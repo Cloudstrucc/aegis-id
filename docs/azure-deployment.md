@@ -7,7 +7,7 @@ The app is designed to run as a Node.js Express app on Azure App Service. Micros
 The free-friendly baseline includes:
 
 - Azure App Service Free `F1` for the public Node.js/HBS app.
-- `VID_MODE=mock` for landing page, subscription capture, and local request demos.
+- `VID_MODE=mock` for landing page, subscription capture, onboarding wizard, and local request demos.
 - File-backed subscription and transaction capture under `data/`.
 - No App Insights, Key Vault, database, private networking, or custom domain required for the first pilot.
 
@@ -78,6 +78,8 @@ az webapp config appsettings set \
     VID_CALLBACK_API_KEY="<random-callback-secret>" \
     PUBLIC_BASE_URL="https://<globally-unique-app-name>.azurewebsites.net"
 ```
+
+For a subscriber-driven Cloudstrucc Inc. pilot, the wizard can also accept tenant/app/DID/claims details in the dashboard. A live test still needs a client secret supplied one time in the wizard or configured in App Service settings. The wizard does not persist secrets.
 
 ## Microsoft Setup Checklist
 

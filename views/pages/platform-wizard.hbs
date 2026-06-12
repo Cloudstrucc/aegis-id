@@ -1,0 +1,78 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">{{platform.family}}</p>
+  <h1>{{platform.name}} wizard</h1>
+  <p>{{platform.summary}}</p>
+  <div class="hero__actions">
+    <a class="button button--primary" href="/dashboard/{{subscription.id}}">Dashboard</a>
+    <a class="button button--secondary" href="{{platform.docsUrl}}">Provider Docs</a>
+  </div>
+</section>
+
+<section class="band band--white">
+  <div class="wizard-layout">
+    <aside class="wizard-rail" aria-label="Setup steps">
+      <div class="progress-bar">
+        <span style="width: {{progressPercent}}%"></span>
+      </div>
+      <ol>
+        {{#each steps}}
+          <li class="{{#if active}}is-active{{/if}} {{#if completed}}is-complete{{/if}}">
+            <a href="/dashboard/{{../subscription.id}}/platforms/{{../platform.id}}/setup?step={{index}}">
+              <span>{{displayIndex}}</span>
+              <strong>{{title}}</strong>
+            </a>
+          </li>
+        {{/each}}
+      </ol>
+    </aside>
+
+    <div class="wizard-panel">
+      <div class="wizard-panel__head">
+        <p class="eyebrow">Step {{stepDisplayIndex}}</p>
+        <h2>{{currentStep.title}}</h2>
+        <p>{{currentStep.description}}</p>
+      </div>
+
+      {{#if currentStep.testStep}}
+        <form class="wizard-form" action="/dashboard/{{subscription.id}}/platforms/{{platform.id}}/test" method="post">
+          <input type="hidden" name="stepIndex" value="{{stepIndex}}">
+          {{#each currentStep.fields}}
+            {{> wizard-field}}
+          {{/each}}
+          <div class="note-panel">
+            <strong>No secrets are persisted.</strong>
+            <span>For live Microsoft tests, the client secret is used only for this request. Store production secrets in Azure Key Vault or App Service settings.</span>
+          </div>
+          <div class="wizard-actions">
+            {{#if hasPrevious}}
+              <a class="button button--secondary button--dark-text" href="/dashboard/{{subscription.id}}/platforms/{{platform.id}}/setup?step={{previousStepIndex}}">Back</a>
+            {{/if}}
+            <button class="button button--primary button--blue" type="submit">Run Test</button>
+          </div>
+        </form>
+      {{else}}
+        <form class="wizard-form" action="/dashboard/{{subscription.id}}/platforms/{{platform.id}}/setup" method="post">
+          <input type="hidden" name="stepIndex" value="{{stepIndex}}">
+          {{#each currentStep.fields}}
+            {{> wizard-field}}
+          {{/each}}
+          <div class="wizard-actions">
+            {{#if hasPrevious}}
+              <a class="button button--secondary button--dark-text" href="/dashboard/{{subscription.id}}/platforms/{{platform.id}}/setup?step={{previousStepIndex}}">Back</a>
+            {{/if}}
+            <button class="button button--primary button--blue" type="submit">{{#if hasNext}}Save and Continue{{else}}Save{{/if}}</button>
+          </div>
+        </form>
+      {{/if}}
+
+      {{#if testResult}}
+        <div class="test-result {{#if testResult.ok}}test-result--ok{{else}}test-result--bad{{/if}}">
+          <span class="track-label">Last test</span>
+          <h3>{{testResult.title}}</h3>
+          <p>{{testResult.message}}</p>
+          <pre>{{json testResult.details}}</pre>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,18 @@
+<div class="field-group">
+  <label for="{{name}}">{{label}}</label>
+  {{#if (eq type "textarea")}}
+    <textarea id="{{name}}" name="{{name}}" rows="5">{{value}}</textarea>
+  {{else if (eq type "select")}}
+    <select id="{{name}}" name="{{name}}">
+      {{#each options}}
+        <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+      {{/each}}
+    </select>
+  {{else if (eq type "password")}}
+    <input id="{{name}}" name="{{name}}" type="password" autocomplete="off">
+  {{else if (eq type "url")}}
+    <input id="{{name}}" name="{{name}}" type="url" value="{{value}}">
+  {{else}}
+    <input id="{{name}}" name="{{name}}" type="text" value="{{value}}">
+  {{/if}}
+</div>

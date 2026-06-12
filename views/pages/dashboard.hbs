@@ -1,0 +1,64 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Subscriber Dashboard</p>
+  <h1>{{workspace.organization}} Aegis ID setup</h1>
+  <p>{{#if welcome}}Subscription captured. Start by connecting Microsoft Entra Verified ID, then add federation providers as needed.{{else}}Manage connected identity platforms and setup progress for this Aegis ID workspace.{{/if}}</p>
+  <div class="hero__actions">
+    <a class="button button--primary" href="/dashboard/{{subscription.id}}/platforms/microsoft-verified-id/setup">Set Up Verified ID</a>
+    <a class="button button--secondary" href="/architecture">Architecture</a>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="dashboard-summary">
+    <article>
+      <span class="metric">{{connectedCount}}</span>
+      <p>Connected platforms</p>
+    </article>
+    <article>
+      <span class="metric">{{inProgressCount}}</span>
+      <p>Configured or in progress</p>
+    </article>
+    <article>
+      <span class="metric">{{verifiedIdMode}}</span>
+      <p>Server Verified ID mode</p>
+    </article>
+  </div>
+</section>
+
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Identity platforms</p>
+    <h2>Connect Aegis ID to the platforms this subscriber uses.</h2>
+  </div>
+
+  <div class="platform-grid">
+    {{#each platforms}}
+      <article class="platform-card platform-card--{{status}}">
+        <div class="platform-card__head">
+          <span class="platform-icon">{{icon}}</span>
+          <div>
+            <span class="track-label">{{family}}</span>
+            <h3>{{name}}</h3>
+          </div>
+        </div>
+        <p>{{summary}}</p>
+        <div class="progress-bar" aria-label="{{completed}} of {{total}} setup steps complete">
+          <span style="width: {{progressPercent}}%"></span>
+        </div>
+        <div class="platform-card__meta">
+          <span>{{statusLabel}}</span>
+          <span>{{completed}} / {{total}}</span>
+        </div>
+        {{#if lastTestResult}}
+          <p class="platform-result {{#if lastTestResult.ok}}platform-result--ok{{else}}platform-result--bad{{/if}}">
+            {{lastTestResult.title}}
+          </p>
+        {{/if}}
+        <div class="platform-card__actions">
+          <a class="button button--primary" href="/dashboard/{{../subscription.id}}/platforms/{{id}}/setup">Open Wizard</a>
+          <a class="button button--ghost" href="{{docsUrl}}">Docs</a>
+        </div>
+      </article>
+    {{/each}}
+  </div>
+</section>

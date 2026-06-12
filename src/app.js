@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const pageRoutes = require('./routes/pages');
 const subscriptionRoutes = require('./routes/subscriptions');
+const dashboardRoutes = require('./routes/dashboard');
 const apiRoutes = require('./routes/api');
 
 function registerHandlebars() {
@@ -74,6 +75,7 @@ function createApp() {
 
   app.use('/', pageRoutes);
   app.use('/', subscriptionRoutes);
+  app.use('/', dashboardRoutes);
   app.use('/api', apiRoutes);
 
   app.use((req, res) => {

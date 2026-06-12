@@ -231,6 +231,27 @@ h3 {
   border-color: var(--cyan-500);
 }
 
+.button--ghost {
+  color: var(--navy-900);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.button--blue {
+  color: #ffffff;
+  background: var(--blue-600);
+}
+
+.button--blue:hover {
+  background: var(--green-500);
+}
+
+.button--dark-text {
+  color: var(--navy-900);
+  background: #f8fbff;
+  border-color: var(--line);
+}
+
 .hero__status {
   position: relative;
   z-index: 1;
@@ -533,6 +554,221 @@ textarea:focus {
   padding: 28px;
 }
 
+.dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dashboard-summary article,
+.platform-card,
+.wizard-rail,
+.wizard-panel,
+.test-result {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.dashboard-summary article {
+  padding: 22px;
+}
+
+.dashboard-summary .metric {
+  color: var(--navy-900);
+}
+
+.dashboard-summary p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.platform-card {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.platform-card__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.platform-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--blue-600), var(--cyan-500));
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.platform-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.progress-bar {
+  height: 10px;
+  overflow: hidden;
+  background: #e8f0f8;
+  border-radius: 999px;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-600), var(--cyan-500), var(--green-500));
+}
+
+.platform-card__meta,
+.platform-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.platform-card__meta {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.platform-card__actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.platform-result {
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.platform-result--ok {
+  color: #075f3f;
+  background: #e8fff4;
+}
+
+.platform-result--bad {
+  color: #8f2c21;
+  background: #fff0ee;
+}
+
+.wizard-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.wizard-rail,
+.wizard-panel {
+  padding: 24px;
+}
+
+.wizard-rail {
+  position: sticky;
+  top: 96px;
+}
+
+.wizard-rail ol {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 18px 0 0;
+  list-style: none;
+}
+
+.wizard-rail a {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  color: var(--muted);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.wizard-rail span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--navy-900);
+  background: #ecf4ff;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.wizard-rail .is-active a {
+  color: var(--navy-900);
+  background: #f7fbff;
+  border-color: var(--line);
+}
+
+.wizard-rail .is-complete span {
+  color: #ffffff;
+  background: var(--green-500);
+}
+
+.wizard-panel {
+  display: grid;
+  gap: 26px;
+}
+
+.wizard-panel__head p:last-child {
+  color: var(--muted);
+}
+
+.wizard-form {
+  display: grid;
+  gap: 18px;
+}
+
+.wizard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.note-panel {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  color: #345;
+  background: #f6fbff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.test-result {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+}
+
+.test-result--ok {
+  border-color: #8be1ba;
+}
+
+.test-result--bad {
+  border-color: #ffb4b4;
+}
+
 .site-footer {
   display: flex;
   justify-content: space-between;
@@ -580,9 +816,16 @@ textarea:focus {
   .track-grid,
   .plan-grid,
   .architecture-grid,
+  .dashboard-summary,
+  .platform-grid,
+  .wizard-layout,
   .subscription-layout,
   .field-row {
     grid-template-columns: 1fr;
+  }
+
+  .wizard-rail {
+    position: static;
   }
 
   .architecture-strip {

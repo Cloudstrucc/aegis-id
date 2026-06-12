@@ -15,6 +15,7 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 - `VID_MODE=mock` for local demos without a Microsoft tenant connection.
 - MSAL-backed `VID_MODE=live` adapter boundary for Microsoft Entra Verified ID.
 - Redacted audit event storage.
+- Subscriber dashboard with setup wizards for Microsoft Verified ID, Keycloak, Okta, and generic OIDC/SAML.
 - ACA-Py Docker Compose lab and helper scripts.
 - Azure App Service Bicep baseline targeting the Free `F1` tier where available.
 - Architecture, Azure deployment, Aries lab, and security docs.
@@ -65,6 +66,8 @@ npm run smoke
 
 - `/` anonymous landing page and subscription form.
 - `/architecture` architecture view and local demo API controls.
+- `/dashboard/:subscriptionId` subscriber dashboard after subscription.
+- `/dashboard/:subscriptionId/platforms/:platformId/setup` interactive platform setup wizard.
 - `/api/health` service health.
 - `/api/issuer/create-offer` creates a mock or live issuance request.
 - `/api/verifier/create-request` creates a mock or live presentation request.
@@ -82,6 +85,19 @@ PUBLIC_BASE_URL=http://localhost:3000
 ```
 
 Mock mode returns local wallet handoff URLs under `/lab/mock-wallet/...` and lets the UI/API work before Entra Verified ID is configured.
+
+## Subscriber Wizard
+
+After subscribing, the app redirects to the subscriber dashboard. The dashboard tracks connected platforms and setup progress for:
+
+- Microsoft Entra Verified ID / Azure
+- Keycloak
+- Okta
+- Generic OIDC / SAML
+
+The Microsoft wizard lets a subscriber configure tenant details, their DID organization, app registration values, credential type, and claims. The test step can run in mock mode or create a live Microsoft Entra Verified ID issuance/presentation request using a one-time client secret that is not persisted.
+
+More detail: [docs/subscriber-onboarding.md](docs/subscriber-onboarding.md)
 
 ### Live Microsoft Verified ID mode
 

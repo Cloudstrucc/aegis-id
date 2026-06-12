@@ -68,8 +68,14 @@ async function listSubscriptions() {
   return store.read();
 }
 
+async function getSubscription(id) {
+  const subscriptions = await listSubscriptions();
+  return subscriptions.find((subscription) => subscription.id === id) || null;
+}
+
 module.exports = {
   createSubscription,
+  getSubscription,
   listSubscriptions,
   validateSubscription
 };
