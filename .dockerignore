@@ -1,0 +1,9 @@
+.git
+.github
+.azure
+.env
+node_modules
+npm-debug.log*
+coverage
+data/*.json
+tmp

@@ -1,0 +1,70 @@
+name: cloudstrucc-aegis-id-aries
+
+services:
+  acapy-mediator:
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    command: >
+      start
+      --label "Cloudstrucc Mediator"
+      --inbound-transport http 0.0.0.0 3010
+      --outbound-transport http
+      --admin 0.0.0.0 3011
+      --admin-insecure-mode
+      --endpoint ${MEDIATOR_ENDPOINT:-http://localhost:3010}
+      --wallet-type askar
+      --wallet-name mediator-wallet
+      --wallet-key ${MEDIATOR_WALLET_KEY:-change-me-mediator}
+      --auto-provision
+      --mediator-invitation
+      --open-mediation
+    ports:
+      - "3010:3010"
+      - "3011:3011"
+
+  acapy-issuer:
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    command: >
+      start
+      --label "Cloudstrucc Aries Issuer"
+      --inbound-transport http 0.0.0.0 4010
+      --outbound-transport http
+      --admin 0.0.0.0 4011
+      --admin-insecure-mode
+      --endpoint ${ISSUER_ENDPOINT:-http://localhost:4010}
+      --wallet-type askar
+      --wallet-name issuer-wallet
+      --wallet-key ${ISSUER_WALLET_KEY:-change-me-issuer}
+      --auto-provision
+      --auto-accept-invites
+      --auto-accept-requests
+      --auto-ping-connection
+    ports:
+      - "4010:4010"
+      - "4011:4011"
+
+  acapy-verifier:
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    command: >
+      start
+      --label "Cloudstrucc Aries Verifier"
+      --inbound-transport http 0.0.0.0 5010
+      --outbound-transport http
+      --admin 0.0.0.0 5011
+      --admin-insecure-mode
+      --endpoint ${VERIFIER_ENDPOINT:-http://localhost:5010}
+      --wallet-type askar
+      --wallet-name verifier-wallet
+      --wallet-key ${VERIFIER_WALLET_KEY:-change-me-verifier}
+      --auto-provision
+      --auto-accept-invites
+      --auto-accept-requests
+      --auto-ping-connection
+    ports:
+      - "5010:5010"
+      - "5011:5011"
+
+  von-network:
+    image: ghcr.io/bcgov/von-network-base:latest
+    profiles: ["ledger"]
+    ports:
+      - "9000:9000"

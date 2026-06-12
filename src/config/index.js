@@ -1,0 +1,47 @@
+const path = require('node:path');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const rootDir = path.resolve(__dirname, '..', '..');
+
+function resolveFromRoot(value, fallback) {
+  return path.resolve(rootDir, value || fallback);
+}
+
+const config = {
+  app: {
+    name: 'Cloudstrucc Aegis ID',
+    env: process.env.NODE_ENV || 'development',
+    port: Number.parseInt(process.env.PORT || '3000', 10),
+    publicBaseUrl: process.env.PUBLIC_BASE_URL || 'http://localhost:3000'
+  },
+  paths: {
+    root: rootDir,
+    public: path.join(rootDir, 'public'),
+    views: path.join(rootDir, 'views'),
+    subscriptions: resolveFromRoot(process.env.SUBSCRIPTION_STORE_PATH, 'data/subscriptions.json'),
+    transactions: resolveFromRoot(process.env.TRANSACTION_STORE_PATH, 'data/transactions.json'),
+    audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json')
+  },
+  verifiedId: {
+    mode: process.env.VID_MODE || 'mock',
+    tenantId: process.env.AZURE_TENANT_ID || '',
+    clientId: process.env.AZURE_CLIENT_ID || '',
+    clientSecret: process.env.AZURE_CLIENT_SECRET || '',
+    scope: '3db474b9-6a0c-4840-96ac-1fceb342124f/.default',
+    apiBaseUrl: 'https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials',
+    clientName: process.env.VID_CLIENT_NAME || 'Cloudstrucc Aegis ID',
+    authorityDid: process.env.VID_AUTHORITY_DID || '',
+    manifestUrl: process.env.VID_MANIFEST_URL || '',
+    credentialType: process.env.VID_CREDENTIAL_TYPE || 'CloudstruccEmployeeCredential',
+    callbackApiKey: process.env.VID_CALLBACK_API_KEY || ''
+  },
+  aries: {
+    issuerAdminUrl: process.env.ARIES_ISSUER_ADMIN_URL || 'http://localhost:4011',
+    verifierAdminUrl: process.env.ARIES_VERIFIER_ADMIN_URL || 'http://localhost:5011',
+    mediatorAdminUrl: process.env.ARIES_MEDIATOR_ADMIN_URL || 'http://localhost:3011'
+  }
+};
+
+module.exports = config;

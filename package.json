@@ -1,0 +1,26 @@
+{
+  "name": "aegis-id",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudstrucc Aegis ID dual-track identity architecture: Microsoft Entra Verified ID production path plus Aries interoperability lab.",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "smoke": "node -e \"require('./src/app').createApp(); console.log('app bootstraps')\""
+  },
+  "dependencies": {
+    "@azure/msal-node": "^5.2.4",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "hbs": "^4.2.0",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "qrcode": "^1.5.4"
+  }
+}

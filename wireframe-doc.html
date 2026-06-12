@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cloudstrucc Implementation Guide: YubiKey + Verified ID + Aries</title>
+  <style>
+    :root {
+      --navy: #081C2D;
+      --blue: #1769E0;
+      --cyan: #00B7C7;
+      --green: #19B97A;
+      --ink: #182334;
+      --muted: #5F6C7B;
+      --bg: #F6F9FC;
+      --card: #FFFFFF;
+      --line: #DCE6F1;
+      --code: #0D1726;
+      --warn: #FFF5D6;
+      --good: #E8FFF4;
+      --bad: #FFECEC;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, Segoe UI, Arial, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.55; }
+    header { background: radial-gradient(circle at top right, rgba(0,183,199,.34), transparent 36%), linear-gradient(135deg, var(--navy), #123A63 60%, #0A243B); color: white; padding: 56px 7vw 42px; }
+    .brand { display:flex; align-items:center; gap:14px; margin-bottom: 28px; }
+    .logo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--cyan), var(--blue)); display:grid; place-items:center; font-weight:900; box-shadow: 0 10px 24px rgba(0,0,0,.25); }
+    .brand span { letter-spacing:.08em; text-transform:uppercase; font-size: 13px; opacity:.9; }
+    h1 { font-size: clamp(34px, 5vw, 64px); line-height: 1; margin: 0 0 18px; max-width: 1100px; }
+    header p { font-size: 20px; max-width: 980px; opacity: .93; }
+    .meta { display:flex; gap: 14px; flex-wrap:wrap; margin-top: 26px; }
+    .pill { border:1px solid rgba(255,255,255,.28); border-radius: 999px; padding:8px 13px; background: rgba(255,255,255,.08); font-size: 14px; }
+    main { display:grid; grid-template-columns: 280px 1fr; gap: 28px; padding: 28px 7vw 64px; }
+    nav { position: sticky; top: 16px; align-self:start; background: var(--card); border:1px solid var(--line); border-radius: 18px; padding: 18px; box-shadow: 0 10px 26px rgba(8,28,45,.06); }
+    nav h3 { margin: 0 0 10px; font-size: 14px; text-transform:uppercase; color: var(--muted); letter-spacing:.08em; }
+    nav a { display:block; color: var(--ink); text-decoration:none; padding: 7px 0; font-size: 14px; border-bottom:1px solid #EFF3F8; }
+    section { background: var(--card); border:1px solid var(--line); border-radius: 22px; padding: 30px; margin-bottom: 24px; box-shadow: 0 10px 28px rgba(8,28,45,.05); }
+    h2 { margin: 0 0 14px; font-size: 30px; color: var(--navy); }
+    h3 { margin-top: 24px; color: #123A63; }
+    .lead { font-size: 18px; color: var(--muted); }
+    .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .card { border:1px solid var(--line); border-radius: 18px; padding: 18px; background: linear-gradient(180deg, #fff, #FAFCFF); }
+    .card h3 { margin-top:0; }
+    table { border-collapse: collapse; width:100%; margin: 16px 0; overflow:hidden; border-radius: 14px; }
+    th, td { border:1px solid var(--line); padding: 10px 12px; text-align:left; vertical-align:top; }
+    th { background:#EDF5FF; color:#123A63; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#EEF3F9; padding:2px 5px; border-radius:5px; }
+    pre { background: var(--code); color:#EAF2FF; padding: 18px; border-radius: 16px; overflow:auto; border:1px solid #21324A; }
+    pre code { background: transparent; color: inherit; padding:0; }
+    .diagram { background:#F8FBFF; border:1px solid var(--line); border-radius: 20px; padding: 22px; margin: 18px 0; }
+    .flow { display:flex; flex-wrap:wrap; align-items:center; gap: 12px; justify-content:center; }
+    .node { min-width: 150px; padding: 14px 16px; border-radius: 16px; background:white; border:2px solid #BBD7FF; text-align:center; font-weight:700; box-shadow: 0 8px 18px rgba(23,105,224,.08); }
+    .node.accent { border-color: var(--cyan); }
+    .node.green { border-color: var(--green); }
+    .arrow { font-size: 26px; color: var(--blue); font-weight:900; }
+    .note { padding: 14px 16px; border-radius: 14px; margin: 14px 0; border:1px solid var(--line); background:#F6FAFF; }
+    .warning { background: var(--warn); border-color:#F3D575; }
+    .good { background: var(--good); border-color:#8BE1BA; }
+    .bad { background: var(--bad); border-color:#FFB4B4; }
+    .checklist li { margin: 8px 0; }
+    .refs a { color: var(--blue); word-break: break-word; }
+    footer { padding: 32px 7vw; color: var(--muted); border-top: 1px solid var(--line); }
+    @media (max-width: 980px) { main { grid-template-columns: 1fr; } nav { position: static; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">C</div><div><strong>Cloudstrucc</strong><br><span>Verified Identity Reference Architecture</span></div></div>
+  <h1>YubiKey + Microsoft Entra Verified ID + Aries / ACA-Py Implementation Guide</h1>
+  <p>A detailed build reference for deploying phishing-resistant YubiKey authentication, Microsoft Entra Verified ID issuance/verification, and an optional Aries wallet/DID interoperability lab.</p>
+  <div class="meta"><span class="pill">Production path: Entra Verified ID</span><span class="pill">Lab path: ACA-Py + Bifold + VON</span><span class="pill">Standards: FIDO2, WebAuthn, OIDC4VC, DIDComm</span></div>
+</header>
+<main>
+<nav>
+  <h3>Contents</h3>
+  <a href="#decision">1. Decision</a>
+  <a href="#standards">2. Standards</a>
+  <a href="#architecture">3. Architecture</a>
+  <a href="#yubikey">4. YubiKey</a>
+  <a href="#verifiedid">5. Verified ID</a>
+  <a href="#issuer">6. Issuer</a>
+  <a href="#verifier">7. Verifier</a>
+  <a href="#aries">8. Aries Lab</a>
+  <a href="#oidc4vc">9. OIDC4VC</a>
+  <a href="#security">10. Security</a>
+  <a href="#codex">11. Codex Backlog</a>
+  <a href="#refs">12. References</a>
+</nav>
+<div>
+<section id="decision">
+  <h2>1. Executive Architecture Decision</h2>
+  <p class="lead">Cloudstrucc should implement a dual-track architecture: a Microsoft-native production path and a separate Aries interoperability lab.</p>
+  <div class="grid">
+    <div class="card"><h3>Production Track</h3><p>Use Microsoft Entra ID, YubiKey FIDO2/passkeys, Conditional Access, and Microsoft Entra Verified ID for enterprise-grade issuance and verification.</p></div>
+    <div class="card"><h3>Interoperability Track</h3><p>Use ACA-Py, Bifold/Credo wallet, mediator, DID service, and VON Network for Aries, DIDComm, AnonCreds, and wallet interoperability experiments.</p></div>
+  </div>
+  <div class="note warning"><strong>Important:</strong> VON Network is a development Indy ledger. Do not treat it as a production trust registry or production DID infrastructure.</div>
+</section>
+
+<section id="standards">
+  <h2>2. Standards Position</h2>
+  <table><tr><th>Area</th><th>Recommended Standard</th><th>Use</th></tr>
+  <tr><td>Hardware authentication</td><td>FIDO2 / WebAuthn / passkeys</td><td>YubiKey device-bound phishing-resistant authentication.</td></tr>
+  <tr><td>Enterprise identity</td><td>Microsoft Entra ID</td><td>User authentication, Conditional Access, authentication strength.</td></tr>
+  <tr><td>Microsoft VC</td><td>Entra Verified ID Request Service REST API</td><td>Issuer and verifier application integration.</td></tr>
+  <tr><td>Credential issuance standard</td><td>OID4VCI</td><td>OAuth-protected VC issuance to wallets.</td></tr>
+  <tr><td>Credential presentation standard</td><td>OID4VP</td><td>Wallet-to-verifier VC presentation.</td></tr>
+  <tr><td>Aries messaging</td><td>DIDComm</td><td>ACA-Py and mobile Aries wallets.</td></tr>
+  <tr><td>Development ledger</td><td>VON Network / Indy</td><td>Local lab only.</td></tr></table>
+</section>
+
+<section id="architecture">
+  <h2>3. Target Solution Overview</h2>
+  <div class="diagram"><div class="flow"><div class="node">Employee</div><div class="arrow">→</div><div class="node accent">YubiKey NFC / USB</div><div class="arrow">→</div><div class="node">Entra ID</div><div class="arrow">→</div><div class="node green">Verified ID</div><div class="arrow">→</div><div class="node">Wallet</div><div class="arrow">→</div><div class="node">Verifier App</div></div></div>
+  <div class="diagram"><div class="flow"><div class="node">Bifold Wallet</div><div class="arrow">↔</div><div class="node accent">ACA-Py Mediator</div><div class="arrow">↔</div><div class="node">ACA-Py Issuer</div><div class="arrow">↔</div><div class="node green">VON Dev Ledger</div><div class="arrow">↔</div><div class="node">ACA-Py Verifier</div></div></div>
+</section>
+
+<section id="yubikey">
+  <h2>4. Configure YubiKey with Microsoft Entra ID</h2>
+  <ol>
+    <li>Enable <strong>Passkey (FIDO2)</strong> in Microsoft Entra Authentication Methods policy.</li>
+    <li>Target a pilot group before tenant-wide rollout.</li>
+    <li>For high assurance, evaluate attestation enforcement and approved YubiKey AAGUID restrictions.</li>
+    <li>Have users register their YubiKey through Security Info.</li>
+    <li>Apply Conditional Access requiring phishing-resistant authentication strength for issuer/verifier apps.</li>
+  </ol>
+  <div class="note good"><strong>NFC:</strong> NFC YubiKeys can be used where OS, browser, and app support FIDO2/passkeys over NFC. Test iPhone, Android, Windows, and USB fallback paths.</div>
+</section>
+
+<section id="verifiedid">
+  <h2>5. Configure Microsoft Entra Verified ID</h2>
+  <p>Use Quick setup for demos and Advanced setup for production. Advanced setup is preferred when Cloudstrucc needs explicit Key Vault, lifecycle separation, governance, and environment controls.</p>
+  <pre><code>{
+  "credentialType": "CloudstruccEmployeeCredential",
+  "displayName": "Cloudstrucc Employee Credential",
+  "claims": {
+    "employeeId": "string",
+    "displayName": "string",
+    "email": "string",
+    "department": "string",
+    "role": "string",
+    "assuranceLevel": "string",
+    "employmentStatus": "string"
+  }
+}</code></pre>
+  <p>Recommended issuance pattern: <strong>ID token hint</strong>. The issuer app authenticates the user with Entra ID/YubiKey and passes trusted claims to the Verified ID issuance request.</p>
+</section>
+
+<section id="issuer">
+  <h2>6. Issuer Application</h2>
+  <p>The issuer app authenticates the user, confirms phishing-resistant authentication, creates an issuance request, renders QR/deep link, receives callbacks, and persists transaction state.</p>
+  <pre><code>app.post('/api/issuer/create-offer', requireAuth, async (req, res) =&gt; {
+  await requirePhishingResistantAuth(req.user);
+
+  const request = await verifiedIdClient.createIssuanceRequest({
+    credentialType: 'CloudstruccEmployeeCredential',
+    claims: {
+      employeeId: req.user.employeeId,
+      displayName: req.user.name,
+      email: req.user.email,
+      assuranceLevel: 'FIDO2_YUBIKEY',
+      employmentStatus: 'active'
+    },
+    callbackUrl: `${PUBLIC_BASE_URL}/api/issuer/callback`,
+    state: crypto.randomUUID()
+  });
+
+  res.json({ qrCodeUrl: request.url, transactionId: request.id });
+});</code></pre>
+</section>
+
+<section id="verifier">
+  <h2>7. Verifier Application</h2>
+  <p>The verifier app creates a presentation request, specifies accepted issuer DID and credential type, validates callback state, and maps verified claims to an authorization decision.</p>
+  <pre><code>app.post('/api/verifier/create-request', async (req, res) =&gt; {
+  const request = await verifiedIdClient.createPresentationRequest({
+    acceptedIssuers: [CLOUDSTRUCC_ISSUER_DID],
+    credentialType: 'CloudstruccEmployeeCredential',
+    requestedClaims: ['employeeId', 'email', 'employmentStatus', 'assuranceLevel'],
+    callbackUrl: `${PUBLIC_BASE_URL}/api/verifier/callback`,
+    state: crypto.randomUUID()
+  });
+
+  res.json({ qrCodeUrl: request.url, transactionId: request.id });
+});</code></pre>
+</section>
+
+<section id="aries">
+  <h2>8. Aries / ACA-Py Lab</h2>
+  <p>The Aries lab is useful for Bifold/Credo wallet testing, DIDComm, mediator-based mobile flows, AnonCreds schema/credential-definition publishing, and non-Microsoft interoperability.</p>
+  <h3>When a DID service is necessary</h3>
+  <ul>
+    <li>You need DIDs outside Microsoft Verified ID.</li>
+    <li>You need DIDComm endpoints and mediator services.</li>
+    <li>You need to publish AnonCreds schemas/credential definitions.</li>
+    <li>You need a wallet ecosystem such as Bifold/Credo.</li>
+  </ul>
+  <pre><code>services:
+  acapy-mediator:
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    command: start --label "Cloudstrucc Mediator" --admin 0.0.0.0 3001 --admin-insecure-mode --mediator-invitation --open-mediation
+    ports: ["3000:3000", "3001:3001"]
+
+  acapy-issuer:
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    command: start --label "Cloudstrucc Issuer" --admin 0.0.0.0 4001 --admin-insecure-mode --auto-provision
+    ports: ["4000:4000", "4001:4001"]
+
+  acapy-verifier:
+    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    command: start --label "Cloudstrucc Verifier" --admin 0.0.0.0 5001 --admin-insecure-mode --auto-provision
+    ports: ["5000:5000", "5001:5001"]</code></pre>
+  <div class="note bad"><strong>Do not expose ACA-Py admin APIs with <code>--admin-insecure-mode</code> outside local development.</strong></div>
+</section>
+
+<section id="oidc4vc">
+  <h2>9. OIDC4VC Guidance</h2>
+  <p>OIDC4VC makes sense when Cloudstrucc needs OpenID/OAuth-style wallet interactions beyond a Microsoft-only flow. Use OID4VCI for credential issuance and OID4VP for presentation. Keep Aries DIDComm, Microsoft Verified ID, and OIDC4VC adapters separate until compatibility is proven through wallet testing.</p>
+  <div class="diagram"><div class="flow"><div class="node">Business App</div><div class="arrow">→</div><div class="node accent">Credential Policy Engine</div><div class="arrow">→</div><div class="node">Verified ID Adapter</div><div class="node">OID4VC Adapter</div><div class="node">Aries Adapter</div></div></div>
+</section>
+
+<section id="security">
+  <h2>10. Security Controls</h2>
+  <ul class="checklist">
+    <li>Require phishing-resistant MFA for issuer administration.</li>
+    <li>Require YubiKey/passkey authentication for employee credential issuance.</li>
+    <li>Validate callback state and correlation IDs.</li>
+    <li>Use HTTPS everywhere.</li>
+    <li>Do not log raw credentials, tokens, private keys, or unnecessary personal data.</li>
+    <li>Separate sandbox, staging, and production issuers.</li>
+    <li>Keep VON Network restricted to local development.</li>
+  </ul>
+</section>
+
+<section id="codex">
+  <h2>11. Codex Implementation Backlog</h2>
+  <ol>
+    <li>Create TypeScript monorepo with issuer and verifier apps.</li>
+    <li>Add Microsoft identity sign-in and authentication-strength abstraction.</li>
+    <li>Implement Verified ID issuer request endpoint and callback.</li>
+    <li>Implement Verified ID verifier request endpoint and callback.</li>
+    <li>Add transaction persistence, audit logging, QR rendering, and admin dashboards.</li>
+    <li>Add ACA-Py Compose lab for issuer, verifier, and mediator.</li>
+    <li>Add scripts for Aries invitations, schema, credential definition, issuance, and proof requests.</li>
+    <li>Add OIDC4VC adapter interfaces after selecting target wallet and format.</li>
+    <li>Harden callbacks, secrets, admin APIs, and observability.</li>
+  </ol>
+</section>
+
+<section id="refs" class="refs">
+  <h2>12. References</h2>
+  <ul>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-passkeys-fido2">Microsoft Entra passkeys/FIDO2 authentication method</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-authentication-passkeys-fido2">Enable passkeys/FIDO2 in Microsoft Entra ID</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-register-passkey-with-security-key">Register a passkey with a FIDO2 security key</a></li>
+    <li><a href="https://support.yubico.com/s/article/YubiKeys-for-Microsoft-Entra-ID-passwordless-sign-in-guide">Yubico: YubiKeys for Microsoft Entra ID passwordless sign-in</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api">Microsoft Entra Verified ID Request Service REST API</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api">Microsoft Entra Verified ID presentation request API</a></li>
+    <li><a href="https://learn.microsoft.com/en-us/entra/verified-id/rules-and-display-definitions-model">Verified ID rules and display definitions</a></li>
+    <li><a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html">OpenID for Verifiable Credential Issuance 1.0</a></li>
+    <li><a href="https://aca-py.org/latest/">ACA-Py documentation</a></li>
+    <li><a href="https://github.com/openwallet-foundation/bifold-wallet">Bifold Wallet</a></li>
+    <li><a href="https://github.com/bcgov/von-network">VON Network</a></li>
+  </ul>
+</section>
+</div>
+</main>
+<footer>Prepared for Cloudstrucc. This reference separates the production Microsoft Verified ID path from the Aries/VON interoperability lab to reduce implementation risk.</footer>
+</body>
+</html>

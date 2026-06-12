@@ -1,0 +1,131 @@
+<section class="hero">
+  <div class="hero__overlay"></div>
+  <div class="hero__content">
+    <p class="eyebrow">Verified identity architecture</p>
+    <h1>Cloudstrucc Aegis ID</h1>
+    <p class="hero__lead">A dual-track identity service for YubiKey-backed Microsoft Entra Verified ID in production and an isolated Aries interoperability lab for wallet and DID testing.</p>
+    <div class="hero__actions">
+      <a class="button button--primary" href="#subscribe">Subscribe</a>
+      <a class="button button--secondary" href="/architecture">View Architecture</a>
+    </div>
+  </div>
+  <div class="hero__status" aria-label="Current service posture">
+    <div>
+      <span class="metric">01</span>
+      <span>Production adapter</span>
+    </div>
+    <div>
+      <span class="metric">02</span>
+      <span>Aries lab boundary</span>
+    </div>
+    <div>
+      <span class="metric">{{verifiedIdMode}}</span>
+      <span>Verified ID mode</span>
+    </div>
+  </div>
+</section>
+
+<section class="band band--light" id="tracks">
+  <div class="section-heading">
+    <p class="eyebrow">Dual-track model</p>
+    <h2>Production trust stays separate from interoperability research.</h2>
+  </div>
+  <div class="track-grid">
+    {{#each tracks}}
+      <article class="track-card">
+        <span class="track-label">{{label}}</span>
+        <h3>{{title}}</h3>
+        <p>{{summary}}</p>
+        <ul>
+          {{#each markers}}
+            <li>{{this}}</li>
+          {{/each}}
+        </ul>
+      </article>
+    {{/each}}
+  </div>
+</section>
+
+<section class="band band--ink">
+  <div class="architecture-strip" aria-label="Architecture flow">
+    <div class="flow-node flow-node--blue">YubiKey</div>
+    <div class="flow-line"></div>
+    <div class="flow-node flow-node--cyan">Entra ID</div>
+    <div class="flow-line"></div>
+    <div class="flow-node flow-node--green">Verified ID</div>
+    <div class="flow-break"></div>
+    <div class="flow-node flow-node--lab">ACA-Py</div>
+    <div class="flow-line flow-line--lab"></div>
+    <div class="flow-node flow-node--lab">Bifold</div>
+    <div class="flow-line flow-line--lab"></div>
+    <div class="flow-node flow-node--lab">VON Dev Ledger</div>
+  </div>
+</section>
+
+<section class="band band--white" id="subscribe">
+  <div class="subscription-layout">
+    <div class="section-heading">
+      <p class="eyebrow">Subscription</p>
+      <h2>Start with the free-tier pilot runway.</h2>
+      <p>Capture interest, validate the Microsoft flow in mock mode, then connect Entra Verified ID and the Aries lab when the tenant and callback URLs are ready.</p>
+    </div>
+
+    <form class="subscribe-form" action="/subscribe" method="post" novalidate>
+      <div class="field-group">
+        <label for="email">Work email</label>
+        <input id="email" name="email" type="email" value="{{formValues.email}}" autocomplete="email" required>
+        {{#if formErrors.email}}<p class="field-error">{{formErrors.email}}</p>{{/if}}
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="organization">Organization</label>
+          <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization">
+        </div>
+        <div class="field-group">
+          <label for="role">Role</label>
+          <input id="role" name="role" type="text" value="{{formValues.role}}">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="plan">Plan</label>
+          <select id="plan" name="plan">
+            <option value="pilot">Pilot</option>
+            <option value="sandbox">Sandbox</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="interest">Interest</label>
+          <select id="interest" name="interest">
+            <option value="both">Both tracks</option>
+            <option value="microsoft-native">Microsoft-native</option>
+            <option value="aries-lab">Aries lab</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="4">{{formValues.notes}}</textarea>
+      </div>
+      <label class="checkline">
+        <input name="consent" type="checkbox" value="yes" required>
+        <span>Cloudstrucc can contact me about Aegis ID onboarding.</span>
+      </label>
+      {{#if formErrors.consent}}<p class="field-error">{{formErrors.consent}}</p>{{/if}}
+      <button class="button button--primary" type="submit">Subscribe</button>
+    </form>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="plan-grid">
+    {{#each plans}}
+      <article class="plan-card">
+        <span>{{price}}</span>
+        <h3>{{name}}</h3>
+        <p>{{summary}}</p>
+      </article>
+    {{/each}}
+  </div>
+</section>

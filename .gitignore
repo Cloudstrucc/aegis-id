@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.azure/
+.vscode/
+node_modules/
+npm-debug.log*
+coverage/
+data/*.json
+!data/.gitkeep
+tmp/

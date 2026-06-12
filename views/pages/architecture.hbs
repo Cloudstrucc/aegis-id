@@ -1,0 +1,54 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Reference architecture</p>
+  <h1>Two tracks, one policy surface.</h1>
+  <p>The production adapter targets Microsoft Entra Verified ID. The Aries lab remains a separate test harness for ACA-Py, DIDComm, AnonCreds, mediator flows, and wallet interoperability.</p>
+</section>
+
+<section class="band band--white">
+  <div class="architecture-grid">
+    <article class="track-card track-card--production">
+      <span class="track-label">Microsoft production path</span>
+      <h2>Entra ID + YubiKey + Verified ID</h2>
+      <ul>
+        <li>MSAL client-credentials access token for the Request Service REST API.</li>
+        <li>Issuer request endpoint for credential offers and callbacks.</li>
+        <li>Verifier request endpoint for presentations and authorization decisions.</li>
+        <li>Callback events captured as redacted audit records.</li>
+      </ul>
+    </article>
+    <article class="track-card track-card--lab">
+      <span class="track-label">Aries interoperability lab</span>
+      <h2>ACA-Py + Bifold/Credo + VON</h2>
+      <ul>
+        <li>Docker Compose lab for mediator, issuer, verifier, and optional dev ledger.</li>
+        <li>Shell scripts for invitations, schemas, credential definitions, issuance, and proofs.</li>
+        <li>Localhost admin APIs only; public tunnels are lab-only and need hardening.</li>
+        <li>No production dependency on the lab ledger or DIDComm agent.</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section class="band band--ink">
+  <div class="console-panel">
+    <div>
+      <p class="eyebrow">Demo API</p>
+      <h2>Local adapter checks</h2>
+    </div>
+    <div class="demo-actions">
+      <button class="button button--secondary" data-demo-action="issue">Create Issuance Offer</button>
+      <button class="button button--secondary" data-demo-action="verify">Create Presentation Request</button>
+      <button class="button button--secondary" data-demo-action="aries">Check Aries Lab</button>
+    </div>
+    <pre class="demo-output" data-demo-output>{
+  "verifiedIdMode": "{{microsoftMode}}"
+}</pre>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="policy-block">
+    <p class="eyebrow">Presentation policy</p>
+    <pre>{{json policy}}</pre>
+  </div>
+</section>
