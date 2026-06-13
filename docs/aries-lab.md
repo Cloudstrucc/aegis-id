@@ -50,6 +50,8 @@ aries-lab/scripts/create-issuer-invitation.sh
 aries-lab/scripts/create-verifier-invitation.sh
 ```
 
+The helper scripts create Out-of-Band invitations through ACA-Py's current `/out-of-band/create-invitation` admin route. The older `/connections/create-invitation` route is not available as a POST endpoint in the pinned ACA-Py image.
+
 ## AnonCreds Flow
 
 The commands below require a running ledger-backed profile. The default `--no-ledger` compose mode is intentionally lighter and will not publish schemas or credential definitions.
