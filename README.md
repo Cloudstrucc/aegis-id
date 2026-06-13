@@ -19,7 +19,32 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 - Subscriber dashboard with setup wizards for Microsoft Verified ID, Keycloak, Okta, and generic OIDC/SAML.
 - ACA-Py Docker Compose lab and helper scripts.
 - Azure App Service Bicep baseline targeting the Free `F1` tier where available.
-- Architecture, Azure deployment, Aries lab, and security docs.
+- Architecture, operator, Azure deployment, Aries lab, and security docs.
+
+## Operator Guide
+
+For a branded Cloudstrucc Inc. walkthrough covering subscription, dashboard wizards, Mac-to-iPhone QR testing, Microsoft Authenticator, YubiKey/passkey usage, Aries lab checks, and Azure pilot deployment, see:
+
+[docs/cloudstrucc-aegis-id-operator-guide.md](docs/cloudstrucc-aegis-id-operator-guide.md)
+
+## When A Wallet Makes Sense
+
+Use a wallet only when the credential needs to become a portable asset, not just a login event. Wallets make the most sense when Cloudstrucc Inc. needs credentials to move between departments, contractors, allies, auditors, partners, facilities, or external systems outside the issuer's direct control.
+
+If all you need is secure login to applications, a wallet can add complexity without much benefit. In that case, YubiKey/passkeys plus Entra ID, Keycloak, Okta, or another SSO layer is usually the cleaner path. The real value of wallets starts when the credential itself must be issued, held, presented, verified, and trusted across boundaries.
+
+Wallet-friendly use cases include:
+
+- Portable contractor, employee, partner, student, or member ID.
+- Digital ID badge for physical access, front-desk validation, visitor workflows, and field checks.
+- Cross-department or cross-organization credential presentation where the relying party should not need direct access to the issuer's directory.
+- Digital signatures, proof-of-approval, notarized attestations, or signed workflow evidence.
+- Identity validation, age/status/eligibility checks, certifications, licenses, training records, and compliance evidence.
+- Selective disclosure where the verifier only needs specific claims instead of a full profile.
+- Bring-your-own-identity patterns across Keycloak, Okta, OIDC, SAML, partner portals, and future identity providers.
+- Wallet-first auth and RBAC flows where a presented credential, claims, issuer trust, revocation state, and policy rules determine access without a traditional app account being the starting point.
+
+YubiKey is still important, but it solves a different problem: phishing-resistant authentication to accounts and admin surfaces. It is not meant to be the portable credential container, ID badge, signature artifact, or cross-organization proof wallet.
 
 ## Repository Layout
 
@@ -27,7 +52,7 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 .
 ├── aries-lab/                 # ACA-Py Docker Compose and admin helper scripts
 ├── data/                      # Local JSON stores, ignored except .gitkeep
-├── docs/                      # Architecture, Azure, Aries, and security docs
+├── docs/                      # Operator, architecture, Azure, Aries, and security docs
 ├── infra/bicep/               # Azure App Service infrastructure baseline
 ├── public/                    # Styles, scripts, and generated hero image
 ├── src/
