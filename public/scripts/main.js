@@ -26,6 +26,12 @@ const demoActions = {
 };
 
 document.addEventListener('click', async (event) => {
+  const copyButton = event.target.closest('[data-copy-value]');
+  if (copyButton) {
+    await copyToClipboard(copyButton);
+    return;
+  }
+
   const openVideoButton = event.target.closest('[data-video-open]');
   if (openVideoButton && videoModal) {
     lastVideoTrigger = openVideoButton;
@@ -87,4 +93,19 @@ function closeVideoModal() {
   videoModal.hidden = true;
   document.body.classList.remove('modal-open');
   lastVideoTrigger?.focus();
+}
+
+async function copyToClipboard(button) {
+  const originalLabel = button.textContent;
+
+  try {
+    await navigator.clipboard.writeText(button.dataset.copyValue);
+    button.textContent = 'Copied';
+  } catch (error) {
+    button.textContent = 'Copy failed';
+  }
+
+  window.setTimeout(() => {
+    button.textContent = originalLabel;
+  }, 1600);
 }

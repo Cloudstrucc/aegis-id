@@ -1,6 +1,31 @@
-<section class="page-hero page-hero--compact">
-  <p class="eyebrow">Mock wallet</p>
-  <h1>{{kind}} request received.</h1>
-  <p>This local handoff stands in for the wallet deep link while `VID_MODE=mock`. State: <code>{{state}}</code></p>
-  <a class="button button--primary" href="/architecture">Back to Architecture</a>
+<section class="page-hero page-hero--compact mock-wallet-hero">
+  <div class="mock-wallet-layout">
+    <div class="mock-wallet-copy">
+      <p class="eyebrow">Mock wallet</p>
+      <h1>{{kind}} request received.</h1>
+      <p>This local handoff stands in for the wallet deep link while <code>VID_MODE=mock</code>. State: <code>{{state}}</code></p>
+      <div class="hero__actions">
+        <a class="button button--primary" href="/architecture">Back to Architecture</a>
+        <a class="button button--secondary" href="{{requestUrl}}">Open Request Link</a>
+      </div>
+    </div>
+
+    <aside class="wallet-qr-card" aria-label="Scannable mock wallet request QR code">
+      <div class="wallet-qr-card__head">
+        <span class="wallet-qr-card__icon" aria-hidden="true">QR</span>
+        <div>
+          <p class="eyebrow">Scan with iPhone</p>
+          <h2>Mock {{kind}} QR</h2>
+        </div>
+      </div>
+      {{#if qrCodeDataUrl}}
+        <img class="wallet-qr-card__image" src="{{qrCodeDataUrl}}" alt="QR code for mock {{kind}} request">
+      {{else}}
+        <div class="wallet-qr-card__fallback" role="status">QR code will appear after the app restarts with the latest route update.</div>
+      {{/if}}
+      <p class="wallet-qr-card__hint">Use iPhone Camera or Safari. For phone testing, this link should use your Mac LAN IP, not localhost.</p>
+      <code class="wallet-qr-card__url">{{requestUrl}}</code>
+      <button class="button button--secondary wallet-qr-card__copy" type="button" data-copy-value="{{requestUrl}}">Copy request link</button>
+    </aside>
+  </div>
 </section>
