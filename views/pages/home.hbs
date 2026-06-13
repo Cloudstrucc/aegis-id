@@ -6,7 +6,7 @@
     <p class="hero__lead">A dual-track identity service for YubiKey-backed Microsoft Entra Verified ID in production and an isolated Aries interoperability lab for wallet and DID testing.</p>
     <div class="hero__actions">
       <a class="button button--primary" href="#subscribe">Subscribe</a>
-      <a class="button button--secondary" href="/architecture">View Architecture</a>
+      <button class="button button--secondary" type="button" data-video-open>Watch video</button>
     </div>
   </div>
   <div class="hero__status" aria-label="Current service posture">
@@ -32,14 +32,30 @@
       <h2>A quick cartoon guide to onboarding.</h2>
       <p>Watch the subscriber journey from sign-up to Verified ID setup, wallet testing, and connecting other identity platforms.</p>
     </div>
-    <div class="video-shell">
-      <video controls preload="metadata" poster="/images/setup-walkthrough-poster.png" aria-label="Cloudstrucc Aegis ID setup walkthrough video">
-        <source src="/videos/setup-walkthrough.mp4" type="video/mp4">
-        Your browser does not support the setup walkthrough video.
-      </video>
-    </div>
+    <button class="video-shell video-trigger" type="button" data-video-open aria-label="Watch the Cloudstrucc Aegis ID setup walkthrough video">
+      <img src="/images/setup-walkthrough-poster.png" alt="" aria-hidden="true">
+      <span class="video-trigger__play" aria-hidden="true"></span>
+      <span class="video-trigger__label">Watch video</span>
+    </button>
   </div>
 </section>
+
+<div class="video-modal" data-video-modal hidden>
+  <div class="video-modal__backdrop" data-video-close></div>
+  <section class="video-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="setup-video-title">
+    <div class="video-modal__head">
+      <div>
+        <p class="eyebrow">Setup walkthrough</p>
+        <h2 id="setup-video-title">Cloudstrucc Aegis ID onboarding</h2>
+      </div>
+      <button class="video-modal__close" type="button" data-video-close aria-label="Close video">×</button>
+    </div>
+    <video controls preload="metadata" poster="/images/setup-walkthrough-poster.png" data-video-player aria-label="Cloudstrucc Aegis ID setup walkthrough video">
+      <source src="/videos/setup-walkthrough.mp4" type="video/mp4">
+      Your browser does not support the setup walkthrough video.
+    </video>
+  </section>
+</div>
 
 <section class="band band--light" id="tracks">
   <div class="section-heading">

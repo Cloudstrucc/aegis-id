@@ -1,4 +1,7 @@
 const output = document.querySelector('[data-demo-output]');
+const videoModal = document.querySelector('[data-video-modal]');
+const videoPlayer = document.querySelector('[data-video-player]');
+let lastVideoTrigger = null;
 
 const demoActions = {
   issue: {
@@ -23,6 +26,19 @@ const demoActions = {
 };
 
 document.addEventListener('click', async (event) => {
+  const openVideoButton = event.target.closest('[data-video-open]');
+  if (openVideoButton && videoModal) {
+    lastVideoTrigger = openVideoButton;
+    openVideoModal();
+    return;
+  }
+
+  const closeVideoButton = event.target.closest('[data-video-close]');
+  if (closeVideoButton && videoModal) {
+    closeVideoModal();
+    return;
+  }
+
   const button = event.target.closest('[data-demo-action]');
   if (!button || !output) {
     return;
@@ -50,3 +66,25 @@ document.addEventListener('click', async (event) => {
     button.disabled = false;
   }
 });
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && videoModal && !videoModal.hidden) {
+    closeVideoModal();
+  }
+});
+
+function openVideoModal() {
+  videoModal.hidden = false;
+  document.body.classList.add('modal-open');
+  videoPlayer?.focus();
+}
+
+function closeVideoModal() {
+  if (videoPlayer) {
+    videoPlayer.pause();
+    videoPlayer.currentTime = 0;
+  }
+  videoModal.hidden = true;
+  document.body.classList.remove('modal-open');
+  lastVideoTrigger?.focus();
+}
