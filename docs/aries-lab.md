@@ -12,6 +12,10 @@ cp .env.example .env
 docker compose up -d acapy-mediator acapy-issuer acapy-verifier
 ```
 
+The compose file defaults to `ghcr.io/openwallet-foundation/acapy-agent:1.6` through `ACAPY_IMAGE_TAG=1.6`. If a specific ACA-Py tag disappears or is not published in GHCR, update `ACAPY_IMAGE_TAG` in `aries-lab/.env` to another available tag such as `latest` or a known-good release tag.
+
+The default local lab starts ACA-Py with `--no-ledger` so the issuer, verifier, and mediator can boot without a VON/Indy genesis file. Use this mode for admin API health checks, connection experiments, and non-ledger protocol work. AnonCreds schema and credential-definition publishing requires adding a ledger profile and genesis configuration.
+
 The local admin endpoints are:
 
 - Mediator admin: `http://localhost:3011`
@@ -47,6 +51,8 @@ aries-lab/scripts/create-verifier-invitation.sh
 ```
 
 ## AnonCreds Flow
+
+The commands below require a running ledger-backed profile. The default `--no-ledger` compose mode is intentionally lighter and will not publish schemas or credential definitions.
 
 ```bash
 SCHEMA_RESPONSE="$(aries-lab/scripts/create-schema.sh)"

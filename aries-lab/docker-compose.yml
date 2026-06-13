@@ -2,7 +2,7 @@ name: cloudstrucc-aegis-id-aries
 
 services:
   acapy-mediator:
-    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    image: ghcr.io/openwallet-foundation/acapy-agent:${ACAPY_IMAGE_TAG:-1.6}
     command: >
       start
       --label "Cloudstrucc Mediator"
@@ -11,18 +11,18 @@ services:
       --admin 0.0.0.0 3011
       --admin-insecure-mode
       --endpoint ${MEDIATOR_ENDPOINT:-http://localhost:3010}
+      --no-ledger
       --wallet-type askar
       --wallet-name mediator-wallet
       --wallet-key ${MEDIATOR_WALLET_KEY:-change-me-mediator}
       --auto-provision
-      --mediator-invitation
       --open-mediation
     ports:
       - "3010:3010"
       - "3011:3011"
 
   acapy-issuer:
-    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    image: ghcr.io/openwallet-foundation/acapy-agent:${ACAPY_IMAGE_TAG:-1.6}
     command: >
       start
       --label "Cloudstrucc Aries Issuer"
@@ -31,6 +31,7 @@ services:
       --admin 0.0.0.0 4011
       --admin-insecure-mode
       --endpoint ${ISSUER_ENDPOINT:-http://localhost:4010}
+      --no-ledger
       --wallet-type askar
       --wallet-name issuer-wallet
       --wallet-key ${ISSUER_WALLET_KEY:-change-me-issuer}
@@ -43,7 +44,7 @@ services:
       - "4011:4011"
 
   acapy-verifier:
-    image: ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6.0
+    image: ghcr.io/openwallet-foundation/acapy-agent:${ACAPY_IMAGE_TAG:-1.6}
     command: >
       start
       --label "Cloudstrucc Aries Verifier"
@@ -52,6 +53,7 @@ services:
       --admin 0.0.0.0 5011
       --admin-insecure-mode
       --endpoint ${VERIFIER_ENDPOINT:-http://localhost:5010}
+      --no-ledger
       --wallet-type askar
       --wallet-name verifier-wallet
       --wallet-key ${VERIFIER_WALLET_KEY:-change-me-verifier}
