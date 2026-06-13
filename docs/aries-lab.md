@@ -4,6 +4,8 @@ The Aries lab is intentionally separate from the Microsoft-native production pat
 
 ## Start Agents
 
+Open Docker Desktop first. The Aries lab depends on local Docker containers; if Docker is not running, `/api/aries/status` will report the ACA-Py admin endpoints as unreachable.
+
 ```bash
 cd aries-lab
 cp .env.example .env
@@ -21,6 +23,21 @@ The Node app checks these with:
 ```bash
 curl http://localhost:3000/api/aries/status
 ```
+
+Expected healthy result:
+
+```json
+{
+  "track": "aries-interoperability-lab",
+  "checks": [
+    { "name": "issuer", "baseUrl": "http://localhost:4011", "ok": true, "status": 200 },
+    { "name": "verifier", "baseUrl": "http://localhost:5011", "ok": true, "status": 200 },
+    { "name": "mediator", "baseUrl": "http://localhost:3011", "ok": true, "status": 200 }
+  ]
+}
+```
+
+If you see `ECONNREFUSED`, Docker Desktop is not running or the ACA-Py containers are not started. If you see `TimeoutError`, check container logs and port mappings.
 
 ## Invitations
 
