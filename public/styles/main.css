@@ -315,7 +315,8 @@ h3 {
 
 .track-grid,
 .plan-grid,
-.architecture-grid {
+.architecture-grid,
+.video-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
@@ -552,6 +553,26 @@ textarea:focus {
   max-width: 980px;
   margin: 0 auto;
   padding: 28px;
+}
+
+.video-layout {
+  align-items: center;
+  gap: 40px;
+}
+
+.video-shell {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--navy-950);
+  box-shadow: var(--shadow);
+}
+
+.video-shell video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--navy-950);
 }
 
 .dashboard-summary {
@@ -816,6 +837,7 @@ textarea:focus {
   .track-grid,
   .plan-grid,
   .architecture-grid,
+  .video-layout,
   .dashboard-summary,
   .platform-grid,
   .wizard-layout,

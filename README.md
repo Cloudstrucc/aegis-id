@@ -10,6 +10,7 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 ## What Is Included
 
 - Anonymous Cloudstrucc-themed landing page.
+- Playable cartoon setup walkthrough video on the home page.
 - Subscription form backed by local JSON storage for a free-tier pilot.
 - Express API endpoints for Verified ID issuance and presentation requests.
 - `VID_MODE=mock` for local demos without a Microsoft tenant connection.
@@ -60,6 +61,12 @@ Run checks:
 ```bash
 npm test
 npm run smoke
+```
+
+Regenerate the home-page setup walkthrough video:
+
+```bash
+npm run video:setup
 ```
 
 ## Main Routes
