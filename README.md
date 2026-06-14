@@ -18,6 +18,7 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 - Redacted audit event storage.
 - Subscriber dashboard with setup wizards for Microsoft Verified ID, Keycloak, Okta, and generic OIDC/SAML.
 - ACA-Py Docker Compose lab and helper scripts.
+- Native SwiftUI iOS Aries wallet starter for Cloudstrucc lab invitations.
 - Azure App Service Bicep baseline targeting the Free `F1` tier where available.
 - Architecture, operator, Azure deployment, Aries lab, and security docs.
 
@@ -54,6 +55,7 @@ YubiKey is still important, but it solves a different problem: phishing-resistan
 ├── data/                      # Local JSON stores, ignored except .gitkeep
 ├── docs/                      # Operator, architecture, Azure, Aries, and security docs
 ├── infra/bicep/               # Azure App Service infrastructure baseline
+├── ios/                       # Cloudstrucc Aegis Wallet SwiftUI starter
 ├── public/                    # Styles, scripts, and generated hero image
 ├── src/
 │   ├── adapters/              # Microsoft Verified ID and Aries boundaries
