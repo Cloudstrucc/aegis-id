@@ -7,6 +7,7 @@
 DerivedData/
 *.xcuserstate
 xcuserdata/
+ios/CloudstruccAegisWallet/CloudstruccAegisWallet.xcodeproj/project.xcworkspace/
 node_modules/
 npm-debug.log*
 yarn-debug.log*

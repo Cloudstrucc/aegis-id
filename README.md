@@ -28,6 +28,10 @@ For a branded Cloudstrucc Inc. walkthrough covering subscription, dashboard wiza
 
 [docs/cloudstrucc-aegis-id-operator-guide.md](docs/cloudstrucc-aegis-id-operator-guide.md)
 
+For the end-to-end lab flow from web registration to Aries invitation acceptance and a wallet challenge, see:
+
+[docs/cloudstrucc-wallet-e2e-runbook.md](docs/cloudstrucc-wallet-e2e-runbook.md)
+
 ## When A Wallet Makes Sense
 
 Use a wallet only when the credential needs to become a portable asset, not just a login event. Wallets make the most sense when Cloudstrucc Inc. needs credentials to move between departments, contractors, allies, auditors, partners, facilities, or external systems outside the issuer's direct control.
@@ -171,6 +175,8 @@ aries-lab/scripts/create-verifier-invitation.sh
 ```
 
 More detail: [docs/aries-lab.md](docs/aries-lab.md)
+
+End-to-end wallet lab: [docs/cloudstrucc-wallet-e2e-runbook.md](docs/cloudstrucc-wallet-e2e-runbook.md)
 
 ## Azure Hosting
 
