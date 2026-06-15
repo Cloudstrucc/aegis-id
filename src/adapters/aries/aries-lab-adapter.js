@@ -1,9 +1,21 @@
 const config = require('../../config');
+const QRCode = require('qrcode');
 
 const endpoints = {
   issuer: config.aries.issuerAdminUrl,
   verifier: config.aries.verifierAdminUrl,
   mediator: config.aries.mediatorAdminUrl
+};
+
+const invitationAgents = {
+  issuer: {
+    baseUrl: endpoints.issuer,
+    label: 'Cloudstrucc Aries Issuer'
+  },
+  verifier: {
+    baseUrl: endpoints.verifier,
+    label: 'Cloudstrucc Aries Verifier'
+  }
 };
 
 async function getAriesStatus() {
@@ -31,6 +43,64 @@ async function getAriesStatus() {
   return {
     track: 'aries-interoperability-lab',
     checks
+  };
+}
+
+async function createOutOfBandInvitation(agentName = 'issuer', options = {}) {
+  const agent = invitationAgents[agentName];
+  if (!agent) {
+    const error = new Error(`Unknown Aries invitation agent: ${agentName}`);
+    error.status = 400;
+    throw error;
+  }
+
+  const payload = {
+    handshake_protocols: ['https://didcomm.org/didexchange/1.0'],
+    metadata: options.metadata || {},
+    my_label: options.label || agent.label,
+    use_did_method: options.useDidMethod || 'did:peer:2'
+  };
+  const baseUrl = options.baseUrl || agent.baseUrl;
+
+  const response = await fetch(`${baseUrl}/out-of-band/create-invitation?auto_accept=true`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(options.timeoutMs || 5000)
+  });
+  const body = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    const error = new Error(`ACA-Py ${agentName} invitation request failed.`);
+    error.status = response.status;
+    error.details = body;
+    throw error;
+  }
+
+  const invitationUrl = body.invitation_url || body.invitationUrl;
+  const qrCodeDataUrl = invitationUrl ? await QRCode.toDataURL(invitationUrl, { margin: 1, width: 420 }) : null;
+
+  return {
+    track: 'aries-interoperability-lab',
+    mode: 'aries-oob',
+    agent: agentName,
+    label: payload.my_label,
+    requestUrl: invitationUrl,
+    invitationUrl,
+    qrCodeDataUrl,
+    phoneReachable: invitationUrl ? isPhoneReachableUrl(invitationUrl) : false,
+    payload: body
+  };
+}
+
+function describeInvitationError(error) {
+  return {
+    ok: false,
+    ...describeConnectionError(error),
+    status: error.status || null,
+    details: error.details || null
   };
 }
 
@@ -87,4 +157,31 @@ function normalizeFetchMessage(message, code) {
   return message;
 }
 
-module.exports = { getAriesStatus, describeConnectionError };
+async function parseJsonResponse(response) {
+  const text = await response.text();
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return { raw: text };
+  }
+}
+
+function isPhoneReachableUrl(value) {
+  try {
+    const url = new URL(value);
+    return !['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+  } catch (error) {
+    return false;
+  }
+}
+
+module.exports = {
+  createOutOfBandInvitation,
+  describeConnectionError,
+  describeInvitationError,
+  getAriesStatus
+};

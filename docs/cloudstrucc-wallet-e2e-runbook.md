@@ -185,6 +185,24 @@ Expected result:
 
 ## 4. Generate The Cloudstrucc Wallet Invitation
 
+### Web App Path
+
+Open the Architecture page:
+
+```text
+http://localhost:3000/architecture
+```
+
+Select **Create Issuance Offer**. The response panel renders:
+
+- A **Scan with Cloudstrucc iOS Wallet** QR code for the Aries OOB issuer invitation.
+- A **Scan Microsoft Wallet Offer** QR code for the Microsoft/mock Verified ID issuance request.
+- The raw JSON response for debugging.
+
+Use the Cloudstrucc iOS wallet starter to scan the Aries OOB QR. Use Microsoft Authenticator or the mock wallet page for the Verified ID QR.
+
+### Script Path
+
 Create an issuer invitation:
 
 ```bash

@@ -663,6 +663,73 @@ textarea:focus {
   min-height: 240px;
 }
 
+.demo-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.demo-qr-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  color: var(--navy-950);
+  background: #ffffff;
+  border: 1px solid rgba(205, 222, 238, 0.96);
+  border-radius: 8px;
+}
+
+.demo-qr-card h3 {
+  font-size: 22px;
+}
+
+.demo-qr-card .eyebrow {
+  color: var(--blue-600);
+}
+
+.demo-qr-card__description,
+.demo-qr-card__warning,
+.demo-qr-card__error {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.demo-qr-card__warning {
+  color: #8a4f00;
+}
+
+.demo-qr-card__error {
+  color: #9f2f24;
+  font-weight: 800;
+}
+
+.demo-qr-card__image {
+  display: block;
+  width: min(100%, 280px);
+  margin: 0 auto;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.demo-qr-card__url {
+  display: block;
+  max-width: 100%;
+  padding: 10px;
+  overflow-wrap: anywhere;
+  color: var(--navy-950);
+  background: #f4f8fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.demo-qr-card__copy {
+  justify-self: start;
+}
+
 .policy-block {
   max-width: 980px;
   margin: 0 auto;
@@ -1083,6 +1150,7 @@ textarea:focus {
   .track-grid,
   .plan-grid,
   .architecture-grid,
+  .demo-result-grid,
   .mock-wallet-layout,
   .video-layout,
   .dashboard-summary,

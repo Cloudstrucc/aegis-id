@@ -2,7 +2,11 @@ const express = require('express');
 
 const config = require('../config');
 const { createMicrosoftVerifiedIdAdapter } = require('../adapters/microsoft/verified-id-adapter');
-const { getAriesStatus } = require('../adapters/aries/aries-lab-adapter');
+const {
+  createOutOfBandInvitation,
+  describeInvitationError,
+  getAriesStatus
+} = require('../adapters/aries/aries-lab-adapter');
 const {
   buildDemoEmployeeClaims,
   evaluatePresentation,
@@ -30,6 +34,7 @@ router.post('/issuer/create-offer', async (req, res, next) => {
       credentialType: config.verifiedId.credentialType,
       claims
     });
+    const iosWalletInvitation = await tryCreateIosWalletInvitation();
 
     await saveTransaction({
       id: result.id,
@@ -46,7 +51,10 @@ router.post('/issuer/create-offer', async (req, res, next) => {
       credentialType: config.verifiedId.credentialType
     });
 
-    res.status(201).json(result);
+    res.status(201).json({
+      ...result,
+      iosWalletInvitation
+    });
   } catch (error) {
     next(error);
   }
@@ -119,6 +127,15 @@ router.get('/aries/status', async (req, res, next) => {
   }
 });
 
+router.post('/aries/:agent/invitation', async (req, res, next) => {
+  try {
+    const invitation = await createOutOfBandInvitation(req.params.agent);
+    res.status(201).json(invitation);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/transactions', async (req, res, next) => {
   try {
     res.json(await listTransactions());
@@ -136,6 +153,19 @@ function validateCallbackApiKey(req) {
     const error = new Error('Invalid callback API key.');
     error.status = 401;
     throw error;
+  }
+}
+
+async function tryCreateIosWalletInvitation() {
+  try {
+    return await createOutOfBandInvitation('issuer');
+  } catch (error) {
+    return {
+      agent: 'issuer',
+      mode: 'aries-oob',
+      label: 'Cloudstrucc Aries Issuer',
+      ...describeInvitationError(error)
+    };
   }
 }
 

@@ -1,4 +1,5 @@
 const output = document.querySelector('[data-demo-output]');
+const demoResult = document.querySelector('[data-demo-result]');
 const videoModal = document.querySelector('[data-video-modal]');
 const videoPlayer = document.querySelector('[data-video-player]');
 let lastVideoTrigger = null;
@@ -57,6 +58,7 @@ document.addEventListener('click', async (event) => {
 
   button.disabled = true;
   output.textContent = 'Running...';
+  renderDemoResult(null);
 
   try {
     const response = await fetch(action.url, {
@@ -66,8 +68,10 @@ document.addEventListener('click', async (event) => {
     });
     const payload = await response.json();
     output.textContent = JSON.stringify(payload, null, 2);
+    renderDemoResult(payload, button.dataset.demoAction);
   } catch (error) {
     output.textContent = JSON.stringify({ error: error.message }, null, 2);
+    renderDemoResult(null);
   } finally {
     button.disabled = false;
   }
@@ -108,4 +112,128 @@ async function copyToClipboard(button) {
   window.setTimeout(() => {
     button.textContent = originalLabel;
   }, 1600);
+}
+
+function renderDemoResult(payload, actionName) {
+  if (!demoResult) {
+    return;
+  }
+
+  demoResult.replaceChildren();
+  demoResult.hidden = true;
+
+  if (!payload) {
+    return;
+  }
+
+  const cards = [];
+
+  if (actionName === 'issue' && payload.iosWalletInvitation) {
+    cards.push(
+      createQrCard({
+        eyebrow: 'iOS Aries lab',
+        title: 'Scan with Cloudstrucc iOS Wallet',
+        description:
+          payload.iosWalletInvitation.ok === false
+            ? 'Start the Aries issuer container to generate an iOS wallet invitation QR.'
+            : 'Aries out-of-band issuer invitation for the Cloudstrucc iOS wallet starter.',
+        qrCodeDataUrl: payload.iosWalletInvitation.qrCodeDataUrl,
+        requestUrl: payload.iosWalletInvitation.invitationUrl || payload.iosWalletInvitation.requestUrl,
+        phoneReachable: payload.iosWalletInvitation.phoneReachable,
+        phoneHint:
+          'This QR uses localhost. For iPhone testing, set the Aries endpoint to your Mac LAN IP and recreate the lab containers.',
+        error: payload.iosWalletInvitation.ok === false ? payload.iosWalletInvitation : null
+      })
+    );
+  }
+
+  if (payload.qrCodeDataUrl) {
+    cards.push(
+      createQrCard({
+        eyebrow: payload.kind === 'presentation' ? 'Verified ID presentation' : 'Verified ID issuance',
+        title: payload.kind === 'presentation' ? 'Scan Presentation Request' : 'Scan Microsoft Wallet Offer',
+        description:
+          payload.kind === 'presentation'
+            ? 'Verified ID presentation request QR for a compatible Microsoft wallet.'
+            : 'Verified ID issuance offer QR for Microsoft Authenticator or the mock wallet page.',
+        qrCodeDataUrl: payload.qrCodeDataUrl,
+        requestUrl: payload.requestUrl,
+        phoneReachable: isPhoneReachableUrl(payload.requestUrl),
+        phoneHint: 'This QR uses localhost. For iPhone testing, set PUBLIC_BASE_URL to your Mac LAN IP or deployed HTTPS URL.'
+      })
+    );
+  }
+
+  if (!cards.length) {
+    return;
+  }
+
+  cards.forEach((card) => demoResult.append(card));
+  demoResult.hidden = false;
+}
+
+function createQrCard({ eyebrow, title, description, qrCodeDataUrl, requestUrl, phoneReachable, phoneHint, error }) {
+  const card = document.createElement('article');
+  card.className = 'demo-qr-card';
+
+  const eyebrowElement = document.createElement('p');
+  eyebrowElement.className = 'eyebrow';
+  eyebrowElement.textContent = eyebrow;
+  card.append(eyebrowElement);
+
+  const titleElement = document.createElement('h3');
+  titleElement.textContent = title;
+  card.append(titleElement);
+
+  const descriptionElement = document.createElement('p');
+  descriptionElement.className = 'demo-qr-card__description';
+  descriptionElement.textContent = description;
+  card.append(descriptionElement);
+
+  if (qrCodeDataUrl) {
+    const image = document.createElement('img');
+    image.className = 'demo-qr-card__image';
+    image.src = qrCodeDataUrl;
+    image.alt = `${title} QR code`;
+    card.append(image);
+  }
+
+  if (error) {
+    const errorElement = document.createElement('p');
+    errorElement.className = 'demo-qr-card__error';
+    errorElement.textContent = error.hint || error.message || 'Unable to create the Aries wallet invitation.';
+    card.append(errorElement);
+  }
+
+  if (requestUrl) {
+    const code = document.createElement('code');
+    code.className = 'demo-qr-card__url';
+    code.textContent = requestUrl;
+    card.append(code);
+
+    const copyButton = document.createElement('button');
+    copyButton.className = 'button button--secondary demo-qr-card__copy';
+    copyButton.type = 'button';
+    copyButton.dataset.copyValue = requestUrl;
+    copyButton.textContent = 'Copy link';
+    card.append(copyButton);
+  }
+
+  if (requestUrl && phoneReachable === false) {
+    const hint = document.createElement('p');
+    hint.className = 'demo-qr-card__warning';
+    hint.textContent = phoneHint || 'This QR uses localhost. For iPhone testing, use a phone-reachable host.';
+    card.append(hint);
+  }
+
+  return card;
+}
+
+function isPhoneReachableUrl(value) {
+  try {
+    const url = new URL(value);
+    return !['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+  } catch (error) {
+    return false;
+  }
 }
