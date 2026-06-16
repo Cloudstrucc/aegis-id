@@ -52,6 +52,25 @@ aries-lab/scripts/create-verifier-invitation.sh
 
 The helper scripts create Out-of-Band invitations through ACA-Py's current `/out-of-band/create-invitation` admin route. The older `/connections/create-invitation` route is not available as a POST endpoint in the pinned ACA-Py image.
 
+For deterministic local testing with an ACA-Py holder stand-in:
+
+```bash
+aries-lab/scripts/start-holder-standin.sh
+aries-lab/scripts/create-issuer-invitation.sh > /tmp/cloudstrucc-issuer-invite.json
+aries-lab/scripts/accept-invitation-with-holder.sh /tmp/cloudstrucc-issuer-invite.json | jq
+aries-lab/scripts/send-wallet-challenge.sh issuer | jq
+```
+
+To test the verifier path, create and accept a verifier invitation before sending a verifier challenge:
+
+```bash
+aries-lab/scripts/create-verifier-invitation.sh > /tmp/cloudstrucc-verifier-invite.json
+aries-lab/scripts/accept-invitation-with-holder.sh /tmp/cloudstrucc-verifier-invite.json | jq
+aries-lab/scripts/send-wallet-challenge.sh verifier | jq
+```
+
+Use a fresh invitation for each acceptance test. Reusing the same single-use OOB invitation can leave records at `request-sent` and produce `reuse-not-accepted` ACA-Py log noise.
+
 ## AnonCreds Flow
 
 The commands below require a running ledger-backed profile. The default `--no-ledger` compose mode is intentionally lighter and will not publish schemas or credential definitions.

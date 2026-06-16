@@ -229,6 +229,8 @@ A phone cannot open:
 http://localhost:4010?oob=...
 ```
 
+Use a fresh invitation for each acceptance test. The lab invitations are single-use unless explicitly created as reusable by the agent. Re-posting an already accepted OOB invitation can leave holder-side records stuck at `request-sent` and can produce ACA-Py `reuse-not-accepted` log noise.
+
 ## 5. Send The Invitation To The Wallet
 
 ### Option A: Render A QR Code
@@ -281,6 +283,15 @@ Pass condition:
 
 Use this when a mobile Aries wallet is not ready yet, or when you want a deterministic protocol test.
 
+Shortcut:
+
+```bash
+./aries-lab/scripts/start-holder-standin.sh
+./aries-lab/scripts/accept-invitation-with-holder.sh /tmp/cloudstrucc-issuer-invite.json | jq
+```
+
+Manual equivalent:
+
 ```bash
 MAC_IP="$(ipconfig getifaddr en0)"
 
@@ -322,6 +333,17 @@ curl -s http://localhost:6011/connections | jq '.results[] | {side:"holder", con
 curl -s http://localhost:4011/connections | jq '.results[] | {side:"issuer", connection_id, state, rfc23_state, their_label}'
 ```
 
+Expected completed records:
+
+```json
+{
+  "state": "active",
+  "rfc23_state": "completed"
+}
+```
+
+Older records with `invitation-sent` or `request-sent` usually mean old invitations were generated or replayed but not completed. Use the completed connection for wallet challenges.
+
 ## 7. Test A Wallet Challenge
 
 For the current no-ledger lab, use a DIDComm trust ping and optional basic message as the wallet challenge. This proves the connection is live and the wallet/holder can receive protocol messages from Cloudstrucc.
@@ -331,6 +353,12 @@ Get the latest completed issuer connection:
 ```bash
 ISSUER_CONN_ID="$(curl -s http://localhost:4011/connections | jq -r '.results[] | select(.rfc23_state=="completed") | .connection_id' | tail -n 1)"
 echo "$ISSUER_CONN_ID"
+```
+
+Shortcut:
+
+```bash
+./aries-lab/scripts/send-wallet-challenge.sh issuer | jq
 ```
 
 Send a trust ping:
@@ -367,6 +395,7 @@ To test the verifier as the challenge sender, repeat the invitation acceptance f
 
 ```bash
 ./aries-lab/scripts/create-verifier-invitation.sh > /tmp/cloudstrucc-verifier-invite.json
+./aries-lab/scripts/accept-invitation-with-holder.sh /tmp/cloudstrucc-verifier-invite.json | jq
 ```
 
 After the wallet accepts the verifier invitation, get the verifier connection ID:
@@ -374,6 +403,14 @@ After the wallet accepts the verifier invitation, get the verifier connection ID
 ```bash
 VERIFIER_CONN_ID="$(curl -s http://localhost:5011/connections | jq -r '.results[] | select(.rfc23_state=="completed") | .connection_id' | tail -n 1)"
 echo "$VERIFIER_CONN_ID"
+```
+
+If `VERIFIER_CONN_ID` is blank, the holder has not accepted the verifier invitation yet. Creating the verifier invitation only creates an `invitation-sent` record; it does not complete DIDExchange.
+
+Shortcut:
+
+```bash
+./aries-lab/scripts/send-wallet-challenge.sh verifier | jq
 ```
 
 Send the verifier challenge:
@@ -408,6 +445,39 @@ echo "$SCHEMA_RESPONSE"
 Use this phase when Cloudstrucc is ready to test a true credential presentation instead of a connection challenge.
 
 ## Troubleshooting
+
+<details>
+<summary>Holder logs show `reuse-not-accepted` or records stay at `request-sent`</summary>
+
+This usually means the holder tried to accept the same single-use OOB invitation more than once, or the invitation was accepted after a connection already existed and the issuer did not accept reuse. Create a fresh issuer or verifier invitation, then accept that fresh JSON file once.
+
+```bash
+./aries-lab/scripts/create-issuer-invitation.sh > /tmp/cloudstrucc-issuer-invite.json
+./aries-lab/scripts/accept-invitation-with-holder.sh /tmp/cloudstrucc-issuer-invite.json | jq
+```
+
+Use records with `state: active` and `rfc23_state: completed` for challenge testing. Ignore stale `invitation-sent` or `request-sent` records unless you are debugging protocol history.
+
+</details>
+
+<details>
+<summary>Verifier challenge fails with `jq: parse error`</summary>
+
+Check whether `VERIFIER_CONN_ID` is empty:
+
+```bash
+echo "$VERIFIER_CONN_ID"
+```
+
+If it is empty, accept a verifier invitation first:
+
+```bash
+./aries-lab/scripts/create-verifier-invitation.sh > /tmp/cloudstrucc-verifier-invite.json
+./aries-lab/scripts/accept-invitation-with-holder.sh /tmp/cloudstrucc-verifier-invite.json | jq
+./aries-lab/scripts/send-wallet-challenge.sh verifier | jq
+```
+
+</details>
 
 <details>
 <summary>The phone opens the QR link, but nothing happens</summary>
