@@ -99,6 +99,58 @@ async function createOutOfBandInvitation(agentName = 'issuer', options = {}) {
   };
 }
 
+async function listAgentConnections(agentName = 'issuer', options = {}) {
+  const baseUrl = getAgentAdminUrl(agentName);
+  const response = await fetch(`${baseUrl}/connections`, {
+    signal: AbortSignal.timeout(options.timeoutMs || 5000)
+  });
+  const body = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    const error = new Error(`ACA-Py ${agentName} connections request failed.`);
+    error.status = response.status;
+    error.details = body;
+    throw error;
+  }
+
+  return body.results || [];
+}
+
+async function listCompletedConnections(agentName = 'issuer', options = {}) {
+  const connections = await listAgentConnections(agentName, options);
+  return connections.filter((connection) => connection.rfc23_state === 'completed' || connection.state === 'active');
+}
+
+async function sendWalletChallenge(agentName = 'issuer', options = {}) {
+  const baseUrl = getAgentAdminUrl(agentName);
+  const connectionId = options.connectionId || (await getLatestCompletedConnectionId(agentName, options));
+
+  if (!connectionId) {
+    const error = new Error(`No completed ${agentName} wallet connection was found.`);
+    error.status = 409;
+    error.details = {
+      hint: `Create a fresh ${agentName} invitation and accept it with the Cloudstrucc iOS wallet before sending the challenge.`
+    };
+    throw error;
+  }
+
+  const comment = options.comment || `Cloudstrucc ${agentName} wallet challenge`;
+  const content =
+    options.content || `Cloudstrucc ${agentName} wallet challenge: confirm DIDComm channel is live.`;
+
+  const ping = await postAgentJson(`${baseUrl}/connections/${connectionId}/send-ping`, { comment }, agentName);
+  const message = await postAgentJson(`${baseUrl}/connections/${connectionId}/send-message`, { content }, agentName);
+
+  return {
+    agent: agentName,
+    connectionId,
+    comment,
+    content,
+    ping,
+    message
+  };
+}
+
 function describeInvitationError(error) {
   return {
     ok: false,
@@ -161,6 +213,42 @@ function normalizeFetchMessage(message, code) {
   return message;
 }
 
+function getAgentAdminUrl(agentName) {
+  const baseUrl = endpoints[agentName];
+  if (!baseUrl) {
+    const error = new Error(`Unknown Aries agent: ${agentName}`);
+    error.status = 400;
+    throw error;
+  }
+  return baseUrl;
+}
+
+async function getLatestCompletedConnectionId(agentName, options = {}) {
+  const connections = await listCompletedConnections(agentName, options);
+  return connections.at(-1)?.connection_id || null;
+}
+
+async function postAgentJson(url, payload, agentName) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(5000)
+  });
+  const body = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    const error = new Error(`ACA-Py ${agentName} request failed.`);
+    error.status = response.status;
+    error.details = body;
+    throw error;
+  }
+
+  return body;
+}
+
 async function parseJsonResponse(response) {
   const text = await response.text();
   if (!text) {
@@ -204,5 +292,8 @@ module.exports = {
   createOutOfBandInvitation,
   describeConnectionError,
   describeInvitationError,
-  getAriesStatus
+  getAriesStatus,
+  listAgentConnections,
+  listCompletedConnections,
+  sendWalletChallenge
 };

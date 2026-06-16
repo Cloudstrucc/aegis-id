@@ -70,6 +70,28 @@ The Keycloak, Okta, and Generic OIDC / SAML wizards save provider metadata and c
 
 The current implementation does metadata reachability and shape validation. It does not yet perform a full browser SSO login, token exchange, SAML assertion validation, or SCIM sync.
 
+## Local Platform Test Examples
+
+The root [README](../README.md) contains a full platform test matrix with example wizard values. For quick local validation without real external identity providers, use the built-in mock metadata endpoints:
+
+| Platform card | Protocol | Metadata input | Expected wizard result |
+| --- | --- | --- | --- |
+| Microsoft Entra Verified ID | Verified ID mock | Test mode `Mock request` | `Mock Verified ID request created` |
+| Keycloak | OIDC | Base URL `http://localhost:3000/demo/metadata/keycloak`, realm `cloudstrucc` | `OIDC discovery valid` |
+| Keycloak | SAML | Metadata URL `http://localhost:3000/demo/metadata/generic/saml` | `SAML metadata found` |
+| Okta | OIDC | Issuer URL `http://localhost:3000/demo/metadata/okta/oauth2/default` | `OIDC discovery valid` |
+| Okta | SAML | Metadata URL `http://localhost:3000/demo/metadata/generic/saml` | `SAML metadata found` |
+| Generic OIDC / SAML | OIDC | Metadata URL `http://localhost:3000/demo/metadata/generic/oidc` | `OIDC discovery valid` |
+| Generic OIDC / SAML | SAML | Metadata URL `http://localhost:3000/demo/metadata/generic/saml` | `SAML metadata found` |
+
+For browser SSO plus wallet step-up testing, use:
+
+```text
+http://localhost:3000/demo/oidc-wallet
+```
+
+That relying-party demo represents the pattern Keycloak, Okta, or a generic OIDC/SAML provider would use after primary SSO: OIDC or SAML completes first, then Aegis ID sends a Cloudstrucc wallet challenge before allowing app access.
+
 ## Security Notes
 
 - Do not treat local JSON stores as production storage.

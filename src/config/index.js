@@ -23,6 +23,7 @@ const config = {
     subscriptions: resolveFromRoot(process.env.SUBSCRIPTION_STORE_PATH, 'data/subscriptions.json'),
     subscriberWorkspaces: resolveFromRoot(process.env.SUBSCRIBER_WORKSPACE_STORE_PATH, 'data/subscriber-workspaces.json'),
     transactions: resolveFromRoot(process.env.TRANSACTION_STORE_PATH, 'data/transactions.json'),
+    oidcWalletSessions: resolveFromRoot(process.env.OIDC_WALLET_SESSION_STORE_PATH, 'data/oidc-wallet-sessions.json'),
     audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json')
   },
   verifiedId: {
@@ -42,6 +43,17 @@ const config = {
     issuerAdminUrl: process.env.ARIES_ISSUER_ADMIN_URL || 'http://localhost:4011',
     verifierAdminUrl: process.env.ARIES_VERIFIER_ADMIN_URL || 'http://localhost:5011',
     mediatorAdminUrl: process.env.ARIES_MEDIATOR_ADMIN_URL || 'http://localhost:3011'
+  },
+  oidcWalletDemo: {
+    mode: process.env.OIDC_WALLET_DEMO_MODE || 'mock',
+    issuer: process.env.OIDC_WALLET_ISSUER || 'https://mock-idp.cloudstrucc.local',
+    publicBaseUrl: process.env.OIDC_WALLET_PUBLIC_BASE_URL || '',
+    authorizationEndpoint:
+      process.env.OIDC_WALLET_AUTHORIZATION_ENDPOINT || '/demo/oidc-wallet/mock-authorize',
+    clientId: process.env.OIDC_WALLET_CLIENT_ID || 'cloudstrucc-wallet-gated-app',
+    scope: process.env.OIDC_WALLET_SCOPE || 'openid profile email',
+    redirectPath: '/demo/oidc-wallet/callback',
+    sessionTtlSeconds: Number.parseInt(process.env.OIDC_WALLET_SESSION_TTL_SECONDS || '900', 10)
   }
 };
 

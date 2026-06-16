@@ -23,7 +23,7 @@ struct HomeView: View {
                 StatusBadge(text: "Cloudstrucc Lab", systemImage: "shield.lefthalf.filled", tint: CloudstruccTheme.green)
                 Text("Aries connections")
                     .font(.largeTitle.bold())
-                Text("Import out-of-band invitations from your local ACA-Py issuer and verifier agents.")
+                Text("Import lab invitations, accept them through the local holder stand-in, and track mock credential and challenge transactions.")
                     .foregroundStyle(.secondary)
             }
         }
@@ -89,6 +89,9 @@ struct HomeView: View {
                         systemImage: connection.state.symbolName,
                         tint: CloudstruccTheme.blue
                     )
+                    Text("\(store.transactions(for: connection).count) wallet transactions")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
             }
         }

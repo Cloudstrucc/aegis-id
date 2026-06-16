@@ -11,6 +11,7 @@ const pageRoutes = require('./routes/pages');
 const subscriptionRoutes = require('./routes/subscriptions');
 const dashboardRoutes = require('./routes/dashboard');
 const apiRoutes = require('./routes/api');
+const oidcWalletDemoRoutes = require('./routes/oidc-wallet-demo');
 
 function registerHandlebars() {
   const partialsDir = path.join(config.paths.views, 'partials');
@@ -76,6 +77,7 @@ function createApp() {
   app.use('/', pageRoutes);
   app.use('/', subscriptionRoutes);
   app.use('/', dashboardRoutes);
+  app.use('/', oidcWalletDemoRoutes);
   app.use('/api', apiRoutes);
 
   app.use((req, res) => {

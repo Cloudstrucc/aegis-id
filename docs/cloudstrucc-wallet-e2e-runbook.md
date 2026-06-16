@@ -79,9 +79,10 @@ flowchart LR
 - `jq` installed for JSON filtering.
 - This repository cloned locally.
 - iPhone on the same Wi-Fi network as the Mac, or a local ACA-Py holder stand-in.
-- For a real mobile wallet test, an Aries/DIDComm wallet that supports Out-of-Band invitations and DIDExchange.
+- For a simulator demo, the native Cloudstrucc iOS starter in `ios/CloudstruccAegisWallet`.
+- For a real mobile wallet protocol test, an Aries/DIDComm wallet that supports Out-of-Band invitations and DIDExchange.
 
-> Note: The native iOS starter in `ios/CloudstruccAegisWallet` scans and stores OOB invitations, but it does not complete DIDExchange yet. Use it for Cloudstrucc UX work. Use an Aries-compatible wallet or the holder stand-in below for the protocol challenge.
+> Note: The iOS starter includes a simulator-only Lab Bridge that calls the local holder and issuer ACA-Py admin APIs. That bridge is for Cloudstrucc UX and lab journey testing. A production Aries wallet still needs its own DIDComm transport, secure key storage, credential exchange, proof presentation, and revocation handling.
 
 ## 1. Start The Web App
 
@@ -255,6 +256,37 @@ jq -r .invitation_url /tmp/cloudstrucc-issuer-invite.json | pbcopy
 Send it to the iPhone by AirDrop, Messages, email, or another secure internal channel.
 
 ## 6. Accept The Invitation
+
+### With The iOS Simulator Lab Bridge
+
+Use this path when you want the Cloudstrucc iOS app running in Simulator to drive the local lab without Microsoft Verified ID.
+
+Start ACA-Py and the holder stand-in from the repo root:
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+cd aries-lab
+cp .env.example .env
+docker compose up -d acapy-mediator acapy-issuer acapy-verifier
+
+cd /Users/frederickpearson/repos/aegis-id
+./aries-lab/scripts/start-holder-standin.sh
+./aries-lab/scripts/create-issuer-invitation.sh > /tmp/cloudstrucc-issuer-invite.json
+jq -r .invitation_url /tmp/cloudstrucc-issuer-invite.json
+```
+
+Run `ios/CloudstruccAegisWallet` in Simulator. In the app:
+
+1. Paste or scan the fresh issuer invitation.
+2. Open **Connections**.
+3. Open **Cloudstrucc Aries Issuer**.
+4. Tap **Accept invitation in lab**.
+5. Tap **Issue mock credential**.
+6. Tap **Accept credential** in **Wallet transactions**.
+7. Tap **Send wallet challenge**.
+8. Tap **Accept challenge** in **Wallet transactions**.
+
+This is a lab bridge flow. The iOS app calls the local holder and issuer ACA-Py admin APIs to complete DIDExchange, send a mock credential message, send a trust-ping/basic-message challenge, and record wallet transactions in the simulator. It does not use Microsoft Verified ID and it does not publish ledger-backed AnonCreds.
 
 ### With An Aries-Compatible Mobile Wallet
 

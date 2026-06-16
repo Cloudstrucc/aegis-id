@@ -1,0 +1,61 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Example relying party</p>
+  <h1>OIDC plus wallet challenge.</h1>
+  <p>Authenticate with an OIDC provider, then require a Cloudstrucc wallet challenge before the protected app opens.</p>
+  <div class="hero__actions">
+    <form action="/demo/oidc-wallet/login" method="post">
+      <button class="button button--primary" type="submit">Start OIDC Login</button>
+    </form>
+    <a class="button button--secondary" href="/architecture">View Architecture</a>
+  </div>
+</section>
+
+<section class="band band--white">
+  <div class="demo-app-shell">
+    <div class="demo-app-head">
+      <div>
+        <p class="eyebrow">Authentication policy</p>
+        <h2>Access requires two successful checks.</h2>
+      </div>
+      <span class="demo-pill">Mode: {{demoMode}}</span>
+    </div>
+
+    <div class="oidc-flow-grid">
+      <article class="oidc-step-card">
+        <span class="platform-icon">1</span>
+        <h3>OIDC authentication</h3>
+        <p>Client <code>{{clientId}}</code> starts an authorization-code request against <code>{{issuer}}</code>.</p>
+      </article>
+      <article class="oidc-step-card">
+        <span class="platform-icon">2</span>
+        <h3>Wallet challenge</h3>
+        <p>Cloudstrucc sends a DIDComm challenge to the active Aries wallet connection after OIDC succeeds.</p>
+      </article>
+      <article class="oidc-step-card">
+        <span class="platform-icon">3</span>
+        <h3>Protected app</h3>
+        <p>The app opens only after the wallet transaction is accepted and the challenge gate is satisfied.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="demo-status-grid">
+    <article>
+      <span class="metric">{{connectionCount}}</span>
+      <p>Active issuer wallet connections</p>
+    </article>
+    <article>
+      <span class="metric">OIDC</span>
+      <p>Primary app authentication layer</p>
+    </article>
+    <article>
+      <span class="metric">DIDComm</span>
+      <p>Wallet step-up challenge layer</p>
+    </article>
+  </div>
+  {{#if connectionError}}
+    <p class="demo-warning">{{connectionError}}</p>
+  {{/if}}
+</section>

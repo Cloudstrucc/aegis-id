@@ -1,0 +1,73 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Protected app</p>
+  <h1>Access granted.</h1>
+  <p>{{claims.email}} passed OIDC authentication and accepted the Cloudstrucc wallet challenge.</p>
+  <div class="hero__actions">
+    <a class="button button--primary" href="/demo/oidc-wallet">Run Again</a>
+    <a class="button button--secondary" href="/architecture">Architecture</a>
+  </div>
+</section>
+
+<section class="band band--white">
+  <div class="demo-app-shell">
+    <ol class="auth-stepper" aria-label="Authentication progress">
+      {{#each flowSteps}}
+        <li class="auth-stepper__item auth-stepper__item--{{state}}">
+          <span>{{label}}</span>
+        </li>
+      {{/each}}
+    </ol>
+
+    <div class="protected-app-grid">
+      <article class="protected-panel protected-panel--primary">
+        <p class="eyebrow">Authorization decision</p>
+        <h2>Wallet-backed session active</h2>
+        <p>The example app now treats this browser flow as authenticated because both the OIDC identity and wallet challenge gates are complete.</p>
+      </article>
+
+      <article class="protected-panel">
+        <p class="eyebrow">OIDC claims</p>
+        <dl class="claim-list">
+          <div>
+            <dt>Name</dt>
+            <dd>{{claims.name}}</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd>{{claims.email}}</dd>
+          </div>
+          <div>
+            <dt>Subject</dt>
+            <dd>{{claims.sub}}</dd>
+          </div>
+          <div>
+            <dt>ACR</dt>
+            <dd>{{claims.acr}}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="protected-panel">
+        <p class="eyebrow">Wallet challenge</p>
+        <dl class="claim-list">
+          <div>
+            <dt>Status</dt>
+            <dd>{{session.walletChallenge.status}}</dd>
+          </div>
+          <div>
+            <dt>Connection</dt>
+            <dd>{{session.walletChallenge.connectionId}}</dd>
+          </div>
+          <div>
+            <dt>Nonce</dt>
+            <dd>{{session.walletChallenge.nonce}}</dd>
+          </div>
+          <div>
+            <dt>Accepted</dt>
+            <dd>{{session.walletChallenge.acceptedAt}}</dd>
+          </div>
+        </dl>
+      </article>
+    </div>
+  </div>
+</section>

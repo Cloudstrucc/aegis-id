@@ -8,10 +8,14 @@ It currently provides:
 - QR scanner for Aries Out-of-Band invitation URLs.
 - Manual invitation paste/import.
 - OOB invitation parser for ACA-Py `/out-of-band/create-invitation` URLs.
-- Local connection list with state tracking.
+- Local connection list with lab state tracking.
+- Simulator-only Lab Bridge for accepting invitations through the local holder stand-in.
+- Mock credential offer and acceptance transactions.
+- Wallet challenge send/accept transactions over the local ACA-Py connection.
+- OIDC web-app challenge fetch and accept flow for `/demo/oidc-wallet`.
 - URL scheme hooks for `cloudstrucc-wallet://` and `aegisid://`.
 
-It does not yet implement the full Aries wallet engine. A production Aries wallet still needs DIDComm transport, DIDExchange state machines, key management, secure storage, credential exchange, proof presentation, revocation handling, and protocol test coverage.
+It does not yet implement the full Aries wallet engine. The Lab Bridge calls local ACA-Py admin APIs from the simulator. A production Aries wallet still needs DIDComm transport, DIDExchange state machines, key management, secure storage, credential exchange, proof presentation, revocation handling, and protocol test coverage.
 
 ## Open And Build
 
@@ -30,23 +34,95 @@ xcodebuild \
   build
 ```
 
-## Lab Flow
+## Complete Simulator Test Process
 
-Start the ACA-Py lab from the repo root:
+Use this flow when testing the wallet side of Cloudstrucc Aegis ID from the iOS Simulator.
 
-```bash
-cd aries-lab
-docker compose up -d acapy-mediator acapy-issuer acapy-verifier
-```
+1. Start the Express app:
 
-Create an issuer invitation:
+   ```bash
+   cd /Users/frederickpearson/repos/aegis-id
+   npm install
+   cp .env.example .env
+   npm run dev
+   ```
+
+2. Start the Aries lab:
+
+   ```bash
+   cd /Users/frederickpearson/repos/aegis-id/aries-lab
+   cp .env.example .env
+   docker compose up -d acapy-mediator acapy-issuer acapy-verifier
+   ```
+
+3. Start the local holder stand-in:
+
+   ```bash
+   cd /Users/frederickpearson/repos/aegis-id
+   ./aries-lab/scripts/start-holder-standin.sh
+   ```
+
+4. Build and run this iOS app in Simulator.
+
+5. Create and import a fresh issuer invitation:
+
+   ```bash
+   ./aries-lab/scripts/create-issuer-invitation.sh > /tmp/cloudstrucc-issuer-invite.json
+   jq -r .invitation_url /tmp/cloudstrucc-issuer-invite.json
+   ```
+
+6. In the simulator app, paste or scan the invitation, open **Connections**, open **Cloudstrucc Aries Issuer**, then tap **Accept invitation in lab**.
+
+After that, the simulator wallet can test mock credential issuance, local DIDComm challenges, and the OIDC web-app challenge flow.
+
+## Lab Credential And Challenge Flow
+
+With an accepted issuer connection:
+
+1. Tap **Issue mock credential**.
+2. Tap **Accept credential** in the Wallet transactions section.
+3. Tap **Send wallet challenge**.
+4. Tap **Accept challenge** in the Wallet transactions section.
+
+The transaction list should show invitation, mock credential, and challenge events. The challenge acceptance sends a basic message back through the holder stand-in.
+
+## OIDC Web App Challenge Demo
+
+Start the Express app and open the example relying-party app:
 
 ```bash
 cd /Users/frederickpearson/repos/aegis-id
-./aries-lab/scripts/create-issuer-invitation.sh | jq -r .invitation_url
+npm run dev
 ```
 
-For a physical iPhone, ensure `aries-lab/.env` uses your Mac LAN IP instead of `localhost`, then restart Docker Compose and regenerate the invitation.
+Open:
+
+```text
+http://localhost:3000/demo/oidc-wallet
+```
+
+After OIDC login succeeds in the browser:
+
+1. Send the wallet challenge from the browser.
+2. Open the accepted issuer connection in the simulator wallet.
+3. Tap **Fetch OIDC challenges**.
+4. Tap **Accept challenge** on the pending OIDC wallet challenge.
+5. The browser redirects to the protected app after the wallet callback succeeds.
+
+The simulator bridge uses `http://localhost:3000` for the Express app, `http://localhost:4011` for issuer admin, and `http://localhost:6011` for holder admin.
+
+## Platform Coverage From The Wallet Perspective
+
+| Platform | What the web app tests | What the iOS wallet participates in |
+| --- | --- | --- |
+| Microsoft Entra Verified ID | Mock or live issuance/presentation request creation | Mock QR handoff only today; live Microsoft wallet testing should use Microsoft Authenticator |
+| Keycloak OIDC | Metadata discovery and claim mapping in the setup wizard | OIDC + wallet challenge demo can represent the step-up pattern after Keycloak login |
+| Keycloak SAML | SAML metadata reachability and claim mapping | Same step-up pattern after SAML login; wallet challenge is separate from SAML assertion validation |
+| Okta OIDC | Metadata discovery and group/claim mapping | Same OIDC + wallet challenge pattern after Okta login |
+| Okta SAML | SAML metadata reachability and group/claim mapping | Same step-up pattern after Okta SAML login |
+| Generic OIDC / SAML | Standards-based OIDC or SAML metadata validation | Same wallet challenge can be used after any upstream IdP completes browser SSO |
+
+For a physical iPhone, ensure `aries-lab/.env` uses your Mac LAN IP instead of `localhost`, then restart Docker Compose and regenerate the invitation. The current Lab Bridge defaults are simulator-oriented and use localhost admin APIs.
 
 ## Engine Integration Options
 

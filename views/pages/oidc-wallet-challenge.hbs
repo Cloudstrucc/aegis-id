@@ -1,0 +1,90 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Step-up required</p>
+  <h1>Wallet challenge required.</h1>
+  <p>OIDC authentication succeeded for {{claims.email}}. Complete the Cloudstrucc wallet challenge to enter the protected app.</p>
+</section>
+
+<section class="band band--white" data-oidc-session-id="{{session.id}}" data-oidc-app-url="/demo/oidc-wallet/sessions/{{session.id}}/app">
+  <div class="demo-app-shell">
+    <ol class="auth-stepper" aria-label="Authentication progress">
+      {{#each flowSteps}}
+        <li class="auth-stepper__item auth-stepper__item--{{state}}">
+          <span>{{label}}</span>
+        </li>
+      {{/each}}
+    </ol>
+
+    <div class="oidc-gate-layout">
+      <article class="oidc-step-card">
+        <p class="eyebrow">OIDC subject</p>
+        <h2>{{claims.name}}</h2>
+        <dl class="claim-list">
+          <div>
+            <dt>Email</dt>
+            <dd>{{claims.email}}</dd>
+          </div>
+          <div>
+            <dt>Subject</dt>
+            <dd>{{claims.sub}}</dd>
+          </div>
+          <div>
+            <dt>Issuer</dt>
+            <dd>{{claims.iss}}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="oidc-step-card">
+        <p class="eyebrow">Wallet gate</p>
+        <h2>{{#if challengeSent}}Challenge sent{{else}}Send challenge{{/if}}</h2>
+
+        {{#if challengeError}}
+          <div class="test-result test-result--bad">
+            <span class="track-label">{{challengeError.title}}</span>
+            <p>{{challengeError.message}}</p>
+            {{#if challengeError.details}}
+              <pre>{{json challengeError.details}}</pre>
+            {{/if}}
+          </div>
+        {{/if}}
+
+        {{#if connectionError}}
+          <p class="demo-warning">{{connectionError}}</p>
+        {{/if}}
+
+        {{#if hasConnections}}
+          <form class="wizard-form" action="/demo/oidc-wallet/sessions/{{session.id}}/challenge" method="post">
+            <div class="field-group">
+              <label for="connectionId">Wallet connection</label>
+              <select id="connectionId" name="connectionId">
+                {{#each connections}}
+                  <option value="{{id}}" {{#if selected}}selected{{/if}}>{{label}} - {{state}} - {{id}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <button class="button button--primary button--blue" type="submit">Send Wallet Challenge</button>
+          </form>
+        {{else}}
+          <div class="note-panel">
+            <strong>No active wallet connection found.</strong>
+            <span>Create a fresh issuer invitation, import it in the iOS simulator wallet, then tap <b>Accept invitation in lab</b>.</span>
+          </div>
+          <pre>./aries-lab/scripts/create-issuer-invitation.sh &gt; /tmp/cloudstrucc-issuer-invite.json
+jq -r .invitation_url /tmp/cloudstrucc-issuer-invite.json</pre>
+        {{/if}}
+
+        {{#if challengeSent}}
+          <div class="challenge-ticket">
+            <span class="track-label">Challenge nonce</span>
+            <code>{{session.walletChallenge.nonce}}</code>
+            <span>Thread {{session.walletChallenge.threadId}}</span>
+            <span data-oidc-challenge-status>Waiting for wallet acceptance.</span>
+          </div>
+          <form class="wizard-actions" action="/demo/oidc-wallet/sessions/{{session.id}}/complete" method="post">
+            <button class="button button--secondary button--dark-text" type="submit">Manual Lab Confirm</button>
+          </form>
+        {{/if}}
+      </article>
+    </div>
+  </div>
+</section>

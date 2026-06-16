@@ -1,0 +1,43 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Mock OIDC provider</p>
+  <h1>Cloudstrucc identity login.</h1>
+  <p>This local provider returns a mock authorization code for the wallet-gated example app.</p>
+</section>
+
+<section class="band band--white">
+  <div class="demo-app-shell demo-app-shell--narrow">
+    <div class="demo-app-head">
+      <div>
+        <p class="eyebrow">Authorization request</p>
+        <h2>Approve sign-in</h2>
+      </div>
+      <span class="demo-pill">OIDC</span>
+    </div>
+
+    <dl class="claim-list">
+      <div>
+        <dt>Client</dt>
+        <dd>{{clientId}}</dd>
+      </div>
+      <div>
+        <dt>Scope</dt>
+        <dd>{{scope}}</dd>
+      </div>
+      <div>
+        <dt>Nonce</dt>
+        <dd>{{nonce}}</dd>
+      </div>
+      <div>
+        <dt>Redirect URI</dt>
+        <dd>{{redirectUri}}</dd>
+      </div>
+    </dl>
+
+    <form class="wizard-actions" action="/demo/oidc-wallet/mock-authorize" method="post">
+      <input type="hidden" name="state" value="{{state}}">
+      <input type="hidden" name="redirectUri" value="{{redirectUri}}">
+      <button class="button button--primary button--blue" type="submit">Approve OIDC Login</button>
+      <a class="button button--ghost" href="/demo/oidc-wallet">Cancel</a>
+    </form>
+  </div>
+</section>

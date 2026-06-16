@@ -13,6 +13,7 @@
 		A10000000000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Models.swift */; };
 		A10000000000000000000005 /* WalletStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* WalletStore.swift */; };
 		A10000000000000000000006 /* OOBInvitationParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* OOBInvitationParser.swift */; };
+		A10000000000000000000012 /* LabAgentClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* LabAgentClient.swift */; };
 		A10000000000000000000007 /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* QRCodeScannerView.swift */; };
 		A10000000000000000000008 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* HomeView.swift */; };
 		A10000000000000000000009 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* ScanView.swift */; };
@@ -34,6 +35,7 @@
 		A20000000000000000000011 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A20000000000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000013 /* CloudstruccAegisWallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CloudstruccAegisWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000014 /* LabAgentClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabAgentClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +109,7 @@
 			children = (
 				A20000000000000000000005 /* WalletStore.swift */,
 				A20000000000000000000006 /* OOBInvitationParser.swift */,
+				A20000000000000000000014 /* LabAgentClient.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -228,6 +231,7 @@
 				A10000000000000000000004 /* Models.swift in Sources */,
 				A10000000000000000000005 /* WalletStore.swift in Sources */,
 				A10000000000000000000006 /* OOBInvitationParser.swift in Sources */,
+				A10000000000000000000012 /* LabAgentClient.swift in Sources */,
 				A10000000000000000000007 /* QRCodeScannerView.swift in Sources */,
 				A10000000000000000000008 /* HomeView.swift in Sources */,
 				A10000000000000000000009 /* ScanView.swift in Sources */,

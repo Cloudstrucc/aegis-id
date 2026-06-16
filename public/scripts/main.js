@@ -2,6 +2,7 @@ const output = document.querySelector('[data-demo-output]');
 const demoResult = document.querySelector('[data-demo-result]');
 const videoModal = document.querySelector('[data-video-modal]');
 const videoPlayer = document.querySelector('[data-video-player]');
+const oidcChallengeGate = document.querySelector('[data-oidc-session-id]');
 let lastVideoTrigger = null;
 
 const demoActions = {
@@ -83,6 +84,10 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+if (oidcChallengeGate) {
+  pollOidcWalletChallenge(oidcChallengeGate);
+}
+
 function openVideoModal() {
   videoModal.hidden = false;
   document.body.classList.add('modal-open');
@@ -97,6 +102,36 @@ function closeVideoModal() {
   videoModal.hidden = true;
   document.body.classList.remove('modal-open');
   lastVideoTrigger?.focus();
+}
+
+function pollOidcWalletChallenge(gate) {
+  const sessionId = gate.dataset.oidcSessionId;
+  const appUrl = gate.dataset.oidcAppUrl;
+  const statusElement = document.querySelector('[data-oidc-challenge-status]');
+
+  if (!sessionId || !statusElement) {
+    return;
+  }
+
+  const interval = window.setInterval(async () => {
+    try {
+      const response = await fetch(`/api/oidc-wallet/sessions/${sessionId}`);
+      const payload = await response.json();
+
+      if (payload.status === 'authenticated') {
+        statusElement.textContent = 'Wallet accepted. Opening protected app...';
+        window.clearInterval(interval);
+        window.location.assign(payload.appUrl || appUrl);
+        return;
+      }
+
+      if (payload.walletChallenge?.status) {
+        statusElement.textContent = `Wallet challenge status: ${payload.walletChallenge.status}`;
+      }
+    } catch (error) {
+      statusElement.textContent = 'Waiting for wallet acceptance.';
+    }
+  }, 2200);
 }
 
 async function copyToClipboard(button) {

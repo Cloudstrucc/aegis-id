@@ -38,6 +38,13 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Cloudstrucc Aegis Wallet uses the camera to scan Aries out-of-band invitation QR codes.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Cloudstrucc Aegis Wallet connects to local ACA-Py lab agents while running in the simulator.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
