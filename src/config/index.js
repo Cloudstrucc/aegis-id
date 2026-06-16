@@ -21,6 +21,7 @@ const config = {
     public: path.join(rootDir, 'public'),
     views: path.join(rootDir, 'views'),
     subscriptions: resolveFromRoot(process.env.SUBSCRIPTION_STORE_PATH, 'data/subscriptions.json'),
+    users: resolveFromRoot(process.env.USER_STORE_PATH, 'data/users.json'),
     subscriberWorkspaces: resolveFromRoot(process.env.SUBSCRIBER_WORKSPACE_STORE_PATH, 'data/subscriber-workspaces.json'),
     transactions: resolveFromRoot(process.env.TRANSACTION_STORE_PATH, 'data/transactions.json'),
     issuerOrganizations: resolveFromRoot(process.env.ISSUER_ORG_STORE_PATH, 'data/issuer-organizations.json'),
@@ -28,6 +29,12 @@ const config = {
     orgAdminEvents: resolveFromRoot(process.env.ORG_ADMIN_EVENT_STORE_PATH, 'data/org-admin-events.json'),
     oidcWalletSessions: resolveFromRoot(process.env.OIDC_WALLET_SESSION_STORE_PATH, 'data/oidc-wallet-sessions.json'),
     audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json')
+  },
+  auth: {
+    sessionSecret: process.env.SESSION_SECRET || 'dev-change-this-session-secret',
+    passkeyRpName: process.env.PASSKEY_RP_NAME || 'Vanguard Cloud Services - Aegis ID',
+    passkeyRpId: process.env.PASSKEY_RP_ID || '',
+    passkeyOrigin: process.env.PASSKEY_ORIGIN || ''
   },
   verifiedId: {
     mode: process.env.VID_MODE || 'mock',

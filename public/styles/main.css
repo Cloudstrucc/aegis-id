@@ -110,17 +110,32 @@ pre {
 
 .site-nav {
   display: flex;
+  align-items: center;
   gap: 22px;
   font-size: 14px;
   font-weight: 700;
 }
 
-.site-nav a {
+.site-nav a,
+.nav-button {
   color: rgba(255, 255, 255, 0.86);
   text-decoration: none;
 }
 
-.site-nav a:hover {
+.site-nav form {
+  margin: 0;
+}
+
+.nav-button {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.site-nav a:hover,
+.nav-button:hover {
   color: #ffffff;
 }
 
@@ -430,6 +445,18 @@ h3 {
   align-items: start;
 }
 
+.auth-grid {
+  display: grid;
+  grid-template-columns: 0.82fr 1.18fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.auth-grid--compact {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
 .subscribe-form {
   display: grid;
   gap: 18px;
@@ -544,6 +571,83 @@ textarea:focus {
   margin: 0;
   color: #a3382b;
   font-size: 14px;
+}
+
+.form-alert,
+.developer-code,
+.form-footnote {
+  margin: 0;
+}
+
+.form-alert {
+  padding: 12px 14px;
+  color: #7b241d;
+  background: #fff2ef;
+  border: 1px solid #f3c2b9;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.form-footnote {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.form-footnote a {
+  color: var(--blue-600);
+}
+
+.developer-code {
+  padding: 12px 14px;
+  color: var(--navy-900);
+  background: #ecf9fb;
+  border: 1px solid rgba(0, 183, 199, 0.28);
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.delivery-panel {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  background: #f5f9fd;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.delivery-panel h2 {
+  margin-bottom: 4px;
+  font-size: 24px;
+}
+
+.delivery-panel p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.delivery-panel__icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--blue-600), var(--cyan-500) 58%, var(--green-500));
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.nested-form,
+.inline-actions {
+  display: grid;
+  gap: 14px;
+}
+
+.inline-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .page-hero {
@@ -1721,6 +1825,8 @@ textarea:focus {
   .demo-status-grid,
   .wizard-layout,
   .subscription-layout,
+  .auth-grid,
+  .inline-actions,
   .field-row {
     grid-template-columns: 1fr;
   }

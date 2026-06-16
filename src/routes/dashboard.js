@@ -1,6 +1,7 @@
 const express = require('express');
 
-const { getSubscription } = require('../services/subscription-service');
+const { requireAuthenticated } = require('../middleware/auth');
+const { getSubscriptionForUser } = require('../services/subscription-service');
 const {
   buildDashboardView,
   buildWizardView,
@@ -16,10 +17,11 @@ const { getOrgAdminView } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
+router.use('/dashboard', requireAuthenticated);
 
 router.get('/dashboard/:subscriptionId', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspaces = await listWorkspacesForSubscription(subscription);
     if (workspaces.length === 0) {
       return res.redirect(303, `/organizations/${subscription.id}`);
@@ -35,7 +37,7 @@ router.get('/dashboard/:subscriptionId', async (req, res, next) => {
 
 router.get('/dashboard/:subscriptionId/orgs/:workspaceId', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(subscription, req.params.workspaceId);
     const issuerOrganizations = await listIssuerOrganizations(subscription.id, workspace.id);
     const orgAdmin = await getOrgAdminView(workspace, subscription);
@@ -53,7 +55,7 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', async (req, res, next
 
 router.get('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
     res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}/platforms/${req.params.platformId}/setup?step=${req.query.step || '0'}`);
   } catch (error) {
@@ -63,7 +65,7 @@ router.get('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req,
 
 router.get('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/setup', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(subscription, req.params.workspaceId);
     getPlatformDefinition(req.params.platformId);
 
@@ -78,7 +80,7 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/s
 
 router.post('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
     const platform = getPlatformDefinition(req.params.platformId);
     const stepIndex = Number.parseInt(req.body.stepIndex || '0', 10);
@@ -95,7 +97,7 @@ router.post('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req
 
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/setup', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const platform = getPlatformDefinition(req.params.platformId);
     const stepIndex = Number.parseInt(req.body.stepIndex || '0', 10);
     const step = platform.steps[stepIndex];
@@ -122,7 +124,7 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/
 
 router.post('/dashboard/:subscriptionId/platforms/:platformId/test', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
     const platform = getPlatformDefinition(req.params.platformId);
     const testStep = platform.steps.find((step) => step.testStep);
@@ -139,7 +141,7 @@ router.post('/dashboard/:subscriptionId/platforms/:platformId/test', async (req,
 
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/test', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const platform = getPlatformDefinition(req.params.platformId);
     const testStep = platform.steps.find((step) => step.testStep);
 
@@ -159,7 +161,7 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/
     const testStepIndex = Math.max(0, platform.steps.findIndex((step) => step.testStep));
     res.redirect(303, `/dashboard/${subscription.id}/orgs/${req.params.workspaceId}/platforms/${platform.id}/setup?step=${testStepIndex}`);
   } catch (error) {
-    const subscription = await getSubscription(req.params.subscriptionId);
+    const subscription = await getSubscriptionForUser(req.params.subscriptionId, req.user);
     if (!subscription) {
       return next(error);
     }
@@ -181,8 +183,8 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/
   }
 });
 
-async function loadSubscription(subscriptionId) {
-  const subscription = await getSubscription(subscriptionId);
+async function loadSubscription(req) {
+  const subscription = await getSubscriptionForUser(req.params.subscriptionId, req.user);
   if (!subscription) {
     const error = new Error('Subscriber dashboard not found.');
     error.status = 404;

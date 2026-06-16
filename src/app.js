@@ -4,9 +4,13 @@ const express = require('express');
 const helmet = require('helmet');
 const hbs = require('hbs');
 const morgan = require('morgan');
+const passport = require('passport');
 const rateLimit = require('express-rate-limit');
+const session = require('express-session');
 
 const config = require('./config');
+const authRoutes = require('./routes/auth');
+const accountRoutes = require('./routes/account');
 const pageRoutes = require('./routes/pages');
 const subscriptionRoutes = require('./routes/subscriptions');
 const organizationRoutes = require('./routes/organizations');
@@ -15,6 +19,8 @@ const orgAdminRoutes = require('./routes/org-admin');
 const apiRoutes = require('./routes/api');
 const oidcWalletDemoRoutes = require('./routes/oidc-wallet-demo');
 const issuerOrganizationRoutes = require('./routes/issuer-organizations');
+const { attachAuthLocals } = require('./middleware/auth');
+const { configurePassport } = require('./services/passport-service');
 
 function registerHandlebars() {
   const partialsDir = path.join(config.paths.views, 'partials');
@@ -30,6 +36,7 @@ function registerHandlebars() {
 
 function createApp() {
   registerHandlebars();
+  configurePassport(passport);
 
   const app = express();
 
@@ -59,6 +66,21 @@ function createApp() {
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use(express.json({ limit: '2mb' }));
   app.use(express.static(config.paths.public, { maxAge: config.app.env === 'production' ? '1d' : 0 }));
+  app.use(
+    session({
+      name: 'aegis.sid',
+      secret: config.auth.sessionSecret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: config.app.env === 'production'
+      }
+    })
+  );
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   app.use(
     '/api',
@@ -76,7 +98,10 @@ function createApp() {
     res.locals.verifiedIdMode = config.verifiedId.mode;
     next();
   });
+  app.use(attachAuthLocals);
 
+  app.use('/', authRoutes);
+  app.use('/', accountRoutes);
   app.use('/', pageRoutes);
   app.use('/', subscriptionRoutes);
   app.use('/', organizationRoutes);

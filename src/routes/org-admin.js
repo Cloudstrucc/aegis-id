@@ -1,6 +1,7 @@
 const express = require('express');
 
-const { getSubscription } = require('../services/subscription-service');
+const { requireAuthenticated } = require('../middleware/auth');
+const { getSubscriptionForUser } = require('../services/subscription-service');
 const { getWorkspaceForSubscription } = require('../services/platform-service');
 const {
   acceptCoAdminChallenge,
@@ -19,6 +20,7 @@ const {
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
+router.use('/dashboard', requireAuthenticated);
 
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials', withOrg(async ({ subscription, workspace, req, res }) => {
   const credential = await issueCredential(workspace, subscription, req.body);
@@ -98,7 +100,7 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/branding', withO
 function withOrg(handler) {
   return async (req, res, next) => {
     try {
-      const subscription = await loadSubscription(req.params.subscriptionId);
+      const subscription = await loadSubscription(req);
       const workspace = await loadWorkspace(subscription, req.params.workspaceId);
       await handler({ subscription, workspace, req, res });
     } catch (error) {
@@ -107,8 +109,8 @@ function withOrg(handler) {
   };
 }
 
-async function loadSubscription(subscriptionId) {
-  const subscription = await getSubscription(subscriptionId);
+async function loadSubscription(req) {
+  const subscription = await getSubscriptionForUser(req.params.subscriptionId, req.user);
   if (!subscription) {
     const error = new Error('Subscriber session not found.');
     error.status = 404;

@@ -16,9 +16,9 @@ function normalizeText(value = '') {
   return String(value).trim().slice(0, 400);
 }
 
-function validateSubscription(input) {
+function validateSubscription(input = {}, user = null) {
   const errors = {};
-  const email = normalizeEmail(input.email);
+  const email = normalizeEmail(user?.email || input.email);
   const plan = allowedPlans.has(input.plan) ? input.plan : 'pilot';
   const interest = allowedInterests.has(input.interest) ? input.interest : 'both';
 
@@ -44,8 +44,8 @@ function validateSubscription(input) {
   };
 }
 
-async function createSubscription(input) {
-  const validation = validateSubscription(input);
+async function createSubscription(input, user = null) {
+  const validation = validateSubscription(input, user);
   if (!validation.isValid) {
     const error = new Error('Subscription form needs attention.');
     error.status = 422;
@@ -56,8 +56,9 @@ async function createSubscription(input) {
   const record = {
     id: crypto.randomUUID(),
     ...validation.values,
+    userId: user?.id || null,
     status: 'new',
-    source: 'landing-page',
+    source: user ? 'authenticated-subscription' : 'landing-page',
     createdAt: new Date().toISOString()
   };
 
@@ -73,9 +74,32 @@ async function getSubscription(id) {
   return subscriptions.find((subscription) => subscription.id === id) || null;
 }
 
+async function listSubscriptionsForUser(user) {
+  if (!user) {
+    return [];
+  }
+
+  const subscriptions = await listSubscriptions();
+  return subscriptions.filter((subscription) => ownsSubscription(subscription, user));
+}
+
+async function getSubscriptionForUser(id, user) {
+  const subscription = await getSubscription(id);
+  return subscription && ownsSubscription(subscription, user) ? subscription : null;
+}
+
+function ownsSubscription(subscription, user) {
+  if (!subscription || !user) {
+    return false;
+  }
+  return subscription.userId === user.id || normalizeEmail(subscription.email) === normalizeEmail(user.email);
+}
+
 module.exports = {
   createSubscription,
   getSubscription,
+  getSubscriptionForUser,
+  listSubscriptionsForUser,
   listSubscriptions,
   validateSubscription
 };

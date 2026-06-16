@@ -170,15 +170,19 @@ npm run video:setup
 sequenceDiagram
     actor User as Subscriber
     participant Home as Vanguard Cloud Services landing page
-    participant Sub as Subscription service
+    participant Auth as Passport.js auth
+    participant MFA as Second factor
+    participant Sub as Organization subscription
     participant Dash as Subscriber dashboard
     participant Wiz as Setup wizard
     participant VID as Verified ID adapter
 
-    User->>Home: Submit subscription form
-    Home->>Sub: Create local subscriber record
-    Sub-->>Home: Redirect with subscription ID
-    Home-->>User: Open dashboard
+    User->>Home: Create subscriber account
+    Home->>Auth: Register local user
+    Auth->>MFA: Email, SMS, or passkey verification
+    MFA-->>Sub: Unlock organization subscription
+    User->>Sub: Subscribe organization
+    Sub-->>Dash: Open organization dashboard
     User->>Dash: Choose platform
     Dash->>Wiz: Start wizard
     User->>Wiz: Enter tenant, DID org, app, and claims
@@ -190,17 +194,18 @@ sequenceDiagram
 
 1. Open `http://localhost:3000`.
 2. Select **Watch video** if you want the visual walkthrough.
-3. Fill in the subscription form.
-4. Submit the form.
-5. The app redirects to the subscriber dashboard.
-6. Open **Microsoft Entra Verified ID / Azure**.
-7. Complete the wizard:
+3. Create a subscriber account.
+4. Complete email, SMS, or passkey second-factor verification.
+5. Subscribe an organization at `/subscribe`.
+6. Register or choose the organization, then open the dashboard.
+7. Open **Microsoft Entra Verified ID / Azure**.
+8. Complete the wizard:
    - Tenant
    - DID organization
    - App registration
    - Claims
    - Test
-8. Use mock mode until the Entra tenant and HTTPS callback URL are ready.
+9. Use mock mode until the Entra tenant and HTTPS callback URL are ready.
 
 <details>
 <summary><strong>Suggested Vanguard Cloud Services pilot claim set</strong></summary>

@@ -11,7 +11,9 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 
 - Anonymous Vanguard-themed landing page.
 - Playable cartoon setup walkthrough video on the home page.
-- Subscription form backed by local JSON storage for a free-tier pilot.
+- Passport.js local registration and login for subscriber users.
+- Email-code, SMS-code, or passkey second-factor verification before organization subscription.
+- Authenticated organization subscription backed by local JSON storage for a free-tier pilot.
 - Express API endpoints for Verified ID issuance and presentation requests.
 - `VID_MODE=mock` for local demos without a Microsoft tenant connection.
 - MSAL-backed `VID_MODE=live` adapter boundary for Microsoft Entra Verified ID.
@@ -65,8 +67,9 @@ YubiKey is still important, but it solves a different problem: phishing-resistan
 ├── src/
 │   ├── adapters/              # Microsoft Verified ID and Aries boundaries
 │   ├── config/                # Environment-driven configuration
+│   ├── middleware/            # Session/auth route guards
 │   ├── routes/                # Pages, subscriptions, API endpoints
-│   └── services/              # Policy, storage, audit, subscriptions, Verified ID client
+│   └── services/              # Policy, storage, audit, auth, subscriptions, Verified ID client
 ├── views/                     # HBS layouts, partials, and pages
 ├── AGENT.md                   # Source implementation guide
 └── wireframe-doc.html         # Source visual/reference document
@@ -114,26 +117,34 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
    npm run dev
    ```
 
-2. Open the landing page and create a subscription:
+2. Open the landing page and create a subscriber account:
 
    ```text
    http://localhost:3000
    ```
 
-   Submit the subscription form. The app redirects to:
+   Register with a work email and password, then complete the second-factor step. In local development, email/SMS codes are displayed on the verification page so you can test without a mail or SMS provider.
+
+3. Subscribe an organization after MFA:
 
    ```text
-   /dashboard/<subscription-id>
+   /subscribe
    ```
 
-3. Run the platform setup wizards from the subscriber dashboard:
+   The verified user becomes the first organization administrator. The app redirects to:
+
+   ```text
+   /organizations/<subscription-id>
+   ```
+
+4. Register or choose an organization tile, then run the platform setup wizards from the dashboard:
 
    - Microsoft Entra Verified ID
    - Keycloak
    - Okta
    - Generic OIDC / SAML
 
-4. Start the Aries lab when testing wallet flows:
+5. Start the Aries lab when testing wallet flows:
 
    ```bash
    cd /Users/frederickpearson/repos/aegis-id/aries-lab
@@ -144,7 +155,7 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
    ./aries-lab/scripts/start-holder-standin.sh
    ```
 
-5. Create and accept an org-scoped issuer invitation:
+6. Create and accept an org-scoped issuer invitation:
 
    - Open `/dashboard/<subscription-id>`.
    - In **Issuing organization**, select **Create Org Issuer Invitation**.
@@ -153,7 +164,7 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
 
    After acceptance, the iOS wallet registers the completed issuer connection back to the subscriber org. That org is then available as a challenge sender in the OIDC wallet demo.
 
-6. Test the OIDC + wallet challenge relying-party app:
+7. Test the OIDC + wallet challenge relying-party app:
 
    ```text
    http://localhost:3000/demo/oidc-wallet
@@ -163,14 +174,20 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
 
 ## Main Routes
 
-- `/` anonymous landing page and subscription form.
-- `/architecture` architecture view and local demo API controls.
-- `/demo/oidc-wallet` example OIDC app that requires a wallet challenge before access.
+- `/` anonymous landing page and account creation form.
+- `/auth/register` Passport.js local registration.
+- `/auth/login` Passport.js local login.
+- `/auth/verify` email/SMS/passkey second-factor verification.
+- `/account` authenticated subscriber account home.
+- `/subscribe` authenticated organization subscription.
+- `/organizations/:subscriptionId` authenticated organization selector/registration.
+- `/architecture` authenticated architecture view and local demo API controls.
+- `/demo/oidc-wallet` authenticated example OIDC app that requires a wallet challenge before access.
 - `/demo/metadata/keycloak/realms/vanguard/.well-known/openid-configuration` local Keycloak-shaped OIDC discovery document.
 - `/demo/metadata/okta/oauth2/default/.well-known/openid-configuration` local Okta-shaped OIDC discovery document.
 - `/demo/metadata/generic/oidc` local generic OIDC discovery document.
 - `/demo/metadata/generic/saml` local generic SAML metadata document.
-- `/dashboard/:subscriptionId` subscriber dashboard after subscription.
+- `/dashboard/:subscriptionId` authenticated subscriber dashboard after organization subscription.
 - `/dashboard/:subscriptionId/platforms/:platformId/setup` interactive platform setup wizard.
 - `/api/health` service health.
 - `/api/issuer/create-offer` creates a mock or live issuance request.

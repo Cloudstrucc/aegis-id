@@ -19,12 +19,14 @@
 
 ## Subscription Data
 
-The demo stores subscription data in `data/subscriptions.json`. That keeps the first Azure App Service deployment simple, but production should move subscription data to a durable system with access controls, retention policy, and export/delete workflows.
+The demo stores users in `data/users.json` and subscriptions in `data/subscriptions.json`. That keeps the first Azure App Service deployment simple, but production should move account, subscription, MFA, and organization data to a durable system with access controls, retention policy, and export/delete workflows.
 
 ## Subscriber Dashboard
 
-- Add real authentication before exposing `/dashboard/:subscriptionId` publicly.
-- Treat the current subscription ID URL as a pilot convenience, not production access control.
+- Subscriber dashboard, organization subscription, setup wizard, and OIDC demo pages require Passport.js authentication.
+- Organization subscription is available only after email, SMS, or passkey second-factor verification.
+- Treat local email/SMS development codes as a dev-only stand-in for a real provider such as Azure Communication Services, SendGrid, Twilio, or Microsoft Graph mail.
 - Do not persist Azure client secrets or IdP client secrets in the local JSON workspace store.
+- Add CSRF protection before accepting production form posts.
 - Restrict metadata test URLs before enabling customer-supplied Keycloak, Okta, OIDC, or SAML endpoints in production.
 - Store per-subscriber platform configuration in a tenant-isolated database for production SaaS use.

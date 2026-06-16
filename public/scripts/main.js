@@ -34,6 +34,18 @@ document.addEventListener('click', async (event) => {
     return;
   }
 
+  const registerPasskeyButton = event.target.closest('[data-passkey-register]');
+  if (registerPasskeyButton) {
+    await handlePasskey(registerPasskeyButton, 'register');
+    return;
+  }
+
+  const authenticatePasskeyButton = event.target.closest('[data-passkey-authenticate]');
+  if (authenticatePasskeyButton) {
+    await handlePasskey(authenticatePasskeyButton, 'authenticate');
+    return;
+  }
+
   const openVideoButton = event.target.closest('[data-video-open]');
   if (openVideoButton && videoModal) {
     lastVideoTrigger = openVideoButton;
@@ -106,6 +118,62 @@ function closeVideoModal() {
   videoModal.hidden = true;
   document.body.classList.remove('modal-open');
   lastVideoTrigger?.focus();
+}
+
+async function handlePasskey(button, mode) {
+  const status = document.querySelector('[data-passkey-status]');
+  const originalLabel = button.textContent;
+
+  if (!window.PublicKeyCredential || !navigator.credentials) {
+    setPasskeyStatus(status, 'This browser does not support passkeys.');
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = mode === 'register' ? 'Creating...' : 'Verifying...';
+  setPasskeyStatus(status, 'Waiting for passkey approval.');
+
+  try {
+    const optionsResponse = await fetch(`/auth/passkeys/${mode}/options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin'
+    });
+    const options = await optionsResponse.json();
+    if (!optionsResponse.ok) {
+      throw new Error(options.error?.message || options.message || 'Unable to start passkey flow.');
+    }
+
+    const credential =
+      mode === 'register'
+        ? await navigator.credentials.create({ publicKey: prepareCreationOptions(options) })
+        : await navigator.credentials.get({ publicKey: prepareRequestOptions(options) });
+
+    const verifyResponse = await fetch(`/auth/passkeys/${mode}/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(serializePublicKeyCredential(credential))
+    });
+    const payload = await verifyResponse.json();
+    if (!verifyResponse.ok) {
+      throw new Error(payload.error?.message || payload.message || 'Passkey verification failed.');
+    }
+
+    setPasskeyStatus(status, 'Passkey verified. Opening your account...');
+    window.location.assign(payload.redirectUrl || '/account');
+  } catch (error) {
+    setPasskeyStatus(status, error.message || 'Passkey flow was cancelled.');
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
+}
+
+function setPasskeyStatus(status, message) {
+  if (status) {
+    status.textContent = message;
+  }
 }
 
 function pollOidcWalletChallenge(gate) {
@@ -340,4 +408,76 @@ function isPhoneReachableUrl(value) {
   } catch (error) {
     return false;
   }
+}
+
+function prepareCreationOptions(options) {
+  return {
+    ...options,
+    challenge: base64urlToBuffer(options.challenge),
+    user: {
+      ...options.user,
+      id: base64urlToBuffer(options.user.id)
+    },
+    excludeCredentials: (options.excludeCredentials || []).map((credential) => ({
+      ...credential,
+      id: base64urlToBuffer(credential.id)
+    }))
+  };
+}
+
+function prepareRequestOptions(options) {
+  return {
+    ...options,
+    challenge: base64urlToBuffer(options.challenge),
+    allowCredentials: (options.allowCredentials || []).map((credential) => ({
+      ...credential,
+      id: base64urlToBuffer(credential.id)
+    }))
+  };
+}
+
+function serializePublicKeyCredential(credential) {
+  const response = {
+    clientDataJSON: bufferToBase64url(credential.response.clientDataJSON)
+  };
+
+  if (credential.response.attestationObject) {
+    response.attestationObject = bufferToBase64url(credential.response.attestationObject);
+    response.transports = credential.response.getTransports?.() || [];
+  }
+
+  if (credential.response.authenticatorData) {
+    response.authenticatorData = bufferToBase64url(credential.response.authenticatorData);
+    response.signature = bufferToBase64url(credential.response.signature);
+    response.userHandle = credential.response.userHandle ? bufferToBase64url(credential.response.userHandle) : null;
+  }
+
+  return {
+    id: credential.id,
+    rawId: bufferToBase64url(credential.rawId),
+    type: credential.type,
+    authenticatorAttachment: credential.authenticatorAttachment,
+    clientExtensionResults: credential.getClientExtensionResults(),
+    response
+  };
+}
+
+function base64urlToBuffer(value) {
+  const base64 = String(value).replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+  const binary = window.atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes.buffer;
+}
+
+function bufferToBase64url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }

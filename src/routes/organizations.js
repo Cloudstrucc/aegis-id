@@ -1,6 +1,7 @@
 const express = require('express');
 
-const { getSubscription } = require('../services/subscription-service');
+const { requireAuthenticated } = require('../middleware/auth');
+const { getSubscriptionForUser } = require('../services/subscription-service');
 const {
   listWorkspacesForSubscription,
   registerWorkspaceForSubscription
@@ -8,10 +9,11 @@ const {
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
+router.use('/organizations', requireAuthenticated);
 
 router.get('/organizations/:subscriptionId', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const organizations = await listWorkspacesForSubscription(subscription);
 
     res.render('pages/organizations', {
@@ -33,7 +35,7 @@ router.get('/organizations/:subscriptionId', async (req, res, next) => {
 
 router.post('/organizations/:subscriptionId', async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspace = await registerWorkspaceForSubscription(subscription, req.body);
 
     await writeAuditEvent('organization.workspace.registered', {
@@ -49,8 +51,8 @@ router.post('/organizations/:subscriptionId', async (req, res, next) => {
   }
 });
 
-async function loadSubscription(subscriptionId) {
-  const subscription = await getSubscription(subscriptionId);
+async function loadSubscription(req) {
+  const subscription = await getSubscriptionForUser(req.params.subscriptionId, req.user);
   if (!subscription) {
     const error = new Error('Subscriber session not found.');
     error.status = 404;

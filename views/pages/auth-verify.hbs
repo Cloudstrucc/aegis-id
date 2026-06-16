@@ -1,0 +1,74 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Second factor</p>
+  <h1>Verify your sign in.</h1>
+  <p>{{user.email}} needs one more proof before subscriber features unlock.</p>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      <p class="eyebrow">Step-up verification</p>
+      <h2>Protect organization administration.</h2>
+      <p>Credential issuance, role management, and organization subscription all require this additional verification step.</p>
+    </div>
+
+    <div class="subscribe-form">
+      {{#if errorMessage}}<p class="form-alert">{{errorMessage}}</p>{{/if}}
+
+      {{#if isOtp}}
+        <div class="delivery-panel">
+          <span class="delivery-panel__icon">{{#if (eq delivery.method "sms")}}SMS{{else}}Email{{/if}}</span>
+          <div>
+            <h2>Code sent to {{delivery.destination}}</h2>
+            <p>Enter the six-digit code to finish signing in.</p>
+          </div>
+        </div>
+
+        {{#if delivery.developmentCode}}
+          <p class="developer-code">Development code: <strong>{{delivery.developmentCode}}</strong></p>
+        {{/if}}
+
+        <form class="nested-form" action="/auth/verify" method="post">
+          <div class="field-group">
+            <label for="code">Verification code</label>
+            <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" required>
+          </div>
+          <button class="button button--primary" type="submit">Verify</button>
+        </form>
+
+        <div class="inline-actions">
+          <form action="/auth/verify/resend" method="post">
+            <input type="hidden" name="method" value="email">
+            <button class="button button--secondary button--dark-text" type="submit">Send email code</button>
+          </form>
+          {{#if canUseSms}}
+            <form action="/auth/verify/resend" method="post">
+              <input type="hidden" name="method" value="sms">
+              <button class="button button--secondary button--dark-text" type="submit">Send SMS code</button>
+            </form>
+          {{/if}}
+        </div>
+      {{/if}}
+
+      {{#if isPasskey}}
+        <div class="delivery-panel">
+          <span class="delivery-panel__icon">Key</span>
+          <div>
+            <h2>{{#if (eq passkeyMode "register")}}Create a passkey{{else}}Use your passkey{{/if}}</h2>
+            <p>{{#if (eq passkeyMode "register")}}Your first passkey will become a second-factor option for future sign-ins.{{else}}Approve this sign-in with your registered passkey.{{/if}}</p>
+          </div>
+        </div>
+
+        <button class="button button--primary" type="button" {{#if (eq passkeyMode "register")}}data-passkey-register{{else}}data-passkey-authenticate{{/if}}>
+          {{#if (eq passkeyMode "register")}}Create passkey{{else}}Verify with passkey{{/if}}
+        </button>
+        <p class="form-footnote" data-passkey-status></p>
+
+        <form action="/auth/verify/resend" method="post">
+          <input type="hidden" name="method" value="email">
+          <button class="button button--secondary button--dark-text" type="submit">Use email code instead</button>
+        </form>
+      {{/if}}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,88 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Subscriber access</p>
+  <h1>Create your Aegis ID account.</h1>
+  <p>Register first, complete second-factor verification, then subscribe one or more organizations.</p>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid">
+    <div class="section-heading">
+      <p class="eyebrow">Secure signup</p>
+      <h2>Start with a verified user account.</h2>
+      <p>Vanguard Cloud Services uses Passport.js sessions with a second factor before organization subscription and administration are available.</p>
+    </div>
+
+    <form class="subscribe-form" action="/auth/register" method="post" novalidate>
+      {{#if errorMessage}}<p class="form-alert">{{errorMessage}}</p>{{/if}}
+
+      <div class="field-row">
+        <div class="field-group">
+          <label for="displayName">Full name</label>
+          <input id="displayName" name="displayName" type="text" value="{{formValues.displayName}}" autocomplete="name" required>
+          {{#if formErrors.displayName}}<p class="field-error">{{formErrors.displayName}}</p>{{/if}}
+        </div>
+        <div class="field-group">
+          <label for="email">Work email</label>
+          <input id="email" name="email" type="email" value="{{formValues.email}}" autocomplete="email" required>
+          {{#if formErrors.email}}<p class="field-error">{{formErrors.email}}</p>{{/if}}
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" required>
+          {{#if formErrors.password}}<p class="field-error">{{formErrors.password}}</p>{{/if}}
+        </div>
+        <div class="field-group">
+          <label for="confirmPassword">Confirm password</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
+          {{#if formErrors.confirmPassword}}<p class="field-error">{{formErrors.confirmPassword}}</p>{{/if}}
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label for="phone">Mobile phone</label>
+          <input id="phone" name="phone" type="tel" value="{{formValues.phone}}" autocomplete="tel">
+          {{#if formErrors.phone}}<p class="field-error">{{formErrors.phone}}</p>{{/if}}
+        </div>
+        <div class="field-group">
+          <label for="preferredMfa">Second factor</label>
+          <select id="preferredMfa" name="preferredMfa">
+            <option value="email" {{#if (eq formValues.preferredMfa "email")}}selected{{/if}}>Email code</option>
+            <option value="sms" {{#if (eq formValues.preferredMfa "sms")}}selected{{/if}}>SMS code</option>
+            <option value="passkey" {{#if (eq formValues.preferredMfa "passkey")}}selected{{/if}}>Passkey</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label for="organization">Organization to subscribe</label>
+          <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization">
+        </div>
+        <div class="field-group">
+          <label for="plan">Plan</label>
+          <select id="plan" name="plan">
+            <option value="pilot" {{#if (eq formValues.plan "pilot")}}selected{{/if}}>Pilot</option>
+            <option value="sandbox" {{#if (eq formValues.plan "sandbox")}}selected{{/if}}>Sandbox</option>
+            <option value="enterprise" {{#if (eq formValues.plan "enterprise")}}selected{{/if}}>Enterprise</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="interest">Identity track</label>
+        <select id="interest" name="interest">
+          <option value="both" {{#if (eq formValues.interest "both")}}selected{{/if}}>Both tracks</option>
+          <option value="microsoft-native" {{#if (eq formValues.interest "microsoft-native")}}selected{{/if}}>Microsoft-native</option>
+          <option value="aries-lab" {{#if (eq formValues.interest "aries-lab")}}selected{{/if}}>Aries lab</option>
+        </select>
+      </div>
+
+      <button class="button button--primary" type="submit">Create account</button>
+      <p class="form-footnote">Already registered? <a href="/auth/login">Sign in</a>.</p>
+    </form>
+  </div>
+</section>

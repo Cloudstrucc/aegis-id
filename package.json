@@ -16,12 +16,17 @@
   },
   "dependencies": {
     "@azure/msal-node": "^5.2.4",
+    "@simplewebauthn/server": "^13.3.1",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
+    "express-session": "^1.19.0",
     "hbs": "^4.2.0",
     "helmet": "^8.0.0",
     "morgan": "^1.10.0",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
     "qrcode": "^1.5.4"
   }
 }

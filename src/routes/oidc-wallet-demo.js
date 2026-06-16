@@ -1,6 +1,7 @@
 const express = require('express');
 
 const config = require('../config');
+const { requireAuthenticated } = require('../middleware/auth');
 const { writeAuditEvent } = require('../services/audit-service');
 const {
   buildFlowSteps,
@@ -15,6 +16,7 @@ const {
 } = require('../services/oidc-wallet-demo-service');
 
 const router = express.Router();
+router.use('/demo/oidc-wallet', requireAuthenticated);
 
 router.get('/demo/oidc-wallet', async (req, res) => {
   const connectionState = await loadConnectionState();

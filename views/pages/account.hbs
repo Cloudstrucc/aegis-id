@@ -1,0 +1,38 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Subscriber account</p>
+  <h1>Welcome, {{user.displayName}}.</h1>
+  <p>Choose an organization you administer or subscribe a new organization to Vanguard Cloud Services - Aegis ID.</p>
+  <div class="hero__actions">
+    <a class="button button--primary" href="/subscribe">Subscribe organization</a>
+  </div>
+</section>
+
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Organizations</p>
+    <h2>Your administrative access.</h2>
+    <p>Each tile opens the organization selector or dashboard for a subscription you own.</p>
+  </div>
+
+  {{#if hasOrganizations}}
+    <div class="organization-grid">
+      {{#each organizations}}
+        <a class="organization-tile" href="{{organizationsPath}}">
+          <div class="organization-tile__mark" aria-hidden="true">V</div>
+          <div>
+            <h3>{{subscription.organization}}</h3>
+            <p>{{subscription.plan}} plan · {{subscription.interest}}</p>
+            <p>{{#if hasWorkspaces}}{{workspaces.length}} workspace{{else}}No workspace registered yet{{/if}}</p>
+          </div>
+          <span class="organization-tile__arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      {{/each}}
+    </div>
+  {{else}}
+    <div class="empty-state-panel">
+      <h2>No organizations yet.</h2>
+      <p>Subscribe your first organization, verify the administrative flow, then open the setup wizards for Verified ID, Keycloak, Okta, OIDC, or SAML.</p>
+      <a class="button button--primary" href="/subscribe">Subscribe organization</a>
+    </div>
+  {{/if}}
+</section>

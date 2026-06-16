@@ -1,0 +1,61 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Organization subscription</p>
+  <h1>Subscribe an organization.</h1>
+  <p>Your user account is verified. Now create the organization subscription that unlocks setup wizards, credential issuance, roles, claims, branding, and wallet challenges.</p>
+</section>
+
+<section class="band band--white">
+  <div class="subscription-layout">
+    <div class="section-heading">
+      <p class="eyebrow">Admin owner</p>
+      <h2>{{formValues.email}}</h2>
+      <p>This account becomes the first organization administrator. Co-administrators can be promoted later through dual wallet challenges.</p>
+    </div>
+
+    <form class="subscribe-form" action="/subscribe" method="post" novalidate>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="organization">Organization</label>
+          <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization" required>
+        </div>
+        <div class="field-group">
+          <label for="role">Your role</label>
+          <input id="role" name="role" type="text" value="{{formValues.role}}">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label for="plan">Plan</label>
+          <select id="plan" name="plan">
+            <option value="pilot" {{#if (eq formValues.plan "pilot")}}selected{{/if}}>Pilot</option>
+            <option value="sandbox" {{#if (eq formValues.plan "sandbox")}}selected{{/if}}>Sandbox</option>
+            <option value="enterprise" {{#if (eq formValues.plan "enterprise")}}selected{{/if}}>Enterprise</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="interest">Identity track</label>
+          <select id="interest" name="interest">
+            <option value="both" {{#if (eq formValues.interest "both")}}selected{{/if}}>Both tracks</option>
+            <option value="microsoft-native" {{#if (eq formValues.interest "microsoft-native")}}selected{{/if}}>Microsoft-native</option>
+            <option value="aries-lab" {{#if (eq formValues.interest "aries-lab")}}selected{{/if}}>Aries lab</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" rows="4">{{formValues.notes}}</textarea>
+      </div>
+
+      <label class="checkline">
+        <input name="consent" type="checkbox" value="yes" required>
+        <span>Vanguard Cloud Services can contact me about Aegis ID onboarding for this organization.</span>
+      </label>
+      {{#if formErrors.email}}<p class="field-error">{{formErrors.email}}</p>{{/if}}
+      {{#if formErrors.consent}}<p class="field-error">{{formErrors.consent}}</p>{{/if}}
+
+      <button class="button button--primary" type="submit">Subscribe organization</button>
+    </form>
+  </div>
+</section>

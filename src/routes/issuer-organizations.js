@@ -1,6 +1,7 @@
 const express = require('express');
 
-const { getSubscription } = require('../services/subscription-service');
+const { requireAuthenticated } = require('../middleware/auth');
+const { getSubscriptionForUser } = require('../services/subscription-service');
 const { getOrCreateWorkspace, getWorkspaceForSubscription } = require('../services/platform-service');
 const {
   createIssuerOrganizationInvitation,
@@ -10,9 +11,9 @@ const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
 
-router.post('/dashboard/:subscriptionId/issuer-organizations/invitations', async (req, res, next) => {
+router.post('/dashboard/:subscriptionId/issuer-organizations/invitations', requireAuthenticated, async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
     const issuerOrganization = await createIssuerOrganizationInvitation(subscription, workspace);
 
@@ -29,9 +30,9 @@ router.post('/dashboard/:subscriptionId/issuer-organizations/invitations', async
   }
 });
 
-router.post('/dashboard/:subscriptionId/orgs/:workspaceId/issuer-organizations/invitations', async (req, res, next) => {
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/issuer-organizations/invitations', requireAuthenticated, async (req, res, next) => {
   try {
-    const subscription = await loadSubscription(req.params.subscriptionId);
+    const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(subscription, req.params.workspaceId);
     const issuerOrganization = await createIssuerOrganizationInvitation(subscription, workspace);
 
@@ -66,8 +67,8 @@ router.post('/api/issuer-organizations/:organizationId/connections', async (req,
   }
 });
 
-async function loadSubscription(subscriptionId) {
-  const subscription = await getSubscription(subscriptionId);
+async function loadSubscription(req) {
+  const subscription = await getSubscriptionForUser(req.params.subscriptionId, req.user);
   if (!subscription) {
     const error = new Error('Subscriber dashboard not found.');
     error.status = 404;

@@ -1,6 +1,14 @@
 # Subscriber Onboarding Wizard
 
-After subscribing, a user is redirected to a dashboard at:
+The anonymous landing page only creates a subscriber account. The user must sign in with Passport.js and complete email, SMS, or passkey second-factor verification before subscribing an organization.
+
+After verification, the user subscribes an organization at:
+
+```text
+/subscribe
+```
+
+The verified subscriber becomes the first organization administrator. After the organization is subscribed and registered, the user reaches a dashboard at:
 
 ```text
 /dashboard/<subscription-id>
@@ -94,17 +102,19 @@ That relying-party demo represents the pattern Keycloak, Okta, or a generic OIDC
 
 The challenge sender is an issuing organization, not just a raw connection. To make an org available:
 
-1. Subscribe and open `/dashboard/<subscription-id>`.
-2. In **Issuing organization**, create an org issuer invitation.
-3. Accept that invitation in the Vanguard Cloud Services iOS simulator wallet.
-4. The wallet registers the completed issuer connection back to the org.
-5. The OIDC wallet demo can then select that org as the challenge sender.
+1. Create an account from `/`, complete second-factor verification, and subscribe an organization at `/subscribe`.
+2. Open `/organizations/<subscription-id>` and register or choose the organization.
+3. In **Issuing organization**, create an org issuer invitation.
+4. Accept that invitation in the Vanguard Cloud Services iOS simulator wallet.
+5. The wallet registers the completed issuer connection back to the org.
+6. The OIDC wallet demo can then select that org as the challenge sender.
 
 ## Security Notes
 
 - Do not treat local JSON stores as production storage.
 - Do not persist client secrets in subscriber setup data.
-- Add authentication before exposing subscriber dashboards publicly.
+- Keep subscriber dashboards behind Passport.js authentication and second-factor verification.
+- Replace local development email/SMS codes with a real delivery provider before production.
 - Add tenant isolation before running this as a multi-tenant SaaS.
 - Restrict metadata test URLs in production to avoid SSRF risk.
 - Use Azure Key Vault or another secret manager before live customer onboarding.

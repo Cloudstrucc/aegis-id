@@ -7,9 +7,18 @@
     </span>
   </a>
   <nav class="site-nav" aria-label="Site">
-    <a href="/architecture">Architecture</a>
-    <a href="/demo/oidc-wallet">OIDC Demo</a>
-    <a href="/#subscribe">Subscribe</a>
+    {{#if isAuthenticated}}
+      <a href="/account">Account</a>
+      <a href="/subscribe">Subscribe Org</a>
+      <a href="/architecture">Architecture</a>
+      <a href="/demo/oidc-wallet">OIDC Demo</a>
+      <form action="/auth/logout" method="post">
+        <button class="nav-button" type="submit">Sign out</button>
+      </form>
+    {{else}}
+      <a href="/auth/login">Sign in</a>
+      <a href="/#signup">Create account</a>
+    {{/if}}
     <a href="/api/health">Health</a>
   </nav>
 </header>

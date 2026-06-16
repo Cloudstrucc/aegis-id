@@ -39,6 +39,17 @@ function getHomeContent(overrides = {}) {
         markers: ['DIDComm', 'AnonCreds', 'Mediator testing', 'Wallet interop']
       }
     ],
+    formValues: {
+      displayName: '',
+      email: '',
+      phone: '',
+      organization: '',
+      role: '',
+      plan: 'pilot',
+      interest: 'both',
+      preferredMfa: 'email'
+    },
+    formErrors: {},
     ...overrides
   };
 }

@@ -2,6 +2,7 @@ const express = require('express');
 const QRCode = require('qrcode');
 
 const config = require('../config');
+const { requireAuthenticated } = require('../middleware/auth');
 const { getPresentationPolicy } = require('../services/credential-policy-service');
 const { getHomeContent } = require('../services/home-content');
 
@@ -11,7 +12,7 @@ router.get('/', (req, res) => {
   res.render('pages/home', getHomeContent());
 });
 
-router.get('/architecture', (req, res) => {
+router.get('/architecture', requireAuthenticated, (req, res) => {
   res.render('pages/architecture', {
     title: 'Architecture',
     description: 'Vanguard Cloud Services - Aegis ID reference architecture.',
@@ -20,7 +21,7 @@ router.get('/architecture', (req, res) => {
   });
 });
 
-router.get('/lab/mock-wallet/:kind/:state', async (req, res, next) => {
+router.get('/lab/mock-wallet/:kind/:state', requireAuthenticated, async (req, res, next) => {
   try {
     const publicBaseUrl = config.app.publicBaseUrl.replace(/\/$/, '');
     const requestUrl = `${publicBaseUrl}${req.originalUrl}`;
