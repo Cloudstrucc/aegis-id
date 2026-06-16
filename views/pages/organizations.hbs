@@ -1,0 +1,58 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Organization Access</p>
+  <h1>Choose your Aegis ID workspace.</h1>
+  <p>{{#if welcome}}Subscription captured. Register your organization, or open an existing workspace you administer or contribute to.{{else}}Select the organization you want to configure for verified identity and wallet challenge flows.{{/if}}</p>
+</section>
+
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Signed in as {{subscription.email}}</p>
+    <h2>Organizations</h2>
+    <p>Aegis ID workspaces are scoped by organization so administrators and contributors can manage the right Verified ID, OIDC, SAML, and wallet challenge configuration.</p>
+  </div>
+
+  {{#if hasOrganizations}}
+    <div class="organization-grid">
+      {{#each organizations}}
+        <a class="organization-tile" href="{{dashboardPath}}">
+          <div class="organization-tile__mark" aria-hidden="true">V</div>
+          <div>
+            <span class="track-label">{{roleLabel}}</span>
+            <h3>{{organization}}</h3>
+            <p>{{#if updatedAt}}Updated {{updatedAt}}{{else}}Ready to configure{{/if}}</p>
+          </div>
+          <span class="organization-tile__arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      {{/each}}
+    </div>
+  {{else}}
+    <article class="empty-state-panel">
+      <span class="platform-icon">ID</span>
+      <h2>Register your organization to continue.</h2>
+      <p>No Aegis ID organization workspaces are associated with this subscriber yet. Create one, then you can open the dashboard and start the setup wizards.</p>
+    </article>
+  {{/if}}
+</section>
+
+<section class="band band--light">
+  <div class="subscription-layout">
+    <div class="section-heading">
+      <p class="eyebrow">Register Organization</p>
+      <h2>Create a workspace for Verified ID and wallet testing.</h2>
+      <p>The first user who registers an organization is recorded as an administrator. Additional contributors can be added later when real authentication and access management are connected.</p>
+    </div>
+
+    <form class="subscribe-form" action="/organizations/{{subscription.id}}" method="post">
+      <div class="field-group">
+        <label for="organization">Organization name</label>
+        <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization" required>
+      </div>
+      <input type="hidden" name="role" value="administrator">
+      <div class="note-panel">
+        <strong>Role</strong>
+        <span>You will be recorded as the organization administrator for this workspace.</span>
+      </div>
+      <button class="button button--primary button--blue" type="submit">Register Organization</button>
+    </form>
+  </div>
+</section>

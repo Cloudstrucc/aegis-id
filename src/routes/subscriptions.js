@@ -3,7 +3,6 @@ const express = require('express');
 const { createSubscription, validateSubscription } = require('../services/subscription-service');
 const { writeAuditEvent } = require('../services/audit-service');
 const { getHomeContent } = require('../services/home-content');
-const { createWorkspaceForSubscription } = require('../services/platform-service');
 
 const router = express.Router();
 
@@ -16,9 +15,7 @@ router.post('/subscribe', async (req, res, next) => {
       plan: record.plan,
       interest: record.interest
     });
-    await createWorkspaceForSubscription(record);
-
-    res.redirect(303, `/dashboard/${record.id}?welcome=1`);
+    res.redirect(303, `/organizations/${record.id}?welcome=1`);
   } catch (error) {
     if (error.status === 422) {
       const validation = validateSubscription(req.body);

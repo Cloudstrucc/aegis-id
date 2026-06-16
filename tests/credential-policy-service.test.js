@@ -7,10 +7,10 @@ const {
   getPresentationPolicy
 } = require('../src/services/credential-policy-service');
 
-test('buildDemoEmployeeClaims applies the Cloudstrucc assurance vocabulary', () => {
-  const claims = buildDemoEmployeeClaims({ email: 'pilot@cloudstrucc.com' });
+test('buildDemoEmployeeClaims applies the Vanguard assurance vocabulary', () => {
+  const claims = buildDemoEmployeeClaims({ email: 'pilot@vanguardcs.ca' });
 
-  assert.equal(claims.email, 'pilot@cloudstrucc.com');
+  assert.equal(claims.email, 'pilot@vanguardcs.ca');
   assert.equal(claims.assuranceLevel, 'FIDO2_YUBIKEY');
   assert.equal(claims.employmentStatus, 'active');
 });
@@ -18,7 +18,7 @@ test('buildDemoEmployeeClaims applies the Cloudstrucc assurance vocabulary', () 
 test('evaluatePresentation grants access only for active YubiKey-backed credentials', () => {
   const decision = evaluatePresentation({
     employeeId: 'CS-10027',
-    email: 'pilot@cloudstrucc.com',
+    email: 'pilot@vanguardcs.ca',
     employmentStatus: 'active',
     assuranceLevel: 'FIDO2_YUBIKEY'
   });

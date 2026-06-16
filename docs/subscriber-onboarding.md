@@ -17,7 +17,7 @@ Each platform has an interactive wizard that saves setup progress and can run a 
 
 ## Microsoft Entra Verified ID Wizard
 
-The Microsoft wizard is designed for the Cloudstrucc Inc. tenant pilot.
+The Microsoft wizard is designed for the Vanguard Cloud Services tenant pilot.
 
 Steps:
 
@@ -77,7 +77,7 @@ The root [README](../README.md) contains a full platform test matrix with exampl
 | Platform card | Protocol | Metadata input | Expected wizard result |
 | --- | --- | --- | --- |
 | Microsoft Entra Verified ID | Verified ID mock | Test mode `Mock request` | `Mock Verified ID request created` |
-| Keycloak | OIDC | Base URL `http://localhost:3000/demo/metadata/keycloak`, realm `cloudstrucc` | `OIDC discovery valid` |
+| Keycloak | OIDC | Base URL `http://localhost:3000/demo/metadata/keycloak`, realm `vanguard` | `OIDC discovery valid` |
 | Keycloak | SAML | Metadata URL `http://localhost:3000/demo/metadata/generic/saml` | `SAML metadata found` |
 | Okta | OIDC | Issuer URL `http://localhost:3000/demo/metadata/okta/oauth2/default` | `OIDC discovery valid` |
 | Okta | SAML | Metadata URL `http://localhost:3000/demo/metadata/generic/saml` | `SAML metadata found` |
@@ -90,7 +90,15 @@ For browser SSO plus wallet step-up testing, use:
 http://localhost:3000/demo/oidc-wallet
 ```
 
-That relying-party demo represents the pattern Keycloak, Okta, or a generic OIDC/SAML provider would use after primary SSO: OIDC or SAML completes first, then Aegis ID sends a Cloudstrucc wallet challenge before allowing app access.
+That relying-party demo represents the pattern Keycloak, Okta, or a generic OIDC/SAML provider would use after primary SSO: OIDC or SAML completes first, then Aegis ID sends a Vanguard Aegis ID wallet challenge before allowing app access.
+
+The challenge sender is an issuing organization, not just a raw connection. To make an org available:
+
+1. Subscribe and open `/dashboard/<subscription-id>`.
+2. In **Issuing organization**, create an org issuer invitation.
+3. Accept that invitation in the Vanguard Cloud Services iOS simulator wallet.
+4. The wallet registers the completed issuer connection back to the org.
+5. The OIDC wallet demo can then select that org as the challenge sender.
 
 ## Security Notes
 

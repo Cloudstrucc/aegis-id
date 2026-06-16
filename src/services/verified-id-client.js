@@ -15,7 +15,7 @@ class VerifiedIdClient {
     const state = crypto.randomUUID();
     const pin = createPin();
     const payload = {
-      authority: this.config.authorityDid || 'did:web:cloudstrucc.example',
+      authority: this.config.authorityDid || 'did:web:vanguardcs.ca',
       callback: this.createCallback(`${this.publicBaseUrl}/api/issuer/callback`, state),
       registration: {
         clientName: this.config.clientName
@@ -35,17 +35,17 @@ class VerifiedIdClient {
   async createPresentationRequest({ credentialType, acceptedIssuers, requestedClaims } = {}) {
     const state = crypto.randomUUID();
     const payload = {
-      authority: this.config.authorityDid || 'did:web:cloudstrucc.example',
+      authority: this.config.authorityDid || 'did:web:vanguardcs.ca',
       includeReceipt: true,
       callback: this.createCallback(`${this.publicBaseUrl}/api/verifier/callback`, state),
       registration: {
         clientName: this.config.clientName,
-        purpose: 'Verify Cloudstrucc employee access eligibility.'
+        purpose: 'Verify Vanguard Cloud Services employee access eligibility.'
       },
       requestedCredentials: [
         {
           type: credentialType || this.config.credentialType,
-          acceptedIssuers: acceptedIssuers?.length ? acceptedIssuers : ['did:web:cloudstrucc.example'],
+          acceptedIssuers: acceptedIssuers?.length ? acceptedIssuers : ['did:web:vanguardcs.ca'],
           configuration: {
             validation: {
               allowRevoked: false,

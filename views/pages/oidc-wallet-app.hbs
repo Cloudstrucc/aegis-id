@@ -1,7 +1,7 @@
 <section class="page-hero page-hero--compact">
   <p class="eyebrow">Protected app</p>
   <h1>Access granted.</h1>
-  <p>{{claims.email}} passed OIDC authentication and accepted the Cloudstrucc wallet challenge.</p>
+  <p>{{claims.email}} passed OIDC authentication and accepted the Vanguard Aegis ID wallet challenge.</p>
   <div class="hero__actions">
     <a class="button button--primary" href="/demo/oidc-wallet">Run Again</a>
     <a class="button button--secondary" href="/architecture">Architecture</a>
@@ -53,6 +53,10 @@
           <div>
             <dt>Status</dt>
             <dd>{{session.walletChallenge.status}}</dd>
+          </div>
+          <div>
+            <dt>Issuing org</dt>
+            <dd>{{session.walletChallenge.organizationName}}</dd>
           </div>
           <div>
             <dt>Connection</dt>

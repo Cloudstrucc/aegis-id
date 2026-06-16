@@ -21,7 +21,7 @@ router.get('/demo/oidc-wallet', async (req, res) => {
 
   res.render('pages/oidc-wallet-demo', {
     title: 'OIDC Wallet Challenge Demo',
-    description: 'Example OIDC app that requires a Cloudstrucc wallet challenge before access.',
+    description: 'Example OIDC app that requires a Vanguard Aegis ID wallet challenge before access.',
     demoMode: config.oidcWalletDemo.mode,
     clientId: config.oidcWalletDemo.clientId,
     issuer: config.oidcWalletDemo.issuer,
@@ -48,7 +48,7 @@ router.post('/demo/oidc-wallet/login', async (req, res, next) => {
 router.get('/demo/oidc-wallet/mock-authorize', (req, res) => {
   res.render('pages/oidc-wallet-mock-authorize', {
     title: 'Mock OIDC Provider',
-    description: 'Mock OIDC authorization page for the Cloudstrucc wallet challenge demo.',
+    description: 'Mock OIDC authorization page for the Vanguard Aegis ID wallet challenge demo.',
     clientId: req.query.client_id,
     scope: req.query.scope,
     state: req.query.state,
@@ -99,12 +99,16 @@ router.get('/demo/oidc-wallet/sessions/:sessionId/challenge', async (req, res, n
 
 router.post('/demo/oidc-wallet/sessions/:sessionId/challenge', async (req, res, next) => {
   try {
+    const issuerChoice = parseIssuerChoice(req.body.issuerChoice);
     const session = await createWalletChallenge(req.params.sessionId, {
-      connectionId: req.body.connectionId
+      organizationId: issuerChoice.organizationId,
+      connectionId: issuerChoice.connectionId
     });
 
     await writeAuditEvent('oidc-wallet-demo.challenge.sent', {
       sessionId: session.id,
+      organizationId: session.walletChallenge.organizationId,
+      organizationName: session.walletChallenge.organizationName,
       connectionId: session.walletChallenge.connectionId,
       threadId: session.walletChallenge.threadId
     });
@@ -152,7 +156,7 @@ router.get('/demo/oidc-wallet/sessions/:sessionId/app', async (req, res, next) =
 
     return res.render('pages/oidc-wallet-app', {
       title: 'Protected OIDC App',
-      description: 'Protected app unlocked by OIDC plus Cloudstrucc wallet challenge.',
+      description: 'Protected app unlocked by OIDC plus Vanguard Aegis ID wallet challenge.',
       session,
       claims: session.oidc.claims,
       flowSteps: buildFlowSteps(session.status)
@@ -211,9 +215,13 @@ async function loadConnectionState() {
     const connections = await listWalletConnections();
     return {
       connections: connections.map((connection) => ({
-        id: connection.connection_id,
-        label: connection.their_label || 'Cloudstrucc wallet',
-        state: connection.rfc23_state || connection.state || 'unknown',
+        id: connection.id,
+        organizationId: connection.organizationId,
+        choiceValue: connection.organizationId ? `org:${connection.organizationId}` : `conn:${connection.connectionId}`,
+        label: connection.label,
+        state: connection.status,
+        connectionId: connection.connectionId,
+        type: connection.type,
         selected: false
       })),
       error: null
@@ -229,12 +237,15 @@ async function loadConnectionState() {
 function buildChallengeView(session, connectionState, challengeError = null) {
   const connections = connectionState.connections.map((connection, index) => ({
     ...connection,
-    selected: connection.id === session.walletChallenge?.connectionId || (!session.walletChallenge && index === connectionsLastIndex(connectionState.connections))
+    selected:
+      connection.organizationId === session.walletChallenge?.organizationId ||
+      connection.connectionId === session.walletChallenge?.connectionId ||
+      (!session.walletChallenge && index === connectionsLastIndex(connectionState.connections))
   }));
 
   return {
     title: 'Wallet Challenge Required',
-    description: 'OIDC succeeded. Complete the Cloudstrucc wallet challenge to enter the app.',
+    description: 'OIDC succeeded. Complete the Vanguard Aegis ID wallet challenge to enter the app.',
     session,
     claims: session.oidc.claims,
     flowSteps: buildFlowSteps(session.status),
@@ -248,6 +259,16 @@ function buildChallengeView(session, connectionState, challengeError = null) {
 
 function connectionsLastIndex(connections) {
   return Math.max(0, connections.length - 1);
+}
+
+function parseIssuerChoice(value = '') {
+  if (value.startsWith('org:')) {
+    return { organizationId: value.slice(4), connectionId: undefined };
+  }
+  if (value.startsWith('conn:')) {
+    return { organizationId: undefined, connectionId: value.slice(5) };
+  }
+  return { organizationId: undefined, connectionId: undefined };
 }
 
 function getRequestBaseUrl(req) {

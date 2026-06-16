@@ -9,9 +9,12 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const pageRoutes = require('./routes/pages');
 const subscriptionRoutes = require('./routes/subscriptions');
+const organizationRoutes = require('./routes/organizations');
 const dashboardRoutes = require('./routes/dashboard');
+const orgAdminRoutes = require('./routes/org-admin');
 const apiRoutes = require('./routes/api');
 const oidcWalletDemoRoutes = require('./routes/oidc-wallet-demo');
+const issuerOrganizationRoutes = require('./routes/issuer-organizations');
 
 function registerHandlebars() {
   const partialsDir = path.join(config.paths.views, 'partials');
@@ -47,14 +50,14 @@ function createApp() {
           imgSrc: ["'self'", 'data:'],
           objectSrc: ["'none'"],
           scriptSrc: ["'self'"],
-          styleSrc: ["'self'"]
+          styleSrc: ["'self'", "'unsafe-inline'"]
         }
       }
     })
   );
   app.use(morgan(config.app.env === 'production' ? 'combined' : 'dev'));
-  app.use(express.urlencoded({ extended: false }));
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: false, limit: '2mb' }));
+  app.use(express.json({ limit: '2mb' }));
   app.use(express.static(config.paths.public, { maxAge: config.app.env === 'production' ? '1d' : 0 }));
 
   app.use(
@@ -76,7 +79,10 @@ function createApp() {
 
   app.use('/', pageRoutes);
   app.use('/', subscriptionRoutes);
+  app.use('/', organizationRoutes);
   app.use('/', dashboardRoutes);
+  app.use('/', orgAdminRoutes);
+  app.use('/', issuerOrganizationRoutes);
   app.use('/', oidcWalletDemoRoutes);
   app.use('/api', apiRoutes);
 

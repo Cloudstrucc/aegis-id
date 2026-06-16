@@ -3,7 +3,8 @@
   <h1>{{platform.name}} wizard</h1>
   <p>{{platform.summary}}</p>
   <div class="hero__actions">
-    <a class="button button--primary" href="/dashboard/{{subscription.id}}">Dashboard</a>
+    <a class="button button--primary" href="{{dashboardBasePath}}">Dashboard</a>
+    <a class="button button--secondary" href="/organizations/{{subscription.id}}">Organizations</a>
     <a class="button button--secondary" href="{{platform.docsUrl}}">Provider Docs</a>
   </div>
 </section>
@@ -17,7 +18,7 @@
       <ol>
         {{#each steps}}
           <li class="{{#if active}}is-active{{/if}} {{#if completed}}is-complete{{/if}}">
-            <a href="/dashboard/{{../subscription.id}}/platforms/{{../platform.id}}/setup?step={{index}}">
+            <a href="{{../dashboardBasePath}}/platforms/{{../platform.id}}/setup?step={{index}}">
               <span>{{displayIndex}}</span>
               <strong>{{title}}</strong>
             </a>
@@ -34,7 +35,7 @@
       </div>
 
       {{#if currentStep.testStep}}
-        <form class="wizard-form" action="/dashboard/{{subscription.id}}/platforms/{{platform.id}}/test" method="post">
+        <form class="wizard-form" action="{{dashboardBasePath}}/platforms/{{platform.id}}/test" method="post">
           <input type="hidden" name="stepIndex" value="{{stepIndex}}">
           {{#each currentStep.fields}}
             {{> wizard-field}}
@@ -45,20 +46,20 @@
           </div>
           <div class="wizard-actions">
             {{#if hasPrevious}}
-              <a class="button button--secondary button--dark-text" href="/dashboard/{{subscription.id}}/platforms/{{platform.id}}/setup?step={{previousStepIndex}}">Back</a>
+              <a class="button button--secondary button--dark-text" href="{{dashboardBasePath}}/platforms/{{platform.id}}/setup?step={{previousStepIndex}}">Back</a>
             {{/if}}
             <button class="button button--primary button--blue" type="submit">Run Test</button>
           </div>
         </form>
       {{else}}
-        <form class="wizard-form" action="/dashboard/{{subscription.id}}/platforms/{{platform.id}}/setup" method="post">
+        <form class="wizard-form" action="{{dashboardBasePath}}/platforms/{{platform.id}}/setup" method="post">
           <input type="hidden" name="stepIndex" value="{{stepIndex}}">
           {{#each currentStep.fields}}
             {{> wizard-field}}
           {{/each}}
           <div class="wizard-actions">
             {{#if hasPrevious}}
-              <a class="button button--secondary button--dark-text" href="/dashboard/{{subscription.id}}/platforms/{{platform.id}}/setup?step={{previousStepIndex}}">Back</a>
+              <a class="button button--secondary button--dark-text" href="{{dashboardBasePath}}/platforms/{{platform.id}}/setup?step={{previousStepIndex}}">Back</a>
             {{/if}}
             <button class="button button--primary button--blue" type="submit">{{#if hasNext}}Save and Continue{{else}}Save{{/if}}</button>
           </div>

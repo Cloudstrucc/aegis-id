@@ -1,6 +1,6 @@
-# Cloudstrucc Aegis ID Architecture
+# Vanguard Cloud Services - Aegis ID Architecture
 
-Cloudstrucc Aegis ID uses a dual-track architecture. The Microsoft-native track is the production path. The Aries track is a lab for protocol and wallet interoperability.
+Vanguard Cloud Services - Aegis ID uses a dual-track architecture. The Microsoft-native track is the production path. The Aries track is a lab for protocol and wallet interoperability.
 
 ```mermaid
 flowchart LR

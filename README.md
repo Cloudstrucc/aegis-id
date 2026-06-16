@@ -1,6 +1,6 @@
-# Cloudstrucc Aegis ID
+# Vanguard Cloud Services - Aegis ID
 
-Cloudstrucc Aegis ID is a Node.js Express + HBS reference implementation for a dual-track verified identity service:
+Vanguard Cloud Services - Aegis ID is a Node.js Express + HBS reference implementation for a dual-track verified identity service:
 
 - **Microsoft-native production path:** Microsoft Entra ID, YubiKey/passkeys, Conditional Access, and Microsoft Entra Verified ID.
 - **Aries interoperability lab:** ACA-Py issuer/verifier/mediator, Bifold/Credo-compatible wallet testing, DIDComm, AnonCreds, and optional VON/Indy development ledger work.
@@ -9,7 +9,7 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 
 ## What Is Included
 
-- Anonymous Cloudstrucc-themed landing page.
+- Anonymous Vanguard-themed landing page.
 - Playable cartoon setup walkthrough video on the home page.
 - Subscription form backed by local JSON storage for a free-tier pilot.
 - Express API endpoints for Verified ID issuance and presentation requests.
@@ -19,23 +19,23 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 - Subscriber dashboard with setup wizards for Microsoft Verified ID, Keycloak, Okta, and generic OIDC/SAML.
 - OIDC + wallet challenge example relying-party app.
 - ACA-Py Docker Compose lab and helper scripts.
-- Native SwiftUI iOS Aries wallet starter for Cloudstrucc lab invitations.
+- Native SwiftUI iOS Aries wallet starter for Vanguard Cloud Services lab invitations.
 - Azure App Service Bicep baseline targeting the Free `F1` tier where available.
 - Architecture, operator, Azure deployment, Aries lab, and security docs.
 
 ## Operator Guide
 
-For a branded Cloudstrucc Inc. walkthrough covering subscription, dashboard wizards, Mac-to-iPhone QR testing, Microsoft Authenticator, YubiKey/passkey usage, Aries lab checks, and Azure pilot deployment, see:
+For a branded Vanguard Cloud Services walkthrough covering subscription, dashboard wizards, Mac-to-iPhone QR testing, Microsoft Authenticator, YubiKey/passkey usage, Aries lab checks, and Azure pilot deployment, see:
 
-[docs/cloudstrucc-aegis-id-operator-guide.md](docs/cloudstrucc-aegis-id-operator-guide.md)
+[docs/vanguard-aegis-id-operator-guide.md](docs/vanguard-aegis-id-operator-guide.md)
 
 For the end-to-end lab flow from web registration to Aries invitation acceptance and a wallet challenge, see:
 
-[docs/cloudstrucc-wallet-e2e-runbook.md](docs/cloudstrucc-wallet-e2e-runbook.md)
+[docs/vanguard-wallet-e2e-runbook.md](docs/vanguard-wallet-e2e-runbook.md)
 
 ## When A Wallet Makes Sense
 
-Use a wallet only when the credential needs to become a portable asset, not just a login event. Wallets make the most sense when Cloudstrucc Inc. needs credentials to move between departments, contractors, allies, auditors, partners, facilities, or external systems outside the issuer's direct control.
+Use a wallet only when the credential needs to become a portable asset, not just a login event. Wallets make the most sense when Vanguard Cloud Services needs credentials to move between departments, contractors, allies, auditors, partners, facilities, or external systems outside the issuer's direct control.
 
 If all you need is secure login to applications, a wallet can add complexity without much benefit. In that case, YubiKey/passkeys plus Entra ID, Keycloak, Okta, or another SSO layer is usually the cleaner path. The real value of wallets starts when the credential itself must be issued, held, presented, verified, and trusted across boundaries.
 
@@ -60,7 +60,7 @@ YubiKey is still important, but it solves a different problem: phishing-resistan
 ├── data/                      # Local JSON stores, ignored except .gitkeep
 ├── docs/                      # Operator, architecture, Azure, Aries, and security docs
 ├── infra/bicep/               # Azure App Service infrastructure baseline
-├── ios/                       # Cloudstrucc Aegis Wallet SwiftUI starter
+├── ios/                       # Vanguard Aegis ID Wallet SwiftUI starter
 ├── public/                    # Styles, scripts, and generated hero image
 ├── src/
 │   ├── adapters/              # Microsoft Verified ID and Aries boundaries
@@ -103,7 +103,7 @@ npm run video:setup
 
 ## Full Local Test Process
 
-Use this checklist to exercise the full Cloudstrucc Aegis ID lab from landing page through platform setup, wallet challenge, and protected app access.
+Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab from landing page through platform setup, wallet challenge, and protected app access.
 
 1. Start the web app:
 
@@ -144,14 +144,14 @@ Use this checklist to exercise the full Cloudstrucc Aegis ID lab from landing pa
    ./aries-lab/scripts/start-holder-standin.sh
    ```
 
-5. Import and accept an issuer invitation in the iOS simulator wallet:
+5. Create and accept an org-scoped issuer invitation:
 
-   ```bash
-   ./aries-lab/scripts/create-issuer-invitation.sh > /tmp/cloudstrucc-issuer-invite.json
-   jq -r .invitation_url /tmp/cloudstrucc-issuer-invite.json
-   ```
+   - Open `/dashboard/<subscription-id>`.
+   - In **Issuing organization**, select **Create Org Issuer Invitation**.
+   - Scan the generated Vanguard Aegis ID Wallet QR, or copy the deep link into the simulator.
+   - In the iOS simulator wallet, open **Connections**, open the org issuer connection, then tap **Accept invitation in lab**.
 
-   In the iOS simulator app, paste or scan the invitation, open **Connections**, open **Cloudstrucc Aries Issuer**, then tap **Accept invitation in lab**.
+   After acceptance, the iOS wallet registers the completed issuer connection back to the subscriber org. That org is then available as a challenge sender in the OIDC wallet demo.
 
 6. Test the OIDC + wallet challenge relying-party app:
 
@@ -166,7 +166,7 @@ Use this checklist to exercise the full Cloudstrucc Aegis ID lab from landing pa
 - `/` anonymous landing page and subscription form.
 - `/architecture` architecture view and local demo API controls.
 - `/demo/oidc-wallet` example OIDC app that requires a wallet challenge before access.
-- `/demo/metadata/keycloak/realms/cloudstrucc/.well-known/openid-configuration` local Keycloak-shaped OIDC discovery document.
+- `/demo/metadata/keycloak/realms/vanguard/.well-known/openid-configuration` local Keycloak-shaped OIDC discovery document.
 - `/demo/metadata/okta/oauth2/default/.well-known/openid-configuration` local Okta-shaped OIDC discovery document.
 - `/demo/metadata/generic/oidc` local generic OIDC discovery document.
 - `/demo/metadata/generic/saml` local generic SAML metadata document.
@@ -209,7 +209,7 @@ The examples below are intended to make every supported platform card testable f
 
 ### Microsoft Entra Verified ID
 
-Use this to test the Microsoft-native credential path. Mock mode works locally; live mode requires your Cloudstrucc Inc. Azure tenant and public HTTPS callback URL.
+Use this to test the Microsoft-native credential path. Mock mode works locally; live mode requires your Vanguard Cloud Services Azure tenant and public HTTPS callback URL.
 
 Wizard path:
 
@@ -221,15 +221,15 @@ Example mock values:
 
 | Step | Field | Example |
 | --- | --- | --- |
-| Tenant | Tenant display name | `Cloudstrucc Inc.` |
+| Tenant | Tenant display name | `Vanguard Cloud Services` |
 | Tenant | Azure tenant ID | `24a46daa-7b87-4566-9eea-281326a1b75c` |
-| Tenant | Primary verified domain | `cloudstrucc.com` |
+| Tenant | Primary verified domain | `vanguardcs.ca` |
 | Tenant | Public HTTPS app URL | `http://localhost:3000` for mock, Azure HTTPS URL for live |
-| Verified ID Service | Issuer authority DID | `did:web:cloudstrucc.com` |
+| Verified ID Service | Issuer authority DID | `did:web:vanguardcs.ca` |
 | Verified ID Service | DID method | `did:web` |
-| App Registration | Application registration name | `cloudstrucc-aegis-id-verified-id` |
+| App Registration | Application registration name | `vanguard-aegis-id-verified-id` |
 | App Registration | Request Service permission | `VerifiableCredential.Create.All` |
-| Credential Contract | Credential type | `CloudstruccEmployeeCredential` |
+| Credential Contract | Credential type | `VanguardEmployeeCredential` |
 | Credential Contract | Attestation type | `ID token hint` |
 | Claims | Required claims | `employeeId, displayName, email, department, role, assuranceLevel, employmentStatus` |
 | Claims | Presentation authorization rules | `employmentStatus=active` and `assuranceLevel=FIDO2_YUBIKEY` |
@@ -246,7 +246,7 @@ AZURE_CLIENT_ID=<app-client-id>
 AZURE_CLIENT_SECRET=<client-secret-or-use-one-time-field>
 VID_AUTHORITY_DID=<issuer-did>
 VID_MANIFEST_URL=<credential-manifest-url>
-VID_CREDENTIAL_TYPE=CloudstruccEmployeeCredential
+VID_CREDENTIAL_TYPE=VanguardEmployeeCredential
 VID_CALLBACK_API_KEY=<shared-callback-key>
 PUBLIC_BASE_URL=https://<your-app>.azurewebsites.net
 ```
@@ -266,7 +266,7 @@ Example values:
 | Step | Field | Example |
 | --- | --- | --- |
 | Realm | Keycloak base URL | `http://localhost:3000/demo/metadata/keycloak` |
-| Realm | Realm | `cloudstrucc` |
+| Realm | Realm | `vanguard` |
 | Realm | Protocol | `OpenID Connect` |
 | Client | Client ID | `aegis-id-keycloak` |
 | Client | Client secret reference | `KEYCLOAK_CLIENT_SECRET` |
@@ -287,9 +287,9 @@ Example values:
 | Step | Field | Example |
 | --- | --- | --- |
 | Realm | Keycloak base URL | `http://localhost:3000/demo/metadata/keycloak` |
-| Realm | Realm | `cloudstrucc` |
+| Realm | Realm | `vanguard` |
 | Realm | Protocol | `SAML 2.0` |
-| Client | Client ID | `https://aegis-id.cloudstrucc.local/saml` |
+| Client | Client ID | `https://aegis-id.vanguard.local/saml` |
 | Client | Client secret reference | `KEYCLOAK_SAML_SIGNING_CERT` |
 | Client | Redirect URI | `http://localhost:3000/auth/keycloak/callback` |
 | Client | Metadata or discovery URL | `http://localhost:3000/demo/metadata/generic/saml` |
@@ -320,7 +320,7 @@ Example values:
 | App Integration | Redirect URI | `http://localhost:3000/auth/okta/callback` |
 | App Integration | SAML metadata URL | leave blank for OIDC |
 | Claims | Claim mappings | `email -> email`, `groups -> groups`, `department -> department` |
-| Claims | Groups claim filter | `Cloudstrucc-*` |
+| Claims | Groups claim filter | `Vanguard-*` |
 | Test | Test mode | `Metadata discovery` |
 
 Expected result: **OIDC discovery valid**.
@@ -336,7 +336,7 @@ Example values:
 | Org | Okta org URL | `https://example.okta.com` |
 | Org | Authorization server issuer URL | `https://example.okta.com/oauth2/default` |
 | Org | Protocol | `SAML 2.0` |
-| App Integration | Client ID | `https://aegis-id.cloudstrucc.local/saml/metadata` |
+| App Integration | Client ID | `https://aegis-id.vanguard.local/saml/metadata` |
 | App Integration | Client secret reference | `OKTA_SAML_CERT_REFERENCE` |
 | App Integration | Redirect URI | `http://localhost:3000/auth/okta/callback` |
 | App Integration | SAML metadata URL | `http://localhost:3000/demo/metadata/generic/saml` |
@@ -359,7 +359,7 @@ Example values:
 
 | Step | Field | Example |
 | --- | --- | --- |
-| Provider | Provider name | `Cloudstrucc Mock OIDC` |
+| Provider | Provider name | `Vanguard Cloud Services Mock OIDC` |
 | Provider | Protocol | `OpenID Connect` |
 | Provider | OIDC issuer URL | `http://localhost:3000/demo/metadata/generic` |
 | Provider | OIDC discovery or SAML metadata URL | `http://localhost:3000/demo/metadata/generic/oidc` |
@@ -380,11 +380,11 @@ Example values:
 
 | Step | Field | Example |
 | --- | --- | --- |
-| Provider | Provider name | `Cloudstrucc Mock SAML` |
+| Provider | Provider name | `Vanguard Cloud Services Mock SAML` |
 | Provider | Protocol | `SAML 2.0` |
 | Provider | OIDC issuer URL | leave blank |
 | Provider | OIDC discovery or SAML metadata URL | `http://localhost:3000/demo/metadata/generic/saml` |
-| Relying Party | Client ID / Entity ID | `https://aegis-id.cloudstrucc.local/saml` |
+| Relying Party | Client ID / Entity ID | `https://aegis-id.vanguard.local/saml` |
 | Relying Party | Secret or certificate reference | `GENERIC_SAML_CERT_REFERENCE` |
 | Relying Party | Callback / ACS URL | `http://localhost:3000/auth/federation/callback` |
 | Claims | Claim mappings | `email -> email`, `NameID -> subject`, `groups -> groups` |
@@ -404,7 +404,7 @@ AZURE_CLIENT_ID=
 AZURE_CLIENT_SECRET=
 VID_AUTHORITY_DID=
 VID_MANIFEST_URL=
-VID_CREDENTIAL_TYPE=CloudstruccEmployeeCredential
+VID_CREDENTIAL_TYPE=VanguardEmployeeCredential
 VID_CALLBACK_API_KEY=
 PUBLIC_BASE_URL=https://your-app.azurewebsites.net
 ```
@@ -432,7 +432,7 @@ aries-lab/scripts/create-verifier-invitation.sh
 
 More detail: [docs/aries-lab.md](docs/aries-lab.md)
 
-End-to-end wallet lab: [docs/cloudstrucc-wallet-e2e-runbook.md](docs/cloudstrucc-wallet-e2e-runbook.md)
+End-to-end wallet lab: [docs/vanguard-wallet-e2e-runbook.md](docs/vanguard-wallet-e2e-runbook.md)
 
 ## OIDC + Wallet Challenge Demo
 
@@ -446,11 +446,11 @@ The demo flow is:
 
 1. Start OIDC login.
 2. Approve the local mock OIDC provider.
-3. Send a Cloudstrucc wallet challenge to the latest active Aries issuer connection.
+3. Choose the issuing org that should send the wallet challenge.
 4. Accept the challenge in the iOS simulator wallet.
 5. The browser polls the session and opens the protected example app after the wallet acceptance callback.
 
-Before sending the challenge, make sure the Aries lab and holder stand-in are running and that the iOS simulator wallet has accepted a fresh issuer invitation:
+Before sending the challenge, make sure the Aries lab and holder stand-in are running and that the iOS simulator wallet has accepted an org issuer invitation from the subscriber dashboard:
 
 ```bash
 cd /Users/frederickpearson/repos/aegis-id
@@ -460,11 +460,11 @@ docker compose up -d acapy-mediator acapy-issuer acapy-verifier
 
 cd /Users/frederickpearson/repos/aegis-id
 ./aries-lab/scripts/start-holder-standin.sh
-./aries-lab/scripts/create-issuer-invitation.sh > /tmp/cloudstrucc-issuer-invite.json
-jq -r .invitation_url /tmp/cloudstrucc-issuer-invite.json
 ```
 
-In the iOS simulator wallet, open the accepted issuer connection, tap **Fetch OIDC challenges**, then accept the pending transaction. The wallet calls back to `/api/oidc-wallet/challenges/:sessionId/accept`, and the browser moves to the protected app when the session becomes authenticated.
+Then open `/dashboard/<subscription-id>`, create the org issuer invitation, and accept it in the iOS simulator wallet.
+
+In the OIDC challenge page, select the issuing org from the dropdown and send the challenge. In the iOS simulator wallet, open the accepted org issuer connection, tap **Fetch OIDC challenges**, then accept the pending transaction. The wallet calls back to `/api/oidc-wallet/challenges/:sessionId/accept`, and the browser moves to the protected app when the session becomes authenticated.
 
 This is a lab demonstration of step-up authentication. For production, replace the lab callback with ACA-Py webhooks, a signed presentation, or another server-verifiable wallet response tied to the OIDC session.
 
@@ -474,9 +474,9 @@ The first deployment can fit on Azure App Service Free `F1` if you keep it as th
 
 ```bash
 az login
-az group create --name rg-cloudstrucc-aegis-id --location canadacentral
+az group create --name rg-vanguard-aegis-id --location canadacentral
 az deployment group create \
-  --resource-group rg-cloudstrucc-aegis-id \
+  --resource-group rg-vanguard-aegis-id \
   --template-file infra/bicep/main.bicep \
   --parameters appName="<globally-unique-app-name>"
 ```
@@ -488,7 +488,7 @@ npm ci
 npm test
 zip -r aegis-id.zip . -x "node_modules/*" ".git/*" ".env" "data/*.json" "tmp/*"
 az webapp deploy \
-  --resource-group rg-cloudstrucc-aegis-id \
+  --resource-group rg-vanguard-aegis-id \
   --name "<globally-unique-app-name>" \
   --src-path aegis-id.zip \
   --type zip

@@ -12,6 +12,7 @@ const {
   evaluatePresentation,
   getPresentationPolicy
 } = require('../services/credential-policy-service');
+const { getOrganizationProfile } = require('../services/org-admin-service');
 const { saveTransaction, listTransactions } = require('../services/transaction-store');
 const { writeAuditEvent } = require('../services/audit-service');
 
@@ -144,6 +145,14 @@ router.get('/transactions', async (req, res, next) => {
   }
 });
 
+router.get('/organizations/:organizationId/profile', async (req, res, next) => {
+  try {
+    res.json(await getOrganizationProfile(req.params.organizationId));
+  } catch (error) {
+    next(error);
+  }
+});
+
 function validateCallbackApiKey(req) {
   if (!config.verifiedId.callbackApiKey) {
     return;
@@ -163,7 +172,7 @@ async function tryCreateIosWalletInvitation() {
     return {
       agent: 'issuer',
       mode: 'aries-oob',
-      label: 'Cloudstrucc Aries Issuer',
+      label: 'Vanguard Aries Issuer',
       ...describeInvitationError(error)
     };
   }

@@ -9,8 +9,8 @@ const {
 } = require('../src/services/platform-service');
 
 test('dashboard view exposes Microsoft, Keycloak, Okta, and generic federation platforms', () => {
-  const subscription = { id: 'sub-1', email: 'identity@cloudstrucc.com' };
-  const workspace = { subscriptionId: 'sub-1', organization: 'Cloudstrucc Inc.', platforms: {} };
+  const subscription = { id: 'sub-1', email: 'identity@vanguardcs.ca' };
+  const workspace = { id: 'org-1', subscriptionId: 'sub-1', organization: 'Vanguard Cloud Services', platforms: {} };
   const view = buildDashboardView(subscription, workspace);
 
   assert.deepEqual(
@@ -21,10 +21,11 @@ test('dashboard view exposes Microsoft, Keycloak, Okta, and generic federation p
 });
 
 test('wizard view does not prefill one-time Microsoft client secret', () => {
-  const subscription = { id: 'sub-1', email: 'identity@cloudstrucc.com' };
+  const subscription = { id: 'sub-1', email: 'identity@vanguardcs.ca' };
   const workspace = {
     subscriptionId: 'sub-1',
-    organization: 'Cloudstrucc Inc.',
+    id: 'org-1',
+    organization: 'Vanguard Cloud Services',
     platforms: {
       'microsoft-verified-id': {
         status: 'configured',
@@ -49,13 +50,13 @@ test('Keycloak OIDC metadata URL can be derived from base URL and realm', () => 
   const url = buildMetadataUrl(
     'keycloak',
     {
-      baseUrl: 'https://idp.cloudstrucc.com/',
-      realm: 'cloudstrucc'
+      baseUrl: 'https://idp.vanguardcs.ca/',
+      realm: 'vanguard'
     },
     'oidc'
   );
 
-  assert.equal(url, 'https://idp.cloudstrucc.com/realms/cloudstrucc/.well-known/openid-configuration');
+  assert.equal(url, 'https://idp.vanguardcs.ca/realms/vanguard/.well-known/openid-configuration');
 });
 
 test('Microsoft platform has a live test step', () => {

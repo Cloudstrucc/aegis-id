@@ -56,16 +56,16 @@ For deterministic local testing with an ACA-Py holder stand-in:
 
 ```bash
 aries-lab/scripts/start-holder-standin.sh
-aries-lab/scripts/create-issuer-invitation.sh > /tmp/cloudstrucc-issuer-invite.json
-aries-lab/scripts/accept-invitation-with-holder.sh /tmp/cloudstrucc-issuer-invite.json | jq
+aries-lab/scripts/create-issuer-invitation.sh > /tmp/vanguard-issuer-invite.json
+aries-lab/scripts/accept-invitation-with-holder.sh /tmp/vanguard-issuer-invite.json | jq
 aries-lab/scripts/send-wallet-challenge.sh issuer | jq
 ```
 
 To test the verifier path, create and accept a verifier invitation before sending a verifier challenge:
 
 ```bash
-aries-lab/scripts/create-verifier-invitation.sh > /tmp/cloudstrucc-verifier-invite.json
-aries-lab/scripts/accept-invitation-with-holder.sh /tmp/cloudstrucc-verifier-invite.json | jq
+aries-lab/scripts/create-verifier-invitation.sh > /tmp/vanguard-verifier-invite.json
+aries-lab/scripts/accept-invitation-with-holder.sh /tmp/vanguard-verifier-invite.json | jq
 aries-lab/scripts/send-wallet-challenge.sh verifier | jq
 ```
 

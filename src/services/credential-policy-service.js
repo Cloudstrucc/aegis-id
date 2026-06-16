@@ -2,9 +2,9 @@ const config = require('../config');
 
 function buildDemoEmployeeClaims(input = {}) {
   return {
-    employeeId: input.employeeId || 'CS-10027',
-    displayName: input.displayName || 'Cloudstrucc Team Member',
-    email: input.email || 'identity@cloudstrucc.com',
+    employeeId: input.employeeId || 'VCS-10027',
+    displayName: input.displayName || 'Vanguard Team Member',
+    email: input.email || 'identity@vanguardcs.ca',
     department: input.department || 'Architecture',
     role: input.role || 'Verified Identity Pilot',
     assuranceLevel: 'FIDO2_YUBIKEY',
@@ -15,7 +15,7 @@ function buildDemoEmployeeClaims(input = {}) {
 function getPresentationPolicy() {
   return {
     credentialType: config.verifiedId.credentialType,
-    acceptedIssuers: config.verifiedId.authorityDid ? [config.verifiedId.authorityDid] : ['did:web:cloudstrucc.example'],
+    acceptedIssuers: config.verifiedId.authorityDid ? [config.verifiedId.authorityDid] : ['did:web:vanguardcs.ca'],
     requestedClaims: ['employeeId', 'email', 'employmentStatus', 'assuranceLevel'],
     authorizationRules: [
       {

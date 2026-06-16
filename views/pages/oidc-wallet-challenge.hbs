@@ -1,7 +1,7 @@
 <section class="page-hero page-hero--compact">
   <p class="eyebrow">Step-up required</p>
   <h1>Wallet challenge required.</h1>
-  <p>OIDC authentication succeeded for {{claims.email}}. Complete the Cloudstrucc wallet challenge to enter the protected app.</p>
+  <p>OIDC authentication succeeded for {{claims.email}}. Complete the Vanguard Aegis ID wallet challenge to enter the protected app.</p>
 </section>
 
 <section class="band band--white" data-oidc-session-id="{{session.id}}" data-oidc-app-url="/demo/oidc-wallet/sessions/{{session.id}}/app">
@@ -55,10 +55,10 @@
         {{#if hasConnections}}
           <form class="wizard-form" action="/demo/oidc-wallet/sessions/{{session.id}}/challenge" method="post">
             <div class="field-group">
-              <label for="connectionId">Wallet connection</label>
-              <select id="connectionId" name="connectionId">
+              <label for="issuerChoice">Issuing organization</label>
+              <select id="issuerChoice" name="issuerChoice">
                 {{#each connections}}
-                  <option value="{{id}}" {{#if selected}}selected{{/if}}>{{label}} - {{state}} - {{id}}</option>
+                  <option value="{{choiceValue}}" {{#if selected}}selected{{/if}}>{{label}} - {{state}} - {{connectionId}}</option>
                 {{/each}}
               </select>
             </div>
@@ -66,11 +66,13 @@
           </form>
         {{else}}
           <div class="note-panel">
-            <strong>No active wallet connection found.</strong>
-            <span>Create a fresh issuer invitation, import it in the iOS simulator wallet, then tap <b>Accept invitation in lab</b>.</span>
+            <strong>No connected issuing org found.</strong>
+            <span>Create an org issuer invitation from a subscriber dashboard, import it in the iOS simulator wallet, then tap <b>Accept invitation in lab</b>.</span>
           </div>
-          <pre>./aries-lab/scripts/create-issuer-invitation.sh &gt; /tmp/cloudstrucc-issuer-invite.json
-jq -r .invitation_url /tmp/cloudstrucc-issuer-invite.json</pre>
+          <pre>Open /organizations/&lt;subscription-id&gt;
+Register or choose an organization
+Click "Create Org Issuer Invitation"
+Scan or paste that org invitation in the iOS wallet</pre>
         {{/if}}
 
         {{#if challengeSent}}

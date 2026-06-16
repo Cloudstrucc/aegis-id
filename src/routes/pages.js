@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
 router.get('/architecture', (req, res) => {
   res.render('pages/architecture', {
     title: 'Architecture',
-    description: 'Cloudstrucc Aegis ID reference architecture.',
+    description: 'Vanguard Cloud Services - Aegis ID reference architecture.',
     policy: getPresentationPolicy(),
     microsoftMode: config.verifiedId.mode
   });
@@ -76,7 +76,7 @@ function buildOidcDiscovery(issuer, provider) {
     id_token_signing_alg_values_supported: ['RS256'],
     scopes_supported: ['openid', 'profile', 'email', 'groups'],
     claims_supported: ['sub', 'email', 'name', 'groups', 'department', 'roles'],
-    cloudstrucc_demo_provider: provider
+    vanguard_demo_provider: provider
   };
 }
 

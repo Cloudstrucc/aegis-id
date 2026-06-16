@@ -3,6 +3,10 @@ const crypto = require('node:crypto');
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { listCompletedConnections, sendWalletChallenge } = require('../adapters/aries/aries-lab-adapter');
+const {
+  getIssuerOrganization,
+  listConnectedIssuerOrganizations
+} = require('./issuer-organization-service');
 
 const store = new FileJsonStore(config.paths.oidcWalletSessions, []);
 
@@ -89,7 +93,29 @@ async function getDemoSession(sessionId) {
 }
 
 async function listWalletConnections() {
-  return listCompletedConnections('issuer');
+  const organizations = await listConnectedIssuerOrganizations();
+  if (organizations.length > 0) {
+    return organizations.map((organization) => ({
+      id: organization.organizationId,
+      organizationId: organization.organizationId,
+      organizationName: organization.organizationName,
+      label: organization.organizationName,
+      connectionId: organization.issuerConnectionId,
+      status: organization.status,
+      type: 'issuer-organization'
+    }));
+  }
+
+  const connections = await listCompletedConnections('issuer');
+  return connections.map((connection) => ({
+    id: connection.connection_id,
+    organizationId: null,
+    organizationName: null,
+    label: connection.their_label || 'Vanguard Aegis ID wallet',
+    connectionId: connection.connection_id,
+    status: connection.rfc23_state || connection.state || 'unknown',
+    type: 'raw-connection'
+  }));
 }
 
 async function createWalletChallenge(sessionId, options = {}) {
@@ -103,15 +129,27 @@ async function createWalletChallenge(sessionId, options = {}) {
 
   const nonce = createToken(18);
   const subject = session.oidc?.claims?.email || session.oidc?.claims?.sub || 'unknown-subject';
+  const issuerOrganization = options.organizationId ? await getIssuerOrganization(options.organizationId) : null;
+  if (options.organizationId && !issuerOrganization) {
+    const error = new Error('Selected issuing org is not connected to the wallet yet.');
+    error.status = 409;
+    error.details = {
+      hint: 'Create the org issuer invitation from the subscriber dashboard, accept it in the iOS wallet, then try again.'
+    };
+    throw error;
+  }
+  const connectionId = issuerOrganization?.issuerConnectionId || options.connectionId || undefined;
+  const organizationName = issuerOrganization?.organizationName || options.organizationName || 'Vanguard Aries Issuer';
   const challenge = await sendWalletChallenge('issuer', {
-    connectionId: options.connectionId || undefined,
-    comment: `Cloudstrucc OIDC step-up challenge ${nonce}`,
+    connectionId,
+    comment: `${organizationName} OIDC step-up challenge ${nonce}`,
     content: [
-      'Cloudstrucc OIDC wallet challenge',
+      `${organizationName} OIDC wallet challenge`,
       `session=${session.id}`,
       `nonce=${nonce}`,
       `subject=${subject}`,
-      'Accept this in the Cloudstrucc wallet to unlock the protected web app.'
+      `issuerOrg=${issuerOrganization?.organizationId || 'raw-connection'}`,
+      'Accept this in the Vanguard Aegis ID wallet to unlock the protected web app.'
     ].join('\n')
   });
 
@@ -123,6 +161,8 @@ async function createWalletChallenge(sessionId, options = {}) {
       nonce,
       status: 'sent',
       agent: challenge.agent,
+      organizationId: issuerOrganization?.organizationId || null,
+      organizationName,
       connectionId: challenge.connectionId,
       threadId: challenge.ping?.thread_id || null,
       sentAt: nowIso()
@@ -171,6 +211,8 @@ async function listPendingWalletChallenges(connectionId) {
       nonce: record.walletChallenge.nonce,
       status: record.walletChallenge.status,
       connectionId: record.walletChallenge.connectionId,
+      organizationId: record.walletChallenge.organizationId || null,
+      organizationName: record.walletChallenge.organizationName || 'Vanguard Aries Issuer',
       threadId: record.walletChallenge.threadId,
       sentAt: record.walletChallenge.sentAt,
       subject: record.oidc?.claims?.email || record.oidc?.claims?.sub || 'unknown-subject',
@@ -219,11 +261,11 @@ function assertSessionActive(session) {
 function buildMockClaims(session) {
   return {
     iss: config.oidcWalletDemo.issuer,
-    sub: 'cloudstrucc-demo-user',
+    sub: 'vanguard-demo-user',
     aud: config.oidcWalletDemo.clientId,
-    email: 'identity@cloudstrucc.com',
-    name: 'Cloudstrucc Demo User',
-    acr: 'urn:cloudstrucc:auth:oidc-password',
+    email: 'identity@vanguardcs.ca',
+    name: 'Vanguard Demo User',
+    acr: 'urn:vanguard:aegis-id:auth:oidc-password',
     nonce: session.nonce,
     auth_time: Math.floor(Date.now() / 1000)
   };

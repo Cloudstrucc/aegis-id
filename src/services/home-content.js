@@ -1,6 +1,6 @@
 function getHomeContent(overrides = {}) {
   return {
-    title: 'Cloudstrucc Aegis ID',
+    title: 'Vanguard Cloud Services - Aegis ID',
     description:
       'Dual-track verified identity architecture for Microsoft Entra Verified ID production and Aries interoperability labs.',
     plans: [
@@ -8,7 +8,7 @@ function getHomeContent(overrides = {}) {
         id: 'pilot',
         name: 'Pilot',
         price: 'Free-tier fit',
-        summary: 'Landing page, subscription capture, mock Verified ID flows, and local Aries lab.'
+        summary: 'Landing page, subscription capture, mock Verified ID flows, organization workspaces, and local Aries lab.'
       },
       {
         id: 'sandbox',

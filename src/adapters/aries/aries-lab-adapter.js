@@ -10,11 +10,11 @@ const endpoints = {
 const invitationAgents = {
   issuer: {
     baseUrl: endpoints.issuer,
-    label: 'Cloudstrucc Aries Issuer'
+    label: 'Vanguard Aries Issuer'
   },
   verifier: {
     baseUrl: endpoints.verifier,
-    label: 'Cloudstrucc Aries Verifier'
+    label: 'Vanguard Aries Verifier'
   }
 };
 
@@ -129,14 +129,14 @@ async function sendWalletChallenge(agentName = 'issuer', options = {}) {
     const error = new Error(`No completed ${agentName} wallet connection was found.`);
     error.status = 409;
     error.details = {
-      hint: `Create a fresh ${agentName} invitation and accept it with the Cloudstrucc iOS wallet before sending the challenge.`
+      hint: `Create a fresh ${agentName} invitation and accept it with the Vanguard Aegis ID wallet before sending the challenge.`
     };
     throw error;
   }
 
-  const comment = options.comment || `Cloudstrucc ${agentName} wallet challenge`;
+  const comment = options.comment || `Vanguard ${agentName} wallet challenge`;
   const content =
-    options.content || `Cloudstrucc ${agentName} wallet challenge: confirm DIDComm channel is live.`;
+    options.content || `Vanguard ${agentName} wallet challenge: confirm DIDComm channel is live.`;
 
   const ping = await postAgentJson(`${baseUrl}/connections/${connectionId}/send-ping`, { comment }, agentName);
   const message = await postAgentJson(`${baseUrl}/connections/${connectionId}/send-message`, { content }, agentName);
@@ -283,8 +283,13 @@ function createIosWalletDeepLink(invitationUrl) {
     oob,
     endpoint
   });
+  for (const [key, value] of url.searchParams.entries()) {
+    if (key.startsWith('vanguard_') || key.startsWith('cloudstrucc_')) {
+      params.set(key, value);
+    }
+  }
 
-  return `cloudstrucc-wallet://invite?${params.toString()}`;
+  return `aegisid://invite?${params.toString()}`;
 }
 
 module.exports = {

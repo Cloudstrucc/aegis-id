@@ -11,7 +11,7 @@ function resolveFromRoot(value, fallback) {
 
 const config = {
   app: {
-    name: 'Cloudstrucc Aegis ID',
+    name: 'Vanguard Cloud Services - Aegis ID',
     env: process.env.NODE_ENV || 'development',
     port: Number.parseInt(process.env.PORT || '3000', 10),
     publicBaseUrl: process.env.PUBLIC_BASE_URL || 'http://localhost:3000'
@@ -23,6 +23,9 @@ const config = {
     subscriptions: resolveFromRoot(process.env.SUBSCRIPTION_STORE_PATH, 'data/subscriptions.json'),
     subscriberWorkspaces: resolveFromRoot(process.env.SUBSCRIBER_WORKSPACE_STORE_PATH, 'data/subscriber-workspaces.json'),
     transactions: resolveFromRoot(process.env.TRANSACTION_STORE_PATH, 'data/transactions.json'),
+    issuerOrganizations: resolveFromRoot(process.env.ISSUER_ORG_STORE_PATH, 'data/issuer-organizations.json'),
+    orgAdmin: resolveFromRoot(process.env.ORG_ADMIN_STORE_PATH, 'data/org-admin.json'),
+    orgAdminEvents: resolveFromRoot(process.env.ORG_ADMIN_EVENT_STORE_PATH, 'data/org-admin-events.json'),
     oidcWalletSessions: resolveFromRoot(process.env.OIDC_WALLET_SESSION_STORE_PATH, 'data/oidc-wallet-sessions.json'),
     audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json')
   },
@@ -33,10 +36,10 @@ const config = {
     clientSecret: process.env.AZURE_CLIENT_SECRET || '',
     scope: '3db474b9-6a0c-4840-96ac-1fceb342124f/.default',
     apiBaseUrl: 'https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials',
-    clientName: process.env.VID_CLIENT_NAME || 'Cloudstrucc Aegis ID',
+    clientName: process.env.VID_CLIENT_NAME || 'Vanguard Cloud Services - Aegis ID',
     authorityDid: process.env.VID_AUTHORITY_DID || '',
     manifestUrl: process.env.VID_MANIFEST_URL || '',
-    credentialType: process.env.VID_CREDENTIAL_TYPE || 'CloudstruccEmployeeCredential',
+    credentialType: process.env.VID_CREDENTIAL_TYPE || 'VanguardEmployeeCredential',
     callbackApiKey: process.env.VID_CALLBACK_API_KEY || ''
   },
   aries: {
@@ -46,11 +49,11 @@ const config = {
   },
   oidcWalletDemo: {
     mode: process.env.OIDC_WALLET_DEMO_MODE || 'mock',
-    issuer: process.env.OIDC_WALLET_ISSUER || 'https://mock-idp.cloudstrucc.local',
+    issuer: process.env.OIDC_WALLET_ISSUER || 'https://mock-idp.vanguardcs.local',
     publicBaseUrl: process.env.OIDC_WALLET_PUBLIC_BASE_URL || '',
     authorizationEndpoint:
       process.env.OIDC_WALLET_AUTHORIZATION_ENDPOINT || '/demo/oidc-wallet/mock-authorize',
-    clientId: process.env.OIDC_WALLET_CLIENT_ID || 'cloudstrucc-wallet-gated-app',
+    clientId: process.env.OIDC_WALLET_CLIENT_ID || 'vanguard-aegis-wallet-gated-app',
     scope: process.env.OIDC_WALLET_SCOPE || 'openid profile email',
     redirectPath: '/demo/oidc-wallet/callback',
     sessionTtlSeconds: Number.parseInt(process.env.OIDC_WALLET_SESSION_TTL_SECONDS || '900', 10)

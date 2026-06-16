@@ -1,9 +1,10 @@
 <section class="page-hero page-hero--compact">
-  <p class="eyebrow">Subscriber Dashboard</p>
+  <p class="eyebrow">{{workspaceRole}} Dashboard</p>
   <h1>{{workspace.organization}} Aegis ID setup</h1>
   <p>{{#if welcome}}Subscription captured. Start by connecting Microsoft Entra Verified ID, then add federation providers as needed.{{else}}Manage connected identity platforms and setup progress for this Aegis ID workspace.{{/if}}</p>
   <div class="hero__actions">
-    <a class="button button--primary" href="/dashboard/{{subscription.id}}/platforms/microsoft-verified-id/setup">Set Up Verified ID</a>
+    <a class="button button--primary" href="{{dashboardBasePath}}/platforms/microsoft-verified-id/setup">Set Up Verified ID</a>
+    <a class="button button--secondary" href="{{organizationsPath}}">Organizations</a>
     <a class="button button--secondary" href="/architecture">Architecture</a>
   </div>
 </section>
@@ -22,6 +23,414 @@
       <span class="metric">{{verifiedIdMode}}</span>
       <p>Server Verified ID mode</p>
     </article>
+  </div>
+</section>
+
+<section id="credential-admin" class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Credential Administration</p>
+    <h2>Issue, monitor, update, and revoke organization credentials.</h2>
+    <p>Admins can manage claims, roles, holder invitations, co-admin requests, branding, and immutable wallet challenge logs for this organization.</p>
+  </div>
+
+  <div class="dashboard-summary dashboard-summary--four">
+    <article>
+      <span class="metric">{{orgAdmin.activeCount}}</span>
+      <p>Active credentials</p>
+    </article>
+    <article>
+      <span class="metric">{{orgAdmin.invitedCount}}</span>
+      <p>Invited</p>
+    </article>
+    <article>
+      <span class="metric">{{orgAdmin.revokedCount}}</span>
+      <p>Revoked</p>
+    </article>
+    <article>
+      <span class="metric">{{orgAdmin.coAdminCount}}</span>
+      <p>Co-admins</p>
+    </article>
+  </div>
+
+  {{#if orgAdmin.isAdmin}}
+    <div class="admin-grid">
+      <article class="platform-card">
+        <div class="platform-card__head">
+          <span class="platform-icon">ID</span>
+          <div>
+            <span class="track-label">Issue credential</span>
+            <h3>Invite a credential holder</h3>
+          </div>
+        </div>
+        <form class="wizard-form" action="{{dashboardBasePath}}/admin/credentials" method="post">
+          <div class="field-row">
+            <div class="field-group">
+              <label for="holderEmail">Holder email</label>
+              <input id="holderEmail" name="holderEmail" type="email" value="identity@vanguardcs.ca" required>
+            </div>
+            <div class="field-group">
+              <label for="displayName">Display name</label>
+              <input id="displayName" name="displayName" type="text" value="Vanguard Team Member" required>
+            </div>
+          </div>
+          <div class="checkbox-grid">
+            {{#each orgAdmin.roles}}
+              <label class="checkline">
+                <input type="checkbox" name="roleIds" value="{{id}}">
+                <span>{{name}}</span>
+              </label>
+            {{/each}}
+          </div>
+          <div class="claim-edit-grid">
+            {{#each orgAdmin.claimDefinitions}}
+              <div class="field-group">
+                <label for="issue-claim-{{key}}">{{label}}</label>
+                <input id="issue-claim-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{defaultValue}}">
+              </div>
+            {{/each}}
+          </div>
+          <button class="button button--primary button--blue" type="submit">Issue Credential</button>
+        </form>
+      </article>
+
+      <article class="platform-card">
+        <div class="platform-card__head">
+          <span class="platform-icon">LOG</span>
+          <div>
+            <span class="track-label">Immutable log</span>
+            <h3>Wallet challenge events</h3>
+          </div>
+        </div>
+        <div class="event-list">
+          {{#each orgAdmin.events}}
+            <details>
+              <summary>{{title}} <span>{{createdAt}}</span></summary>
+              <pre>{{details}}</pre>
+            </details>
+          {{/each}}
+        </div>
+      </article>
+    </div>
+  {{else}}
+    <article class="note-panel">
+      <strong>Contributor view</strong>
+      <span>You can view organization state, but credential issuance and administration require administrator access.</span>
+    </article>
+  {{/if}}
+
+  <div class="credential-grid">
+    {{#each orgAdmin.credentials}}
+      <article id="credential-{{id}}" class="credential-card credential-card--{{status}}">
+        <div class="credential-card__head">
+          <div>
+            <span class="track-label">{{statusLabel}}</span>
+            <h3>{{displayName}}</h3>
+            <p>{{holderEmail}}</p>
+          </div>
+          <span class="credential-status">{{statusLabel}}</span>
+        </div>
+
+        <div class="tag-row">
+          {{#each roleLabels}}
+            <span>{{this}}</span>
+          {{/each}}
+          {{#if coAdminStatus}}
+            <span>Co-admin: {{coAdminStatus}}</span>
+          {{/if}}
+        </div>
+
+        <details>
+          <summary>Credential profile and transactions</summary>
+          <dl class="claim-list">
+            {{#each claimFields}}
+              <div>
+                <dt>{{label}}</dt>
+                <dd>{{value}}</dd>
+              </div>
+            {{/each}}
+          </dl>
+          <div class="event-list event-list--compact">
+            {{#each events}}
+              <details>
+                <summary>{{title}} <span>{{createdAt}}</span></summary>
+                <pre>{{details}}</pre>
+              </details>
+            {{/each}}
+          </div>
+        </details>
+
+        {{#if ../orgAdmin.isAdmin}}
+          <details>
+            <summary>Admin actions</summary>
+            <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/update" method="post">
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="holder-{{id}}">Holder email</label>
+                  <input id="holder-{{id}}" name="holderEmail" type="email" value="{{holderEmail}}">
+                </div>
+                <div class="field-group">
+                  <label for="name-{{id}}">Display name</label>
+                  <input id="name-{{id}}" name="displayName" type="text" value="{{displayName}}">
+                </div>
+              </div>
+              <div class="checkbox-grid">
+                {{#each availableRoles}}
+                  <label class="checkline">
+                    <input type="checkbox" name="roleIds" value="{{id}}" {{#if checked}}checked{{/if}}>
+                    <span>{{name}}</span>
+                  </label>
+                {{/each}}
+              </div>
+              <div class="claim-edit-grid">
+                {{#each claimFields}}
+                  <div class="field-group">
+                    <label for="credential-{{../id}}-{{key}}">{{label}}</label>
+                    <input id="credential-{{../id}}-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{value}}">
+                  </div>
+                {{/each}}
+              </div>
+              <button class="button button--primary button--blue" type="submit">Update Claims and Roles</button>
+            </form>
+
+            <div class="credential-actions">
+              {{#if (eq status "invited")}}
+                <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/accept" method="post">
+                  <button class="button button--primary" type="submit">Mark Accepted</button>
+                </form>
+              {{/if}}
+              {{#if (eq status "active")}}
+                {{#if coAdminRequestId}}
+                  <form action="{{../dashboardBasePath}}/admin/co-admin/{{coAdminRequestId}}/admin/accept" method="post">
+                    <button class="button button--secondary button--dark-text" type="submit">Accept Admin Challenge</button>
+                  </form>
+                  <form action="{{../dashboardBasePath}}/admin/co-admin/{{coAdminRequestId}}/holder/accept" method="post">
+                    <button class="button button--secondary button--dark-text" type="submit">Accept Holder Challenge</button>
+                  </form>
+                  <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/co-admin/revoke" method="post">
+                    <button class="button button--ghost" type="submit">Revoke Co-admin</button>
+                  </form>
+                {{else}}
+                  <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/co-admin/request" method="post">
+                    <button class="button button--secondary button--dark-text" type="submit">Promote to Co-admin</button>
+                  </form>
+                {{/if}}
+              {{/if}}
+              {{#unless (eq status "revoked")}}
+                <form class="inline-revoke-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/revoke" method="post">
+                  <input name="reason" type="text" placeholder="Revocation reason">
+                  <button class="button button--ghost" type="submit">Revoke Credential</button>
+                </form>
+              {{/unless}}
+            </div>
+          </details>
+        {{/if}}
+      </article>
+    {{/each}}
+  </div>
+</section>
+
+<section id="roles-claims" class="band band--light">
+  <div class="section-heading">
+    <p class="eyebrow">Roles and claims</p>
+    <h2>Define what this organization can issue.</h2>
+  </div>
+  <div class="admin-grid">
+    <article class="platform-card">
+      <h3>Roles</h3>
+      <div class="definition-list">
+        {{#each orgAdmin.roles}}
+          <div>
+            <strong>{{name}}</strong>
+            <span>{{description}}</span>
+            {{#if ../orgAdmin.isAdmin}}
+              <form action="{{../dashboardBasePath}}/admin/roles/{{id}}/delete" method="post">
+                <button class="button button--ghost" type="submit">Delete</button>
+              </form>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+      {{#if orgAdmin.isAdmin}}
+        <form class="wizard-form" action="{{dashboardBasePath}}/admin/roles" method="post">
+          <div class="field-group">
+            <label for="roleName">Role name</label>
+            <input id="roleName" name="name" type="text">
+          </div>
+          <div class="field-group">
+            <label for="roleDescription">Description</label>
+            <textarea id="roleDescription" name="description" rows="3"></textarea>
+          </div>
+          <button class="button button--primary button--blue" type="submit">Create Role</button>
+        </form>
+      {{/if}}
+    </article>
+
+    <article class="platform-card">
+      <h3>Claims</h3>
+      <div class="definition-list">
+        {{#each orgAdmin.claimDefinitions}}
+          <div>
+            <strong>{{label}}</strong>
+            <span>{{key}} · {{type}}</span>
+            {{#if ../orgAdmin.isAdmin}}
+              <form action="{{../dashboardBasePath}}/admin/claims/{{id}}/delete" method="post">
+                <button class="button button--ghost" type="submit">Delete</button>
+              </form>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+      {{#if orgAdmin.isAdmin}}
+        <form class="wizard-form" action="{{dashboardBasePath}}/admin/claims" method="post">
+          <div class="field-row">
+            <div class="field-group">
+              <label for="claimLabel">Claim label</label>
+              <input id="claimLabel" name="label" type="text">
+            </div>
+            <div class="field-group">
+              <label for="claimKey">Claim key</label>
+              <input id="claimKey" name="key" type="text">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="claimType">Type</label>
+              <select id="claimType" name="type">
+                <option value="text">Text</option>
+                <option value="email">Email</option>
+                <option value="number">Number</option>
+                <option value="date">Date</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="claimDefault">Default value</label>
+              <input id="claimDefault" name="defaultValue" type="text">
+            </div>
+          </div>
+          <label class="checkline">
+            <input name="required" type="checkbox" value="yes">
+            <span>Required claim</span>
+          </label>
+          <button class="button button--primary button--blue" type="submit">Create Claim</button>
+        </form>
+      {{/if}}
+    </article>
+  </div>
+</section>
+
+<section id="org-branding" class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Organization branding</p>
+    <h2>Control the wallet context for this org.</h2>
+    <p>Choose a palette or upload a small logo. The org profile API exposes this branding to the iOS wallet when it is viewing this organization context.</p>
+  </div>
+  <div class="admin-grid">
+    <article class="brand-preview-card" style="--brand-primary: {{orgAdmin.branding.primaryColor}}; --brand-accent: {{orgAdmin.branding.accentColor}}; --brand-bg: {{orgAdmin.branding.backgroundColor}}; --brand-text: {{orgAdmin.branding.textColor}};">
+      {{#if orgAdmin.branding.logoDataUrl}}
+        <img src="{{orgAdmin.branding.logoDataUrl}}" alt="{{workspace.organization}} logo">
+      {{else}}
+        <span>V</span>
+      {{/if}}
+      <h3>{{workspace.organization}}</h3>
+      <p>Aegis ID wallet profile</p>
+    </article>
+
+    {{#if orgAdmin.isAdmin}}
+      <form class="platform-card wizard-form" action="{{dashboardBasePath}}/admin/branding" method="post">
+        <div class="field-group">
+          <label for="paletteId">Palette</label>
+          <select id="paletteId" name="paletteId">
+            {{#each orgAdmin.palettes}}
+              <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+            {{/each}}
+            <option value="custom" {{#if orgAdmin.customPaletteSelected}}selected{{/if}}>Custom palette</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="primaryColor">Primary</label>
+            <input id="primaryColor" name="primaryColor" type="color" value="{{orgAdmin.branding.primaryColor}}">
+          </div>
+          <div class="field-group">
+            <label for="accentColor">Accent</label>
+            <input id="accentColor" name="accentColor" type="color" value="{{orgAdmin.branding.accentColor}}">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="backgroundColor">Background</label>
+            <input id="backgroundColor" name="backgroundColor" type="color" value="{{orgAdmin.branding.backgroundColor}}">
+          </div>
+          <div class="field-group">
+            <label for="textColor">Text</label>
+            <input id="textColor" name="textColor" type="color" value="{{orgAdmin.branding.textColor}}">
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="logoUpload">Logo upload</label>
+          <input id="logoUpload" type="file" accept="image/png,image/jpeg,image/webp" data-logo-upload>
+          <input type="hidden" name="logoDataUrl" data-logo-data-url>
+        </div>
+        <button class="button button--primary button--blue" type="submit">Save Branding</button>
+      </form>
+    {{/if}}
+  </div>
+</section>
+
+<section id="issuer-orgs" class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Issuing organization</p>
+    <h2>Create the org credential invitation used by the wallet challenge.</h2>
+    <p>The OIDC wallet test can send a challenge from any org that has an accepted issuer connection.</p>
+  </div>
+
+  <div class="issuer-org-layout">
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">ORG</span>
+        <div>
+          <span class="track-label">Subscriber org</span>
+          <h3>{{workspace.organization}}</h3>
+        </div>
+      </div>
+      <p>Create an Aries issuer invitation branded to this organization. After the iOS wallet accepts it, the org appears as a selectable challenge sender in the OIDC wallet demo.</p>
+      <form action="{{dashboardBasePath}}/issuer-organizations/invitations" method="post">
+        <button class="button button--primary button--blue" type="submit">Create Org Issuer Invitation</button>
+      </form>
+    </article>
+
+    {{#if hasIssuerOrganizations}}
+      {{#each issuerOrganizations}}
+        <article class="demo-qr-card">
+          <p class="eyebrow">{{status}}</p>
+          <h3>{{organizationName}}</h3>
+          <p class="demo-qr-card__description">Scan with the Vanguard Aegis ID wallet, accept the invitation, then fetch OIDC challenges from this issuer connection.</p>
+          {{#if iosQrCodeDataUrl}}
+            <img class="demo-qr-card__image" src="{{iosQrCodeDataUrl}}" alt="{{organizationName}} issuer invitation QR code">
+          {{/if}}
+          <code class="demo-qr-card__url">{{iosDeepLinkUrl}}</code>
+          <dl class="claim-list">
+            <div>
+              <dt>Status</dt>
+              <dd>{{status}}</dd>
+            </div>
+            <div>
+              <dt>Issuer connection</dt>
+              <dd>{{#if issuerConnectionId}}{{issuerConnectionId}}{{else}}Waiting for wallet acceptance{{/if}}</dd>
+            </div>
+            <div>
+              <dt>Invitation</dt>
+              <dd>{{invitationId}}</dd>
+            </div>
+          </dl>
+        </article>
+      {{/each}}
+    {{else}}
+      <article class="note-panel">
+        <strong>No org issuer invitations yet.</strong>
+        <span>Create an invitation, then accept it in the iOS wallet to make this org available for OIDC wallet challenges.</span>
+      </article>
+    {{/if}}
   </div>
 </section>
 
@@ -55,7 +464,7 @@
           </p>
         {{/if}}
         <div class="platform-card__actions">
-          <a class="button button--primary" href="/dashboard/{{../subscription.id}}/platforms/{{id}}/setup">Open Wizard</a>
+          <a class="button button--primary" href="{{../dashboardBasePath}}/platforms/{{id}}/setup">Open Wizard</a>
           <a class="button button--ghost" href="{{docsUrl}}">Docs</a>
         </div>
       </article>

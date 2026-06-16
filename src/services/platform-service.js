@@ -1,3 +1,5 @@
+const crypto = require('node:crypto');
+
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const VerifiedIdClient = require('./verified-id-client');
@@ -7,11 +9,11 @@ const store = new FileJsonStore(config.paths.subscriberWorkspaces, []);
 
 const DEFAULT_REQUIRED_CLAIMS = 'employeeId, displayName, email, department, role, assuranceLevel, employmentStatus';
 const FIELD_HELP_TEXT = {
-  adminDomain: 'Enter the primary verified domain in the Entra tenant, for example cloudstrucc.com. This should match or support the Verified ID linked domain.',
+  adminDomain: 'Enter the primary verified domain in the Entra tenant, for example vanguardcs.ca. This should match or support the Verified ID linked domain.',
   attestationType: 'Choose how claims are supplied to the credential. Use ID token hint for this app because Aegis ID sends claim values in the issuance request.',
   azureAppName: 'Enter the display name of the Entra app registration that will call the Verified ID Request Service API.',
   azureClientId: 'Paste the Application (client) ID from the Entra app registration.',
-  azureTenantId: 'Paste the Directory (tenant) ID for the Cloudstrucc Inc. Entra tenant.',
+  azureTenantId: 'Paste the Directory (tenant) ID for the Vanguard Cloud Services Entra tenant.',
   baseUrl: 'Enter the root URL of the Keycloak server, without the realm path.',
   callbackApiKeyReference: 'Enter the App Service setting or Key Vault secret name that stores VID_CALLBACK_API_KEY for callback verification.',
   callbackOrAcsUrl: 'Enter the OIDC callback URL or SAML Assertion Consumer Service URL registered with the identity provider.',
@@ -19,7 +21,7 @@ const FIELD_HELP_TEXT = {
   clientId: 'Enter the OIDC client ID or SAML entity ID assigned to this Aegis ID integration.',
   clientSecretReference: 'Enter the secret store reference for the client secret. Do not paste the secret itself into the wizard.',
   credentialDisplayName: 'Enter the user-facing name shown in the wallet for this credential.',
-  credentialType: 'Enter the exact credential type configured in Microsoft Entra Verified ID, for example CloudstruccEmployeeCredential.',
+  credentialType: 'Enter the exact credential type configured in Microsoft Entra Verified ID, for example VanguardEmployeeCredential.',
   didMethod: 'Select the DID method used by the Verified ID organization. did:web is easiest to inspect and align with a linked domain.',
   groupsFilter: 'Enter the Okta group naming pattern or expression that should be released as groups or entitlements.',
   issuerUrl: 'Enter the OIDC issuer URL. For Okta this is usually the authorization server URL, such as https://example.okta.com/oauth2/default.',
@@ -43,7 +45,7 @@ const FIELD_HELP_TEXT = {
   secretOrCertReference: 'Enter the secret, certificate, or signing key reference used for this relying-party registration. Do not paste private material.',
   secretReference: 'Enter where the client secret is stored, such as an App Service setting or Key Vault secret reference. Do not paste the secret here.',
   setupMode: 'Choose Advanced setup for tenant testing because it exposes Key Vault, DID, and linked-domain settings needed for production-like validation.',
-  tenantDisplayName: 'Enter the friendly tenant name shown to operators, for example Cloudstrucc Inc.',
+  tenantDisplayName: 'Enter the friendly tenant name shown to operators, for example Vanguard Cloud Services.',
   testMode: 'Choose Mock to validate local UI behavior, or Live to call Microsoft Entra Verified ID with tenant configuration.',
   verifiedIdAdminRole: 'Enter the Entra role assigned to the operator completing Verified ID setup. Authentication Policy Administrator is commonly required.',
   verifiedIdAuthorityDid: 'Paste the issuer authority DID from the Verified ID portal. This is the DID the verifier should trust.'
@@ -56,7 +58,7 @@ function getPlatformDefinitions() {
       name: 'Microsoft Entra Verified ID',
       family: 'Verified ID / Azure',
       icon: 'MS',
-      summary: 'Set up Cloudstrucc Inc. tenant details, issuer DID, credential contract, claims, and a wallet test.',
+      summary: 'Set up Vanguard Cloud Services tenant details, issuer DID, credential contract, claims, and a wallet test.',
       docsUrl: 'https://learn.microsoft.com/en-us/entra/verified-id/verifiable-credentials-configure-tenant',
       steps: [
         {
@@ -64,9 +66,9 @@ function getPlatformDefinitions() {
           title: 'Tenant & Prerequisites',
           description: 'Confirm the Entra tenant, public callback host, admin role, and setup path before creating live Verified ID requests.',
           fields: [
-            textField('tenantDisplayName', 'Tenant display name', 'Cloudstrucc Inc.'),
+            textField('tenantDisplayName', 'Tenant display name', 'Vanguard Cloud Services'),
             textField('azureTenantId', 'Azure tenant ID'),
-            textField('adminDomain', 'Primary verified domain', 'cloudstrucc.com'),
+            textField('adminDomain', 'Primary verified domain', 'vanguardcs.ca'),
             urlField('publicBaseUrl', 'Public HTTPS app URL', config.app.publicBaseUrl),
             textField('verifiedIdAdminRole', 'Verified ID admin role', 'Authentication Policy Administrator'),
             selectField('setupMode', 'Verified ID setup mode', [
@@ -80,13 +82,13 @@ function getPlatformDefinitions() {
           title: 'Verified ID Service',
           description: 'Record the Entra Verified ID organization, trusted domain, DID, and Key Vault values created in the portal.',
           fields: [
-            textField('verifiedIdAuthorityDid', 'Issuer authority DID', 'did:web:cloudstrucc.com'),
+            textField('verifiedIdAuthorityDid', 'Issuer authority DID', 'did:web:vanguardcs.ca'),
             selectField('didMethod', 'DID method', [
               ['did:web', 'did:web'],
               ['did:ion', 'did:ion'],
               ['managed', 'Microsoft-managed DID']
             ]),
-            textField('linkedDomain', 'Trusted linked domain', 'cloudstrucc.com'),
+            textField('linkedDomain', 'Trusted linked domain', 'vanguardcs.ca'),
             textField('keyVaultName', 'Key Vault name or reference'),
             selectField('keyVaultPermissionModel', 'Key Vault permission model', [
               ['access-policy', 'Vault access policy'],
@@ -99,7 +101,7 @@ function getPlatformDefinitions() {
           title: 'App Registration',
           description: 'Record the app registration and permission values used to call the Microsoft Verified ID Request Service API.',
           fields: [
-            textField('azureAppName', 'Application registration name', 'cloudstrucc-aegis-id-verified-id'),
+            textField('azureAppName', 'Application registration name', 'vanguard-aegis-id-verified-id'),
             textField('azureClientId', 'Application client ID'),
             textField('requestServicePermission', 'Request Service permission', 'VerifiableCredential.Create.All'),
             textField('secretReference', 'Client secret reference', 'Key Vault secret or App Service setting name'),
@@ -111,14 +113,14 @@ function getPlatformDefinitions() {
           title: 'Credential Contract',
           description: 'Capture the credential type, manifest URL, and attestation shape Aegis ID will use for issuance.',
           fields: [
-            textField('credentialType', 'Credential type', 'CloudstruccEmployeeCredential'),
+            textField('credentialType', 'Credential type', 'VanguardEmployeeCredential'),
             urlField('manifestUrl', 'Credential manifest URL'),
             selectField('attestationType', 'Attestation type', [
               ['idTokenHint', 'ID token hint'],
               ['idToken', 'ID token'],
               ['selfIssued', 'Self-issued']
             ]),
-            textField('credentialDisplayName', 'Credential display name', 'Cloudstrucc Employee Credential')
+            textField('credentialDisplayName', 'Credential display name', 'Vanguard Employee Credential')
           ]
         },
         {
@@ -129,7 +131,7 @@ function getPlatformDefinitions() {
             textareaField('requiredClaims', 'Required claims', DEFAULT_REQUIRED_CLAIMS),
             textareaField('optionalClaims', 'Optional claims', 'manager, costCenter, region'),
             textareaField('presentationRules', 'Presentation authorization rules', 'employmentStatus=active\nassuranceLevel=FIDO2_YUBIKEY'),
-            textField('sampleSubjectEmail', 'Sample test subject email', 'identity@cloudstrucc.com')
+            textField('sampleSubjectEmail', 'Sample test subject email', 'identity@vanguardcs.ca')
           ]
         },
         {
@@ -161,7 +163,7 @@ function getPlatformDefinitions() {
           description: 'Point Aegis ID at the Keycloak realm that will federate users.',
           fields: [
             urlField('baseUrl', 'Keycloak base URL', 'https://idp.example.com'),
-            textField('realm', 'Realm', 'cloudstrucc'),
+            textField('realm', 'Realm', 'vanguard'),
             selectField('protocol', 'Protocol', [
               ['oidc', 'OpenID Connect'],
               ['saml', 'SAML 2.0']
@@ -235,7 +237,7 @@ function getPlatformDefinitions() {
           description: 'Map Okta profile, group, and entitlement claims.',
           fields: [
             textareaField('claimMappings', 'Claim mappings', 'email -> email\ngroups -> groups\ndepartment -> department'),
-            textField('groupsFilter', 'Groups claim filter', 'Cloudstrucc-*')
+            textField('groupsFilter', 'Groups claim filter', 'Vanguard-*')
           ]
         },
         {
@@ -305,7 +307,7 @@ async function createWorkspaceForSubscription(subscription) {
   let workspace = workspaces.find((item) => item.subscriptionId === subscription.id);
 
   if (workspace) {
-    return workspace;
+    return ensureMembership(workspace, subscription, 'administrator');
   }
 
   workspace = {
@@ -313,6 +315,7 @@ async function createWorkspaceForSubscription(subscription) {
     subscriptionId: subscription.id,
     organization: subscription.organization || inferOrganization(subscription.email),
     ownerEmail: subscription.email,
+    members: [createWorkspaceMembership(subscription, 'administrator')],
     platforms: {},
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -323,16 +326,126 @@ async function createWorkspaceForSubscription(subscription) {
   return workspace;
 }
 
-async function getWorkspace(subscriptionId) {
+async function registerWorkspaceForSubscription(subscription, input = {}) {
   const workspaces = await store.read();
+  const organization = normalizeOrganization(input.organization || subscription.organization || inferOrganization(subscription.email));
+  const existing = workspaces.find(
+    (workspace) => workspaceBelongsToSubscription(workspace, subscription) && normalizeComparable(workspace.organization) === normalizeComparable(organization)
+  );
+
+  if (existing) {
+    const memberWorkspace = ensureMembership(existing, subscription, 'administrator');
+    memberWorkspace.updatedAt = new Date().toISOString();
+    await store.write(workspaces);
+    return decorateWorkspaceForSubscription(memberWorkspace, subscription);
+  }
+
+  const now = new Date().toISOString();
+  const workspace = {
+    id: crypto.randomUUID(),
+    subscriptionId: subscription.id,
+    organization,
+    ownerEmail: subscription.email,
+    members: [createWorkspaceMembership(subscription, 'administrator')],
+    platforms: {},
+    createdAt: now,
+    updatedAt: now
+  };
+
+  workspaces.unshift(workspace);
+  await store.write(workspaces);
+  return decorateWorkspaceForSubscription(workspace, subscription);
+}
+
+async function listWorkspacesForSubscription(subscription) {
+  const workspaces = await store.read();
+  return workspaces
+    .filter((workspace) => workspaceBelongsToSubscription(workspace, subscription))
+    .map((workspace) => decorateWorkspaceForSubscription(ensureMembership(workspace, subscription), subscription))
+    .sort((left, right) => new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime());
+}
+
+async function getWorkspace(subscriptionId, workspaceId) {
+  const workspaces = await store.read();
+  if (workspaceId) {
+    return workspaces.find((workspace) => workspace.id === workspaceId && workspace.subscriptionId === subscriptionId) || null;
+  }
   return workspaces.find((workspace) => workspace.subscriptionId === subscriptionId) || null;
 }
 
-async function getOrCreateWorkspace(subscription) {
-  return (await getWorkspace(subscription.id)) || createWorkspaceForSubscription(subscription);
+async function getWorkspaceForSubscription(subscription, workspaceId) {
+  const workspaces = await listWorkspacesForSubscription(subscription);
+  if (!workspaceId) {
+    return workspaces[0] || null;
+  }
+
+  return workspaces.find((workspace) => workspace.id === workspaceId) || null;
 }
 
-async function savePlatformStep(subscription, platformId, stepId, input = {}) {
+async function setWorkspaceMemberRole(workspaceId, email, role = 'contributor', metadata = {}) {
+  const workspaces = await store.read();
+  const workspace = workspaces.find((item) => item.id === workspaceId);
+  if (!workspace) {
+    throw notFound('Organization workspace not found.');
+  }
+
+  workspace.members = Array.isArray(workspace.members) ? workspace.members : [];
+  const normalizedEmail = normalizeEmail(email);
+  let member = workspace.members.find((item) => normalizeEmail(item.email) === normalizedEmail);
+  if (!member) {
+    member = {
+      email: normalizedEmail,
+      role: normalizeRole(role),
+      addedAt: new Date().toISOString()
+    };
+    workspace.members.push(member);
+  }
+
+  member.role = normalizeRole(role);
+  member.sourceCredentialId = metadata.sourceCredentialId || member.sourceCredentialId || null;
+  member.updatedAt = new Date().toISOString();
+  workspace.updatedAt = new Date().toISOString();
+  await store.write(workspaces);
+  return workspace;
+}
+
+async function revokeWorkspaceMemberRole(workspaceId, email, role = 'administrator') {
+  const workspaces = await store.read();
+  const workspace = workspaces.find((item) => item.id === workspaceId);
+  if (!workspace) {
+    throw notFound('Organization workspace not found.');
+  }
+
+  const normalizedEmail = normalizeEmail(email);
+  workspace.members = (workspace.members || []).map((member) => {
+    if (normalizeEmail(member.email) !== normalizedEmail || normalizeRole(member.role) !== normalizeRole(role)) {
+      return member;
+    }
+
+    return {
+      ...member,
+      role: 'contributor',
+      revokedRole: normalizeRole(role),
+      revokedAt: new Date().toISOString()
+    };
+  });
+  workspace.updatedAt = new Date().toISOString();
+  await store.write(workspaces);
+  return workspace;
+}
+
+async function getOrCreateWorkspace(subscription, workspaceId) {
+  const workspace = await getWorkspaceForSubscription(subscription, workspaceId);
+  if (workspace) {
+    return workspace;
+  }
+  if (workspaceId) {
+    throw notFound('Organization workspace not found for this subscriber.');
+  }
+  return createWorkspaceForSubscription(subscription);
+}
+
+async function savePlatformStep(subscription, platformId, stepId, input = {}, workspaceId) {
   const platform = getPlatformDefinition(platformId);
   const step = platform.steps.find((candidate) => candidate.id === stepId);
   if (!step) {
@@ -340,7 +453,7 @@ async function savePlatformStep(subscription, platformId, stepId, input = {}) {
   }
 
   const workspaces = await store.read();
-  const workspace = await ensureWorkspaceInList(workspaces, subscription);
+  const workspace = await ensureWorkspaceInList(workspaces, subscription, workspaceId);
   const platformState = workspace.platforms[platformId] || createPlatformState(platformId);
 
   for (const field of step.fields) {
@@ -363,10 +476,10 @@ async function savePlatformStep(subscription, platformId, stepId, input = {}) {
   return platformState;
 }
 
-async function runPlatformTest(subscription, platformId, input = {}) {
+async function runPlatformTest(subscription, platformId, input = {}, workspaceId) {
   const platform = getPlatformDefinition(platformId);
   const workspaces = await store.read();
-  const workspace = await ensureWorkspaceInList(workspaces, subscription);
+  const workspace = await ensureWorkspaceInList(workspaces, subscription, workspaceId);
   const platformState = workspace.platforms[platformId] || createPlatformState(platformId);
 
   const result =
@@ -414,9 +527,12 @@ function buildDashboardView(subscription, workspace) {
 
   return {
     title: 'Subscriber Dashboard',
-    description: 'Cloudstrucc Aegis ID subscriber dashboard.',
+    description: 'Vanguard Cloud Services - Aegis ID subscriber dashboard.',
     subscription,
     workspace,
+    workspaceRole: workspace.roleLabel || roleLabel(workspace.role || 'administrator'),
+    dashboardBasePath: dashboardPath(subscription.id, workspace.id),
+    organizationsPath: `/organizations/${subscription.id}`,
     platforms: cards,
     connectedCount: cards.filter((card) => card.status === 'connected').length,
     inProgressCount: cards.filter((card) => ['in-progress', 'configured', 'attention'].includes(card.status)).length
@@ -432,9 +548,11 @@ function buildWizardView(subscription, workspace, platformId, stepIndex = 0) {
 
   return {
     title: `${platform.name} Setup`,
-    description: `${platform.name} setup wizard for Cloudstrucc Aegis ID.`,
+    description: `${platform.name} setup wizard for Vanguard Cloud Services - Aegis ID.`,
     subscription,
     workspace,
+    workspaceRole: workspace.roleLabel || roleLabel(workspace.role || 'administrator'),
+    dashboardBasePath: dashboardPath(subscription.id, workspace.id),
     platform,
     state,
     currentStep: decorateStep(currentStep, state, true, normalizedStepIndex),
@@ -500,7 +618,7 @@ async function runMicrosoftVerifiedIdTest(platformState, input) {
   });
 
   const claims = buildDemoEmployeeClaims({
-    email: data.sampleSubjectEmail || 'identity@cloudstrucc.com'
+    email: data.sampleSubjectEmail || 'identity@vanguardcs.ca'
   });
 
   const issuance = await client.createIssuanceRequest({
@@ -510,7 +628,7 @@ async function runMicrosoftVerifiedIdTest(platformState, input) {
   const presentation = await client.createPresentationRequest({
     ...getPresentationPolicy(),
     credentialType: data.credentialType || config.verifiedId.credentialType,
-    acceptedIssuers: [data.verifiedIdAuthorityDid || config.verifiedId.authorityDid || 'did:web:cloudstrucc.example']
+    acceptedIssuers: [data.verifiedIdAuthorityDid || config.verifiedId.authorityDid || 'did:web:vanguardcs.ca']
   });
 
   return {
@@ -630,21 +748,93 @@ function summarizeVerifiedIdResult(result) {
   };
 }
 
-async function ensureWorkspaceInList(workspaces, subscription) {
-  let workspace = workspaces.find((item) => item.subscriptionId === subscription.id);
+async function ensureWorkspaceInList(workspaces, subscription, workspaceId) {
+  let workspace = workspaceId
+    ? workspaces.find((item) => item.id === workspaceId && workspaceBelongsToSubscription(item, subscription))
+    : workspaces.find((item) => workspaceBelongsToSubscription(item, subscription));
+
+  if (workspaceId && !workspace) {
+    throw notFound('Organization workspace not found for this subscriber.');
+  }
+
   if (!workspace) {
     workspace = {
       id: subscription.id,
       subscriptionId: subscription.id,
       organization: subscription.organization || inferOrganization(subscription.email),
       ownerEmail: subscription.email,
+      members: [createWorkspaceMembership(subscription, 'administrator')],
       platforms: {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     workspaces.push(workspace);
   }
+  return ensureMembership(workspace, subscription, 'administrator');
+}
+
+function workspaceBelongsToSubscription(workspace, subscription) {
+  if (workspace.subscriptionId === subscription.id || normalizeEmail(workspace.ownerEmail) === normalizeEmail(subscription.email)) {
+    return true;
+  }
+
+  return (workspace.members || []).some((member) => normalizeEmail(member.email) === normalizeEmail(subscription.email));
+}
+
+function createWorkspaceMembership(subscription, role = 'administrator') {
+  return {
+    email: normalizeEmail(subscription.email),
+    role: normalizeRole(role),
+    addedAt: new Date().toISOString()
+  };
+}
+
+function ensureMembership(workspace, subscription, defaultRole = 'administrator') {
+  const email = normalizeEmail(subscription.email);
+  workspace.members = Array.isArray(workspace.members) ? workspace.members : [];
+  let member = workspace.members.find((item) => normalizeEmail(item.email) === email);
+  if (!member) {
+    member = createWorkspaceMembership(subscription, workspace.ownerEmail === subscription.email ? 'administrator' : defaultRole);
+    workspace.members.push(member);
+  }
+  workspace.role = normalizeRole(member.role);
+  workspace.roleLabel = roleLabel(workspace.role);
+  workspace.dashboardPath = dashboardPath(subscription.id, workspace.id);
   return workspace;
+}
+
+function decorateWorkspaceForSubscription(workspace, subscription) {
+  return {
+    ...workspace,
+    role: normalizeRole(workspace.role),
+    roleLabel: roleLabel(workspace.role),
+    dashboardPath: dashboardPath(subscription.id, workspace.id)
+  };
+}
+
+function dashboardPath(subscriptionId, workspaceId) {
+  return `/dashboard/${subscriptionId}/orgs/${workspaceId}`;
+}
+
+function normalizeRole(value = '') {
+  const normalized = String(value || '').trim().toLowerCase();
+  return ['administrator', 'contributor'].includes(normalized) ? normalized : 'administrator';
+}
+
+function roleLabel(role = '') {
+  return normalizeRole(role) === 'contributor' ? 'Contributor' : 'Administrator';
+}
+
+function normalizeOrganization(value = '') {
+  return String(value || '').trim().slice(0, 160) || 'New Organization';
+}
+
+function normalizeEmail(value = '') {
+  return String(value || '').trim().toLowerCase();
+}
+
+function normalizeComparable(value = '') {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 function createPlatformState(platformId) {
@@ -729,10 +919,15 @@ module.exports = {
   buildMetadataUrl,
   buildWizardView,
   createWorkspaceForSubscription,
+  getWorkspaceForSubscription,
   getOrCreateWorkspace,
   getPlatformDefinition,
   getPlatformDefinitions,
   getWorkspace,
+  listWorkspacesForSubscription,
+  registerWorkspaceForSubscription,
+  revokeWorkspaceMemberRole,
   runPlatformTest,
-  savePlatformStep
+  savePlatformStep,
+  setWorkspaceMemberRole
 };

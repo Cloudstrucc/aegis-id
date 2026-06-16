@@ -2,10 +2,10 @@
 
 The fastest way to test the Aries lab from an iPhone is to use an existing Aries/DIDComm wallet built for Out-of-Band invitations. The best-known open-source mobile wallet family is OpenWallet Foundation Bifold, which is a React Native wallet shell used by Aries/Credo ecosystems.
 
-For Cloudstrucc-owned UX and experiments, this repo now includes a native SwiftUI starter:
+For Vanguard-owned UX and experiments, this repo now includes a native SwiftUI starter:
 
 ```text
-ios/CloudstruccAegisWallet/
+ios/VanguardAegisWallet/
 ```
 
 ## What The Starter Does
@@ -13,7 +13,7 @@ ios/CloudstruccAegisWallet/
 - Scans Aries Out-of-Band QR codes.
 - Parses ACA-Py `invitation_url` values.
 - Saves imported invitations as local connection records.
-- Provides a Cloudstrucc-branded iOS wallet shell.
+- Provides a Vanguard-branded iOS wallet shell.
 
 ## What Still Needs A Real Aries Engine
 
@@ -29,7 +29,7 @@ ios/CloudstruccAegisWallet/
 ## Recommended Build Path
 
 1. Use an existing Aries-compatible wallet for immediate lab testing.
-2. Use `ios/CloudstruccAegisWallet` to shape the Cloudstrucc native user experience.
+2. Use `ios/VanguardAegisWallet` to shape the Vanguard Cloud Services native user experience.
 3. Add an Aries engine adapter behind the SwiftUI shell.
 4. Move all secrets to Keychain-backed storage before handling real credentials.
 5. Keep this separate from the Microsoft Entra Verified ID production path until the Aries protocol bridge is intentionally productized.

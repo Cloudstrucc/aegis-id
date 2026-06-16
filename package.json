@@ -2,7 +2,7 @@
   "name": "aegis-id",
   "version": "0.1.0",
   "private": true,
-  "description": "Cloudstrucc Aegis ID dual-track identity architecture: Microsoft Entra Verified ID production path plus Aries interoperability lab.",
+  "description": "Vanguard Cloud Services - Aegis ID dual-track identity architecture: Microsoft Entra Verified ID production path plus Aries interoperability lab.",
   "main": "src/server.js",
   "engines": {
     "node": ">=20"

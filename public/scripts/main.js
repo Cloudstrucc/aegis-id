@@ -10,8 +10,8 @@ const demoActions = {
     url: '/api/issuer/create-offer',
     method: 'POST',
     body: {
-      displayName: 'Cloudstrucc Pilot User',
-      email: 'pilot@cloudstrucc.com',
+      displayName: 'Vanguard Pilot User',
+      email: 'pilot@vanguardcs.ca',
       department: 'Architecture',
       role: 'Identity Pilot'
     }
@@ -87,6 +87,10 @@ document.addEventListener('keydown', (event) => {
 if (oidcChallengeGate) {
   pollOidcWalletChallenge(oidcChallengeGate);
 }
+
+document.querySelectorAll('[data-logo-upload]').forEach((input) => {
+  input.addEventListener('change', () => handleLogoUpload(input));
+});
 
 function openVideoModal() {
   videoModal.hidden = false;
@@ -167,11 +171,11 @@ function renderDemoResult(payload, actionName) {
     cards.push(
       createQrCard({
         eyebrow: 'iOS Aries lab',
-        title: 'Scan with Cloudstrucc iOS Wallet',
+        title: 'Scan with Vanguard Aegis ID Wallet',
         description:
           payload.iosWalletInvitation.ok === false
             ? 'Start the Aries issuer container to generate an iOS wallet invitation QR.'
-            : 'Scan this with iPhone Camera or inside the Cloudstrucc iOS wallet. Microsoft Authenticator will not accept Aries invitations.',
+            : 'Scan this with iPhone Camera or inside the Vanguard Aegis ID wallet. Microsoft Authenticator will not accept Aries invitations.',
         qrCodeDataUrl: payload.iosWalletInvitation.iosQrCodeDataUrl || payload.iosWalletInvitation.qrCodeDataUrl,
         requestUrl:
           payload.iosWalletInvitation.iosDeepLinkUrl ||
@@ -210,6 +214,32 @@ function renderDemoResult(payload, actionName) {
 
   cards.forEach((card) => demoResult.append(card));
   demoResult.hidden = false;
+}
+
+function handleLogoUpload(input) {
+  const file = input.files?.[0];
+  const hiddenInput = input.closest('form')?.querySelector('[data-logo-data-url]');
+
+  if (!hiddenInput) {
+    return;
+  }
+
+  hiddenInput.value = '';
+  if (!file) {
+    return;
+  }
+
+  if (file.size > 850 * 1024) {
+    input.value = '';
+    window.alert('Please choose a logo under 850 KB for this local pilot.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener('load', () => {
+    hiddenInput.value = String(reader.result || '');
+  });
+  reader.readAsDataURL(file);
 }
 
 function createQrCard({

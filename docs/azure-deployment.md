@@ -27,11 +27,11 @@ az login
 az account set --subscription "<subscription-id>"
 
 az group create \
-  --name rg-cloudstrucc-aegis-id \
+  --name rg-vanguard-aegis-id \
   --location canadacentral
 
 az deployment group create \
-  --resource-group rg-cloudstrucc-aegis-id \
+  --resource-group rg-vanguard-aegis-id \
   --template-file infra/bicep/main.bicep \
   --parameters appName="<globally-unique-app-name>"
 ```
@@ -45,7 +45,7 @@ zip -r aegis-id.zip . \
   -x "node_modules/*" ".git/*" ".env" "data/*.json" "tmp/*"
 
 az webapp deploy \
-  --resource-group rg-cloudstrucc-aegis-id \
+  --resource-group rg-vanguard-aegis-id \
   --name "<globally-unique-app-name>" \
   --src-path aegis-id.zip \
   --type zip
@@ -55,7 +55,7 @@ Open:
 
 ```bash
 az webapp browse \
-  --resource-group rg-cloudstrucc-aegis-id \
+  --resource-group rg-vanguard-aegis-id \
   --name "<globally-unique-app-name>"
 ```
 
@@ -65,7 +65,7 @@ Set these App Service configuration values after the Entra app registration and 
 
 ```bash
 az webapp config appsettings set \
-  --resource-group rg-cloudstrucc-aegis-id \
+  --resource-group rg-vanguard-aegis-id \
   --name "<globally-unique-app-name>" \
   --settings \
     VID_MODE=live \
@@ -74,12 +74,12 @@ az webapp config appsettings set \
     AZURE_CLIENT_SECRET="<client-secret>" \
     VID_AUTHORITY_DID="<issuer-did>" \
     VID_MANIFEST_URL="<credential-manifest-url>" \
-    VID_CREDENTIAL_TYPE="CloudstruccEmployeeCredential" \
+    VID_CREDENTIAL_TYPE="VanguardEmployeeCredential" \
     VID_CALLBACK_API_KEY="<random-callback-secret>" \
     PUBLIC_BASE_URL="https://<globally-unique-app-name>.azurewebsites.net"
 ```
 
-For a subscriber-driven Cloudstrucc Inc. pilot, the wizard can also accept tenant/app/DID/claims details in the dashboard. A live test still needs a client secret supplied one time in the wizard or configured in App Service settings. The wizard does not persist secrets.
+For a subscriber-driven Vanguard Cloud Services pilot, the wizard can also accept tenant/app/DID/claims details in the dashboard. A live test still needs a client secret supplied one time in the wizard or configured in App Service settings. The wizard does not persist secrets.
 
 ## Microsoft Setup Checklist
 

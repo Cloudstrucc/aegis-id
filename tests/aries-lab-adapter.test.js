@@ -68,20 +68,24 @@ test('createOutOfBandInvitation returns an iOS-scannable OOB QR payload', async 
   assert.deepEqual(requests[0].body.handshake_protocols, ['https://didcomm.org/didexchange/1.0']);
   assert.equal(requests[0].body.use_did_method, 'did:peer:2');
   assert.match(invitation.invitationUrl, /\?oob=/);
-  assert.match(invitation.iosDeepLinkUrl, /^cloudstrucc-wallet:\/\/invite\?oob=/);
+  assert.match(invitation.iosDeepLinkUrl, /^aegisid:\/\/invite\?oob=/);
   assert.equal(invitation.phoneReachable, true);
   assert.match(invitation.qrCodeDataUrl, /^data:image\/png;base64,/);
   assert.match(invitation.iosQrCodeDataUrl, /^data:image\/png;base64,/);
 });
 
-test('createIosWalletDeepLink keeps the OOB payload and source endpoint', () => {
-  const deepLink = createIosWalletDeepLink('http://10.0.0.240:4010?oob=abc123');
+test('createIosWalletDeepLink keeps the OOB payload, source endpoint, and org metadata', () => {
+  const deepLink = createIosWalletDeepLink(
+    'http://10.0.0.240:4010?oob=abc123&vanguard_org_id=org-1&vanguard_org_name=Vanguard'
+  );
   const url = new URL(deepLink);
 
-  assert.equal(url.protocol, 'cloudstrucc-wallet:');
+  assert.equal(url.protocol, 'aegisid:');
   assert.equal(url.host, 'invite');
   assert.equal(url.searchParams.get('oob'), 'abc123');
   assert.equal(url.searchParams.get('endpoint'), 'http://10.0.0.240:4010');
+  assert.equal(url.searchParams.get('vanguard_org_id'), 'org-1');
+  assert.equal(url.searchParams.get('vanguard_org_name'), 'Vanguard');
 });
 
 test('sendWalletChallenge posts trust ping and basic message to a completed connection', async (t) => {
@@ -103,7 +107,7 @@ test('sendWalletChallenge posts trust ping and basic message to a completed conn
               connection_id: 'conn-1',
               state: 'active',
               rfc23_state: 'completed',
-              their_label: 'Cloudstrucc iOS Holder Stand-in'
+              their_label: 'Vanguard iOS Holder Stand-in'
             }
           ]
         })
