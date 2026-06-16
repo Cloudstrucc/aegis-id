@@ -5,14 +5,15 @@ enum OOBInvitationParser {
         let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmed),
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let encodedInvitation = components.queryItems?.first(where: { $0.name == "oob" })?.value
+              let queryItems = components.queryItems,
+              let encodedInvitation = queryItems.first(where: { $0.name == "oob" })?.value
         else {
             throw ParserError.missingOOBParameter
         }
 
         let payloadData = try decodeBase64URL(encodedInvitation)
         let payload = try JSONDecoder().decode(OutOfBandPayload.self, from: payloadData)
-        let endpoint = endpointDescription(from: components)
+        let endpoint = endpointDescription(from: components, queryItems: queryItems)
 
         return AriesInvitation(
             id: payload.id,
@@ -42,7 +43,12 @@ enum OOBInvitationParser {
         return data
     }
 
-    private static func endpointDescription(from components: URLComponents) -> String? {
+    private static func endpointDescription(from components: URLComponents, queryItems: [URLQueryItem]) -> String? {
+        if let endpoint = queryItems.first(where: { $0.name == "endpoint" })?.value,
+           !endpoint.isEmpty {
+            return endpoint
+        }
+
         guard let scheme = components.scheme, let host = components.host else {
             return nil
         }

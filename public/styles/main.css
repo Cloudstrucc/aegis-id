@@ -730,6 +730,18 @@ textarea:focus {
   justify-self: start;
 }
 
+.demo-qr-card__details {
+  display: grid;
+  gap: 10px;
+}
+
+.demo-qr-card__details summary {
+  color: var(--blue-600);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .policy-block {
   max-width: 980px;
   margin: 0 auto;

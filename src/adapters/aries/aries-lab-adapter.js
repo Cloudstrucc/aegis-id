@@ -80,7 +80,9 @@ async function createOutOfBandInvitation(agentName = 'issuer', options = {}) {
   }
 
   const invitationUrl = body.invitation_url || body.invitationUrl;
+  const iosDeepLinkUrl = invitationUrl ? createIosWalletDeepLink(invitationUrl) : null;
   const qrCodeDataUrl = invitationUrl ? await QRCode.toDataURL(invitationUrl, { margin: 1, width: 420 }) : null;
+  const iosQrCodeDataUrl = iosDeepLinkUrl ? await QRCode.toDataURL(iosDeepLinkUrl, { margin: 1, width: 420 }) : null;
 
   return {
     track: 'aries-interoperability-lab',
@@ -89,7 +91,9 @@ async function createOutOfBandInvitation(agentName = 'issuer', options = {}) {
     label: payload.my_label,
     requestUrl: invitationUrl,
     invitationUrl,
+    iosDeepLinkUrl,
     qrCodeDataUrl,
+    iosQrCodeDataUrl,
     phoneReachable: invitationUrl ? isPhoneReachableUrl(invitationUrl) : false,
     payload: body
   };
@@ -179,7 +183,24 @@ function isPhoneReachableUrl(value) {
   }
 }
 
+function createIosWalletDeepLink(invitationUrl) {
+  const url = new URL(invitationUrl);
+  const oob = url.searchParams.get('oob');
+  if (!oob) {
+    return null;
+  }
+
+  const endpoint = url.port ? `${url.protocol}//${url.hostname}:${url.port}` : `${url.protocol}//${url.hostname}`;
+  const params = new URLSearchParams({
+    oob,
+    endpoint
+  });
+
+  return `cloudstrucc-wallet://invite?${params.toString()}`;
+}
+
 module.exports = {
+  createIosWalletDeepLink,
   createOutOfBandInvitation,
   describeConnectionError,
   describeInvitationError,

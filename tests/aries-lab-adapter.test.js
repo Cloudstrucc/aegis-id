@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 
 const {
+  createIosWalletDeepLink,
   createOutOfBandInvitation,
   describeConnectionError
 } = require('../src/adapters/aries/aries-lab-adapter');
@@ -66,6 +67,18 @@ test('createOutOfBandInvitation returns an iOS-scannable OOB QR payload', async 
   assert.deepEqual(requests[0].body.handshake_protocols, ['https://didcomm.org/didexchange/1.0']);
   assert.equal(requests[0].body.use_did_method, 'did:peer:2');
   assert.match(invitation.invitationUrl, /\?oob=/);
+  assert.match(invitation.iosDeepLinkUrl, /^cloudstrucc-wallet:\/\/invite\?oob=/);
   assert.equal(invitation.phoneReachable, true);
   assert.match(invitation.qrCodeDataUrl, /^data:image\/png;base64,/);
+  assert.match(invitation.iosQrCodeDataUrl, /^data:image\/png;base64,/);
+});
+
+test('createIosWalletDeepLink keeps the OOB payload and source endpoint', () => {
+  const deepLink = createIosWalletDeepLink('http://10.0.0.240:4010?oob=abc123');
+  const url = new URL(deepLink);
+
+  assert.equal(url.protocol, 'cloudstrucc-wallet:');
+  assert.equal(url.host, 'invite');
+  assert.equal(url.searchParams.get('oob'), 'abc123');
+  assert.equal(url.searchParams.get('endpoint'), 'http://10.0.0.240:4010');
 });

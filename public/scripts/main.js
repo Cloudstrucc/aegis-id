@@ -136,12 +136,17 @@ function renderDemoResult(payload, actionName) {
         description:
           payload.iosWalletInvitation.ok === false
             ? 'Start the Aries issuer container to generate an iOS wallet invitation QR.'
-            : 'Aries out-of-band issuer invitation for the Cloudstrucc iOS wallet starter.',
-        qrCodeDataUrl: payload.iosWalletInvitation.qrCodeDataUrl,
-        requestUrl: payload.iosWalletInvitation.invitationUrl || payload.iosWalletInvitation.requestUrl,
+            : 'Scan this with iPhone Camera or inside the Cloudstrucc iOS wallet. Microsoft Authenticator will not accept Aries invitations.',
+        qrCodeDataUrl: payload.iosWalletInvitation.iosQrCodeDataUrl || payload.iosWalletInvitation.qrCodeDataUrl,
+        requestUrl:
+          payload.iosWalletInvitation.iosDeepLinkUrl ||
+          payload.iosWalletInvitation.invitationUrl ||
+          payload.iosWalletInvitation.requestUrl,
+        secondaryUrl: payload.iosWalletInvitation.invitationUrl,
+        secondaryLabel: 'Raw Aries invitation',
         phoneReachable: payload.iosWalletInvitation.phoneReachable,
         phoneHint:
-          'This QR uses localhost. For iPhone testing, set the Aries endpoint to your Mac LAN IP and recreate the lab containers.',
+          'The underlying Aries endpoint uses localhost. For iPhone testing, set the Aries endpoint to your Mac LAN IP and recreate the lab containers.',
         error: payload.iosWalletInvitation.ok === false ? payload.iosWalletInvitation : null
       })
     );
@@ -172,7 +177,18 @@ function renderDemoResult(payload, actionName) {
   demoResult.hidden = false;
 }
 
-function createQrCard({ eyebrow, title, description, qrCodeDataUrl, requestUrl, phoneReachable, phoneHint, error }) {
+function createQrCard({
+  eyebrow,
+  title,
+  description,
+  qrCodeDataUrl,
+  requestUrl,
+  secondaryUrl,
+  secondaryLabel,
+  phoneReachable,
+  phoneHint,
+  error
+}) {
   const card = document.createElement('article');
   card.className = 'demo-qr-card';
 
@@ -217,6 +233,29 @@ function createQrCard({ eyebrow, title, description, qrCodeDataUrl, requestUrl, 
     copyButton.dataset.copyValue = requestUrl;
     copyButton.textContent = 'Copy link';
     card.append(copyButton);
+  }
+
+  if (secondaryUrl && secondaryUrl !== requestUrl) {
+    const secondary = document.createElement('details');
+    secondary.className = 'demo-qr-card__details';
+
+    const summary = document.createElement('summary');
+    summary.textContent = secondaryLabel || 'Alternate link';
+    secondary.append(summary);
+
+    const code = document.createElement('code');
+    code.className = 'demo-qr-card__url';
+    code.textContent = secondaryUrl;
+    secondary.append(code);
+
+    const copyButton = document.createElement('button');
+    copyButton.className = 'button button--secondary demo-qr-card__copy';
+    copyButton.type = 'button';
+    copyButton.dataset.copyValue = secondaryUrl;
+    copyButton.textContent = 'Copy raw link';
+    secondary.append(copyButton);
+
+    card.append(secondary);
   }
 
   if (requestUrl && phoneReachable === false) {
