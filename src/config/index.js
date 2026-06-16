@@ -28,6 +28,8 @@ const config = {
     orgAdmin: resolveFromRoot(process.env.ORG_ADMIN_STORE_PATH, 'data/org-admin.json'),
     orgAdminEvents: resolveFromRoot(process.env.ORG_ADMIN_EVENT_STORE_PATH, 'data/org-admin-events.json'),
     oidcWalletSessions: resolveFromRoot(process.env.OIDC_WALLET_SESSION_STORE_PATH, 'data/oidc-wallet-sessions.json'),
+    oidcCodes: resolveFromRoot(process.env.OIDC_CODE_STORE_PATH, 'data/oidc-codes.json'),
+    walletChallenges: resolveFromRoot(process.env.WALLET_CHALLENGE_STORE_PATH, 'data/wallet-challenges.json'),
     audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json')
   },
   auth: {

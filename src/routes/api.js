@@ -15,6 +15,12 @@ const {
 const { getOrganizationProfile } = require('../services/org-admin-service');
 const { saveTransaction, listTransactions } = require('../services/transaction-store');
 const { writeAuditEvent } = require('../services/audit-service');
+const {
+  acceptExternalWalletChallenge,
+  createExternalWalletChallenge,
+  getWalletChallenge,
+  listWalletChallengeLedger
+} = require('../services/wallet-challenge-service');
 
 const router = express.Router();
 const verifiedId = createMicrosoftVerifiedIdAdapter();
@@ -148,6 +154,75 @@ router.get('/transactions', async (req, res, next) => {
 router.get('/organizations/:organizationId/profile', async (req, res, next) => {
   try {
     res.json(await getOrganizationProfile(req.params.organizationId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet-challenges', async (req, res, next) => {
+  try {
+    const challenge = await createExternalWalletChallenge(req.body);
+    await writeAuditEvent('wallet-challenge.created', {
+      challengeId: challenge.id,
+      appName: challenge.appName,
+      appInstanceId: challenge.appInstanceId,
+      organizationId: challenge.organizationId,
+      action: challenge.action,
+      resourceType: challenge.resourceType,
+      resourceId: challenge.resourceId,
+      subject: challenge.subject,
+      delivery: challenge.delivery
+    });
+    res.status(201).json(challenge);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/wallet-challenges/ledger', async (req, res, next) => {
+  try {
+    res.json({
+      challenges: await listWalletChallengeLedger({
+        organizationId: req.query.organizationId,
+        appInstanceId: req.query.appInstanceId,
+        limit: req.query.limit
+      })
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/wallet-challenges/:challengeId', async (req, res, next) => {
+  try {
+    res.json(await getWalletChallenge(req.params.challengeId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet-challenges/:challengeId/accept', async (req, res, next) => {
+  try {
+    const challenge = await acceptExternalWalletChallenge(req.params.challengeId, {
+      acceptedBy: req.body.acceptedBy,
+      source: req.body.source || 'wallet-api'
+    });
+    await writeAuditEvent('wallet-challenge.accepted', {
+      challengeId: challenge.id,
+      appName: challenge.appName,
+      appInstanceId: challenge.appInstanceId,
+      organizationId: challenge.organizationId,
+      action: challenge.action,
+      resourceType: challenge.resourceType,
+      resourceId: challenge.resourceId,
+      subject: challenge.subject,
+      source: req.body.source || 'wallet-api'
+    });
+    res.json({
+      ok: true,
+      status: challenge.status,
+      challenge
+    });
   } catch (error) {
     next(error);
   }

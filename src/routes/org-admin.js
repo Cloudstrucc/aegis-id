@@ -6,11 +6,15 @@ const { getWorkspaceForSubscription } = require('../services/platform-service');
 const {
   acceptCoAdminChallenge,
   createClaimDefinition,
+  createOrgUnit,
   createRole,
   deleteClaimDefinition,
+  deleteOrgUnit,
   deleteRole,
+  grantCredentialConsent,
   issueCredential,
   markCredentialAccepted,
+  requestCredentialConsent,
   requestCoAdmin,
   revokeCoAdmin,
   revokeCredential,
@@ -43,6 +47,18 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:cre
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:credentialId/update', withOrg(async ({ subscription, workspace, req, res }) => {
   await updateCredentialProfile(workspace, subscription, req.params.credentialId, req.body);
   await audit('org.credential.updated', subscription, workspace, { credentialId: req.params.credentialId });
+  res.redirect(303, orgAdminPath(subscription.id, workspace.id, req.params.credentialId));
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:credentialId/consent/request', withOrg(async ({ subscription, workspace, req, res }) => {
+  await requestCredentialConsent(workspace, subscription, req.params.credentialId, req.body);
+  await audit('org.credential.consent.requested', subscription, workspace, { credentialId: req.params.credentialId });
+  res.redirect(303, orgAdminPath(subscription.id, workspace.id, req.params.credentialId));
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:credentialId/consent/grant', withOrg(async ({ subscription, workspace, req, res }) => {
+  await grantCredentialConsent(workspace, subscription, req.params.credentialId, req.body);
+  await audit('org.credential.consent.granted', subscription, workspace, { credentialId: req.params.credentialId });
   res.redirect(303, orgAdminPath(subscription.id, workspace.id, req.params.credentialId));
 }));
 
@@ -89,6 +105,18 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/claims/:claimId/
   await deleteClaimDefinition(workspace, subscription, req.params.claimId);
   await audit('org.claim.deleted', subscription, workspace, { claimId: req.params.claimId });
   res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#roles-claims`);
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/org-units', withOrg(async ({ subscription, workspace, req, res }) => {
+  await createOrgUnit(workspace, subscription, req.body);
+  await audit('org.unit.created', subscription, workspace, { name: req.body.name });
+  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#org-structure`);
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/org-units/:unitId/delete', withOrg(async ({ subscription, workspace, req, res }) => {
+  await deleteOrgUnit(workspace, subscription, req.params.unitId);
+  await audit('org.unit.deleted', subscription, workspace, { unitId: req.params.unitId });
+  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#org-structure`);
 }));
 
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/branding', withOrg(async ({ subscription, workspace, req, res }) => {

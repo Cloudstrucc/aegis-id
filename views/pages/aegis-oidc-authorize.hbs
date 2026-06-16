@@ -1,0 +1,48 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Aegis ID OIDC</p>
+  <h1>Authorize {{appName}}.</h1>
+  <p>This lab authorization screen simulates Aegis ID as an OIDC provider. The connected application will still require a wallet challenge before access is granted.</p>
+</section>
+
+<section class="band band--white">
+  <div class="subscription-layout">
+    <article class="subscribe-card">
+      <p class="eyebrow">OIDC request</p>
+      <h2>{{appName}}</h2>
+      <dl class="claim-list">
+        <div>
+          <dt>Client</dt>
+          <dd>{{clientId}}</dd>
+        </div>
+        <div>
+          <dt>Scope</dt>
+          <dd>{{scope}}</dd>
+        </div>
+        <div>
+          <dt>Redirect</dt>
+          <dd>{{redirectUri}}</dd>
+        </div>
+      </dl>
+    </article>
+
+    <form class="subscribe-form" action="/oidc/authorize" method="post">
+      <input type="hidden" name="clientId" value="{{clientId}}">
+      <input type="hidden" name="redirectUri" value="{{redirectUri}}">
+      <input type="hidden" name="responseType" value="{{responseType}}">
+      <input type="hidden" name="scope" value="{{scope}}">
+      <input type="hidden" name="state" value="{{state}}">
+      <input type="hidden" name="nonce" value="{{nonce}}">
+      <input type="hidden" name="organizationId" value="{{organizationId}}">
+
+      <div class="field-group">
+        <label for="oidcEmail">Email</label>
+        <input id="oidcEmail" name="email" type="email" value="identity@vanguardcs.ca" required>
+      </div>
+      <div class="field-group">
+        <label for="oidcName">Name</label>
+        <input id="oidcName" name="name" type="text" value="Vanguard Demo User" required>
+      </div>
+      <button class="button button--primary button--blue" type="submit">Authorize and Return</button>
+    </form>
+  </div>
+</section>

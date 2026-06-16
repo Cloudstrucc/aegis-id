@@ -1,0 +1,41 @@
+<section class="hero">
+  <div class="container py-5">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        <span class="badge text-bg-success mb-3">Aegis ID OIDC + wallet signature</span>
+        <h1 class="display-5 fw-bold">Business expense approvals with wallet-backed assurance.</h1>
+        <p class="lead">
+          This standalone app signs users in with Aegis ID, then requires a wallet challenge for sign-in and every approve/reject decision.
+        </p>
+        {{#unless configured}}
+          <div class="alert alert-warning">
+            Set <code>AEGIS_ORGANIZATION_ID</code> or <code>AEGIS_ISSUER_CONNECTION_ID</code> before creating wallet challenges.
+          </div>
+        {{/unless}}
+        <div class="d-flex flex-wrap gap-2">
+          <form action="/auth/start" method="post">
+            <input type="hidden" name="intent" value="sign-in">
+            <button class="btn btn-light btn-lg" type="submit">Sign in with Aegis ID</button>
+          </form>
+          <form action="/auth/start" method="post">
+            <input type="hidden" name="intent" value="register">
+            <button class="btn btn-outline-light btn-lg" type="submit">Register with Aegis ID</button>
+          </form>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card shadow-lg border-0">
+          <div class="card-body p-4">
+            <h2 class="h4">Assurance flow</h2>
+            <ol class="list-group list-group-numbered mt-3">
+              <li class="list-group-item">OIDC authorization through Aegis ID</li>
+              <li class="list-group-item">Wallet challenge for registration or sign-in</li>
+              <li class="list-group-item">Expense decision challenge per approval/rejection</li>
+              <li class="list-group-item">Ledger record in app dashboard and iOS wallet</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

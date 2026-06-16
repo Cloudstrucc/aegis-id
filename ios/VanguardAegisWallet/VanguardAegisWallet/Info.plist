@@ -27,7 +27,6 @@
 			<string>Vanguard Aegis ID Wallet</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>cloudstrucc-wallet</string>
 				<string>aegisid</string>
 			</array>
 		</dict>

@@ -14,6 +14,7 @@ const {
 } = require('../services/platform-service');
 const { listIssuerOrganizations } = require('../services/issuer-organization-service');
 const { getOrgAdminView } = require('../services/org-admin-service');
+const { listWalletChallengeLedger } = require('../services/wallet-challenge-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
@@ -40,11 +41,14 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', async (req, res, next
     const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(subscription, req.params.workspaceId);
     const issuerOrganizations = await listIssuerOrganizations(subscription.id, workspace.id);
-    const orgAdmin = await getOrgAdminView(workspace, subscription);
+    const orgAdmin = await getOrgAdminView(workspace, subscription, req.query);
+    const walletChallengeLedger = await listWalletChallengeLedger({ organizationId: workspace.id, limit: 25 });
     res.render('pages/dashboard', {
       ...buildDashboardView(subscription, workspace),
       issuerOrganizations,
       hasIssuerOrganizations: issuerOrganizations.length > 0,
+      walletChallengeLedger,
+      hasWalletChallengeLedger: walletChallengeLedger.length > 0,
       orgAdmin,
       welcome: req.query.welcome === '1'
     });

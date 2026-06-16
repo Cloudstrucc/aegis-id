@@ -284,7 +284,7 @@ function createIosWalletDeepLink(invitationUrl) {
     endpoint
   });
   for (const [key, value] of url.searchParams.entries()) {
-    if (key.startsWith('vanguard_') || key.startsWith('cloudstrucc_')) {
+    if (key.startsWith('vanguard_')) {
       params.set(key, value);
     }
   }

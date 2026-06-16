@@ -1,0 +1,29 @@
+<section class="container py-5" data-challenge-id="{{challenge.id}}" data-return-to="{{returnTo}}">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow border-0">
+        <div class="card-body p-4 p-lg-5">
+          <span class="badge text-bg-info mb-3">{{challenge.status}}</span>
+          <h1 class="h2">Wallet challenge required</h1>
+          <p class="text-muted">
+            Open the Vanguard Aegis ID wallet in the simulator, fetch OIDC/app challenges from the active issuer connection, and accept this challenge.
+          </p>
+          <dl class="row">
+            <dt class="col-sm-3">Application</dt>
+            <dd class="col-sm-9">{{challenge.appName}}</dd>
+            <dt class="col-sm-3">Action</dt>
+            <dd class="col-sm-9">{{challenge.action}}</dd>
+            <dt class="col-sm-3">Subject</dt>
+            <dd class="col-sm-9">{{challenge.subject}}</dd>
+            <dt class="col-sm-3">Nonce</dt>
+            <dd class="col-sm-9"><code>{{challenge.nonce}}</code></dd>
+          </dl>
+          <div class="alert alert-secondary" data-challenge-status>
+            Waiting for wallet acceptance.
+          </div>
+          <a class="btn btn-outline-primary" href="{{returnTo}}">Refresh manually</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

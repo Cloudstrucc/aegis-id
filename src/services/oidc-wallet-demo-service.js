@@ -7,6 +7,7 @@ const {
   getIssuerOrganization,
   listConnectedIssuerOrganizations
 } = require('./issuer-organization-service');
+const { listPendingExternalWalletChallenges } = require('./wallet-challenge-service');
 
 const store = new FileJsonStore(config.paths.oidcWalletSessions, []);
 
@@ -193,7 +194,7 @@ async function confirmWalletChallenge(sessionId) {
 
 async function listPendingWalletChallenges(connectionId) {
   const records = await store.read();
-  return records
+  const oidcChallenges = records
     .filter((record) => {
       if (record.status !== 'wallet-challenge-sent' || record.walletChallenge?.status !== 'sent') {
         return false;
@@ -216,8 +217,22 @@ async function listPendingWalletChallenges(connectionId) {
       threadId: record.walletChallenge.threadId,
       sentAt: record.walletChallenge.sentAt,
       subject: record.oidc?.claims?.email || record.oidc?.claims?.sub || 'unknown-subject',
-      issuer: record.oidc?.claims?.iss || record.oidc?.issuer
+      issuer: record.oidc?.claims?.iss || record.oidc?.issuer,
+      appName: 'OIDC Wallet Demo',
+      action: 'sign-in',
+      challengeType: 'authentication',
+      title: 'OIDC Wallet Demo: Sign In',
+      detail: `${record.oidc?.claims?.email || record.oidc?.claims?.sub || 'unknown-subject'} must accept a sign-in challenge.`,
+      acceptPath: `/api/oidc-wallet/challenges/${record.id}/accept`,
+      payloadFields: [
+        { key: 'appName', value: 'OIDC Wallet Demo' },
+        { key: 'action', value: 'sign-in' },
+        { key: 'sessionId', value: record.id },
+        { key: 'issuer', value: record.oidc?.claims?.iss || record.oidc?.issuer || '' }
+      ]
     }));
+  const externalChallenges = await listPendingExternalWalletChallenges(connectionId);
+  return [...oidcChallenges, ...externalChallenges];
 }
 
 async function updateSession(sessionId, updater) {

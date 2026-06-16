@@ -203,6 +203,12 @@ private struct TransactionRow: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            if let appName = transaction.appName {
+                Text("\(appName) - \(transaction.action ?? "challenge")")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(VanguardTheme.blue)
+            }
+
             if let remoteId = transaction.remoteId {
                 Text(remoteId)
                     .font(.caption.monospaced())

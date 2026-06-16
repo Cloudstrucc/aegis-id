@@ -16,6 +16,7 @@ const subscriptionRoutes = require('./routes/subscriptions');
 const organizationRoutes = require('./routes/organizations');
 const dashboardRoutes = require('./routes/dashboard');
 const orgAdminRoutes = require('./routes/org-admin');
+const oidcProviderRoutes = require('./routes/oidc-provider');
 const apiRoutes = require('./routes/api');
 const oidcWalletDemoRoutes = require('./routes/oidc-wallet-demo');
 const issuerOrganizationRoutes = require('./routes/issuer-organizations');
@@ -107,6 +108,7 @@ function createApp() {
   app.use('/', organizationRoutes);
   app.use('/', dashboardRoutes);
   app.use('/', orgAdminRoutes);
+  app.use('/', oidcProviderRoutes);
   app.use('/', issuerOrganizationRoutes);
   app.use('/', oidcWalletDemoRoutes);
   app.use('/api', apiRoutes);

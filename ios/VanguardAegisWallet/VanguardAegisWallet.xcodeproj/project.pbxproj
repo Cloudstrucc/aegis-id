@@ -23,6 +23,7 @@
 		A10000000000000000000014 /* vanguard-logo.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* vanguard-logo.png */; };
 		A10000000000000000000015 /* vanguard-logo@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* vanguard-logo@2x.png */; };
 		A10000000000000000000016 /* vanguard-logo@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* vanguard-logo@3x.png */; };
+		A10000000000000000000017 /* LedgerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* LedgerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +45,7 @@
 		A20000000000000000000016 /* vanguard-logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vanguard-logo.png"; sourceTree = "<group>"; };
 		A20000000000000000000017 /* vanguard-logo@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vanguard-logo@2x.png"; sourceTree = "<group>"; };
 		A20000000000000000000018 /* vanguard-logo@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vanguard-logo@3x.png"; sourceTree = "<group>"; };
+		A20000000000000000000019 /* LedgerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LedgerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +131,7 @@
 				A40000000000000000000009 /* Home */,
 				A40000000000000000000010 /* Scan */,
 				A40000000000000000000013 /* Organizations */,
+				A40000000000000000000015 /* Ledger */,
 				A40000000000000000000011 /* Connections */,
 				A40000000000000000000012 /* Settings */,
 			);
@@ -165,6 +168,14 @@
 				A20000000000000000000015 /* OrganizationsView.swift */,
 			);
 			path = Organizations;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000015 /* Ledger */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000019 /* LedgerView.swift */,
+			);
+			path = Ledger;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000012 /* Settings */ = {
@@ -267,6 +278,7 @@
 				A10000000000000000000008 /* HomeView.swift in Sources */,
 				A10000000000000000000009 /* ScanView.swift in Sources */,
 				A10000000000000000000013 /* OrganizationsView.swift in Sources */,
+				A10000000000000000000017 /* LedgerView.swift in Sources */,
 				A10000000000000000000010 /* ConnectionsView.swift in Sources */,
 				A10000000000000000000011 /* SettingsView.swift in Sources */,
 			);

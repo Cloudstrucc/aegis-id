@@ -37,10 +37,13 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
   const {
     acceptCoAdminChallenge,
     createRole,
+    createOrgUnit,
+    grantCredentialConsent,
     getOrganizationProfile,
     getOrgAdminView,
     issueCredential,
     markCredentialAccepted,
+    requestCredentialConsent,
     requestCoAdmin,
     revokeCredential,
     updateBranding
@@ -58,10 +61,20 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
     textColor: '#182334',
     logoDataUrl: 'data:image/png;base64,aGVsbG8='
   });
+  const division = await createOrgUnit(workspace, subscription, {
+    name: 'Finance',
+    parentId: 'unit-root',
+    roleIds: [role.id],
+    claimKeys: ['department', 'assuranceLevel']
+  });
 
   const credential = await issueCredential(workspace, subscription, {
     holderEmail: 'holder@vanguardcs.ca',
     displayName: 'Vanguard Holder',
+    personType: 'contractor',
+    divisionId: division.id,
+    inviteTtlDays: '14',
+    requestedClaimKeys: ['email', 'department'],
     roleIds: ['role-employee', role.id],
     claim_displayName: 'Vanguard Holder',
     claim_email: 'holder@vanguardcs.ca',
@@ -69,8 +82,19 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
     claim_employmentStatus: 'active'
   });
   assert.equal(credential.status, 'invited');
+  assert.equal(credential.personType, 'contractor');
+  assert.equal(credential.divisionId, division.id);
+  assert.equal(credential.inviteTtlDays, 14);
+  assert.equal(credential.consent.requestedClaimKeys.includes('department'), true);
 
   await markCredentialAccepted(workspace, subscription, credential.id);
+  await requestCredentialConsent(workspace, subscription, credential.id, {
+    requestedClaimKeys: ['email', 'department', 'assuranceLevel']
+  });
+  await grantCredentialConsent(workspace, subscription, credential.id, {
+    sharedClaimKeys: ['email', 'department', 'assuranceLevel'],
+    consent_claim_assuranceLevel: 'LAB_SIMULATOR'
+  });
   const coAdminRequest = await requestCoAdmin(workspace, subscription, credential.id);
   await acceptCoAdminChallenge(workspace, subscription, coAdminRequest.id, 'admin');
   await acceptCoAdminChallenge(workspace, subscription, coAdminRequest.id, 'holder');
@@ -79,6 +103,11 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
   const activeCredential = adminView.credentials.find((item) => item.id === credential.id);
   assert.equal(activeCredential.status, 'active');
   assert.equal(activeCredential.coAdminStatus, 'approved');
+  assert.equal(activeCredential.personTypeLabel, 'Contractor');
+  assert.equal(activeCredential.divisionName, 'Finance');
+  assert.equal(activeCredential.consentStatusLabel, 'Consent granted');
+  assert.equal(adminView.orgChartNodes.some((node) => node.name === 'Finance'), true);
+  assert.equal(adminView.peopleTable.filteredCount, 1);
   assert.equal(adminView.coAdminCount, 1);
   assert.equal(adminView.customPaletteSelected, true);
 
@@ -87,12 +116,16 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
   assert.equal(profile.branding.primaryColor, '#123456');
   assert.equal(profile.credentials[0].roles.some((item) => item.name === 'Privileged Operator'), true);
   assert.equal(profile.credentials[0].claims.department, 'Security');
+  assert.equal(profile.credentials[0].consent.sharedClaims.assuranceLevel, 'LAB_SIMULATOR');
+  assert.equal(profile.credentials[0].divisionName, 'Finance');
+  assert.equal(profile.orgUnits.some((node) => node.name === 'Finance'), true);
 
   const events = JSON.parse(await fs.readFile(process.env.ORG_ADMIN_EVENT_STORE_PATH, 'utf8'));
   const walletChallengeEvents = events.filter((event) => event.type === 'wallet.challenge.sent');
-  assert.equal(walletChallengeEvents.length, 3);
+  assert.equal(walletChallengeEvents.length, 4);
   assert.equal(walletChallengeEvents.every((event) => event.data.immutable === true), true);
   assert.equal(walletChallengeEvents.filter((event) => String(event.data.challenge).startsWith('coadmin-')).length, 2);
+  assert.equal(walletChallengeEvents.some((event) => event.data.challenge === 'claim-consent'), true);
 
   await revokeCredential(workspace, subscription, credential.id, 'Pilot complete');
   const revokedProfile = await getOrganizationProfile(workspace.id);

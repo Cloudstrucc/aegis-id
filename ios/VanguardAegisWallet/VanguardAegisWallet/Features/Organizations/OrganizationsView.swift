@@ -84,6 +84,8 @@ private struct OrganizationRow: View {
             return VanguardTheme.green
         case .challengeReceived, .readyForDidExchange:
             return VanguardTheme.blue
+        case .disabled:
+            return .gray
         case .failed:
             return .red
         case .invitationReceived:
@@ -114,6 +116,27 @@ private struct OrganizationDetailView: View {
             }
 
             if let profile {
+                if organization.latestState == .disabled {
+                    Section {
+                        Label {
+                            Text("This organization is disabled in your wallet because its credential access has been revoked. It remains visible for audit history and portability.")
+                                .font(.subheadline)
+                        } icon: {
+                            Image(systemName: "lock.slash")
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+
+                let units = profile.orgUnits ?? []
+                if !units.isEmpty {
+                    Section("Organization structure") {
+                        ForEach(units) { unit in
+                            OrgUnitRow(unit: unit, roles: profile.roles, claims: profile.claimDefinitions)
+                        }
+                    }
+                }
+
                 Section("Credentials and claims") {
                     ForEach(profile.credentials) { credential in
                         CredentialProfileCard(credential: credential, claimDefinitions: profile.claimDefinitions)
@@ -268,6 +291,56 @@ private struct OrganizationLogo: View {
     }
 }
 
+private struct OrgUnitRow: View {
+    var unit: OrganizationUnit
+    var roles: [OrganizationRole]
+    var claims: [OrganizationClaimDefinition]
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .fill(unit.depth == 0 ? VanguardTheme.blue : VanguardTheme.green)
+                .frame(width: 4, height: 48)
+                .padding(.leading, CGFloat(unit.depth ?? 0) * 14)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(unit.name)
+                        .font(.headline)
+                    Spacer()
+                    Text("\(unit.credentialCount ?? 0)")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                }
+
+                if let path = unit.path, !path.isEmpty {
+                    Text(path)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                let labels = roleLabels + claimLabels
+                if !labels.isEmpty {
+                    FlowLayout(items: labels)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var roleLabels: [String] {
+        (unit.roleIds ?? []).compactMap { roleId in
+            roles.first(where: { $0.id == roleId })?.name
+        }
+    }
+
+    private var claimLabels: [String] {
+        (unit.claimKeys ?? []).map { key in
+            claims.first(where: { $0.key == key })?.label ?? key
+        }
+    }
+}
+
 private struct CredentialProfileCard: View {
     var credential: OrganizationCredential
     var claimDefinitions: [OrganizationClaimDefinition]
@@ -299,6 +372,26 @@ private struct CredentialProfileCard: View {
             }
 
             VStack(spacing: 8) {
+                ProfileInfoRow(label: "Person type", value: credential.personType?.capitalized ?? "Employee")
+                ProfileInfoRow(label: "Division", value: credential.divisionName ?? "Organization")
+                if let expiresAt = credential.inviteExpiresAt {
+                    ProfileInfoRow(label: "Invite expires", value: expiresAt.prefix(10).description)
+                }
+                if let consent = credential.consent {
+                    ProfileInfoRow(label: "Consent", value: consent.status.capitalized)
+                    if !consent.requestedClaimKeys.isEmpty {
+                        ProfileInfoRow(label: "Requested", value: labels(for: consent.requestedClaimKeys).joined(separator: ", "))
+                    }
+                    if !consent.sharedClaims.isEmpty {
+                        ProfileInfoRow(label: "Shared", value: labels(for: Array(consent.sharedClaims.keys)).joined(separator: ", "))
+                    }
+                    if let deltaClaims = consent.deltaClaims, !deltaClaims.isEmpty {
+                        ProfileInfoRow(label: "Delta", value: labels(for: deltaClaims).joined(separator: ", "))
+                    }
+                }
+            }
+
+            VStack(spacing: 8) {
                 ForEach(claimRows, id: \.key) { row in
                     HStack(alignment: .top) {
                         Text(row.label)
@@ -321,8 +414,16 @@ private struct CredentialProfileCard: View {
             return VanguardTheme.green
         case "revoked":
             return .red
+        case "invited" where credential.inviteExpired == true:
+            return .orange
         default:
             return VanguardTheme.blue
+        }
+    }
+
+    private func labels(for keys: [String]) -> [String] {
+        keys.map { key in
+            claimDefinitions.first(where: { $0.key == key })?.label ?? key
         }
     }
 
@@ -358,6 +459,23 @@ private struct OrganizationMetricRow: View {
         } icon: {
             Image(systemName: systemImage)
                 .foregroundStyle(VanguardTheme.blue)
+        }
+    }
+}
+
+private struct ProfileInfoRow: View {
+    var label: String
+    var value: String
+
+    var body: some View {
+        HStack(alignment: .top) {
+            Text(label)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 118, alignment: .leading)
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

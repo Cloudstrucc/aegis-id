@@ -85,6 +85,23 @@ struct LabAgentClient {
         ) as OIDCWalletChallengeAcceptance
     }
 
+    func acceptWalletChallenge(acceptPath: String) async throws {
+        let trimmed = acceptPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let url: URL
+        if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
+            guard let absolute = URL(string: trimmed) else {
+                throw LabAgentError.invalidURL
+            }
+            url = absolute
+        } else {
+            url = webAppURL.appending(path: trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
+        }
+        _ = try await post(
+            url,
+            body: try JSONEncoder().encode(["source": "ios-wallet"])
+        ) as OIDCWalletChallengeAcceptance
+    }
+
     func registerIssuerOrganizationConnection(
         organizationId: String,
         holderConnectionId: String,
@@ -289,6 +306,15 @@ struct OIDCWalletChallenge: Decodable, Hashable {
     var subject: String
     var organizationName: String
     var issuer: String?
+    var appName: String?
+    var action: String?
+    var challengeType: String?
+    var resourceType: String?
+    var resourceId: String?
+    var title: String?
+    var detail: String?
+    var acceptPath: String?
+    var payloadFields: [WalletChallengePayloadField]?
 }
 
 struct OIDCWalletChallengeAcceptance: Decodable {

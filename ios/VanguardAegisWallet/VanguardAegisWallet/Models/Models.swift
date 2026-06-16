@@ -43,12 +43,21 @@ struct CredentialOrganization: Identifiable, Hashable {
     var latestUpdatedAt: Date
 }
 
+struct WalletChallengeBanner: Identifiable, Equatable {
+    var id = UUID()
+    var count: Int
+    var title: String
+    var detail: String
+    var receivedAt = Date()
+}
+
 struct OrganizationProfile: Codable, Equatable, Identifiable {
     var organizationId: String
     var organizationName: String
     var branding: OrganizationBranding
     var roles: [OrganizationRole]
     var claimDefinitions: [OrganizationClaimDefinition]
+    var orgUnits: [OrganizationUnit]?
     var credentials: [OrganizationCredential]
 
     var id: String { organizationId }
@@ -78,15 +87,43 @@ struct OrganizationClaimDefinition: Codable, Equatable, Identifiable, Hashable {
     var defaultValue: String?
 }
 
+struct OrganizationUnit: Codable, Equatable, Identifiable, Hashable {
+    var id: String
+    var name: String
+    var parentId: String?
+    var description: String?
+    var roleIds: [String]?
+    var claimKeys: [String]?
+    var depth: Int?
+    var path: String?
+    var credentialCount: Int?
+}
+
 struct OrganizationCredential: Codable, Equatable, Identifiable {
     var id: String
     var holderEmail: String
     var displayName: String
+    var personType: String?
+    var divisionId: String?
+    var divisionName: String?
     var status: String
+    var inviteTtlDays: Int?
+    var inviteExpiresAt: String?
+    var inviteExpired: Bool?
     var roles: [OrganizationRole]
     var claims: [String: String]
+    var consent: OrganizationClaimConsent?
     var coAdminStatus: String?
     var updatedAt: String?
+}
+
+struct OrganizationClaimConsent: Codable, Equatable {
+    var status: String
+    var requestedClaimKeys: [String]
+    var sharedClaims: [String: String]
+    var deltaClaims: [String]?
+    var requestedAt: String?
+    var grantedAt: String?
 }
 
 enum WalletConnectionState: String, Codable, Hashable, CaseIterable {
@@ -95,6 +132,7 @@ enum WalletConnectionState: String, Codable, Hashable, CaseIterable {
     case connected
     case credentialOffered
     case challengeReceived
+    case disabled
     case failed
 
     var title: String {
@@ -109,6 +147,8 @@ enum WalletConnectionState: String, Codable, Hashable, CaseIterable {
             return "Credential offered"
         case .challengeReceived:
             return "Challenge received"
+        case .disabled:
+            return "Disabled"
         case .failed:
             return "Needs attention"
         }
@@ -126,6 +166,8 @@ enum WalletConnectionState: String, Codable, Hashable, CaseIterable {
             return "person.text.rectangle"
         case .challengeReceived:
             return "bolt.shield"
+        case .disabled:
+            return "lock.slash"
         case .failed:
             return "exclamationmark.triangle"
         }
@@ -141,6 +183,12 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
     var detail: String
     var remoteId: String?
     var webSessionId: String?
+    var webAcceptPath: String?
+    var appName: String?
+    var action: String?
+    var resourceType: String?
+    var resourceId: String?
+    var payloadFields: [WalletChallengePayloadField]?
     var createdAt: Date
     var updatedAt: Date
 
@@ -151,7 +199,13 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
         title: String,
         detail: String,
         remoteId: String? = nil,
-        webSessionId: String? = nil
+        webSessionId: String? = nil,
+        webAcceptPath: String? = nil,
+        appName: String? = nil,
+        action: String? = nil,
+        resourceType: String? = nil,
+        resourceId: String? = nil,
+        payloadFields: [WalletChallengePayloadField]? = nil
     ) {
         self.id = UUID()
         self.connectionId = connectionId
@@ -161,9 +215,22 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
         self.detail = detail
         self.remoteId = remoteId
         self.webSessionId = webSessionId
+        self.webAcceptPath = webAcceptPath
+        self.appName = appName
+        self.action = action
+        self.resourceType = resourceType
+        self.resourceId = resourceId
+        self.payloadFields = payloadFields
         self.createdAt = Date()
         self.updatedAt = Date()
     }
+}
+
+struct WalletChallengePayloadField: Codable, Equatable, Hashable, Identifiable {
+    var key: String
+    var value: String
+
+    var id: String { key }
 }
 
 enum WalletTransactionType: String, Codable, Hashable, CaseIterable {

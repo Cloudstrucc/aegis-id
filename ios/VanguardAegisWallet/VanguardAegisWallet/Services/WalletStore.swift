@@ -8,14 +8,14 @@ final class WalletStore: ObservableObject {
     @Published var lastImportError: String?
     @Published var lastLabMessage: String?
     @Published var lastLabError: String?
+    @Published var challengeBanner: WalletChallengeBanner?
     @Published private(set) var organizationProfiles: [String: OrganizationProfile] = [:]
 
     private let storageKey = "vanguard.aegis.wallet.connections"
     private let transactionsStorageKey = "vanguard.aegis.wallet.transactions"
     private let organizationProfilesStorageKey = "vanguard.aegis.wallet.organization-profiles"
-    private let legacyStorageKey = "cloudstrucc.aegis.wallet.connections"
-    private let legacyTransactionsStorageKey = "cloudstrucc.aegis.wallet.transactions"
     private let labClient = LabAgentClient()
+    private var isAutoRefreshingChallenges = false
 
     init() {
         load()
@@ -61,6 +61,10 @@ final class WalletStore: ObservableObject {
         connections.first(where: { $0.id == id })
     }
 
+    func transaction(id: UUID) -> WalletTransaction? {
+        transactions.first(where: { $0.id == id })
+    }
+
     func transactions(for connection: WalletConnection) -> [WalletTransaction] {
         transactions.filter { $0.connectionId == connection.id }
     }
@@ -82,23 +86,34 @@ final class WalletStore: ObservableObject {
         transactions.filter { $0.status == .pendingAcceptance || $0.status == .received }.count
     }
 
+    var pendingChallengeCount: Int {
+        transactions.filter { $0.type == .challenge && $0.status == .pendingAcceptance }.count
+    }
+
     var credentialOrganizations: [CredentialOrganization] {
         let grouped = Dictionary(grouping: connections, by: organizationKey)
         return grouped.map { key, items in
             let itemIds = Set(items.map(\.id))
             let orgTransactions = transactions.filter { itemIds.contains($0.connectionId) }
             let latestConnection = items.max { $0.updatedAt < $1.updatedAt }
+            let profile = organizationProfiles[key]
+            let profileCredentialCount = profile?.credentials.count ?? 0
+            let profileDisabled = profileCredentialCount > 0 && (profile?.credentials.allSatisfy { $0.status == "revoked" } == true)
             return CredentialOrganization(
                 id: key,
-                name: organizationName(for: items.first),
+                name: profile?.organizationName ?? organizationName(for: items.first),
                 connectionCount: items.count,
-                credentialCount: orgTransactions.filter { $0.type == .credential }.count,
+                credentialCount: profileCredentialCount > 0 ? profileCredentialCount : orgTransactions.filter { $0.type == .credential }.count,
                 challengeCount: orgTransactions.filter { $0.type == .challenge }.count,
-                latestState: latestConnection?.state ?? .invitationReceived,
+                latestState: profileDisabled ? .disabled : latestConnection?.state ?? .invitationReceived,
                 latestUpdatedAt: latestConnection?.updatedAt ?? Date.distantPast
             )
         }
         .sorted { $0.latestUpdatedAt > $1.latestUpdatedAt }
+    }
+
+    func dismissChallengeBanner() {
+        challengeBanner = nil
     }
 
     func acceptLatestInvitationInLab() async {
@@ -201,37 +216,55 @@ final class WalletStore: ObservableObject {
     func refreshOIDCWalletChallenges(_ connection: WalletConnection) async {
         clearLabMessages()
 
-        guard let issuerConnectionId = current(connection)?.issuerConnectionId else {
+        guard current(connection)?.issuerConnectionId != nil else {
             lastLabError = "Accept the invitation before checking web app challenges."
             return
         }
 
         do {
-            let challenges = try await labClient.fetchOIDCWalletChallenges(issuerConnectionId: issuerConnectionId)
-            var added = 0
-            for challenge in challenges where !transactions.contains(where: { $0.webSessionId == challenge.sessionId }) {
-                addTransaction(
-                    connectionId: connection.id,
-                    type: .challenge,
-                    status: .pendingAcceptance,
-                    title: "OIDC wallet challenge",
-                    detail: "\(challenge.organizationName) sign-in challenge for \(challenge.subject)",
-                    remoteId: challenge.nonce,
-                    webSessionId: challenge.sessionId
-                )
-                added += 1
-            }
-
-            if added > 0 {
-                update(connection) { item in
-                    item.state = .challengeReceived
-                }
-                lastLabMessage = "\(added) web app challenge\(added == 1 ? "" : "s") received."
+            let added = try await importOIDCWalletChallenges(for: connection)
+            if !added.isEmpty {
+                showChallengeBanner(for: added)
+                lastLabMessage = "\(added.count) web app challenge\(added.count == 1 ? "" : "s") received."
             } else {
                 lastLabMessage = "No pending web app challenges."
             }
         } catch {
             lastLabError = error.localizedDescription
+        }
+    }
+
+    func autoRefreshOIDCWalletChallenges() async {
+        guard !isAutoRefreshingChallenges else {
+            return
+        }
+
+        let refreshableConnections = connections.filter { $0.issuerConnectionId != nil }
+        guard !refreshableConnections.isEmpty else {
+            return
+        }
+
+        isAutoRefreshingChallenges = true
+        defer { isAutoRefreshingChallenges = false }
+
+        var addedTransactions: [WalletTransaction] = []
+        for connection in refreshableConnections {
+            if Task.isCancelled {
+                return
+            }
+
+            do {
+                addedTransactions.append(contentsOf: try await importOIDCWalletChallenges(for: connection))
+            } catch is CancellationError {
+                return
+            } catch {
+                continue
+            }
+        }
+
+        if !addedTransactions.isEmpty {
+            showChallengeBanner(for: addedTransactions)
+            lastLabMessage = "\(addedTransactions.count) new wallet challenge\(addedTransactions.count == 1 ? "" : "s") received."
         }
     }
 
@@ -262,7 +295,9 @@ final class WalletStore: ObservableObject {
                     content: "Vanguard Aegis ID Wallet simulator accepted challenge \(transaction.remoteId ?? transaction.id.uuidString)."
                 )
             }
-            if let webSessionId = transaction.webSessionId {
+            if let webAcceptPath = transaction.webAcceptPath {
+                try await labClient.acceptWalletChallenge(acceptPath: webAcceptPath)
+            } else if let webSessionId = transaction.webSessionId {
                 try await labClient.acceptOIDCWalletChallenge(sessionId: webSessionId)
             }
 
@@ -320,6 +355,56 @@ final class WalletStore: ObservableObject {
         }
     }
 
+    private func importOIDCWalletChallenges(for connection: WalletConnection) async throws -> [WalletTransaction] {
+        guard let issuerConnectionId = current(connection)?.issuerConnectionId else {
+            return []
+        }
+
+        let challenges = try await labClient.fetchOIDCWalletChallenges(issuerConnectionId: issuerConnectionId)
+        var addedTransactions: [WalletTransaction] = []
+
+        for challenge in challenges where !transactions.contains(where: { $0.webSessionId == challenge.sessionId }) {
+            let transaction = WalletTransaction(
+                connectionId: connection.id,
+                type: .challenge,
+                status: .pendingAcceptance,
+                title: challenge.title ?? "\(challenge.appName ?? "Connected app") wallet challenge",
+                detail: challenge.detail ?? "\(challenge.organizationName) \(challenge.action ?? "sign-in") challenge for \(challenge.subject)",
+                remoteId: challenge.nonce,
+                webSessionId: challenge.sessionId,
+                webAcceptPath: challenge.acceptPath,
+                appName: challenge.appName,
+                action: challenge.action,
+                resourceType: challenge.resourceType,
+                resourceId: challenge.resourceId,
+                payloadFields: challenge.payloadFields
+            )
+            transactions.insert(transaction, at: 0)
+            addedTransactions.append(transaction)
+        }
+
+        if !addedTransactions.isEmpty {
+            saveTransactions()
+            update(connection) { item in
+                item.state = .challengeReceived
+            }
+        }
+
+        return addedTransactions
+    }
+
+    private func showChallengeBanner(for transactions: [WalletTransaction]) {
+        guard let latest = transactions.first else {
+            return
+        }
+
+        challengeBanner = WalletChallengeBanner(
+            count: transactions.count,
+            title: transactions.count == 1 ? latest.title : "\(transactions.count) wallet challenges received",
+            detail: latest.detail
+        )
+    }
+
     private func organizationKey(for connection: WalletConnection) -> String {
         connection.invitation.organizationId ?? connection.invitation.organizationName ?? connection.invitation.label
     }
@@ -345,7 +430,13 @@ final class WalletStore: ObservableObject {
         title: String,
         detail: String,
         remoteId: String? = nil,
-        webSessionId: String? = nil
+        webSessionId: String? = nil,
+        webAcceptPath: String? = nil,
+        appName: String? = nil,
+        action: String? = nil,
+        resourceType: String? = nil,
+        resourceId: String? = nil,
+        payloadFields: [WalletChallengePayloadField]? = nil
     ) {
         transactions.insert(
             WalletTransaction(
@@ -355,7 +446,13 @@ final class WalletStore: ObservableObject {
                 title: title,
                 detail: detail,
                 remoteId: remoteId,
-                webSessionId: webSessionId
+                webSessionId: webSessionId,
+                webAcceptPath: webAcceptPath,
+                appName: appName,
+                action: action,
+                resourceType: resourceType,
+                resourceId: resourceId,
+                payloadFields: payloadFields
             ),
             at: 0
         )
@@ -406,7 +503,7 @@ final class WalletStore: ObservableObject {
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) ?? UserDefaults.standard.data(forKey: legacyStorageKey) else {
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else {
             return
         }
 
@@ -428,7 +525,7 @@ final class WalletStore: ObservableObject {
     }
 
     private func loadTransactions() {
-        guard let data = UserDefaults.standard.data(forKey: transactionsStorageKey) ?? UserDefaults.standard.data(forKey: legacyTransactionsStorageKey) else {
+        guard let data = UserDefaults.standard.data(forKey: transactionsStorageKey) else {
             return
         }
 

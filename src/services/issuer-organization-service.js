@@ -19,12 +19,6 @@ async function createIssuerOrganizationInvitation(subscription, workspace) {
         subscriptionId: subscription.id,
         organizationId,
         organizationName
-      },
-      cloudstrucc: {
-        type: 'issuer-organization',
-        subscriptionId: subscription.id,
-        organizationId,
-        organizationName
       }
     }
   });
@@ -32,10 +26,7 @@ async function createIssuerOrganizationInvitation(subscription, workspace) {
   const decoratedInvitationUrl = decorateInvitationUrl(invitation.invitationUrl, {
     vanguard_org_id: organizationId,
     vanguard_subscription_id: subscription.id,
-    vanguard_org_name: organizationName,
-    cloudstrucc_org_id: organizationId,
-    cloudstrucc_subscription_id: subscription.id,
-    cloudstrucc_org_name: organizationName
+    vanguard_org_name: organizationName
   });
   const iosDeepLinkUrl = createIosWalletDeepLink(decoratedInvitationUrl);
   const now = new Date().toISOString();

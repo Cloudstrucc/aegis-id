@@ -1345,6 +1345,223 @@ textarea:focus {
   border-radius: 8px;
 }
 
+.form-note {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.structure-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 18px;
+  align-items: start;
+  margin: 24px 0;
+}
+
+.org-chart-canvas {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+  background:
+    linear-gradient(#e7eef6 1px, transparent 1px),
+    linear-gradient(90deg, #e7eef6 1px, transparent 1px),
+    #f8fbff;
+  background-size: 28px 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.org-node {
+  position: relative;
+  display: grid;
+  width: min(520px, calc(100% - (var(--depth) * 34px)));
+  min-width: 250px;
+  gap: 7px;
+  margin-left: calc(var(--depth) * 34px);
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #cddbea;
+  border-left: 5px solid var(--blue-600);
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(13, 42, 74, 0.08);
+}
+
+.org-node::before {
+  position: absolute;
+  top: 22px;
+  left: -34px;
+  display: block;
+  width: 28px;
+  height: 2px;
+  background: #9eb6cc;
+  content: "";
+}
+
+.org-node[style*="--depth: 0"]::before {
+  display: none;
+}
+
+.org-node strong {
+  color: var(--navy-900);
+  font-size: 16px;
+}
+
+.org-node span,
+.org-node small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.people-directory {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.people-directory__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr);
+  gap: 18px;
+  align-items: end;
+}
+
+.people-directory__head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.people-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(130px, 0.7fr) minmax(130px, 0.7fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.people-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.people-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.people-table th,
+.people-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.people-table th {
+  color: var(--navy-900);
+  background: #f4f8fb;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.people-table th a,
+.people-table td a {
+  color: var(--blue-600);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.people-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.status-pill {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.status-pill--active,
+.status-pill--accepted {
+  color: #075f3f;
+  background: #e8fff4;
+  border-color: #9de8c6;
+}
+
+.status-pill--invited,
+.status-pill--sent,
+.status-pill--consent {
+  color: #153e78;
+  background: #eef6ff;
+  border-color: #b8d6f4;
+}
+
+.status-pill--revoked {
+  color: #84251c;
+  background: #fff0ee;
+  border-color: #f0b5ae;
+}
+
+.tag-row--compact span {
+  min-height: 24px;
+  padding: 3px 7px;
+  font-size: 11px;
+}
+
+.people-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.empty-table-note {
+  margin: 0;
+  padding: 18px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.consent-panel,
+.consent-actions {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px;
+  background: #f8fbff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.consent-panel h4 {
+  margin: 0;
+  color: var(--navy-900);
+}
+
+.consent-panel p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .event-list {
   display: grid;
   max-height: 430px;
@@ -1812,6 +2029,9 @@ textarea:focus {
   .platform-grid,
   .admin-grid,
   .credential-grid,
+  .structure-layout,
+  .people-directory__head,
+  .people-filters,
   .organization-grid,
   .issuer-org-layout,
   .oidc-flow-grid,
@@ -1828,6 +2048,10 @@ textarea:focus {
 
   .claim-edit-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .people-filters {
+    align-items: stretch;
   }
 
   .wizard-rail {

@@ -20,6 +20,7 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 - Redacted audit event storage.
 - Subscriber dashboard with setup wizards for Microsoft Verified ID, Keycloak, Okta, and generic OIDC/SAML.
 - OIDC + wallet challenge example relying-party app.
+- Standalone Business Expenses app showing Aegis ID OIDC plus wallet-signed approve/reject decisions.
 - ACA-Py Docker Compose lab and helper scripts.
 - Native SwiftUI iOS Aries wallet starter for Vanguard Cloud Services lab invitations.
 - Azure App Service Bicep baseline targeting the Free `F1` tier where available.
@@ -61,6 +62,7 @@ YubiKey is still important, but it solves a different problem: phishing-resistan
 ├── aries-lab/                 # ACA-Py Docker Compose and admin helper scripts
 ├── data/                      # Local JSON stores, ignored except .gitkeep
 ├── docs/                      # Operator, architecture, Azure, Aries, and security docs
+├── examples/business-expenses # Standalone OIDC + wallet-signature business app
 ├── infra/bicep/               # Azure App Service infrastructure baseline
 ├── ios/                       # Vanguard Aegis ID Wallet SwiftUI starter
 ├── public/                    # Styles, scripts, and generated hero image
@@ -171,6 +173,17 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
    ```
 
    Complete mock OIDC login, send the wallet challenge, fetch it in the iOS wallet, accept it, and confirm the browser opens the protected app.
+
+8. Test the standalone Business Expenses app:
+
+   ```bash
+   cd /Users/frederickpearson/repos/aegis-id/examples/business-expenses
+   cp .env.example .env
+   npm install
+   npm run dev
+   ```
+
+   Set `AEGIS_ORGANIZATION_ID` in `.env` to the org workspace whose issuer invitation was accepted by the iOS wallet. Open `http://localhost:4300`, sign in with Aegis ID, fetch and accept the wallet challenge in the iOS wallet, then approve or reject an expense. The resulting wallet signature appears in the Business Expenses ledger, the Aegis ID organization dashboard, and the iOS wallet Ledger tab.
 
 ## Main Routes
 

@@ -73,6 +73,28 @@
               <input id="displayName" name="displayName" type="text" value="Vanguard Team Member" required>
             </div>
           </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="personType">Person type</label>
+              <select id="personType" name="personType" title="Classifies the holder for directory filtering and default role workflows.">
+                {{#each orgAdmin.personTypes}}
+                  <option value="{{id}}">{{name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="divisionId">Division / sub-organization</label>
+              <select id="divisionId" name="divisionId" title="Places this credential in the organization's division tree.">
+                {{#each orgAdmin.orgUnitOptions}}
+                  <option value="{{id}}">{{indentedName}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="inviteTtlDays">Invite expiry days</label>
+              <input id="inviteTtlDays" name="inviteTtlDays" type="number" min="1" max="365" value="7" title="Default is 7 days. Override this for contractors or time-sensitive onboarding.">
+            </div>
+          </div>
           <div class="checkbox-grid">
             {{#each orgAdmin.roles}}
               <label class="checkline">
@@ -80,6 +102,17 @@
                 <span>{{name}}</span>
               </label>
             {{/each}}
+          </div>
+          <div>
+            <p class="form-note">Claims requested by wallet consent challenge</p>
+            <div class="checkbox-grid">
+              {{#each orgAdmin.claimConsentOptions}}
+                <label class="checkline" title="The holder must consent before this organization can use this claim.">
+                  <input type="checkbox" name="requestedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
+                  <span>{{label}}</span>
+                </label>
+              {{/each}}
+            </div>
           </div>
           <div class="claim-edit-grid">
             {{#each orgAdmin.claimDefinitions}}
@@ -118,6 +151,175 @@
     </article>
   {{/if}}
 
+  <div id="org-structure" class="structure-layout">
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">ORG</span>
+        <div>
+          <span class="track-label">Sub-organizations</span>
+          <h3>Organization structure</h3>
+        </div>
+      </div>
+      <div class="org-chart-canvas" aria-label="Organization structure tree">
+        {{#each orgAdmin.orgChartNodes}}
+          <div class="org-node" style="--depth: {{depth}};">
+            <strong>{{name}}</strong>
+            <span>{{path}}</span>
+            <small>{{credentialCount}} credential{{#unless (eq credentialCount 1)}}s{{/unless}}</small>
+            <div class="tag-row">
+              {{#each roleLabels}}
+                <span>{{this}}</span>
+              {{/each}}
+              {{#each claimLabels}}
+                <span>{{this}}</span>
+              {{/each}}
+            </div>
+            {{#if ../orgAdmin.isAdmin}}
+              {{#unless (eq id "unit-root")}}
+                <form action="{{../dashboardBasePath}}/admin/org-units/{{id}}/delete" method="post">
+                  <button class="button button--ghost" type="submit">Delete Node</button>
+                </form>
+              {{/unless}}
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    </article>
+
+    {{#if orgAdmin.isAdmin}}
+      <article class="platform-card">
+        <div class="platform-card__head">
+          <span class="platform-icon">DIV</span>
+          <div>
+            <span class="track-label">Org chart editor</span>
+            <h3>Add a division</h3>
+          </div>
+        </div>
+        <form class="wizard-form" action="{{dashboardBasePath}}/admin/org-units" method="post">
+          <div class="field-row">
+            <div class="field-group">
+              <label for="orgUnitName">Division name</label>
+              <input id="orgUnitName" name="name" type="text" placeholder="Finance, HR, Delivery">
+            </div>
+            <div class="field-group">
+              <label for="orgUnitParent">Parent node</label>
+              <select id="orgUnitParent" name="parentId">
+                {{#each orgAdmin.orgUnitOptions}}
+                  <option value="{{id}}">{{indentedName}}</option>
+                {{/each}}
+              </select>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="orgUnitDescription">Description</label>
+            <textarea id="orgUnitDescription" name="description" rows="3" placeholder="Optional privileges or business context."></textarea>
+          </div>
+          <div>
+            <p class="form-note">Default roles for this node</p>
+            <div class="checkbox-grid">
+              {{#each orgAdmin.roles}}
+                <label class="checkline">
+                  <input type="checkbox" name="roleIds" value="{{id}}">
+                  <span>{{name}}</span>
+                </label>
+              {{/each}}
+            </div>
+          </div>
+          <div>
+            <p class="form-note">Claims normally requested in this node</p>
+            <div class="checkbox-grid">
+              {{#each orgAdmin.claimDefinitions}}
+                <label class="checkline">
+                  <input type="checkbox" name="claimKeys" value="{{key}}">
+                  <span>{{label}}</span>
+                </label>
+              {{/each}}
+            </div>
+          </div>
+          <button class="button button--primary button--blue" type="submit">Add Division</button>
+        </form>
+      </article>
+    {{/if}}
+  </div>
+
+  <div id="people-directory" class="people-directory">
+    <div class="people-directory__head">
+      <div>
+        <p class="eyebrow">People directory</p>
+        <h3>Credential holders and invitations</h3>
+        <p>{{orgAdmin.peopleTable.pageSummary}} people shown. Invitations default to 7 days unless overridden.</p>
+      </div>
+      <form class="people-filters" action="{{dashboardBasePath}}" method="get">
+        <input name="peopleSearch" type="search" value="{{orgAdmin.peopleTable.search}}" placeholder="Search people, email, role">
+        <select name="peopleStatus">
+          {{#each orgAdmin.peopleTable.statusOptions}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+        <select name="peopleType">
+          {{#each orgAdmin.peopleTable.personTypeOptions}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+        <button class="button button--secondary button--dark-text" type="submit">Apply</button>
+      </form>
+    </div>
+
+    <div class="people-table-wrap">
+      <table class="people-table">
+        <thead>
+          <tr>
+            <th><a href="{{orgAdmin.peopleTable.sortLinks.displayName}}">Name</a></th>
+            <th><a href="{{orgAdmin.peopleTable.sortLinks.holderEmail}}">Email</a></th>
+            <th>Type</th>
+            <th><a href="{{orgAdmin.peopleTable.sortLinks.divisionName}}">Division</a></th>
+            <th>Roles</th>
+            <th><a href="{{orgAdmin.peopleTable.sortLinks.status}}">Status</a></th>
+            <th><a href="{{orgAdmin.peopleTable.sortLinks.inviteExpiresAt}}">Invite expiry</a></th>
+            <th><a href="{{orgAdmin.peopleTable.sortLinks.consent}}">Consent</a></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each orgAdmin.peopleTable.rows}}
+            <tr>
+              <td><a href="#credential-{{id}}">{{displayName}}</a></td>
+              <td>{{holderEmail}}</td>
+              <td>{{personTypeLabel}}</td>
+              <td>{{divisionName}}</td>
+              <td>
+                <div class="tag-row tag-row--compact">
+                  {{#each roleLabels}}
+                    <span>{{this}}</span>
+                  {{/each}}
+                </div>
+              </td>
+              <td><span class="status-pill status-pill--{{status}}">{{statusLabel}}</span></td>
+              <td>
+                {{inviteExpiresLabel}}
+                {{#if inviteExpired}}
+                  <span class="status-pill status-pill--revoked">Expired</span>
+                {{/if}}
+              </td>
+              <td><span class="status-pill status-pill--consent">{{consentStatusLabel}}</span></td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      {{#if orgAdmin.peopleTable.empty}}
+        <p class="empty-table-note">No credential holders match these filters.</p>
+      {{/if}}
+    </div>
+    <div class="people-pagination">
+      {{#if orgAdmin.peopleTable.hasPrevious}}
+        <a class="button button--secondary button--dark-text" href="{{orgAdmin.peopleTable.previousUrl}}">Previous</a>
+      {{/if}}
+      <span>Page {{orgAdmin.peopleTable.page}} of {{orgAdmin.peopleTable.pageCount}}</span>
+      {{#if orgAdmin.peopleTable.hasNext}}
+        <a class="button button--secondary button--dark-text" href="{{orgAdmin.peopleTable.nextUrl}}">Next</a>
+      {{/if}}
+    </div>
+  </div>
+
   <div class="credential-grid">
     {{#each orgAdmin.credentials}}
       <article id="credential-{{id}}" class="credential-card credential-card--{{status}}">
@@ -131,12 +333,16 @@
         </div>
 
         <div class="tag-row">
+          <span>{{personTypeLabel}}</span>
+          <span>{{divisionName}}</span>
+          <span>Invite expires {{inviteExpiresLabel}}</span>
           {{#each roleLabels}}
             <span>{{this}}</span>
           {{/each}}
           {{#if coAdminStatus}}
             <span>Co-admin: {{coAdminStatus}}</span>
           {{/if}}
+          <span>{{consentStatusLabel}}</span>
         </div>
 
         <details>
@@ -149,6 +355,28 @@
               </div>
             {{/each}}
           </dl>
+          <div class="consent-panel">
+            <h4>Consent-scoped claims</h4>
+            <p>Only claims granted by the holder are available to this organization context.</p>
+            <div class="tag-row">
+              {{#each requestedClaimLabels}}
+                <span>Requested: {{this}}</span>
+              {{/each}}
+              {{#each deltaClaimLabels}}
+                <span>Delta supplied: {{this}}</span>
+              {{/each}}
+            </div>
+            {{#if sharedClaimFields}}
+              <dl class="claim-list">
+                {{#each sharedClaimFields}}
+                  <div>
+                    <dt>{{label}}</dt>
+                    <dd>{{value}}</dd>
+                  </div>
+                {{/each}}
+              </dl>
+            {{/if}}
+          </div>
           <div class="event-list event-list--compact">
             {{#each events}}
               <details>
@@ -172,6 +400,26 @@
                   <label for="name-{{id}}">Display name</label>
                   <input id="name-{{id}}" name="displayName" type="text" value="{{displayName}}">
                 </div>
+                <div class="field-group">
+                  <label for="type-{{id}}">Person type</label>
+                  <select id="type-{{id}}" name="personType">
+                    {{#each personTypeOptions}}
+                      <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label for="division-{{id}}">Division</label>
+                  <select id="division-{{id}}" name="divisionId">
+                    {{#each divisionOptions}}
+                      <option value="{{id}}" {{#if selected}}selected{{/if}}>{{indentedName}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label for="ttl-{{id}}">Invite expiry days</label>
+                  <input id="ttl-{{id}}" name="inviteTtlDays" type="number" min="1" max="365" value="{{inviteTtlDays}}">
+                </div>
               </div>
               <div class="checkbox-grid">
                 {{#each availableRoles}}
@@ -189,8 +437,50 @@
                   </div>
                 {{/each}}
               </div>
+              <div>
+                <p class="form-note">Claims to request by wallet consent challenge</p>
+                <div class="checkbox-grid">
+                  {{#each consentClaimFields}}
+                    <label class="checkline">
+                      <input type="checkbox" name="requestedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
+                      <span>{{label}}</span>
+                    </label>
+                  {{/each}}
+                </div>
+              </div>
               <button class="button button--primary button--blue" type="submit">Update Claims and Roles</button>
             </form>
+
+            <div class="consent-actions">
+              <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/consent/request" method="post">
+                <p class="form-note">Send a wallet challenge requesting consent to share these claims with {{organizationName}}.</p>
+                <div class="checkbox-grid">
+                  {{#each consentClaimFields}}
+                    <label class="checkline">
+                      <input type="checkbox" name="requestedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
+                      <span>{{label}}</span>
+                    </label>
+                  {{/each}}
+                </div>
+                <button class="button button--secondary button--dark-text" type="submit">Request Claim Consent</button>
+              </form>
+
+              <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/consent/grant" method="post">
+                <p class="form-note">Lab simulator: record holder consent and optional delta claim values.</p>
+                <div class="claim-edit-grid">
+                  {{#each consentClaimFields}}
+                    <div class="field-group">
+                      <label for="consent-{{../id}}-{{key}}">
+                        <input type="checkbox" name="sharedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
+                        {{label}}
+                      </label>
+                      <input id="consent-{{../id}}-{{key}}" name="consent_claim_{{key}}" type="{{type}}" value="{{value}}">
+                    </div>
+                  {{/each}}
+                </div>
+                <button class="button button--primary button--blue" type="submit">Simulate Wallet Consent</button>
+              </form>
+            </div>
 
             <div class="credential-actions">
               {{#if (eq status "invited")}}
@@ -226,6 +516,73 @@
         {{/if}}
       </article>
     {{/each}}
+  </div>
+</section>
+
+<section id="external-wallet-ledger" class="band band--light">
+  <div class="section-heading">
+    <p class="eyebrow">External app ledger</p>
+    <h2>High-assurance wallet challenges from connected applications.</h2>
+    <p>Authentication, approvals, rejections, and contract-style decisions are captured here with immutable wallet payloads for organization reporting.</p>
+  </div>
+
+  <div class="people-directory">
+    <div class="people-directory__head">
+      <div>
+        <p class="eyebrow">Reporting</p>
+        <h3>Recent wallet-signed actions</h3>
+        <p>These records are created by apps such as Business Expenses when they request a wallet signature.</p>
+      </div>
+      <a class="button button--secondary button--dark-text" href="#issuer-orgs">Connect issuing org</a>
+    </div>
+
+    {{#if hasWalletChallengeLedger}}
+      <div class="people-table-wrap">
+        <table class="people-table">
+          <thead>
+            <tr>
+              <th>Application</th>
+              <th>Subject</th>
+              <th>Action</th>
+              <th>Resource</th>
+              <th>Status</th>
+              <th>Timestamp</th>
+              <th>Payload</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each walletChallengeLedger}}
+              <tr>
+                <td>{{appName}}</td>
+                <td>{{subject}}</td>
+                <td>{{action}}</td>
+                <td>{{resourceType}} {{resourceId}}</td>
+                <td><span class="status-pill status-pill--{{status}}">{{status}}</span></td>
+                <td>{{createdAt}}</td>
+                <td>
+                  <details>
+                    <summary>{{challengeId}}</summary>
+                    <dl class="claim-list">
+                      {{#each payloadFields}}
+                        <div>
+                          <dt>{{key}}</dt>
+                          <dd>{{value}}</dd>
+                        </div>
+                      {{/each}}
+                    </dl>
+                  </details>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    {{else}}
+      <article class="note-panel">
+        <strong>No external wallet challenge records yet.</strong>
+        <span>Run the Business Expenses example, sign in with Aegis ID, then approve or reject an expense with the iOS wallet.</span>
+      </article>
+    {{/if}}
   </div>
 </section>
 

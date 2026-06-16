@@ -1,0 +1,71 @@
+<section class="container-fluid py-4 px-lg-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+      <span class="badge text-bg-primary">Protected application</span>
+      <h1 class="mt-2 mb-1">Expense records</h1>
+      <p class="text-muted mb-0">Approvals and rejections require a wallet challenge that acts like a high-assurance signature.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <form action="/expenses/random" method="post">
+        <button class="btn btn-primary" type="submit" aria-label="Add random expense">
+          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+          Expense
+        </button>
+      </form>
+      <a class="btn btn-outline-primary" href="/ledger">View ledger</a>
+    </div>
+  </div>
+
+  {{#if createdExpenseId}}
+    <div class="alert alert-success d-flex align-items-center gap-2" role="status">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      <span>Added random expense <strong>{{createdExpenseId}}</strong>.</span>
+    </div>
+  {{/if}}
+
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Requester</th>
+            <th>Department</th>
+            <th>Vendor</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th class="text-end">Wallet action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each expenses}}
+            <tr>
+              <td><code>{{id}}</code></td>
+              <td>{{requester}}</td>
+              <td>{{department}}</td>
+              <td>{{vendor}}</td>
+              <td>{{category}}</td>
+              <td>{{money amount currency}}</td>
+              <td>
+                <span class="badge status-{{status}}">{{status}}</span>
+              </td>
+              <td class="text-end">
+                {{#if (eq status "pending")}}
+                  <form class="d-inline" action="/expenses/{{id}}/approve" method="post">
+                    <button class="btn btn-success btn-sm" type="submit">Approve</button>
+                  </form>
+                  <form class="d-inline" action="/expenses/{{id}}/reject" method="post">
+                    <button class="btn btn-outline-danger btn-sm" type="submit">Reject</button>
+                  </form>
+                {{else}}
+                  <span class="text-muted">{{decidedBy}}</span>
+                {{/if}}
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

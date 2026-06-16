@@ -1,0 +1,22 @@
+{
+  "name": "vanguard-aegis-business-expenses",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone Business Expenses app that uses Aegis ID OIDC and wallet challenges for high-assurance decisions.",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.19.0",
+    "hbs": "^4.2.0",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0"
+  }
+}

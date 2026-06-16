@@ -127,6 +127,14 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
           value: '${dataRoot}/oidc-wallet-sessions.json'
         }
         {
+          name: 'OIDC_CODE_STORE_PATH'
+          value: '${dataRoot}/oidc-codes.json'
+        }
+        {
+          name: 'WALLET_CHALLENGE_STORE_PATH'
+          value: '${dataRoot}/wallet-challenges.json'
+        }
+        {
           name: 'AUDIT_STORE_PATH'
           value: '${dataRoot}/audit-events.json'
         }

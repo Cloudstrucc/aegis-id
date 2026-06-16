@@ -1,0 +1,39 @@
+body {
+  background: #f5f8fb;
+}
+
+.hero {
+  min-height: calc(100vh - 56px);
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(15, 79, 168, 0.94), rgba(20, 149, 102, 0.88)),
+    radial-gradient(circle at 78% 24%, rgba(255, 255, 255, 0.22), transparent 28%),
+    #0f4fa8;
+}
+
+.hero .card {
+  color: #172033;
+}
+
+.status-pending,
+.status-pending-wallet,
+.status-sent {
+  color: #153e78;
+  background: #e9f3ff;
+}
+
+.status-approved,
+.status-wallet-accepted,
+.status-accepted {
+  color: #075f3f;
+  background: #dff8ec;
+}
+
+.status-rejected {
+  color: #8a2118;
+  background: #ffe5e2;
+}
+
+pre {
+  white-space: pre-wrap;
+}
