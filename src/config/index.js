@@ -32,6 +32,7 @@ const config = {
   },
   auth: {
     sessionSecret: process.env.SESSION_SECRET || 'dev-change-this-session-secret',
+    defaultMfaMethod: process.env.DEFAULT_MFA_METHOD || 'email',
     passkeyRpName: process.env.PASSKEY_RP_NAME || 'Vanguard Cloud Services - Aegis ID',
     passkeyRpId: process.env.PASSKEY_RP_ID || '',
     passkeyOrigin: process.env.PASSKEY_ORIGIN || ''

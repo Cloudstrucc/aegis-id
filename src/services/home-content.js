@@ -1,3 +1,5 @@
+const config = require('../config');
+
 function getHomeContent(overrides = {}) {
   return {
     title: 'Vanguard Cloud Services - Aegis ID',
@@ -47,7 +49,7 @@ function getHomeContent(overrides = {}) {
       role: '',
       plan: 'pilot',
       interest: 'both',
-      preferredMfa: 'email'
+      preferredMfa: config.auth.defaultMfaMethod
     },
     formErrors: {},
     ...overrides

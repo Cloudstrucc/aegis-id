@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @EnvironmentObject private var store: WalletStore
@@ -29,7 +30,8 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
-                    StatusBadge(text: "Vanguard Cloud Services", systemImage: "cloud.fill", tint: VanguardTheme.cyan)
+                    VanguardLogoImage()
+
                     Text("Aegis ID Wallet")
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
@@ -39,19 +41,6 @@ struct HomeView: View {
                 }
 
                 Spacer()
-
-                Text("V")
-                    .font(.title.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 54, height: 54)
-                    .background(
-                        LinearGradient(
-                            colors: [VanguardTheme.cyan, VanguardTheme.green],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
 
             HStack(spacing: 10) {
@@ -222,6 +211,31 @@ private struct HeroPill: View {
         .padding(12)
         .background(.white.opacity(0.10))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private struct VanguardLogoImage: View {
+    var body: some View {
+        if let image = Self.logoImage {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 254, height: 62, alignment: .leading)
+                .clipped()
+                .accessibilityLabel("Vanguard Cloud Services")
+        } else {
+            Text("Vanguard Cloud Services")
+                .font(.headline.bold())
+                .foregroundStyle(.white)
+                .accessibilityLabel("Vanguard Cloud Services")
+        }
+    }
+
+    private static var logoImage: UIImage? {
+        guard let path = Bundle.main.path(forResource: "vanguard-logo", ofType: "png") else {
+            return UIImage(named: "vanguard-logo")
+        }
+        return UIImage(contentsOfFile: path)
     }
 }
 

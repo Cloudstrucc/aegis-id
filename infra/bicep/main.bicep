@@ -11,10 +11,20 @@ param skuName string = 'F1'
 param skuTier string = 'Free'
 
 @description('Node runtime for App Service Linux.')
-param linuxFxVersion string = 'NODE|20-lts'
+param linuxFxVersion string = 'NODE|22-lts'
 
 @description('Public base URL for callbacks. Set to https://<appName>.azurewebsites.net after deployment unless using a custom domain.')
 param publicBaseUrl string = 'https://${appName}.azurewebsites.net'
+
+@secure()
+@description('Express session secret for Passport.js authenticated sessions.')
+param sessionSecret string
+
+@description('Azure tenant ID used later for Microsoft Entra Verified ID live mode. The first deployment still runs in VID_MODE=mock.')
+param azureTenantId string = ''
+
+var defaultHostName = '${appName}.azurewebsites.net'
+var dataRoot = '/home/data'
 
 resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: '${appName}-plan'
@@ -45,6 +55,10 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
       minTlsVersion: '1.2'
       appSettings: [
         {
+          name: 'PORT'
+          value: '8080'
+        }
+        {
           name: 'NODE_ENV'
           value: 'production'
         }
@@ -55,6 +69,66 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'VID_MODE'
           value: 'mock'
+        }
+        {
+          name: 'AZURE_TENANT_ID'
+          value: azureTenantId
+        }
+        {
+          name: 'SESSION_SECRET'
+          value: sessionSecret
+        }
+        {
+          name: 'DEFAULT_MFA_METHOD'
+          value: 'passkey'
+        }
+        {
+          name: 'PASSKEY_RP_NAME'
+          value: 'Vanguard Cloud Services - Aegis ID'
+        }
+        {
+          name: 'PASSKEY_RP_ID'
+          value: defaultHostName
+        }
+        {
+          name: 'PASSKEY_ORIGIN'
+          value: publicBaseUrl
+        }
+        {
+          name: 'USER_STORE_PATH'
+          value: '${dataRoot}/users.json'
+        }
+        {
+          name: 'SUBSCRIPTION_STORE_PATH'
+          value: '${dataRoot}/subscriptions.json'
+        }
+        {
+          name: 'SUBSCRIBER_WORKSPACE_STORE_PATH'
+          value: '${dataRoot}/subscriber-workspaces.json'
+        }
+        {
+          name: 'TRANSACTION_STORE_PATH'
+          value: '${dataRoot}/transactions.json'
+        }
+        {
+          name: 'ISSUER_ORG_STORE_PATH'
+          value: '${dataRoot}/issuer-organizations.json'
+        }
+        {
+          name: 'ORG_ADMIN_STORE_PATH'
+          value: '${dataRoot}/org-admin.json'
+        }
+        {
+          name: 'ORG_ADMIN_EVENT_STORE_PATH'
+          value: '${dataRoot}/org-admin-events.json'
+        }
+        {
+          name: 'OIDC_WALLET_SESSION_STORE_PATH'
+          value: '${dataRoot}/oidc-wallet-sessions.json'
+        }
+        {
+          name: 'AUDIT_STORE_PATH'
+          value: '${dataRoot}/audit-events.json'
         }
         {
           name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'

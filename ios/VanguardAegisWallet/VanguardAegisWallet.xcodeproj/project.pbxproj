@@ -20,6 +20,9 @@
 		A10000000000000000000010 /* ConnectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* ConnectionsView.swift */; };
 		A10000000000000000000011 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* SettingsView.swift */; };
 		A10000000000000000000013 /* OrganizationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* OrganizationsView.swift */; };
+		A10000000000000000000014 /* vanguard-logo.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* vanguard-logo.png */; };
+		A10000000000000000000015 /* vanguard-logo@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* vanguard-logo@2x.png */; };
+		A10000000000000000000016 /* vanguard-logo@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* vanguard-logo@3x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +41,9 @@
 		A20000000000000000000013 /* VanguardAegisWallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VanguardAegisWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000014 /* LabAgentClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabAgentClient.swift; sourceTree = "<group>"; };
 		A20000000000000000000015 /* OrganizationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationsView.swift; sourceTree = "<group>"; };
+		A20000000000000000000016 /* vanguard-logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vanguard-logo.png"; sourceTree = "<group>"; };
+		A20000000000000000000017 /* vanguard-logo@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vanguard-logo@2x.png"; sourceTree = "<group>"; };
+		A20000000000000000000018 /* vanguard-logo@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vanguard-logo@3x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +73,7 @@
 				A40000000000000000000006 /* Models */,
 				A40000000000000000000007 /* Services */,
 				A40000000000000000000008 /* Features */,
+				A40000000000000000000014 /* Resources */,
 				A20000000000000000000012 /* Info.plist */,
 			);
 			path = VanguardAegisWallet;
@@ -168,6 +175,16 @@
 			path = Settings;
 			sourceTree = "<group>";
 		};
+		A40000000000000000000014 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000016 /* vanguard-logo.png */,
+				A20000000000000000000017 /* vanguard-logo@2x.png */,
+				A20000000000000000000018 /* vanguard-logo@3x.png */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -226,6 +243,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000014 /* vanguard-logo.png in Resources */,
+				A10000000000000000000015 /* vanguard-logo@2x.png in Resources */,
+				A10000000000000000000016 /* vanguard-logo@3x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

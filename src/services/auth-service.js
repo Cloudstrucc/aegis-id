@@ -66,7 +66,7 @@ function validateRegistration(input = {}) {
     phone: normalizePhone(input.phone),
     password: String(input.password || ''),
     confirmPassword: String(input.confirmPassword || ''),
-    preferredMfa: mfaMethods.has(input.preferredMfa) ? input.preferredMfa : 'email',
+    preferredMfa: mfaMethods.has(input.preferredMfa) ? input.preferredMfa : defaultMfaMethod(),
     organization: normalizeText(input.organization, 160),
     plan: input.plan || 'pilot',
     interest: input.interest || 'both'
@@ -350,6 +350,10 @@ function validationError(message) {
   const error = new Error(message);
   error.status = 422;
   return error;
+}
+
+function defaultMfaMethod() {
+  return mfaMethods.has(config.auth.defaultMfaMethod) ? config.auth.defaultMfaMethod : 'email';
 }
 
 function normalizeEmail(value = '') {

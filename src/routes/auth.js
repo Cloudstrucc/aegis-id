@@ -1,6 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 
+const config = require('../config');
 const {
   createOtpChallenge,
   finishPasskeyAuthentication,
@@ -224,7 +225,7 @@ function buildRegisterView(req, overrides = {}) {
     organization: '',
     plan: 'pilot',
     interest: 'both',
-    preferredMfa: 'email',
+    preferredMfa: config.auth.defaultMfaMethod,
     ...(req.session?.subscriptionDraft || {}),
     ...(overrides.formValues || {})
   };

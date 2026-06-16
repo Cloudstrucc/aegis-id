@@ -1,6 +1,6 @@
 # Azure Deployment
 
-The app is designed to run as a Node.js Express app on Azure App Service. Microsoft Learn currently documents an App Service Free tier path for Node.js/Express quickstarts, and the Bicep template defaults to `F1`.
+The app is designed to run as a Node.js Express app on Azure App Service. Microsoft Learn currently documents an App Service Free tier path for Node.js/Express quickstarts, and the Bicep template defaults to `F1`. The Azure Linux runtime currently uses Node 22 LTS, which satisfies the app's Node `>=20` engine requirement.
 
 ## Free-Tier Fit
 
@@ -8,7 +8,9 @@ The free-friendly baseline includes:
 
 - Azure App Service Free `F1` for the public Node.js/HBS app.
 - `VID_MODE=mock` for landing page, subscription capture, onboarding wizard, and local request demos.
-- File-backed subscription and transaction capture under `data/`.
+- Passport.js subscriber registration with passkey MFA as the Azure pilot default.
+- Email/SMS MFA UI is present, but production delivery needs a provider such as Azure Communication Services, Microsoft Graph mail, SendGrid, or Twilio before selecting those methods.
+- File-backed user, subscription, organization, and transaction capture under `/home/data`.
 - No App Insights, Key Vault, database, private networking, or custom domain required for the first pilot.
 
 Items that can move the solution out of free-tier territory:
@@ -33,7 +35,10 @@ az group create \
 az deployment group create \
   --resource-group rg-vanguard-aegis-id \
   --template-file infra/bicep/main.bicep \
-  --parameters appName="<globally-unique-app-name>"
+  --parameters \
+    appName="<globally-unique-app-name>" \
+    sessionSecret="<strong-random-session-secret>" \
+    azureTenantId="<tenant-id>"
 ```
 
 Deploy the application package:
@@ -42,7 +47,7 @@ Deploy the application package:
 npm ci
 npm test
 zip -r aegis-id.zip . \
-  -x "node_modules/*" ".git/*" ".env" "data/*.json" "tmp/*"
+  -x "node_modules/*" ".git/*" ".env" "data/*.json" "tmp/*" "ios/*" "aries-lab/*"
 
 az webapp deploy \
   --resource-group rg-vanguard-aegis-id \

@@ -495,7 +495,10 @@ az group create --name rg-vanguard-aegis-id --location canadacentral
 az deployment group create \
   --resource-group rg-vanguard-aegis-id \
   --template-file infra/bicep/main.bicep \
-  --parameters appName="<globally-unique-app-name>"
+  --parameters \
+    appName="<globally-unique-app-name>" \
+    sessionSecret="<strong-random-session-secret>" \
+    azureTenantId="<tenant-id>"
 ```
 
 Deploy a zip package:
@@ -503,7 +506,7 @@ Deploy a zip package:
 ```bash
 npm ci
 npm test
-zip -r aegis-id.zip . -x "node_modules/*" ".git/*" ".env" "data/*.json" "tmp/*"
+zip -r aegis-id.zip . -x "node_modules/*" ".git/*" ".env" "data/*.json" "tmp/*" "ios/*" "aries-lab/*"
 az webapp deploy \
   --resource-group rg-vanguard-aegis-id \
   --name "<globally-unique-app-name>" \
