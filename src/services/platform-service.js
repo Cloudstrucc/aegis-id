@@ -6,6 +6,48 @@ const { buildDemoEmployeeClaims, getPresentationPolicy } = require('./credential
 const store = new FileJsonStore(config.paths.subscriberWorkspaces, []);
 
 const DEFAULT_REQUIRED_CLAIMS = 'employeeId, displayName, email, department, role, assuranceLevel, employmentStatus';
+const FIELD_HELP_TEXT = {
+  adminDomain: 'Enter the primary verified domain in the Entra tenant, for example cloudstrucc.com. This should match or support the Verified ID linked domain.',
+  attestationType: 'Choose how claims are supplied to the credential. Use ID token hint for this app because Aegis ID sends claim values in the issuance request.',
+  azureAppName: 'Enter the display name of the Entra app registration that will call the Verified ID Request Service API.',
+  azureClientId: 'Paste the Application (client) ID from the Entra app registration.',
+  azureTenantId: 'Paste the Directory (tenant) ID for the Cloudstrucc Inc. Entra tenant.',
+  baseUrl: 'Enter the root URL of the Keycloak server, without the realm path.',
+  callbackApiKeyReference: 'Enter the App Service setting or Key Vault secret name that stores VID_CALLBACK_API_KEY for callback verification.',
+  callbackOrAcsUrl: 'Enter the OIDC callback URL or SAML Assertion Consumer Service URL registered with the identity provider.',
+  claimMappings: 'Map provider-specific claim names on the left to Aegis ID normalized claim names on the right, one mapping per line.',
+  clientId: 'Enter the OIDC client ID or SAML entity ID assigned to this Aegis ID integration.',
+  clientSecretReference: 'Enter the secret store reference for the client secret. Do not paste the secret itself into the wizard.',
+  credentialDisplayName: 'Enter the user-facing name shown in the wallet for this credential.',
+  credentialType: 'Enter the exact credential type configured in Microsoft Entra Verified ID, for example CloudstruccEmployeeCredential.',
+  didMethod: 'Select the DID method used by the Verified ID organization. did:web is easiest to inspect and align with a linked domain.',
+  groupsFilter: 'Enter the Okta group naming pattern or expression that should be released as groups or entitlements.',
+  issuerUrl: 'Enter the OIDC issuer URL. For Okta this is usually the authorization server URL, such as https://example.okta.com/oauth2/default.',
+  keyVaultName: 'Enter the Key Vault name or reference used by Entra Verified ID to protect signing keys.',
+  keyVaultPermissionModel: 'Use Vault access policy for current Verified ID setup guidance unless your tenant setup explicitly supports RBAC for this flow.',
+  linkedDomain: 'Enter the trusted domain linked to the Verified ID organization. This should be verified in DNS and visible to wallet users.',
+  manifestUrl: 'Paste the credential manifest URL from the Verified ID portal after creating the credential contract.',
+  metadataUrl: 'Optionally enter the exact OIDC discovery URL or SAML metadata URL. If blank, Aegis ID derives OIDC metadata where possible.',
+  oktaOrgUrl: 'Enter the base URL of the Okta organization, such as https://example.okta.com.',
+  oneTimeClientSecret: 'Paste the Entra app client secret only for this live test request. Aegis ID does not persist this value.',
+  optionalClaims: 'List additional claims that may be issued or mapped later, separated by commas or lines.',
+  presentationRules: 'Enter simple authorization rules that describe which returned credential claims should grant access.',
+  protocol: 'Choose whether this integration should validate OIDC discovery metadata or SAML metadata.',
+  providerName: 'Enter the display name for the identity provider, such as Ping, Auth0, OneLogin, or an internal IdP.',
+  publicBaseUrl: 'Enter the public HTTPS URL where this app is reachable. Microsoft Verified ID callbacks and mobile wallet scans cannot use localhost.',
+  realm: 'Enter the Keycloak realm name that contains users, clients, roles, and protocol mappers.',
+  redirectUri: 'Enter the redirect URI registered on the provider for this Aegis ID relying-party app.',
+  requestServicePermission: 'Enter the Microsoft Verified ID Request Service API application permission granted to the app registration. Use VerifiableCredential.Create.All for issuance and presentation testing.',
+  requiredClaims: 'List claims that must be present for issuance, presentation, or policy evaluation. Separate with commas or lines.',
+  sampleSubjectEmail: 'Enter the test subject email that should be placed into the demo credential claims during a live or mock test.',
+  secretOrCertReference: 'Enter the secret, certificate, or signing key reference used for this relying-party registration. Do not paste private material.',
+  secretReference: 'Enter where the client secret is stored, such as an App Service setting or Key Vault secret reference. Do not paste the secret here.',
+  setupMode: 'Choose Advanced setup for tenant testing because it exposes Key Vault, DID, and linked-domain settings needed for production-like validation.',
+  tenantDisplayName: 'Enter the friendly tenant name shown to operators, for example Cloudstrucc Inc.',
+  testMode: 'Choose Mock to validate local UI behavior, or Live to call Microsoft Entra Verified ID with tenant configuration.',
+  verifiedIdAdminRole: 'Enter the Entra role assigned to the operator completing Verified ID setup. Authentication Policy Administrator is commonly required.',
+  verifiedIdAuthorityDid: 'Paste the issuer authority DID from the Verified ID portal. This is the DID the verifier should trust.'
+};
 
 function getPlatformDefinitions() {
   return [
@@ -19,22 +61,24 @@ function getPlatformDefinitions() {
       steps: [
         {
           id: 'tenant',
-          title: 'Tenant',
-          description: 'Identify the Entra tenant and setup path for this subscriber.',
+          title: 'Tenant & Prerequisites',
+          description: 'Confirm the Entra tenant, public callback host, admin role, and setup path before creating live Verified ID requests.',
           fields: [
             textField('tenantDisplayName', 'Tenant display name', 'Cloudstrucc Inc.'),
             textField('azureTenantId', 'Azure tenant ID'),
             textField('adminDomain', 'Primary verified domain', 'cloudstrucc.com'),
+            urlField('publicBaseUrl', 'Public HTTPS app URL', config.app.publicBaseUrl),
+            textField('verifiedIdAdminRole', 'Verified ID admin role', 'Authentication Policy Administrator'),
             selectField('setupMode', 'Verified ID setup mode', [
-              ['quick', 'Quick setup'],
-              ['advanced', 'Advanced setup with Key Vault']
+              ['advanced', 'Advanced setup with Key Vault'],
+              ['quick', 'Quick setup']
             ])
           ]
         },
         {
-          id: 'did-org',
-          title: 'DID Organization',
-          description: 'Capture the organization identity Aegis ID should trust for issuance and verification.',
+          id: 'verified-id-service',
+          title: 'Verified ID Service',
+          description: 'Record the Entra Verified ID organization, trusted domain, DID, and Key Vault values created in the portal.',
           fields: [
             textField('verifiedIdAuthorityDid', 'Issuer authority DID', 'did:web:cloudstrucc.com'),
             selectField('didMethod', 'DID method', [
@@ -42,29 +86,49 @@ function getPlatformDefinitions() {
               ['did:ion', 'did:ion'],
               ['managed', 'Microsoft-managed DID']
             ]),
-            textField('linkedDomain', 'Linked domain', 'cloudstrucc.com'),
-            textField('keyVaultName', 'Key Vault name or reference')
+            textField('linkedDomain', 'Trusted linked domain', 'cloudstrucc.com'),
+            textField('keyVaultName', 'Key Vault name or reference'),
+            selectField('keyVaultPermissionModel', 'Key Vault permission model', [
+              ['access-policy', 'Vault access policy'],
+              ['rbac', 'Azure RBAC']
+            ])
           ]
         },
         {
           id: 'app-registration',
           title: 'App Registration',
-          description: 'Record the non-secret app registration details used to call the Verified ID Request Service.',
+          description: 'Record the app registration and permission values used to call the Microsoft Verified ID Request Service API.',
           fields: [
+            textField('azureAppName', 'Application registration name', 'cloudstrucc-aegis-id-verified-id'),
             textField('azureClientId', 'Application client ID'),
+            textField('requestServicePermission', 'Request Service permission', 'VerifiableCredential.Create.All'),
             textField('secretReference', 'Client secret reference', 'Key Vault secret or App Service setting name'),
-            urlField('manifestUrl', 'Credential manifest URL'),
             textField('callbackApiKeyReference', 'Callback API key reference', 'VID_CALLBACK_API_KEY')
           ]
         },
         {
-          id: 'claims',
-          title: 'Claims',
-          description: 'Define the credential type and the claims Aegis ID should request, issue, and verify.',
+          id: 'credential-contract',
+          title: 'Credential Contract',
+          description: 'Capture the credential type, manifest URL, and attestation shape Aegis ID will use for issuance.',
           fields: [
             textField('credentialType', 'Credential type', 'CloudstruccEmployeeCredential'),
+            urlField('manifestUrl', 'Credential manifest URL'),
+            selectField('attestationType', 'Attestation type', [
+              ['idTokenHint', 'ID token hint'],
+              ['idToken', 'ID token'],
+              ['selfIssued', 'Self-issued']
+            ]),
+            textField('credentialDisplayName', 'Credential display name', 'Cloudstrucc Employee Credential')
+          ]
+        },
+        {
+          id: 'claims',
+          title: 'Claims & Policy',
+          description: 'Define the claims Aegis ID should issue, request during presentation, and evaluate for access decisions.',
+          fields: [
             textareaField('requiredClaims', 'Required claims', DEFAULT_REQUIRED_CLAIMS),
             textareaField('optionalClaims', 'Optional claims', 'manager, costCenter, region'),
+            textareaField('presentationRules', 'Presentation authorization rules', 'employmentStatus=active\nassuranceLevel=FIDO2_YUBIKEY'),
             textField('sampleSubjectEmail', 'Sample test subject email', 'identity@cloudstrucc.com')
           ]
         },
@@ -616,25 +680,29 @@ function statusLabel(status) {
   );
 }
 
-function textField(name, label, defaultValue = '') {
-  return { type: 'text', name, label, defaultValue };
+function textField(name, label, defaultValue = '', helpText = '') {
+  return { type: 'text', name, label, defaultValue, helpText: helpText || fieldHelp(name) };
 }
 
-function passwordField(name, label) {
-  return { type: 'password', name, label, persist: false };
+function passwordField(name, label, helpText = '') {
+  return { type: 'password', name, label, helpText: helpText || fieldHelp(name), persist: false };
 }
 
-function urlField(name, label, defaultValue = '') {
-  return { type: 'url', name, label, defaultValue };
+function urlField(name, label, defaultValue = '', helpText = '') {
+  return { type: 'url', name, label, defaultValue, helpText: helpText || fieldHelp(name) };
 }
 
-function textareaField(name, label, defaultValue = '') {
-  return { type: 'textarea', name, label, defaultValue };
+function textareaField(name, label, defaultValue = '', helpText = '') {
+  return { type: 'textarea', name, label, defaultValue, helpText: helpText || fieldHelp(name) };
 }
 
-function selectField(name, label, pairs) {
+function selectField(name, label, pairs, helpText = '') {
   const options = pairs.map(([value, optionLabel]) => ({ value, label: optionLabel }));
-  return { type: 'select', name, label, options, defaultValue: options[0]?.value || '' };
+  return { type: 'select', name, label, options, defaultValue: options[0]?.value || '', helpText: helpText || fieldHelp(name) };
+}
+
+function fieldHelp(name) {
+  return FIELD_HELP_TEXT[name] || 'Enter the value provided by the identity platform administrator for this setup field.';
 }
 
 function normalizeFieldValue(value, field) {

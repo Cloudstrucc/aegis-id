@@ -1,5 +1,10 @@
 <div class="field-group">
-  <label for="{{name}}">{{label}}</label>
+  <label class="field-label" for="{{name}}">
+    <span>{{label}}</span>
+    {{#if helpText}}
+      <span class="field-tooltip" tabindex="0" aria-label="{{helpText}}" data-tooltip="{{helpText}}">?</span>
+    {{/if}}
+  </label>
   {{#if (eq type "textarea")}}
     <textarea id="{{name}}" name="{{name}}" rows="5">{{value}}</textarea>
   {{else if (eq type "select")}}

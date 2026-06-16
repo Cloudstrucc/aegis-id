@@ -36,7 +36,9 @@ test('wizard view does not prefill one-time Microsoft client secret', () => {
       }
     }
   };
-  const view = buildWizardView(subscription, workspace, 'microsoft-verified-id', 4);
+  const platform = getPlatformDefinition('microsoft-verified-id');
+  const testStepIndex = platform.steps.findIndex((step) => step.testStep);
+  const view = buildWizardView(subscription, workspace, 'microsoft-verified-id', testStepIndex);
   const secretField = view.currentStep.fields.find((field) => field.name === 'oneTimeClientSecret');
 
   assert.equal(secretField.value, '');
@@ -62,4 +64,16 @@ test('Microsoft platform has a live test step', () => {
 
   assert.equal(testStep.id, 'test');
   assert.equal(testStep.fields.some((field) => field.name === 'oneTimeClientSecret'), true);
+});
+
+test('all setup wizard fields include tooltip help text', () => {
+  for (const platformId of ['microsoft-verified-id', 'keycloak', 'okta', 'generic-oidc-saml']) {
+    const platform = getPlatformDefinition(platformId);
+    for (const step of platform.steps) {
+      for (const field of step.fields) {
+        assert.equal(typeof field.helpText, 'string', `${platformId}.${step.id}.${field.name}`);
+        assert.ok(field.helpText.length > 20, `${platformId}.${step.id}.${field.name}`);
+      }
+    }
+  }
 });
