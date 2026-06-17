@@ -15,6 +15,8 @@ It currently provides:
 - OIDC web-app challenge fetch and accept flow for `/demo/oidc-wallet`.
 - URL scheme hooks for `aegisid://` and `aegisid://`.
 
+Verified ID and YubiKey are web-app assurance methods in this demo. Microsoft Authenticator presents Verified ID credentials, and the browser performs YubiKey/FIDO2 WebAuthn step-up. The iOS wallet receives the downstream Aegis wallet challenge, signs the high-value action, and records the ledger event.
+
 It does not yet implement the full Aries wallet engine. The Lab Bridge calls local ACA-Py admin APIs from the simulator. A production Aries wallet still needs DIDComm transport, DIDExchange state machines, key management, secure storage, credential exchange, proof presentation, revocation handling, and protocol test coverage.
 
 ## Open And Build
@@ -74,7 +76,7 @@ Use this flow when testing the wallet side of Vanguard Cloud Services - Aegis ID
 
 When the invitation contains Vanguard Cloud Services org metadata, the simulator wallet registers the accepted holder/issuer connection back to the Express app. That makes the org available as an OIDC wallet challenge sender.
 
-After that, the simulator wallet can test mock credential issuance, local DIDComm challenges, and the OIDC web-app challenge flow.
+After that, the simulator wallet can test mock credential issuance, local DIDComm challenges, and web-app wallet challenge flows triggered after Verified ID or YubiKey assurance.
 
 ## Lab Credential And Challenge Flow
 
@@ -111,7 +113,15 @@ After OIDC login succeeds in the browser:
 5. Tap **Accept challenge** on the pending OIDC wallet challenge.
 6. The browser redirects to the protected app after the wallet callback succeeds.
 
-The simulator bridge uses `http://localhost:3000` for the Express app, `http://localhost:4011` for issuer admin, and `http://localhost:6011` for holder admin.
+The wallet uses the hosted Aegis ID web app by default:
+
+```text
+https://vanguard-aegis-id-65067d.azurewebsites.net
+```
+
+That default is stored as `AEGIS_WEB_APP_BASE_URL` in `VanguardAegisWallet/Info.plist`. Change that value only when intentionally testing a local web app.
+
+The simulator bridge still uses local ACA-Py admin URLs for DIDComm lab operations: `http://localhost:4011` for issuer admin and `http://localhost:6011` for holder admin. Those local admin URLs are simulator-lab controls and are not expected to work from a physical iPhone.
 
 ## Platform Coverage From The Wallet Perspective
 
@@ -135,3 +145,7 @@ The next implementation step is to connect the SwiftUI shell to an Aries engine.
 - Build a native DIDComm/Aries engine in Swift, starting with DIDExchange and OOB, then credential exchange and presentation exchange.
 
 For production, do not store keys or credentials in `UserDefaults`. Move wallet secrets into Keychain/Secure Enclave-backed storage and add backup/recovery policy before using real credentials.
+
+## TestFlight Release
+
+For business-colleague testing on physical iPhones, use the TestFlight runbook in [TESTFLIGHT_RELEASE.md](TESTFLIGHT_RELEASE.md).

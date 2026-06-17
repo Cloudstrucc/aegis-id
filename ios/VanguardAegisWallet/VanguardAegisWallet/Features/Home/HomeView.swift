@@ -35,7 +35,7 @@ struct HomeView: View {
                     Text("Aegis ID Wallet")
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
-                    Text("Hold lab credentials, accept issuer invitations, and respond to wallet challenges for enterprise identity pilots.")
+                    Text("Hold lab credentials, accept issuer invitations, and sign Aegis wallet challenges after Verified ID or YubiKey web assurance.")
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.84))
                 }
@@ -87,7 +87,7 @@ struct HomeView: View {
                     Text(connection.invitation.label)
                         .font(.title3.bold())
 
-                    Text("This invitation is saved locally. Accept it through the lab bridge before issuing credentials or fetching OIDC wallet challenges.")
+                    Text("This invitation is saved locally. Accept it through the lab bridge before issuing credentials or fetching web app wallet challenges.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title desc">
+  <title id="title">Cloudstrucc Verified ID compact cloud logo</title>
+  <desc id="desc">A compact blue and teal cloud mark with a white verification check.</desc>
+  <defs>
+    <linearGradient id="cloudstruccCompactGradient" x1="12" y1="24" x2="88" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2F7BFF"/>
+      <stop offset="0.55" stop-color="#16A7D5"/>
+      <stop offset="1" stop-color="#48D18A"/>
+    </linearGradient>
+  </defs>
+  <path
+    fill="url(#cloudstruccCompactGradient)"
+    d="M28.8 74.8c-11.9 0-21.6-9.2-21.6-20.5 0-10.3 8-18.8 18.6-20.3 4.5-9.5 14.8-15.7 26.4-15.7 15.2 0 27.7 10.6 29 24 6.6 3.2 10.8 9.6 10.8 16.8 0 8.7-7.4 15.7-16.6 15.7H28.8Z"/>
+  <path
+    fill="#FFFFFF"
+    d="M47.5 65.4c-1.6 0-3.1-.6-4.2-1.8L31.5 51.9a6 6 0 0 1 8.5-8.5l7.5 7.5 18.7-18.7a6 6 0 0 1 8.5 8.5l-22.9 22.9a6 6 0 0 1-4.3 1.8Z"/>
+</svg>

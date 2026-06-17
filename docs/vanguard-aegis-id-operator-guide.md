@@ -41,7 +41,7 @@ Vanguard Cloud Services - Aegis ID is a dual-track identity service for Vanguard
 | Track | Purpose | Wallet / Tooling | Production Posture |
 | --- | --- | --- | --- |
 | Microsoft-native path | Subscriber onboarding, DID organization setup, claims setup, issuance, and presentation with Microsoft Entra Verified ID | Microsoft Authenticator on iOS, Entra admin center, Azure App Service | Production target |
-| Aries interoperability lab | DIDComm, ACA-Py, Bifold/Credo-style lab flows, and proof experiments | Local ACA-Py agents and lab wallets | Research and interoperability only |
+| Aries interoperability lab | DIDComm, ACA-Py, Vanguard Aegis ID mobile app flows, and proof experiments | Local ACA-Py agents and the Aegis ID mobile app | Research and interoperability only |
 | Mock wallet path | Local development before live Verified ID is connected | Browser-based mock wallet pages under `/lab/mock-wallet/...` | Demo and developer testing only |
 
 ```mermaid
@@ -144,7 +144,7 @@ Main URLs:
 
 ### 4. Watch the setup video
 
-The home page has a **Watch video** button that opens the cartoon setup walkthrough.
+The home page has a **Watch video** button that opens the setup walkthrough.
 
 Local asset:
 
@@ -436,7 +436,7 @@ Use the lab for:
 
 - DIDComm experiments.
 - ACA-Py issuer/verifier testing.
-- Bifold/Credo-compatible wallet checks.
+- Vanguard Aegis ID mobile app wallet checks.
 - Schema and credential definition experiments.
 - Proof request experiments.
 

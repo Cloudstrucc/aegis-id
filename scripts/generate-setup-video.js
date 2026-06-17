@@ -9,41 +9,69 @@ const posterDir = path.join(root, 'public', 'images');
 const width = 1280;
 const height = 720;
 const fps = 24;
-const durationSeconds = 18;
+const durationSeconds = 30;
 const totalFrames = fps * durationSeconds;
 
 const scenes = [
   {
     start: 0,
-    end: 4.2,
+    end: 5,
     eyebrow: 'Step 1',
-    title: 'Subscribe',
-    copy: 'A subscriber starts a Cloudstrucc Aegis ID workspace.',
-    accent: '#00b7c7'
+    title: 'Create Account',
+    copy: 'A new subscriber opens the Vanguard Aegis ID website and creates a secure user account.',
+    accent: '#00b7c7',
+    visual: 'account',
+    laptopLabel: 'Website'
   },
   {
-    start: 4.2,
-    end: 8.7,
+    start: 5,
+    end: 10,
     eyebrow: 'Step 2',
-    title: 'Set Up Verified ID',
-    copy: 'The wizard captures tenant, DID organization, app registration, and claims.',
-    accent: '#1769e0'
+    title: 'Create Workspace',
+    copy: 'After sign-in, the subscriber registers an organization workspace and becomes the first administrator.',
+    accent: '#1769e0',
+    visual: 'workspace',
+    laptopLabel: 'Workspace'
   },
   {
-    start: 8.7,
-    end: 13.2,
+    start: 10,
+    end: 15,
     eyebrow: 'Step 3',
-    title: 'Test The Wallet Flow',
-    copy: 'Aegis ID creates issuance and presentation requests for a wallet test.',
-    accent: '#19b97a'
+    title: 'Issue Credential',
+    copy: 'The administrator creates an issuance invitation with selected claims, roles, and an acceptance QR code.',
+    accent: '#19b97a',
+    visual: 'issuance',
+    laptopLabel: 'Issue'
   },
   {
-    start: 13.2,
-    end: 18,
+    start: 15,
+    end: 20,
     eyebrow: 'Step 4',
-    title: 'Connect More Platforms',
-    copy: 'Add Keycloak, Okta, OIDC, or SAML from the same dashboard.',
-    accent: '#f7b955'
+    title: 'Download iOS App',
+    copy: 'The credential holder installs the Vanguard Aegis ID iOS wallet and opens the scanner.',
+    accent: '#f7b955',
+    visual: 'ios',
+    laptopLabel: 'Mobile'
+  },
+  {
+    start: 20,
+    end: 25,
+    eyebrow: 'Step 5',
+    title: 'Scan And Accept',
+    copy: 'The user scans the QR code, reviews the issuer details, and accepts the organization invitation.',
+    accent: '#00b7c7',
+    visual: 'scan',
+    laptopLabel: 'QR invite'
+  },
+  {
+    start: 25,
+    end: 30,
+    eyebrow: 'Step 6',
+    title: 'Test OIDC Challenge',
+    copy: 'A protected app redirects through Aegis ID, sends a wallet challenge, and records the accepted action in the ledger.',
+    accent: '#1769e0',
+    visual: 'oidc',
+    laptopLabel: 'OIDC'
   }
 ];
 
@@ -103,9 +131,7 @@ function renderFrame(scene, localT, t) {
   const cloudLift = Math.sin(t * 0.8) * 6;
   const cardX = 76 + slide * 26;
   const characterWave = Math.sin(t * 5) * 8;
-  const dashboardReveal = scene.title.includes('Connect') ? easeOutCubic(localT) : 0;
-  const walletReveal = scene.title.includes('Wallet') ? easeOutCubic(localT) : 0;
-  const wizardReveal = scene.title.includes('Verified') ? easeOutCubic(localT) : 0;
+  const visualReveal = easeOutCubic(localT);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
@@ -150,16 +176,14 @@ function renderFrame(scene, localT, t) {
   ${renderCharacter(135, 444, characterWave)}
   ${renderLaptop(250, 462, scene, pulse)}
   ${renderCloud(770, 112 + cloudLift, scene.accent)}
-  ${renderWizard(650, 286, wizardReveal, scene.accent)}
-  ${renderWallet(948, 318, walletReveal, scene.accent)}
-  ${renderDashboard(662, 296, dashboardReveal, scene.accent)}
-  ${renderPlatformNodes(660, 580 + nodeOffset, scene.accent)}
+  ${renderSceneVisual(650, 284, scene, visualReveal, pulse)}
+  ${renderJourneyNodes(610, 594 + nodeOffset, scene, scene.accent)}
 
   <g transform="translate(64,40)">
     <rect x="0" y="0" width="54" height="54" rx="12" fill="url(#accent)" opacity="0.95"/>
-    <text x="18" y="36" class="whiteTiny">C</text>
-    <text x="72" y="23" class="whiteTiny">Cloudstrucc</text>
-    <text x="72" y="48" class="tiny" fill="#d4e6f8">Aegis ID setup</text>
+    <text x="18" y="36" class="whiteTiny">V</text>
+    <text x="72" y="23" class="whiteTiny">Vanguard</text>
+    <text x="72" y="48" class="tiny" fill="#d4e6f8">Aegis ID onboarding</text>
   </g>
 </svg>`;
 }
@@ -181,13 +205,7 @@ function renderCharacter(x, y, armWave) {
 }
 
 function renderLaptop(x, y, scene, pulse) {
-  const label = scene.title.includes('Subscribe')
-    ? 'Subscribe'
-    : scene.title.includes('Verified')
-      ? 'Wizard'
-      : scene.title.includes('Wallet')
-        ? 'Test QR'
-        : 'Dashboard';
+  const label = scene.laptopLabel || 'Aegis ID';
   return `<g transform="translate(${x},${y})" filter="url(#shadow)">
     <path d="M0 112 H250 L214 150 H-36 Z" fill="#d9e7f4"/>
     <rect x="22" y="0" width="208" height="126" rx="14" fill="#f8fbff"/>
@@ -197,6 +215,124 @@ function renderLaptop(x, y, scene, pulse) {
     <rect x="60" y="86" width="82" height="9" rx="5" fill="#7aa5cc"/>
     <rect x="112" y="132" width="46" height="8" rx="4" fill="#abc3d8"/>
     <text class="whiteTiny" x="62" y="36">${escapeXml(label)}</text>
+  </g>`;
+}
+
+function renderSceneVisual(x, y, scene, reveal, pulse) {
+  const offset = Math.round((1 - reveal) * 26);
+  const opacity = 0.14 + reveal * 0.86;
+  const visual = {
+    account: renderAccountVisual,
+    workspace: renderWorkspaceVisual,
+    issuance: renderIssuanceVisual,
+    ios: renderIosDownloadVisual,
+    scan: renderScanVisual,
+    oidc: renderOidcVisual
+  }[scene.visual] || renderWorkspaceVisual;
+
+  return `<g transform="translate(${x + offset},${y})" opacity="${opacity}" filter="url(#shadow)">
+    ${visual(scene.accent, pulse)}
+  </g>`;
+}
+
+function renderAccountVisual(accent, pulse) {
+  return `<rect x="0" y="0" width="430" height="270" rx="22" fill="#ffffff"/>
+    <rect x="0" y="0" width="430" height="54" rx="22" fill="#edf6ff"/>
+    <circle cx="34" cy="27" r="8" fill="#c9d9e8"/>
+    <circle cx="60" cy="27" r="8" fill="#c9d9e8"/>
+    <circle cx="86" cy="27" r="8" fill="#c9d9e8"/>
+    <text class="small" x="34" y="96">Create your account</text>
+    <rect x="34" y="124" width="164" height="28" rx="8" fill="#edf6ff"/>
+    <rect x="218" y="124" width="164" height="28" rx="8" fill="#edf6ff"/>
+    <rect x="34" y="170" width="348" height="28" rx="8" fill="#edf6ff"/>
+    <rect x="34" y="218" width="${136 + pulse * 18}" height="34" rx="10" fill="${accent}"/>
+    <text class="whiteTiny" x="58" y="241">Create account</text>`;
+}
+
+function renderWorkspaceVisual(accent) {
+  return `<rect x="0" y="0" width="440" height="280" rx="22" fill="#ffffff"/>
+    <rect x="30" y="30" width="160" height="84" rx="16" fill="#edf6ff"/>
+    <text class="small" x="52" y="68">Organization</text>
+    <text class="tiny" x="52" y="96">Admin workspace</text>
+    <rect x="220" y="30" width="190" height="84" rx="16" fill="#e8fff4"/>
+    <text class="small" x="244" y="68">First admin</text>
+    <text class="tiny" x="244" y="96">Subscriber owner</text>
+    <path d="M95 154 H315" stroke="${accent}" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="95" cy="154" r="26" fill="${accent}"/>
+    <circle cx="205" cy="154" r="22" fill="#00b7c7"/>
+    <circle cx="315" cy="154" r="22" fill="#19b97a"/>
+    <rect x="42" y="204" width="356" height="44" rx="12" fill="#f5f9fd"/>
+    <text class="tiny" x="64" y="232">Workspace ready for credentials</text>`;
+}
+
+function renderIssuanceVisual(accent, pulse) {
+  return `<rect x="0" y="0" width="440" height="286" rx="22" fill="#ffffff"/>
+    <rect x="28" y="30" width="168" height="218" rx="18" fill="#061625"/>
+    <text class="whiteTiny" x="52" y="72">Verified</text>
+    <text class="whiteTiny" x="52" y="100">Employee</text>
+    <rect x="52" y="134" width="96" height="12" rx="6" fill="${accent}"/>
+    <rect x="52" y="162" width="118" height="10" rx="5" fill="#7aa5cc"/>
+    <rect x="226" y="30" width="176" height="128" rx="16" fill="#f5f9fd"/>
+    ${renderMiniQr(248, 48, 88, accent)}
+    <rect x="226" y="178" width="176" height="28" rx="8" fill="#edf6ff"/>
+    <rect x="226" y="218" width="${128 + pulse * 20}" height="30" rx="10" fill="${accent}"/>
+    <text class="whiteTiny" x="248" y="239">Create issuance</text>`;
+}
+
+function renderIosDownloadVisual(accent) {
+  return `<rect x="12" y="0" width="196" height="286" rx="34" fill="#091522"/>
+    <rect x="28" y="24" width="164" height="222" rx="22" fill="#ffffff"/>
+    <rect x="70" y="40" width="80" height="10" rx="5" fill="#091522"/>
+    <rect x="54" y="78" width="112" height="112" rx="24" fill="url(#accent)"/>
+    <text class="whiteTiny" x="86" y="144">Aegis</text>
+    <text class="small" x="48" y="222">Install wallet</text>
+    <g transform="translate(248,62)">
+      <rect x="0" y="0" width="170" height="62" rx="16" fill="#050b13"/>
+      <text class="whiteTiny" x="22" y="27">Download beta</text>
+      <text class="whiteTiny" x="22" y="50">on iOS</text>
+      <path d="M86 108 V172 M62 148 L86 172 L110 148" stroke="${accent}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+}
+
+function renderScanVisual(accent, pulse) {
+  return `<rect x="0" y="0" width="206" height="278" rx="34" fill="#091522"/>
+    <rect x="16" y="24" width="174" height="218" rx="22" fill="#ffffff"/>
+    <text class="small" x="42" y="72">Scan QR</text>
+    ${renderMiniQr(52, 96, 88, accent)}
+    <rect x="36" y="${196 + pulse * 8}" width="134" height="6" rx="3" fill="${accent}" opacity="0.9"/>
+    <g transform="translate(250,28)">
+      <rect x="0" y="0" width="188" height="220" rx="20" fill="#ffffff"/>
+      <text class="small" x="24" y="48">Issuer</text>
+      <text class="tiny" x="24" y="78">Vanguard Aegis ID</text>
+      <rect x="24" y="112" width="140" height="38" rx="10" fill="${accent}"/>
+      <text class="whiteTiny" x="52" y="137">Accept invite</text>
+    </g>`;
+}
+
+function renderOidcVisual(accent) {
+  return `<rect x="0" y="0" width="440" height="276" rx="22" fill="#ffffff"/>
+    <rect x="0" y="0" width="440" height="52" rx="22" fill="#edf6ff"/>
+    <text class="small" x="30" y="94">Business Expenses</text>
+    <rect x="30" y="126" width="180" height="38" rx="10" fill="${accent}"/>
+    <text class="whiteTiny" x="56" y="151">Sign in with Aegis ID</text>
+    <rect x="236" y="84" width="168" height="150" rx="18" fill="#061625"/>
+    <text class="whiteTiny" x="260" y="122">Wallet challenge</text>
+    <text class="whiteTiny" x="260" y="154">Approve sign-in</text>
+    <rect x="260" y="184" width="112" height="32" rx="10" fill="#19b97a"/>
+    <text class="whiteTiny" x="286" y="206">Accept</text>`;
+}
+
+function renderMiniQr(x, y, size, accent) {
+  const cells = [
+    [0,0],[1,0],[2,0],[0,1],[2,1],[0,2],[1,2],[2,2],
+    [5,0],[6,0],[7,0],[5,1],[7,1],[5,2],[6,2],[7,2],
+    [0,5],[1,5],[2,5],[0,6],[2,6],[0,7],[1,7],[2,7],
+    [4,4],[6,4],[3,5],[5,6],[7,6],[4,7],[6,7],[8,3],[8,8],[3,8]
+  ];
+  const unit = size / 10;
+  return `<g transform="translate(${x},${y})">
+    <rect x="0" y="0" width="${size}" height="${size}" rx="8" fill="#ffffff" stroke="#dbe6f2" stroke-width="3"/>
+    ${cells.map(([cx, cy]) => `<rect x="${8 + cx * unit}" y="${8 + cy * unit}" width="${unit * 0.72}" height="${unit * 0.72}" rx="1.5" fill="${cx > 7 || cy > 7 ? accent : '#061625'}"/>`).join('')}
   </g>`;
 }
 
@@ -273,6 +409,25 @@ function renderPlatformNodes(x, y, accent) {
         <text class="tiny" x="24" y="60">${label}</text>
       </g>
     `).join('')}
+  </g>`;
+}
+
+function renderJourneyNodes(x, y, scene, accent) {
+  const nodes = scenes.map((item, index) => ({
+    label: String(index + 1).padStart(2, '0'),
+    title: item.title.split(' ')[0],
+    active: item === scene
+  }));
+  return `<g transform="translate(${x},${y})">
+    ${nodes.map((node, index) => {
+      const dx = index * 94;
+      return `<g transform="translate(${dx},0)">
+        ${index > 0 ? `<path d="M-46 24 H-12" stroke="${accent}" stroke-width="4" stroke-linecap="round" opacity="0.5"/>` : ''}
+        <rect x="0" y="0" width="72" height="58" rx="16" fill="${node.active ? accent : '#ffffff'}" opacity="${node.active ? '1' : '0.82'}"/>
+        <text x="22" y="25" class="${node.active ? 'whiteTiny' : 'tiny'}">${node.label}</text>
+        <text x="12" y="46" class="${node.active ? 'whiteTiny' : 'tiny'}">${escapeXml(node.title)}</text>
+      </g>`;
+    }).join('')}
   </g>`;
 }
 

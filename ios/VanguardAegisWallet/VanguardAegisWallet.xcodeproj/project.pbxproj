@@ -13,17 +13,19 @@
 		A10000000000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Models.swift */; };
 		A10000000000000000000005 /* WalletStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* WalletStore.swift */; };
 		A10000000000000000000006 /* OOBInvitationParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* OOBInvitationParser.swift */; };
-		A10000000000000000000012 /* LabAgentClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* LabAgentClient.swift */; };
 		A10000000000000000000007 /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* QRCodeScannerView.swift */; };
 		A10000000000000000000008 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* HomeView.swift */; };
 		A10000000000000000000009 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* ScanView.swift */; };
 		A10000000000000000000010 /* ConnectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* ConnectionsView.swift */; };
 		A10000000000000000000011 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* SettingsView.swift */; };
+		A10000000000000000000012 /* LabAgentClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* LabAgentClient.swift */; };
 		A10000000000000000000013 /* OrganizationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* OrganizationsView.swift */; };
 		A10000000000000000000014 /* vanguard-logo.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* vanguard-logo.png */; };
 		A10000000000000000000015 /* vanguard-logo@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* vanguard-logo@2x.png */; };
 		A10000000000000000000016 /* vanguard-logo@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* vanguard-logo@3x.png */; };
 		A10000000000000000000017 /* LedgerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* LedgerView.swift */; };
+		A10000000000000000000018 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* Assets.xcassets */; };
+		A10000000000000000000019 /* AegisWalletEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* AegisWalletEnvironment.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +48,8 @@
 		A20000000000000000000017 /* vanguard-logo@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vanguard-logo@2x.png"; sourceTree = "<group>"; };
 		A20000000000000000000018 /* vanguard-logo@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "vanguard-logo@3x.png"; sourceTree = "<group>"; };
 		A20000000000000000000019 /* LedgerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LedgerView.swift; sourceTree = "<group>"; };
+		A20000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20000000000000000000021 /* AegisWalletEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AegisWalletEnvironment.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +79,7 @@
 				A40000000000000000000006 /* Models */,
 				A40000000000000000000007 /* Services */,
 				A40000000000000000000008 /* Features */,
+				A20000000000000000000020 /* Assets.xcassets */,
 				A40000000000000000000014 /* Resources */,
 				A20000000000000000000012 /* Info.plist */,
 			);
@@ -119,6 +124,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000005 /* WalletStore.swift */,
+				A20000000000000000000021 /* AegisWalletEnvironment.swift */,
 				A20000000000000000000006 /* OOBInvitationParser.swift */,
 				A20000000000000000000014 /* LabAgentClient.swift */,
 			);
@@ -162,28 +168,20 @@
 			path = Connections;
 			sourceTree = "<group>";
 		};
-		A40000000000000000000013 /* Organizations */ = {
-			isa = PBXGroup;
-			children = (
-				A20000000000000000000015 /* OrganizationsView.swift */,
-			);
-			path = Organizations;
-			sourceTree = "<group>";
-		};
-		A40000000000000000000015 /* Ledger */ = {
-			isa = PBXGroup;
-			children = (
-				A20000000000000000000019 /* LedgerView.swift */,
-			);
-			path = Ledger;
-			sourceTree = "<group>";
-		};
 		A40000000000000000000012 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000011 /* SettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000013 /* Organizations */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000015 /* OrganizationsView.swift */,
+			);
+			path = Organizations;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000014 /* Resources */ = {
@@ -194,6 +192,14 @@
 				A20000000000000000000018 /* vanguard-logo@3x.png */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000015 /* Ledger */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000019 /* LedgerView.swift */,
+			);
+			path = Ledger;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -257,6 +263,7 @@
 				A10000000000000000000014 /* vanguard-logo.png in Resources */,
 				A10000000000000000000015 /* vanguard-logo@2x.png in Resources */,
 				A10000000000000000000016 /* vanguard-logo@3x.png in Resources */,
+				A10000000000000000000018 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -281,6 +288,7 @@
 				A10000000000000000000017 /* LedgerView.swift in Sources */,
 				A10000000000000000000010 /* ConnectionsView.swift in Sources */,
 				A10000000000000000000011 /* SettingsView.swift in Sources */,
+				A10000000000000000000019 /* AegisWalletEnvironment.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,6 +352,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Debug;
 		};
@@ -383,6 +392,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -394,6 +404,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -404,19 +415,25 @@
 		A90000000000000000000005 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VanguardAegisWallet/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Aegis ID";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.vanguardcs.aegiswallet;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -427,19 +444,28 @@
 		A90000000000000000000006 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = GL46AP73ZQ;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VanguardAegisWallet/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Aegis ID";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.vanguardcs.aegiswallet;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = fpearson613;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

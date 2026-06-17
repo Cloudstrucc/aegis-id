@@ -3,14 +3,14 @@
 Vanguard Cloud Services - Aegis ID is a Node.js Express + HBS reference implementation for a dual-track verified identity service:
 
 - **Microsoft-native production path:** Microsoft Entra ID, YubiKey/passkeys, Conditional Access, and Microsoft Entra Verified ID.
-- **Aries interoperability lab:** ACA-Py issuer/verifier/mediator, Bifold/Credo-compatible wallet testing, DIDComm, AnonCreds, and optional VON/Indy development ledger work.
+- **Aries interoperability lab:** ACA-Py issuer/verifier/mediator, the Vanguard Aegis ID mobile app, DIDComm, AnonCreds, and optional VON/Indy development ledger work.
 
 The two tracks share a claim vocabulary and policy layer, but they stay operationally separate. The Aries lab is not a production dependency.
 
 ## What Is Included
 
 - Anonymous Vanguard-themed landing page.
-- Playable cartoon setup walkthrough video on the home page.
+- Playable setup walkthrough video on the home page.
 - Passport.js local registration and login for subscriber users.
 - Email-code, SMS-code, or passkey second-factor verification before organization subscription.
 - Authenticated organization subscription backed by local JSON storage for a free-tier pilot.
@@ -83,7 +83,7 @@ Use Node.js 20 or newer.
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.example .env.local
 npm run dev
 ```
 
@@ -92,6 +92,8 @@ Open:
 ```text
 http://localhost:3000
 ```
+
+The app loads `.env.local` by default for local runs. Use `APP_ENV=prod`, `APP_ENV=dev`, or `APP_ENV=qa` only when intentionally running with another env file.
 
 Run checks:
 
@@ -280,6 +282,41 @@ VID_CREDENTIAL_TYPE=VanguardEmployeeCredential
 VID_CALLBACK_API_KEY=<shared-callback-key>
 PUBLIC_BASE_URL=https://<your-app>.azurewebsites.net
 ```
+
+For the hosted Vanguard Azure pilot, configure App Service settings after deployment:
+
+```bash
+az webapp config appsettings set \
+  --resource-group rg-vanguard-aegis-id \
+  --name vanguard-aegis-id-65067d \
+  --settings \
+    VID_MODE=live \
+    AZURE_TENANT_ID=24a46daa-7b87-4566-9eea-281326a1b75c \
+    AZURE_CLIENT_ID=5b80fc58-e2a6-4380-baa2-ad9ac0314334 \
+    AZURE_CLIENT_SECRET="<client-secret-from-entra-app-registration>" \
+    VID_AUTHORITY_DID="did:web:verifiedid.entra.microsoft.com:24a46daa-7b87-4566-9eea-281326a1b75c:00b93f5f-6831-41de-4e9b-4b8563fba950" \
+    VID_MANIFEST_URL="https://verifiedid.did.msidentity.com/v1.0/tenants/24a46daa-7b87-4566-9eea-281326a1b75c/verifiableCredentials/contracts/787e316d-1f93-ef68-b802-0d362ca2137a/manifest" \
+    VID_CREDENTIAL_TYPE=VerifiedEmployee \
+    VID_CALLBACK_API_KEY="<strong-shared-callback-key>" \
+    PUBLIC_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net \
+    APP_PUBLIC_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net \
+    BUSINESS_EXPENSES_APP_URL=https://vanguard-business-expenses-65067d.azurewebsites.net
+```
+
+Do not commit real `AZURE_CLIENT_SECRET` or `VID_CALLBACK_API_KEY` values. Set them directly in Azure App Service settings or move them to Key Vault before production use.
+
+| Variable | Purpose |
+| --- | --- |
+| `VID_MODE` | Switches the Verified ID adapter from local mock responses to live Microsoft Entra Verified ID requests. |
+| `AZURE_TENANT_ID` | The Microsoft Entra tenant that owns the Verified ID authority and app registration. |
+| `AZURE_CLIENT_ID` | The app registration client ID used for MSAL client-credential tokens. |
+| `AZURE_CLIENT_SECRET` | The app registration secret used to request Microsoft Verified ID Request Service tokens. |
+| `VID_AUTHORITY_DID` | The issuer authority DID copied from the Entra Verified ID credential contract. |
+| `VID_MANIFEST_URL` | The credential manifest URL for the credential contract being issued and presented. |
+| `VID_CREDENTIAL_TYPE` | The exact credential type name in the Verified ID contract, for example `VerifiedEmployee`. |
+| `VID_CALLBACK_API_KEY` | Shared secret used to protect callbacks from the Verified ID Request Service. |
+| `PUBLIC_BASE_URL` / `APP_PUBLIC_BASE_URL` | Public HTTPS base URL used for callbacks, QR payloads, and deep links. |
+| `BUSINESS_EXPENSES_APP_URL` | URL shown on the signed-in home page for the standalone Business Expenses example app. |
 
 ### Keycloak OIDC
 
@@ -500,31 +537,29 @@ This is a lab demonstration of step-up authentication. For production, replace t
 
 ## Azure Hosting
 
-The first deployment can fit on Azure App Service Free `F1` if you keep it as the public Node.js/HBS app with mock Verified ID mode and file-backed subscription capture.
+The deploy scripts now load environment files directly:
+
+| Env | File | Intended target |
+| --- | --- | --- |
+| `local` | `.env.local` | Localhost only |
+| `dev` | `.env.dev` | Future dev Azure deployment |
+| `qa` | `.env.qa` | Future QA Azure deployment |
+| `prod` | `.env` | Production Azure deployment |
+
+Fill in secrets such as `SESSION_SECRET`, `AZURE_CLIENT_SECRET`, and `VID_CALLBACK_API_KEY` yourself. Blank secret values are not pushed over existing Azure App Service settings by the deploy script.
+
+Production refresh deploy:
 
 ```bash
-az login
-az group create --name rg-vanguard-aegis-id --location canadacentral
-az deployment group create \
-  --resource-group rg-vanguard-aegis-id \
-  --template-file infra/bicep/main.bicep \
-  --parameters \
-    appName="<globally-unique-app-name>" \
-    sessionSecret="<strong-random-session-secret>" \
-    azureTenantId="<tenant-id>"
+cd /Users/frederickpearson/repos/aegis-id
+bash scripts/deploy-azure-webapp.sh --env prod
 ```
 
-Deploy a zip package:
+Future dev/QA refresh deploys:
 
 ```bash
-npm ci
-npm test
-zip -r aegis-id.zip . -x "node_modules/*" ".git/*" ".env" "data/*.json" "tmp/*" "ios/*" "aries-lab/*"
-az webapp deploy \
-  --resource-group rg-vanguard-aegis-id \
-  --name "<globally-unique-app-name>" \
-  --src-path aegis-id.zip \
-  --type zip
+bash scripts/deploy-azure-webapp.sh --env dev
+bash scripts/deploy-azure-webapp.sh --env qa
 ```
 
 More detail: [docs/azure-deployment.md](docs/azure-deployment.md)
@@ -555,5 +590,4 @@ Likely not free or not production-ready on Free tier:
 - Microsoft Entra Verified ID Request Service REST API: https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api
 - Microsoft Entra Verified ID advanced setup: https://learn.microsoft.com/en-us/entra/verified-id/verifiable-credentials-configure-tenant
 - ACA-Py documentation: https://aca-py.org/latest/
-- Bifold Wallet: https://github.com/openwallet-foundation/bifold-wallet
 - VON Network: https://github.com/bcgov/von-network

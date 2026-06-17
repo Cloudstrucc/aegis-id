@@ -5,6 +5,7 @@ const config = require('../config');
 const { requireAuthenticated } = require('../middleware/auth');
 const { getPresentationPolicy } = require('../services/credential-policy-service');
 const { getHomeContent } = require('../services/home-content');
+const { getCredentialInvitationView } = require('../services/org-admin-service');
 
 const router = express.Router();
 
@@ -34,6 +35,21 @@ router.get('/lab/mock-wallet/:kind/:state', requireAuthenticated, async (req, re
       state: req.params.state,
       requestUrl,
       qrCodeDataUrl
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/wallet/credential-invitations/:credentialId', async (req, res, next) => {
+  try {
+    const invite = await getCredentialInvitationView(req.query.organizationId, req.params.credentialId, {
+      publicBaseUrl: getRequestBaseUrl(req)
+    });
+    res.render('pages/credential-invitation', {
+      title: 'Credential invitation',
+      description: 'Vanguard Aegis ID wallet credential invitation.',
+      invite
     });
   } catch (error) {
     next(error);

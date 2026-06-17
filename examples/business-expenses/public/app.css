@@ -24,7 +24,8 @@ body {
 
 .status-approved,
 .status-wallet-accepted,
-.status-accepted {
+.status-accepted,
+.status-pilot-simulated {
   color: #075f3f;
   background: #dff8ec;
 }
@@ -36,4 +37,82 @@ body {
 
 pre {
   white-space: pre-wrap;
+}
+
+.verified-id-card {
+  padding: 22px;
+  border: 1px solid #d8e3ef;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.verified-id-card img {
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border: 1px solid #d8e3ef;
+  border-radius: 10px;
+}
+
+.yubikey-card {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  align-items: center;
+  padding: 24px;
+  border: 1px solid #d8e3ef;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff, #eef7ff);
+}
+
+.yubikey-device {
+  position: relative;
+  min-height: 250px;
+  border-radius: 34px;
+  color: #ffffff;
+  background: linear-gradient(180deg, #111827, #1769e0);
+  box-shadow: 0 24px 64px rgba(17, 24, 39, 0.24);
+}
+
+.yubikey-device__hole {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  width: 54px;
+  height: 54px;
+  border: 8px solid rgba(255, 255, 255, 0.86);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.yubikey-device__contact {
+  position: absolute;
+  left: 50%;
+  top: 106px;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f7b955 0 34%, #d69d38 35% 100%);
+  transform: translateX(-50%);
+}
+
+.yubikey-device span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+@media (max-width: 768px) {
+  .yubikey-card {
+    grid-template-columns: 1fr;
+  }
+
+  .yubikey-device {
+    width: 180px;
+    margin-inline: auto;
+  }
 }

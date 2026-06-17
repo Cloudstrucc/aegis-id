@@ -3,7 +3,8 @@
 Standalone Node.js/Express app showing how an organization can use Vanguard Aegis ID for:
 
 - OIDC sign-in to a business application.
-- Wallet challenge on registration/sign-in.
+- Microsoft Entra Verified ID presentation on registration/sign-in.
+- YubiKey 5C NFC / FIDO2 browser step-up on registration/sign-in.
 - Wallet challenge for high-value approve/reject expense decisions.
 - Ledger reporting in the web app, Aegis ID dashboard, and iOS wallet.
 
@@ -20,6 +21,7 @@ Standalone Node.js/Express app showing how an organization can use Vanguard Aegi
 3. Create an org issuer invitation from the dashboard.
 4. Import and accept that invitation in the iOS wallet simulator.
 5. Copy the organization workspace ID and set it as `AEGIS_ORGANIZATION_ID`.
+6. Configure live Microsoft Entra Verified ID in Aegis ID and issue a `VerifiedEmployee` credential to Microsoft Authenticator.
 
 The app can also target a raw issuer connection with `AEGIS_ISSUER_CONNECTION_ID`, but the recommended path is organization-scoped.
 
@@ -27,15 +29,17 @@ The app can also target a raw issuer connection with `AEGIS_ISSUER_CONNECTION_ID
 
 ```bash
 cd examples/business-expenses
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-Edit `.env`:
+Edit `.env.local`:
 
 ```bash
 AEGIS_ID_BASE_URL=http://localhost:3000
 AEGIS_ORGANIZATION_ID=<your-aegis-organization-workspace-id>
 APP_PUBLIC_BASE_URL=http://localhost:4300
+VERIFIED_ID_AUTH_ENABLED=true
+YUBIKEY_AUTH_ENABLED=true
 ```
 
 ## 3. Run
@@ -53,21 +57,76 @@ http://localhost:4300
 
 ## 4. Test The Flow
 
-1. Click **Register with Aegis ID** or **Sign in with Aegis ID**.
+### Verified ID path
+
+1. Click **Register with Verified ID** or **Sign in with Verified ID**.
 2. Authorize the OIDC request on the Aegis ID authorization screen.
-3. The Business Expenses app creates an authentication wallet challenge.
-4. In the iOS wallet:
+3. The Business Expenses app creates a Microsoft Verified ID presentation request.
+4. In Microsoft Authenticator:
+   - Open **Verified IDs**.
+   - Scan the presentation QR.
+   - Share the `VerifiedEmployee` credential.
+5. Return to Business Expenses. The expense table opens.
+6. Press **Approve** or **Reject** on an expense.
+7. In the Vanguard Aegis ID wallet:
    - Open the issuer connection.
    - Tap **Fetch OIDC challenges**.
    - Open the new challenge in **Ledger** or the connection transaction list.
    - Accept the challenge.
-5. Return to Business Expenses. The expense table opens.
-6. Press **Approve** or **Reject** on an expense.
-7. Accept the new wallet challenge in the iOS wallet.
 8. Review the signed action in:
    - Business Expenses `/ledger`
    - Aegis ID organization dashboard, **External app ledger**
    - iOS wallet **Ledger** tab
+
+### YubiKey path
+
+1. Click **Sign in with YubiKey**.
+2. Authorize the OIDC request on the Aegis ID authorization screen.
+3. Insert or tap a YubiKey 5C NFC / security key when the browser WebAuthn prompt appears.
+4. If you do not have a key available during the demo, use **Record pilot fallback**. It is clearly marked as a simulated pilot event.
+5. Return to Business Expenses. The expense table opens.
+6. Approve or reject an expense, then accept the Aegis wallet challenge in the mobile wallet.
+7. Open `/ledger` to see both **YubiKey assurance events** and **Aegis ID challenge records**.
+
+The landing page also includes **Use wallet-only lab** if you want to show the original Aegis wallet challenge as the sign-in step instead of Microsoft Verified ID or YubiKey.
+
+## Azure Deployment
+
+Deploy Aegis ID first so the Verified ID presentation callbacks and `/api/transactions/:id` endpoint are available:
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+bash scripts/deploy-azure-webapp.sh --env prod
+```
+
+Then deploy this standalone app. The script loads `examples/business-expenses/.env` for `--env prod`, `.env.dev` for `--env dev`, and `.env.qa` for `--env qa`.
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+bash scripts/deploy-azure-business-expenses.sh --env prod
+```
+
+The script targets:
+
+```text
+https://vanguard-business-expenses-65067d.azurewebsites.net
+```
+
+It sets:
+
+```text
+AEGIS_ID_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net
+VERIFIED_ID_AUTH_ENABLED=true
+YUBIKEY_AUTH_ENABLED=true
+OIDC_CLIENT_ID=business-expenses-demo
+```
+
+Future dev/QA deployments use their own env files and must have a matching Aegis organization workspace ID before deploying:
+
+```bash
+bash scripts/deploy-azure-business-expenses.sh --env dev
+bash scripts/deploy-azure-business-expenses.sh --env qa
+```
 
 ## Payload Shape
 

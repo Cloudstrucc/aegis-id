@@ -1,0 +1,56 @@
+<section class="container py-5" data-yubikey-step-up="{{request.id}}" data-return-to="{{returnTo}}">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      <div class="card shadow border-0">
+        <div class="card-body p-4 p-lg-5">
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+              <span class="badge text-bg-dark mb-3">YubiKey FIDO2 / WebAuthn</span>
+              <h1 class="h2">Hardware-backed step-up required</h1>
+              <p class="text-muted">
+                Use a YubiKey 5C NFC, USB-C security key, or browser passkey to prove phishing-resistant user presence before opening the expense table.
+              </p>
+              <dl class="row">
+                <dt class="col-sm-4">Application</dt>
+                <dd class="col-sm-8">Business Expenses</dd>
+                <dt class="col-sm-4">Subject</dt>
+                <dd class="col-sm-8">{{request.user.email}}</dd>
+                <dt class="col-sm-4">Action</dt>
+                <dd class="col-sm-8">{{request.action}}</dd>
+                <dt class="col-sm-4">Request</dt>
+                <dd class="col-sm-8"><code>{{request.id}}</code></dd>
+              </dl>
+              <div class="alert alert-secondary" data-yubikey-message>
+                Waiting for hardware-backed user verification.
+              </div>
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-primary" type="button" data-yubikey-start>Use YubiKey / Passkey</button>
+                <button class="btn btn-outline-secondary" type="button" data-yubikey-simulate>Record pilot fallback</button>
+              </div>
+              <p class="small text-muted mt-3 mb-0">
+                Production note: this demo captures WebAuthn ceremony evidence for the pilot. A production service should verify attestation/assertion signatures and store public keys with a reviewed recovery policy.
+              </p>
+            </div>
+            <div class="col-lg-6">
+              <div class="yubikey-card">
+                <div class="yubikey-device" aria-hidden="true">
+                  <div class="yubikey-device__hole"></div>
+                  <div class="yubikey-device__contact"></div>
+                  <span>YK</span>
+                </div>
+                <div>
+                  <span class="badge text-bg-success">Aegis assurance method</span>
+                  <h2 class="h4 mt-3">YubiKey 5C NFC step-up</h2>
+                  <p class="text-muted mb-0">
+                    Best for administrator sign-in, sensitive approvals, claims export, credential revocation, and browser-based web app workflows where a QR credential presentation is not the right user experience.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <script type="application/json" data-yubikey-options>{{json request.publicKey}}</script>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

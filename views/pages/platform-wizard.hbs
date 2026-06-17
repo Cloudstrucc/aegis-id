@@ -71,6 +71,37 @@
           <span class="track-label">Last test</span>
           <h3>{{testResult.title}}</h3>
           <p>{{testResult.message}}</p>
+          {{#if testResult.details.issuance.qrCodeDataUrl}}
+            <div class="verified-id-live-grid" aria-label="Verified ID live request QR codes">
+              <article class="verified-id-live-card">
+                <div>
+                  <span class="track-label">Issuance</span>
+                  <h4>Scan to add credential</h4>
+                  <p>Use Microsoft Authenticator Verified IDs to scan this request.</p>
+                </div>
+                <img src="{{testResult.details.issuance.qrCodeDataUrl}}" alt="Verified ID issuance QR code">
+                {{#if testResult.details.issuance.pin}}
+                  <p class="verified-id-pin">PIN <strong>{{testResult.details.issuance.pin}}</strong></p>
+                {{/if}}
+                <code>{{testResult.details.issuance.requestUrl}}</code>
+              </article>
+              {{#if testResult.details.presentation.qrCodeDataUrl}}
+                <article class="verified-id-live-card">
+                  <div>
+                    <span class="track-label">Presentation</span>
+                    <h4>Scan to share credential</h4>
+                    <p>Scan this after the credential has been added to the wallet.</p>
+                  </div>
+                  <img src="{{testResult.details.presentation.qrCodeDataUrl}}" alt="Verified ID presentation QR code">
+                  <code>{{testResult.details.presentation.requestUrl}}</code>
+                </article>
+              {{/if}}
+            </div>
+            <div class="note-panel">
+              <strong>Pilot PIN handling.</strong>
+              <span>The test wizard displays the issuance PIN so you can complete the pilot. For production, send the PIN through a separate trusted channel such as email, SMS, or an authenticated employee portal.</span>
+            </div>
+          {{/if}}
           <pre>{{json testResult.details}}</pre>
         </div>
       {{/if}}

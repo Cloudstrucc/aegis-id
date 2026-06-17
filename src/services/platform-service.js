@@ -23,13 +23,19 @@ const FIELD_HELP_TEXT = {
   credentialDisplayName: 'Enter the user-facing name shown in the wallet for this credential.',
   credentialType: 'Enter the exact credential type configured in Microsoft Entra Verified ID, for example VanguardEmployeeCredential.',
   didMethod: 'Select the DID method used by the Verified ID organization. did:web is easiest to inspect and align with a linked domain.',
+  adminStepUpPolicy: 'Describe where Aegis ID should require a hardware-backed step-up, such as admin promotion, credential revocation, claims export, or payment approval.',
+  attestationPolicy: 'Choose whether Aegis ID should require authenticator attestation to prove the registered security key model, such as YubiKey 5C NFC.',
+  fido2Aaguid: 'Enter one or more allowed authenticator AAGUID values if you want to restrict registration to approved hardware key models.',
+  fido2PolicyName: 'Enter the friendly policy name shown to administrators when configuring hardware-backed authentication.',
   groupsFilter: 'Enter the Okta group naming pattern or expression that should be released as groups or entitlements.',
   issuerUrl: 'Enter the OIDC issuer URL. For Okta this is usually the authorization server URL, such as https://example.okta.com/oauth2/default.',
   keyVaultName: 'Enter the Key Vault name or reference used by Entra Verified ID to protect signing keys.',
   keyVaultPermissionModel: 'Use Vault access policy for current Verified ID setup guidance unless your tenant setup explicitly supports RBAC for this flow.',
+  keyInventoryOwner: 'Enter the team or mailbox responsible for issuing, replacing, and recovering hardware keys.',
   linkedDomain: 'Enter the trusted domain linked to the Verified ID organization. This should be verified in DNS and visible to wallet users.',
   manifestUrl: 'Paste the credential manifest URL from the Verified ID portal after creating the credential contract.',
   metadataUrl: 'Optionally enter the exact OIDC discovery URL or SAML metadata URL. If blank, Aegis ID derives OIDC metadata where possible.',
+  nfcEnrollment: 'Choose whether mobile enrollment and step-up can use NFC-capable security keys such as YubiKey 5C NFC.',
   oktaOrgUrl: 'Enter the base URL of the Okta organization, such as https://example.okta.com.',
   oneTimeClientSecret: 'Paste the Entra app client secret only for this live test request. Aegis ID does not persist this value.',
   optionalClaims: 'List additional claims that may be issued or mapped later, separated by commas or lines.',
@@ -38,17 +44,22 @@ const FIELD_HELP_TEXT = {
   providerName: 'Enter the display name for the identity provider, such as Ping, Auth0, OneLogin, or an internal IdP.',
   publicBaseUrl: 'Enter the public HTTPS URL where this app is reachable. Microsoft Verified ID callbacks and mobile wallet scans cannot use localhost.',
   realm: 'Enter the Keycloak realm name that contains users, clients, roles, and protocol mappers.',
+  recoveryPolicy: 'Describe the break-glass or replacement process when a hardware key is lost, damaged, transferred, or reassigned.',
   redirectUri: 'Enter the redirect URI registered on the provider for this Aegis ID relying-party app.',
+  relyingPartyId: 'Enter the WebAuthn relying party ID. This is usually the application domain users sign in to, such as aegis.vanguardcs.ca.',
   requestServicePermission: 'Enter the Microsoft Verified ID Request Service API application permission granted to the app registration. Use VerifiableCredential.Create.All for issuance and presentation testing.',
   requiredClaims: 'List claims that must be present for issuance, presentation, or policy evaluation. Separate with commas or lines.',
   sampleSubjectEmail: 'Enter the test subject email that should be placed into the demo credential claims during a live or mock test.',
+  sampleUserEmail: 'Enter a pilot user email that should be used in the generated YubiKey enrollment checklist.',
   secretOrCertReference: 'Enter the secret, certificate, or signing key reference used for this relying-party registration. Do not paste private material.',
   secretReference: 'Enter where the client secret is stored, such as an App Service setting or Key Vault secret reference. Do not paste the secret here.',
   setupMode: 'Choose Advanced setup for tenant testing because it exposes Key Vault, DID, and linked-domain settings needed for production-like validation.',
   tenantDisplayName: 'Enter the friendly tenant name shown to operators, for example Vanguard Cloud Services.',
   testMode: 'Choose Mock to validate local UI behavior, or Live to call Microsoft Entra Verified ID with tenant configuration.',
+  userVerification: 'Choose whether users must unlock the key with a PIN or biometric gesture before the FIDO2 assertion is accepted.',
   verifiedIdAdminRole: 'Enter the Entra role assigned to the operator completing Verified ID setup. Authentication Policy Administrator is commonly required.',
-  verifiedIdAuthorityDid: 'Paste the issuer authority DID from the Verified ID portal. This is the DID the verifier should trust.'
+  verifiedIdAuthorityDid: 'Paste the issuer authority DID from the Verified ID portal. This is the DID the verifier should trust.',
+  yubiKeyModel: 'Enter the approved hardware key model for this policy, such as YubiKey 5C NFC.'
 };
 
 function getPlatformDefinitions() {
@@ -145,6 +156,71 @@ function getPlatformDefinitions() {
               ['live', 'Live Microsoft Verified ID request']
             ]),
             passwordField('oneTimeClientSecret', 'One-time Azure client secret')
+          ]
+        }
+      ]
+    },
+    {
+      id: 'yubikey-fido2',
+      name: 'YubiKey FIDO2 / WebAuthn',
+      family: 'Hardware-backed assurance',
+      icon: 'YK',
+      summary: 'Configure YubiKey 5C NFC as a phishing-resistant Aegis ID assurance method for sign-in, admin step-up, and high-value approvals.',
+      docsUrl: 'https://www.yubico.com/product/yubikey-5c-nfc/',
+      steps: [
+        {
+          id: 'policy',
+          title: 'Security Key Policy',
+          description: 'Define the hardware-backed authentication policy that Aegis ID should enforce or document for this organization.',
+          fields: [
+            textField('fido2PolicyName', 'Policy name', 'Aegis hardware-backed assurance'),
+            textField('yubiKeyModel', 'Approved key model', 'YubiKey 5C NFC'),
+            textField('relyingPartyId', 'WebAuthn relying party ID', 'vanguard-aegis-id-65067d.azurewebsites.net'),
+            selectField('userVerification', 'User verification', [
+              ['required', 'PIN or biometric required'],
+              ['preferred', 'PIN or biometric preferred'],
+              ['discouraged', 'No local user verification']
+            ])
+          ]
+        },
+        {
+          id: 'attestation',
+          title: 'Attestation & Inventory',
+          description: 'Capture how the organization will restrict, inventory, and recover hardware security keys.',
+          fields: [
+            selectField('attestationPolicy', 'Authenticator attestation', [
+              ['required', 'Require approved hardware attestation'],
+              ['preferred', 'Prefer attestation where available'],
+              ['none', 'Do not enforce attestation']
+            ]),
+            textareaField('fido2Aaguid', 'Allowed AAGUID values', 'Enter approved YubiKey AAGUID values, one per line'),
+            textField('keyInventoryOwner', 'Key inventory owner', 'Security Operations'),
+            textareaField('recoveryPolicy', 'Recovery and replacement policy', 'Require manager approval, identity verification, and immutable Aegis challenge before replacing a lost key.')
+          ]
+        },
+        {
+          id: 'use-cases',
+          title: 'Aegis Use Cases',
+          description: 'Choose where YubiKey-backed assurance complements wallet credentials and Verified ID.',
+          fields: [
+            selectField('nfcEnrollment', 'NFC mobile support', [
+              ['enabled', 'Enable YubiKey 5C NFC mobile flows'],
+              ['desktop-only', 'Desktop only'],
+              ['disabled', 'Not used']
+            ]),
+            textareaField('adminStepUpPolicy', 'Aegis step-up triggers', 'administrator sign-in\nco-admin promotion\ncredential revocation\nclaims export\nhigh-value approval'),
+            textField('sampleUserEmail', 'Sample pilot user', 'identity@vanguardcs.ca')
+          ]
+        },
+        {
+          id: 'test',
+          title: 'Review',
+          description: 'Generate a YubiKey pilot checklist for this organization. This is a policy readiness check, not a live WebAuthn registration.',
+          testStep: true,
+          fields: [
+            selectField('testMode', 'Review mode', [
+              ['checklist', 'Generate checklist']
+            ])
           ]
         }
       ]
@@ -485,6 +561,8 @@ async function runPlatformTest(subscription, platformId, input = {}, workspaceId
   const result =
     platformId === 'microsoft-verified-id'
       ? await runMicrosoftVerifiedIdTest(platformState, input)
+      : platformId === 'yubikey-fido2'
+        ? runYubiKeyReadinessTest(platformState, input)
       : await runFederationMetadataTest(platform, platformState, input);
 
   platformState.lastTestResult = result;
@@ -712,6 +790,43 @@ async function runFederationMetadataTest(platform, platformState, input = {}) {
   };
 }
 
+function runYubiKeyReadinessTest(platformState, input = {}) {
+  const data = {
+    ...platformState.data,
+    ...input
+  };
+  const model = data.yubiKeyModel || 'YubiKey 5C NFC';
+  const rpId = data.relyingPartyId || 'vanguard-aegis-id-65067d.azurewebsites.net';
+  const attestation = data.attestationPolicy || 'required';
+  const userVerification = data.userVerification || 'required';
+  const nfcEnrollment = data.nfcEnrollment || 'enabled';
+  const triggers = splitLines(data.adminStepUpPolicy || 'administrator sign-in\ncredential revocation\nhigh-value approval');
+
+  return {
+    ok: true,
+    mode: 'checklist',
+    title: 'YubiKey assurance checklist generated',
+    message: `${model} is configured as a hardware-backed Aegis ID assurance method for ${rpId}.`,
+    checkedAt: new Date().toISOString(),
+    details: {
+      relyingPartyId: rpId,
+      approvedKeyModel: model,
+      userVerification,
+      attestationPolicy: attestation,
+      nfcMobileSupport: nfcEnrollment,
+      sampleUserEmail: data.sampleUserEmail || 'identity@vanguardcs.ca',
+      stepUpTriggers: triggers,
+      checklist: [
+        'Register the YubiKey as a FIDO2/WebAuthn security key for the pilot user.',
+        'Require PIN or biometric user verification for admin and high-value operations.',
+        'Record key assignment, spare key ownership, and replacement workflow in the organization policy.',
+        'Use Aegis wallet challenges for business action evidence after the hardware-backed sign-in or step-up.',
+        'For Entra-backed tenants, align this policy with passkey/FIDO2 authentication methods and Conditional Access authentication strength.'
+      ]
+    }
+  };
+}
+
 function buildMetadataUrl(platformId, data, protocol) {
   if (data.metadataUrl) {
     return normalizeUrl(data.metadataUrl);
@@ -743,9 +858,18 @@ function summarizeVerifiedIdResult(result) {
     id: result.id,
     mode: result.mode,
     requestUrl: result.requestUrl,
+    qrCodeDataUrl: result.qrCodeDataUrl,
+    pin: result.pin,
     hasQrCode: Boolean(result.qrCodeDataUrl),
     expiresAt: result.expiresAt
   };
+}
+
+function splitLines(value = '') {
+  return String(value)
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 async function ensureWorkspaceInList(workspaces, subscription, workspaceId) {

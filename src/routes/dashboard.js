@@ -41,7 +41,9 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', async (req, res, next
     const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(subscription, req.params.workspaceId);
     const issuerOrganizations = await listIssuerOrganizations(subscription.id, workspace.id);
-    const orgAdmin = await getOrgAdminView(workspace, subscription, req.query);
+    const orgAdmin = await getOrgAdminView(workspace, subscription, req.query, {
+      publicBaseUrl: getRequestBaseUrl(req)
+    });
     const walletChallengeLedger = await listWalletChallengeLedger({ organizationId: workspace.id, limit: 25 });
     res.render('pages/dashboard', {
       ...buildDashboardView(subscription, workspace),
@@ -139,7 +141,17 @@ router.post('/dashboard/:subscriptionId/platforms/:platformId/test', async (req,
     const testStepIndex = Math.max(0, platform.steps.findIndex((step) => step.testStep));
     res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}/platforms/${req.params.platformId}/setup?step=${testStepIndex}`);
   } catch (error) {
-    next(error);
+    try {
+      const subscription = await getSubscriptionForUser(req.params.subscriptionId, req.user);
+      if (!subscription) {
+        return next(error);
+      }
+      const workspace = await getOrCreateWorkspace(subscription);
+      const platform = getPlatformDefinition(req.params.platformId);
+      return renderPlatformTestError(res, subscription, workspace, platform, error);
+    } catch (renderError) {
+      return next(error);
+    }
   }
 });
 
@@ -172,18 +184,7 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/
 
     const platform = getPlatformDefinition(req.params.platformId);
     const workspace = await getOrCreateWorkspace(subscription, req.params.workspaceId);
-    const testStepIndex = Math.max(0, platform.steps.findIndex((step) => step.testStep));
-    const viewModel = buildWizardView(subscription, workspace, platform.id, testStepIndex);
-    return res.status(error.status || 500).render('pages/platform-wizard', {
-      ...viewModel,
-      testResult: {
-        ok: false,
-        title: 'Test failed',
-        message: error.message,
-        checkedAt: new Date().toISOString(),
-        details: error.details || {}
-      }
-    });
+    return renderPlatformTestError(res, subscription, workspace, platform, error);
   }
 });
 
@@ -208,3 +209,22 @@ async function loadWorkspace(subscription, workspaceId) {
 }
 
 module.exports = router;
+
+function getRequestBaseUrl(req) {
+  return `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
+}
+
+function renderPlatformTestError(res, subscription, workspace, platform, error) {
+  const testStepIndex = Math.max(0, platform.steps.findIndex((step) => step.testStep));
+  const viewModel = buildWizardView(subscription, workspace, platform.id, testStepIndex);
+  return res.status(error.status || 500).render('pages/platform-wizard', {
+    ...viewModel,
+    testResult: {
+      ok: false,
+      title: 'Test failed',
+      message: error.message,
+      checkedAt: new Date().toISOString(),
+      details: error.details || {}
+    }
+  });
+}

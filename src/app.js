@@ -57,7 +57,7 @@ function createApp() {
           frameAncestors: ["'none'"],
           imgSrc: ["'self'", 'data:'],
           objectSrc: ["'none'"],
-          scriptSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-eval'", "'wasm-unsafe-eval'"],
           styleSrc: ["'self'", "'unsafe-inline'"]
         }
       }
@@ -66,7 +66,18 @@ function createApp() {
   app.use(morgan(config.app.env === 'production' ? 'combined' : 'dev'));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use(express.json({ limit: '2mb' }));
+  app.use('/images', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    next();
+  });
   app.use(express.static(config.paths.public, { maxAge: config.app.env === 'production' ? '1d' : 0 }));
+  app.use(
+    '/vendor/mediapipe/face_detection',
+    express.static(path.join(config.paths.root, 'node_modules', '@mediapipe', 'face_detection'), {
+      maxAge: config.app.env === 'production' ? '7d' : 0
+    })
+  );
   app.use(
     session({
       name: 'aegis.sid',

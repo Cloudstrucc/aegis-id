@@ -7,11 +7,17 @@ const path = require('node:path');
 test('auth service registers users, verifies passwords, and validates OTP challenges', async (t) => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vanguard-auth-'));
   const previousUserStorePath = process.env.USER_STORE_PATH;
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousAppEnv = process.env.APP_ENV;
   process.env.USER_STORE_PATH = path.join(tempDir, 'users.json');
+  process.env.NODE_ENV = 'test';
+  process.env.APP_ENV = 'local';
   resetModules();
 
   t.after(() => {
     restoreEnv('USER_STORE_PATH', previousUserStorePath);
+    restoreEnv('NODE_ENV', previousNodeEnv);
+    restoreEnv('APP_ENV', previousAppEnv);
     resetModules();
   });
 

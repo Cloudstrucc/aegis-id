@@ -22,6 +22,21 @@ Items that can move the solution out of free-tier territory:
 - Scale-out, deployment slots, Always On, or higher App Service SKUs.
 - Verified ID tenant and request volume requirements beyond free allowances.
 
+## Environment Files
+
+The deploy scripts choose an env file and push the relevant non-empty values into Azure App Service settings.
+
+| Flag | Env file | Purpose |
+| --- | --- | --- |
+| `--env local` | `.env.local` | Localhost only; do not deploy this to Azure unless intentionally testing. |
+| `--env dev` | `.env.dev` | Future dev Azure App Service. |
+| `--env qa` | `.env.qa` | Future QA Azure App Service. |
+| `--env prod` | `.env` | Production Azure App Service. |
+
+You can also pass `--env-file /absolute/path/to/file` for one-off deploys. Existing shell variables override values from the selected env file.
+
+Secrets are intentionally blank in templates. Fill in `SESSION_SECRET`, `AZURE_CLIENT_SECRET`, and `VID_CALLBACK_API_KEY` yourself. If these are blank, the web deploy script preserves the existing Azure setting when possible and generates `SESSION_SECRET` only when one does not already exist.
+
 ## CLI Deployment
 
 ```bash
@@ -41,19 +56,11 @@ az deployment group create \
     azureTenantId="<tenant-id>"
 ```
 
-Deploy the application package:
+Deploy or refresh the production application package:
 
 ```bash
-npm ci
-npm test
-zip -r aegis-id.zip . \
-  -x "node_modules/*" ".git/*" ".env" "data/*.json" "tmp/*" "ios/*" "aries-lab/*"
-
-az webapp deploy \
-  --resource-group rg-vanguard-aegis-id \
-  --name "<globally-unique-app-name>" \
-  --src-path aegis-id.zip \
-  --type zip
+cd /Users/frederickpearson/repos/aegis-id
+bash scripts/deploy-azure-webapp.sh --env prod
 ```
 
 Open:
@@ -83,6 +90,43 @@ az webapp config appsettings set \
     VID_CALLBACK_API_KEY="<random-callback-secret>" \
     PUBLIC_BASE_URL="https://<globally-unique-app-name>.azurewebsites.net"
 ```
+
+For the current Vanguard Azure pilot values:
+
+```bash
+az webapp config appsettings set \
+  --resource-group rg-vanguard-aegis-id \
+  --name vanguard-aegis-id-65067d \
+  --settings \
+    VID_MODE=live \
+    AZURE_TENANT_ID=24a46daa-7b87-4566-9eea-281326a1b75c \
+    AZURE_CLIENT_ID=5b80fc58-e2a6-4380-baa2-ad9ac0314334 \
+    AZURE_CLIENT_SECRET="<client-secret-from-entra-app-registration>" \
+    VID_AUTHORITY_DID="did:web:verifiedid.entra.microsoft.com:24a46daa-7b87-4566-9eea-281326a1b75c:00b93f5f-6831-41de-4e9b-4b8563fba950" \
+    VID_MANIFEST_URL="https://verifiedid.did.msidentity.com/v1.0/tenants/24a46daa-7b87-4566-9eea-281326a1b75c/verifiableCredentials/contracts/787e316d-1f93-ef68-b802-0d362ca2137a/manifest" \
+    VID_CREDENTIAL_TYPE=VerifiedEmployee \
+    VID_CALLBACK_API_KEY="<strong-shared-callback-key>" \
+    PUBLIC_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net \
+    APP_PUBLIC_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net \
+    BUSINESS_EXPENSES_APP_URL=https://vanguard-business-expenses-65067d.azurewebsites.net
+```
+
+The same settings are represented in `.env` for production deploys. Use `.env.dev` and `.env.qa` for future environment-specific app names, URLs, data paths, and passkey origins.
+
+Do not store real `AZURE_CLIENT_SECRET` or `VID_CALLBACK_API_KEY` values in source control. Set them directly in App Service configuration or move them to Key Vault before production use.
+
+| Variable | Purpose |
+| --- | --- |
+| `VID_MODE` | Enables live Microsoft Entra Verified ID requests instead of local mock QR links. |
+| `AZURE_TENANT_ID` | Tenant that owns the Verified ID authority and app registration. |
+| `AZURE_CLIENT_ID` | App registration client ID used for MSAL client credentials. |
+| `AZURE_CLIENT_SECRET` | Secret for the app registration. Rotate this regularly. |
+| `VID_AUTHORITY_DID` | Verified ID issuer authority DID that must match the credential contract. |
+| `VID_MANIFEST_URL` | Manifest URL from the Entra Verified ID credential contract. |
+| `VID_CREDENTIAL_TYPE` | Credential type configured in the contract, such as `VerifiedEmployee`. |
+| `VID_CALLBACK_API_KEY` | Shared callback key checked by the app when Microsoft sends status callbacks. |
+| `PUBLIC_BASE_URL` / `APP_PUBLIC_BASE_URL` | Public app URL used for callbacks, QR links, and wallet handoffs. |
+| `BUSINESS_EXPENSES_APP_URL` | Signed-in home-page link to the standalone Business Expenses demo. |
 
 For a subscriber-driven Vanguard Cloud Services pilot, the wizard can also accept tenant/app/DID/claims details in the dashboard. A live test still needs a client secret supplied one time in the wizard or configured in App Service settings. The wizard does not persist secrets.
 

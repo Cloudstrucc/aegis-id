@@ -25,12 +25,79 @@
   </div>
 </section>
 
+<section class="band band--white mobile-downloads" id="mobile-apps">
+  <div class="mobile-downloads__copy">
+    <p class="eyebrow">Mobile wallet</p>
+    <h2>Install the Vanguard Aegis ID wallet for testing.</h2>
+    <p>Use the iOS TestFlight beta or Android testing link for business-partner wallet pilots.</p>
+  </div>
+  <div class="store-badge-row" aria-label="Mobile app downloads">
+    {{#if hasIosDownloadUrl}}
+      <a class="store-badge store-badge--ios" href="{{iosDownloadUrl}}" target="_blank" rel="noopener">
+        <span class="store-badge__mark">iOS</span>
+        <span>
+          <span class="store-badge__eyebrow">Download beta on</span>
+          <strong>TestFlight</strong>
+        </span>
+      </a>
+    {{else}}
+      <span class="store-badge store-badge--ios store-badge--pending" aria-disabled="true">
+        <span class="store-badge__mark">iOS</span>
+        <span>
+          <span class="store-badge__eyebrow">TestFlight link</span>
+          <strong>Pending</strong>
+        </span>
+      </span>
+    {{/if}}
+    {{#if hasAndroidDownloadUrl}}
+      <a class="store-badge store-badge--android" href="{{androidDownloadUrl}}" target="_blank" rel="noopener">
+        <span class="store-badge__mark">AOS</span>
+        <span>
+          <span class="store-badge__eyebrow">Get the beta on</span>
+          <strong>Android</strong>
+        </span>
+      </a>
+    {{else}}
+      <span class="store-badge store-badge--android store-badge--pending" aria-disabled="true">
+        <span class="store-badge__mark">AOS</span>
+        <span>
+          <span class="store-badge__eyebrow">Android testing link</span>
+          <strong>Pending</strong>
+        </span>
+      </span>
+    {{/if}}
+  </div>
+</section>
+
+{{#if isAuthenticated}}
+  <section class="band band--light" id="example-apps">
+    <div class="section-heading">
+      <p class="eyebrow">Example apps</p>
+      <h2>Try Aegis ID in a working application.</h2>
+      <p>Open a demo app, complete the assurance step, then use the Vanguard Aegis ID mobile app to sign the wallet challenge and review the ledger.</p>
+    </div>
+    <div class="example-app-grid">
+      {{#each exampleApps}}
+        <article class="example-app-card">
+          <span class="track-label">{{label}}</span>
+          <h3>{{title}}</h3>
+          <p>{{summary}}</p>
+          <div class="example-app-card__footer">
+            <span class="example-app-card__meta">{{meta}}</span>
+            <a class="button button--blue example-app-card__cta" href="{{href}}" target="_blank" rel="noopener">{{action}}</a>
+          </div>
+        </article>
+      {{/each}}
+    </div>
+  </section>
+{{/if}}
+
 <section class="band band--white" id="setup-video">
   <div class="video-layout">
     <div class="section-heading">
       <p class="eyebrow">Setup walkthrough</p>
-      <h2>A quick cartoon guide to onboarding.</h2>
-      <p>Watch the subscriber journey from sign-up to Verified ID setup, wallet testing, and connecting other identity platforms.</p>
+      <h2>A quick guide to onboarding.</h2>
+      <p>Watch the subscriber journey from account creation to organization setup, credential issuance, mobile wallet acceptance, and OIDC challenge testing.</p>
     </div>
     <button class="video-shell video-trigger" type="button" data-video-open aria-label="Watch the Vanguard Cloud Services - Aegis ID setup walkthrough video">
       <img src="/images/setup-walkthrough-poster.png" alt="" aria-hidden="true">
@@ -88,102 +155,158 @@
     <div class="flow-break"></div>
     <div class="flow-node flow-node--lab">ACA-Py</div>
     <div class="flow-line flow-line--lab"></div>
-    <div class="flow-node flow-node--lab">Bifold</div>
+    <div class="flow-node flow-node--lab">Aegis ID mobile app</div>
     <div class="flow-line flow-line--lab"></div>
     <div class="flow-node flow-node--lab">VON Dev Ledger</div>
   </div>
 </section>
 
-<section class="band band--white" id="signup">
-  <div class="subscription-layout">
-    <div class="section-heading">
-      <p class="eyebrow">Subscriber account</p>
-      <h2>Create your account before subscribing an organization.</h2>
-      <p>After sign-up, Vanguard Cloud Services - Aegis ID requires email, SMS, or passkey verification before you can subscribe organizations, issue credentials, or open setup wizards.</p>
-    </div>
-
-    <form class="subscribe-form" action="/auth/register" method="post" novalidate>
-      <div class="field-row">
-        <div class="field-group">
-          <label for="displayName">Full name</label>
-          <input id="displayName" name="displayName" type="text" value="{{formValues.displayName}}" autocomplete="name" required>
-          {{#if formErrors.displayName}}<p class="field-error">{{formErrors.displayName}}</p>{{/if}}
-        </div>
-        <div class="field-group">
-          <label for="email">Work email</label>
-          <input id="email" name="email" type="email" value="{{formValues.email}}" autocomplete="email" required>
-          {{#if formErrors.email}}<p class="field-error">{{formErrors.email}}</p>{{/if}}
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" autocomplete="new-password" required>
-          {{#if formErrors.password}}<p class="field-error">{{formErrors.password}}</p>{{/if}}
-        </div>
-        <div class="field-group">
-          <label for="confirmPassword">Confirm password</label>
-          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
-          {{#if formErrors.confirmPassword}}<p class="field-error">{{formErrors.confirmPassword}}</p>{{/if}}
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label for="organization">Organization</label>
-          <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization">
-        </div>
-        <div class="field-group">
-          <label for="role">Role</label>
-          <input id="role" name="role" type="text" value="{{formValues.role}}">
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label for="phone">Mobile phone</label>
-          <input id="phone" name="phone" type="tel" value="{{formValues.phone}}" autocomplete="tel">
-          {{#if formErrors.phone}}<p class="field-error">{{formErrors.phone}}</p>{{/if}}
-        </div>
-        <div class="field-group">
-          <label for="preferredMfa">Second factor</label>
-          <select id="preferredMfa" name="preferredMfa">
-            <option value="email" {{#if (eq formValues.preferredMfa "email")}}selected{{/if}}>Email code</option>
-            <option value="sms" {{#if (eq formValues.preferredMfa "sms")}}selected{{/if}}>SMS code</option>
-            <option value="passkey" {{#if (eq formValues.preferredMfa "passkey")}}selected{{/if}}>Passkey</option>
-          </select>
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label for="plan">Plan</label>
-          <select id="plan" name="plan">
-            <option value="pilot" {{#if (eq formValues.plan "pilot")}}selected{{/if}}>Pilot</option>
-            <option value="sandbox" {{#if (eq formValues.plan "sandbox")}}selected{{/if}}>Sandbox</option>
-            <option value="enterprise" {{#if (eq formValues.plan "enterprise")}}selected{{/if}}>Enterprise</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label for="interest">Interest</label>
-          <select id="interest" name="interest">
-            <option value="both" {{#if (eq formValues.interest "both")}}selected{{/if}}>Both tracks</option>
-            <option value="microsoft-native" {{#if (eq formValues.interest "microsoft-native")}}selected{{/if}}>Microsoft-native</option>
-            <option value="aries-lab" {{#if (eq formValues.interest "aries-lab")}}selected{{/if}}>Aries lab</option>
-          </select>
-        </div>
-      </div>
-      <button class="button button--primary" type="submit">Create account</button>
-      <p class="form-footnote">Already registered? <a href="/auth/login">Sign in</a>.</p>
-    </form>
+<section class="band band--white" id="assurance">
+  <div class="section-heading">
+    <p class="eyebrow">Aegis assurance modes</p>
+    <h2>Choose the right proof for the business moment.</h2>
+    <p>Verified ID, YubiKey/FIDO2, and Aegis wallet challenges can work together or independently depending on the application, risk, and organization policy.</p>
   </div>
-</section>
-
-<section class="band band--light">
-  <div class="plan-grid">
-    {{#each plans}}
-      <article class="plan-card">
-        <span>{{price}}</span>
-        <h3>{{name}}</h3>
+  <div class="assurance-grid">
+    {{#each assuranceModes}}
+      <article class="assurance-card">
+        <span class="platform-icon">{{icon}}</span>
+        <h3>{{title}}</h3>
         <p>{{summary}}</p>
       </article>
     {{/each}}
   </div>
 </section>
+
+{{#unless isAuthenticated}}
+  <section class="band band--light product-brief-preview" id="learn-more">
+    <div class="product-brief-layout">
+      <div class="product-brief-intro">
+        <div class="section-heading">
+          <p class="eyebrow">Learn more about the product</p>
+          <h2>See how Aegis ID fits into real identity journeys.</h2>
+          <p>This product brief explains the business value, technical architecture, demo journeys, and where Verified ID, YubiKey, and the Aegis ID mobile app each add assurance.</p>
+        </div>
+        <div class="product-brief-panel">
+          <div class="brief-path" aria-label="Aegis ID product journey">
+            <span>Identity source</span>
+            <i></i>
+            <span>Verified credential</span>
+            <i></i>
+            <span>Wallet decision</span>
+            <i></i>
+            <span>Audit evidence</span>
+          </div>
+          <p>Use the brief as an executive-ready overview or open it in a new tab and print to PDF for sharing.</p>
+          <div class="inline-actions">
+            <a class="button button--primary" href="{{productBriefUrl}}" target="_blank" rel="noopener">Open product brief</a>
+            <a class="button button--secondary" href="{{productBriefUrl}}" target="_blank" rel="noopener">Export PDF</a>
+          </div>
+        </div>
+      </div>
+      <div class="product-brief-card-grid">
+        {{#each productBriefCards}}
+          <article class="assurance-card product-brief-card">
+            <span class="platform-icon">{{icon}}</span>
+            <h3>{{title}}</h3>
+            <p>{{summary}}</p>
+          </article>
+        {{/each}}
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--white" id="signup">
+    <div class="subscription-layout">
+      <div class="section-heading">
+        <p class="eyebrow">Subscriber account</p>
+        <h2>Create your account before subscribing an organization.</h2>
+        <p>After sign-up, Vanguard Cloud Services - Aegis ID requires email, SMS, or passkey verification before you can subscribe organizations, issue credentials, or open setup wizards.</p>
+      </div>
+
+      <form class="subscribe-form" action="/auth/register" method="post" novalidate>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="displayName">Full name</label>
+            <input id="displayName" name="displayName" type="text" value="{{formValues.displayName}}" autocomplete="name" required>
+            {{#if formErrors.displayName}}<p class="field-error">{{formErrors.displayName}}</p>{{/if}}
+          </div>
+          <div class="field-group">
+            <label for="email">Work email</label>
+            <input id="email" name="email" type="email" value="{{formValues.email}}" autocomplete="email" required>
+            {{#if formErrors.email}}<p class="field-error">{{formErrors.email}}</p>{{/if}}
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="new-password" required>
+            {{#if formErrors.password}}<p class="field-error">{{formErrors.password}}</p>{{/if}}
+          </div>
+          <div class="field-group">
+            <label for="confirmPassword">Confirm password</label>
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
+            {{#if formErrors.confirmPassword}}<p class="field-error">{{formErrors.confirmPassword}}</p>{{/if}}
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="organization">Organization</label>
+            <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization">
+          </div>
+          <div class="field-group">
+            <label for="role">Role</label>
+            <input id="role" name="role" type="text" value="{{formValues.role}}">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="phone">Mobile phone</label>
+            <input id="phone" name="phone" type="tel" value="{{formValues.phone}}" autocomplete="tel">
+            {{#if formErrors.phone}}<p class="field-error">{{formErrors.phone}}</p>{{/if}}
+          </div>
+          <div class="field-group">
+            <label for="preferredMfa">Second factor</label>
+            <select id="preferredMfa" name="preferredMfa">
+              <option value="email" {{#if (eq formValues.preferredMfa "email")}}selected{{/if}}>Email code</option>
+              <option value="sms" {{#if (eq formValues.preferredMfa "sms")}}selected{{/if}}>SMS code</option>
+              <option value="passkey" {{#if (eq formValues.preferredMfa "passkey")}}selected{{/if}}>Passkey</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="plan">Plan</label>
+            <select id="plan" name="plan">
+              <option value="pilot" {{#if (eq formValues.plan "pilot")}}selected{{/if}}>Pilot</option>
+              <option value="sandbox" {{#if (eq formValues.plan "sandbox")}}selected{{/if}}>Sandbox</option>
+              <option value="enterprise" {{#if (eq formValues.plan "enterprise")}}selected{{/if}}>Enterprise</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="interest">Interest</label>
+            <select id="interest" name="interest">
+              <option value="both" {{#if (eq formValues.interest "both")}}selected{{/if}}>Both tracks</option>
+              <option value="microsoft-native" {{#if (eq formValues.interest "microsoft-native")}}selected{{/if}}>Microsoft-native</option>
+              <option value="aries-lab" {{#if (eq formValues.interest "aries-lab")}}selected{{/if}}>Aries lab</option>
+            </select>
+          </div>
+        </div>
+        <button class="button button--primary" type="submit">Create account</button>
+        <p class="form-footnote">Already registered? <a href="/auth/login">Sign in</a>.</p>
+      </form>
+    </div>
+  </section>
+
+  <section class="band band--light">
+    <div class="plan-grid">
+      {{#each plans}}
+        <article class="plan-card">
+          <span>{{price}}</span>
+          <h3>{{name}}</h3>
+          <p>{{summary}}</p>
+        </article>
+      {{/each}}
+    </div>
+  </section>
+{{/unless}}

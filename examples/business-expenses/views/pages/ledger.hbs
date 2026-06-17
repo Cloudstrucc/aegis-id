@@ -3,7 +3,7 @@
     <div>
       <span class="badge text-bg-dark">Reporting</span>
       <h1 class="mt-2 mb-1">Wallet challenge ledger</h1>
-      <p class="text-muted mb-0">Every high-value authentication and expense decision challenge is visible here with its signed payload.</p>
+      <p class="text-muted mb-0">Every high-value authentication, YubiKey step-up, and expense decision challenge is visible here with its signed payload.</p>
     </div>
     <a class="btn btn-primary" href="/expenses">Back to expenses</a>
   </div>
@@ -49,6 +49,31 @@
     </div>
 
     <div class="col-xl-4">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white">
+          <h2 class="h5 mb-0">YubiKey assurance events</h2>
+        </div>
+        <div class="list-group list-group-flush">
+          {{#each assuranceEvents}}
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between gap-3">
+                <strong>{{subject}}</strong>
+                <span class="badge status-{{status}}">{{status}}</span>
+              </div>
+              <div class="text-muted small">{{action}} via {{type}}</div>
+              <div class="small">Credential: <code>{{credentialId}}</code></div>
+              <details class="mt-2">
+                <summary>Payload</summary>
+                <pre class="small mt-2">{{json payload}}</pre>
+              </details>
+            </div>
+          {{/each}}
+          {{#unless assuranceEvents}}
+            <div class="list-group-item text-muted">No YubiKey assurance events yet.</div>
+          {{/unless}}
+        </div>
+      </div>
+
       <div class="card shadow-sm border-0">
         <div class="card-header bg-white">
           <h2 class="h5 mb-0">Local decision index</h2>

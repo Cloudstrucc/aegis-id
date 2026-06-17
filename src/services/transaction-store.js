@@ -14,4 +14,29 @@ async function listTransactions() {
   return store.read();
 }
 
-module.exports = { saveTransaction, listTransactions };
+async function getTransaction(transactionId) {
+  const records = await store.read();
+  return records.find((record) => record.id === transactionId) || null;
+}
+
+async function updateTransactionByState(state, patch) {
+  if (!state) {
+    return null;
+  }
+
+  const records = await store.read();
+  const index = records.findIndex((record) => record.state === state);
+  if (index === -1) {
+    return null;
+  }
+
+  records[index] = {
+    ...records[index],
+    ...patch,
+    updatedAt: new Date().toISOString()
+  };
+  await store.write(records);
+  return records[index];
+}
+
+module.exports = { getTransaction, listTransactions, saveTransaction, updateTransactionByState };

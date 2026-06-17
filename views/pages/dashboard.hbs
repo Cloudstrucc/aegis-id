@@ -1,9 +1,10 @@
 <section class="page-hero page-hero--compact">
   <p class="eyebrow">{{workspaceRole}} Dashboard</p>
   <h1>{{workspace.organization}} Aegis ID setup</h1>
-  <p>{{#if welcome}}Subscription captured. Start by connecting Microsoft Entra Verified ID, then add federation providers as needed.{{else}}Manage connected identity platforms and setup progress for this Aegis ID workspace.{{/if}}</p>
+  <p>{{#if welcome}}Subscription captured. Start by connecting Microsoft Entra Verified ID or YubiKey-backed assurance, then add federation providers as needed.{{else}}Manage connected identity platforms, hardware-backed assurance, and setup progress for this Aegis ID workspace.{{/if}}</p>
   <div class="hero__actions">
     <a class="button button--primary" href="{{dashboardBasePath}}/platforms/microsoft-verified-id/setup">Set Up Verified ID</a>
+    <a class="button button--secondary" href="{{dashboardBasePath}}/platforms/yubikey-fido2/setup">Set Up YubiKey</a>
     <a class="button button--secondary" href="{{organizationsPath}}">Organizations</a>
     <a class="button button--secondary" href="/architecture">Architecture</a>
   </div>
@@ -53,80 +54,60 @@
   </div>
 
   {{#if orgAdmin.isAdmin}}
+    {{#if orgAdmin.adminProfile.showVerificationBanner}}
+      <aside class="identity-reminder" data-dismissible-banner="identity-reminder-{{workspace.id}}">
+        <div>
+          <p class="eyebrow">Administrator assurance</p>
+          <h3>Verify your admin profile within {{orgAdmin.adminProfile.verificationDaysRemaining}} days.</h3>
+          <p>Admins can keep working during the grace period. Upload an ID image and capture a face photo when you are ready; this lab adapter records hashes and a mock match score for the pilot.</p>
+        </div>
+        <div class="identity-reminder__actions">
+          <button class="button button--primary button--blue" type="button" data-modal-target="#admin-identity-verification">Verify ID</button>
+          <button class="button button--secondary button--dark-text" type="button" data-dismiss-banner>Dismiss</button>
+        </div>
+      </aside>
+    {{/if}}
+
+    <div class="workspace-steps" data-workspace-tour="{{workspace.id}}">
+      <article data-tour-step="overview">
+        <span>1</span>
+        <strong>Review the directory</strong>
+        <p>The original subscriber appears first, followed by invited, active, and revoked credential holders.</p>
+      </article>
+      <article data-tour-step="add-user">
+        <span>2</span>
+        <strong>Invite people</strong>
+        <p>Add employees, contractors, or admins. Each invitation defaults to 7 days and produces a QR plus copyable link.</p>
+      </article>
+      <article data-tour-step="configure">
+        <span>3</span>
+        <strong>Configure claims and roles</strong>
+        <p>Use the configuration tiles to define what credentials can contain and what privileges they carry.</p>
+      </article>
+      <article data-tour-step="audit">
+        <span>4</span>
+        <strong>Audit wallet challenges</strong>
+        <p>Authentication, consent, promotion, approval, and revocation activity stays visible in immutable logs.</p>
+      </article>
+    </div>
+
     <div class="admin-grid">
       <article class="platform-card">
         <div class="platform-card__head">
           <span class="platform-icon">ID</span>
           <div>
-            <span class="track-label">Issue credential</span>
-            <h3>Invite a credential holder</h3>
+            <span class="track-label">Next action</span>
+            <h3>Onboard or manage people</h3>
           </div>
         </div>
-        <form class="wizard-form" action="{{dashboardBasePath}}/admin/credentials" method="post">
-          <div class="field-row">
-            <div class="field-group">
-              <label for="holderEmail">Holder email</label>
-              <input id="holderEmail" name="holderEmail" type="email" value="identity@vanguardcs.ca" required>
-            </div>
-            <div class="field-group">
-              <label for="displayName">Display name</label>
-              <input id="displayName" name="displayName" type="text" value="Vanguard Team Member" required>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-group">
-              <label for="personType">Person type</label>
-              <select id="personType" name="personType" title="Classifies the holder for directory filtering and default role workflows.">
-                {{#each orgAdmin.personTypes}}
-                  <option value="{{id}}">{{name}}</option>
-                {{/each}}
-              </select>
-            </div>
-            <div class="field-group">
-              <label for="divisionId">Division / sub-organization</label>
-              <select id="divisionId" name="divisionId" title="Places this credential in the organization's division tree.">
-                {{#each orgAdmin.orgUnitOptions}}
-                  <option value="{{id}}">{{indentedName}}</option>
-                {{/each}}
-              </select>
-            </div>
-            <div class="field-group">
-              <label for="inviteTtlDays">Invite expiry days</label>
-              <input id="inviteTtlDays" name="inviteTtlDays" type="number" min="1" max="365" value="7" title="Default is 7 days. Override this for contractors or time-sensitive onboarding.">
-            </div>
-          </div>
-          <div class="checkbox-grid">
-            {{#each orgAdmin.roles}}
-              <label class="checkline">
-                <input type="checkbox" name="roleIds" value="{{id}}">
-                <span>{{name}}</span>
-              </label>
-            {{/each}}
-          </div>
-          <div>
-            <p class="form-note">Claims requested by wallet consent challenge</p>
-            <div class="checkbox-grid">
-              {{#each orgAdmin.claimConsentOptions}}
-                <label class="checkline" title="The holder must consent before this organization can use this claim.">
-                  <input type="checkbox" name="requestedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
-                  <span>{{label}}</span>
-                </label>
-              {{/each}}
-            </div>
-          </div>
-          <div class="claim-edit-grid">
-            {{#each orgAdmin.claimDefinitions}}
-              <div class="field-group">
-                <label for="issue-claim-{{key}}">{{label}}</label>
-                <input id="issue-claim-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{defaultValue}}">
-              </div>
-            {{/each}}
-          </div>
-          <button class="button button--primary button--blue" type="submit">Issue Credential</button>
-        </form>
+        <p>Start with the people table below. Add a credential holder, open a row for details, or use row actions for edit, re-invite, promotion, and revocation.</p>
+        <div class="platform-card__actions">
+          <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user" data-tour-anchor="add-user">Add User</button>
+          <a class="button button--secondary button--dark-text" href="#roles-claims">Configure Claims and Roles</a>
+        </div>
       </article>
 
-      <article class="platform-card">
+      <article class="platform-card" data-tour-anchor="audit">
         <div class="platform-card__head">
           <span class="platform-icon">LOG</span>
           <div>
@@ -249,24 +230,29 @@
         <h3>Credential holders and invitations</h3>
         <p>{{orgAdmin.peopleTable.pageSummary}} people shown. Invitations default to 7 days unless overridden.</p>
       </div>
-      <form class="people-filters" action="{{dashboardBasePath}}" method="get">
-        <input name="peopleSearch" type="search" value="{{orgAdmin.peopleTable.search}}" placeholder="Search people, email, role">
-        <select name="peopleStatus">
-          {{#each orgAdmin.peopleTable.statusOptions}}
-            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
-          {{/each}}
-        </select>
-        <select name="peopleType">
-          {{#each orgAdmin.peopleTable.personTypeOptions}}
-            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
-          {{/each}}
-        </select>
-        <button class="button button--secondary button--dark-text" type="submit">Apply</button>
-      </form>
+      <div class="people-directory__tools">
+        {{#if orgAdmin.isAdmin}}
+          <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user" data-tour-anchor="add-user">Add User</button>
+        {{/if}}
+        <form class="people-filters" action="{{dashboardBasePath}}" method="get">
+          <input name="peopleSearch" type="search" value="{{orgAdmin.peopleTable.search}}" placeholder="Search people, email, role" aria-label="Search people">
+          <select name="peopleStatus" aria-label="Filter by status">
+            {{#each orgAdmin.peopleTable.statusOptions}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+          <select name="peopleType" aria-label="Filter by person type">
+            {{#each orgAdmin.peopleTable.personTypeOptions}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+          <button class="button button--secondary button--dark-text" type="submit">Apply</button>
+        </form>
+      </div>
     </div>
 
     <div class="people-table-wrap">
-      <table class="people-table">
+      <table class="people-table" data-tour-anchor="people-table">
         <thead>
           <tr>
             <th><a href="{{orgAdmin.peopleTable.sortLinks.displayName}}">Name</a></th>
@@ -276,13 +262,21 @@
             <th>Roles</th>
             <th><a href="{{orgAdmin.peopleTable.sortLinks.status}}">Status</a></th>
             <th><a href="{{orgAdmin.peopleTable.sortLinks.inviteExpiresAt}}">Invite expiry</a></th>
-            <th><a href="{{orgAdmin.peopleTable.sortLinks.consent}}">Consent</a></th>
+            <th><a href="{{orgAdmin.peopleTable.sortLinks.consent}}">Assurance</a></th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {{#each orgAdmin.peopleTable.rows}}
-            <tr>
-              <td><a href="#credential-{{id}}">{{displayName}}</a></td>
+            <tr id="{{#if isAdminProfile}}admin-profile-row{{else}}credential-{{id}}{{/if}}" data-row-modal="#{{detailModalId}}">
+              <td>
+                <button class="table-record-button" type="button" data-modal-target="#{{detailModalId}}">
+                  <strong>{{displayName}}</strong>
+                  {{#if isAdminProfile}}
+                    <span class="validated-mark {{#if (eq verification.status "verified")}}validated-mark--ok{{/if}}" title="{{verificationStatusLabel}}">✓</span>
+                  {{/if}}
+                </button>
+              </td>
               <td>{{holderEmail}}</td>
               <td>{{personTypeLabel}}</td>
               <td>{{divisionName}}</td>
@@ -301,6 +295,22 @@
                 {{/if}}
               </td>
               <td><span class="status-pill status-pill--consent">{{consentStatusLabel}}</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="icon-button" type="button" title="View details" data-modal-target="#{{detailModalId}}">View</button>
+                  {{#if ../orgAdmin.isAdmin}}
+                    {{#if isAdminProfile}}
+                      <button class="icon-button" type="button" title="Verify administrator identity" data-modal-target="#admin-identity-verification">Verify</button>
+                    {{else}}
+                      <button class="icon-button" type="button" title="Edit credential holder" data-modal-target="#{{editModalId}}">Edit</button>
+                      <button class="icon-button" type="button" title="Show invite QR and link" data-modal-target="#{{inviteModalId}}">Invite</button>
+                      {{#unless (eq status "revoked")}}
+                        <button class="icon-button icon-button--danger" type="button" title="Revoke credential" data-modal-target="#{{revokeModalId}}">Revoke</button>
+                      {{/unless}}
+                    {{/if}}
+                  {{/if}}
+                </div>
+              </td>
             </tr>
           {{/each}}
         </tbody>
@@ -320,107 +330,346 @@
     </div>
   </div>
 
-  <div class="credential-grid">
-    {{#each orgAdmin.credentials}}
-      <article id="credential-{{id}}" class="credential-card credential-card--{{status}}">
-        <div class="credential-card__head">
+  {{#if orgAdmin.isAdmin}}
+    <div class="app-modal" id="modal-add-user" hidden>
+      <div class="app-modal__backdrop" data-modal-close></div>
+      <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="modal-add-user-title">
+        <div class="app-modal__head">
           <div>
-            <span class="track-label">{{statusLabel}}</span>
-            <h3>{{displayName}}</h3>
+            <p class="eyebrow">Issue credential</p>
+            <h2 id="modal-add-user-title">Add a user to {{workspace.organization}}</h2>
+            <p>The invite defaults to 7 days. After the credential is created, the QR and link open automatically.</p>
+          </div>
+          <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+        </div>
+        <form class="wizard-form" action="{{dashboardBasePath}}/admin/credentials" method="post">
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="holderEmail">Holder email <span class="field-tooltip" tabindex="0" data-tooltip="The email address used to identify the wallet holder and send human follow-up.">?</span></label>
+              <input id="holderEmail" name="holderEmail" type="email" value="identity@vanguardcs.ca" required>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="displayName">Display name <span class="field-tooltip" tabindex="0" data-tooltip="The name shown in the admin dashboard and wallet credential profile.">?</span></label>
+              <input id="displayName" name="displayName" type="text" value="Vanguard Team Member" required>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="personType">Person type</label>
+              <select id="personType" name="personType">
+                {{#each orgAdmin.personTypes}}
+                  <option value="{{id}}">{{name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="divisionId">Division / sub-organization</label>
+              <select id="divisionId" name="divisionId">
+                {{#each orgAdmin.orgUnitOptions}}
+                  <option value="{{id}}">{{indentedName}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="inviteTtlDays">Invite expiry days <span class="field-tooltip" tabindex="0" data-tooltip="Default is 7 days. Use a shorter window for high-risk invites or a longer one for partners who need scheduling time.">?</span></label>
+              <input id="inviteTtlDays" name="inviteTtlDays" type="number" min="1" max="365" value="7">
+            </div>
+          </div>
+          <div>
+            <p class="form-note">Roles</p>
+            <div class="checkbox-grid">
+              {{#each orgAdmin.roles}}
+                <label class="checkline">
+                  <input type="checkbox" name="roleIds" value="{{id}}">
+                  <span>{{name}}</span>
+                </label>
+              {{/each}}
+            </div>
+          </div>
+          <div>
+            <p class="form-note">Claims requested by wallet consent challenge</p>
+            <div class="checkbox-grid">
+              {{#each orgAdmin.claimConsentOptions}}
+                <label class="checkline">
+                  <input type="checkbox" name="requestedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
+                  <span>{{label}}</span>
+                </label>
+              {{/each}}
+            </div>
+          </div>
+          <div class="claim-edit-grid">
+            {{#each orgAdmin.claimDefinitions}}
+              <div class="field-group">
+                <label for="issue-claim-{{key}}">{{label}}</label>
+                <input id="issue-claim-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{defaultValue}}">
+              </div>
+            {{/each}}
+          </div>
+          <div class="modal-actions">
+            <button class="button button--primary button--blue" type="submit">Issue Credential</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="app-modal" id="admin-profile-detail" hidden>
+      <div class="app-modal__backdrop" data-modal-close></div>
+      <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="admin-profile-title">
+        <div class="app-modal__head">
+          <div>
+            <p class="eyebrow">Original subscriber</p>
+            <h2 id="admin-profile-title">{{orgAdmin.adminProfile.displayName}}</h2>
+            <p>{{orgAdmin.adminProfile.holderEmail}}</p>
+          </div>
+          <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+        </div>
+        <dl class="claim-list">
+          <div><dt>Role</dt><dd>{{orgAdmin.adminProfile.statusLabel}}</dd></div>
+          <div><dt>Organization</dt><dd>{{workspace.organization}}</dd></div>
+          <div><dt>Verification</dt><dd>{{orgAdmin.adminProfile.verificationStatusLabel}}</dd></div>
+          <div><dt>Deadline</dt><dd>{{orgAdmin.adminProfile.verificationDeadlineLabel}}</dd></div>
+        </dl>
+        <div class="modal-actions">
+          <button class="button button--primary button--blue" type="button" data-modal-target="#admin-identity-verification">Verify ID</button>
+          <button class="button button--secondary button--dark-text" type="button" data-modal-close>Close</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="app-modal" id="admin-identity-verification" hidden>
+      <div class="app-modal__backdrop" data-modal-close></div>
+      <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="admin-idv-title">
+        <div class="app-modal__head">
+          <div>
+            <p class="eyebrow">Lab ID verification</p>
+            <h2 id="admin-idv-title">Validate administrator profile</h2>
+            <p>This pilot uses local open-source face detection for capture readiness and stores only image hashes, score, provider, and status.</p>
+          </div>
+          <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+        </div>
+        <form class="wizard-form" action="{{dashboardBasePath}}/admin/identity-verification" method="post" data-idv-form>
+          <ol class="idv-stepper" aria-label="Administrator identity validation steps">
+            <li class="is-active" data-idv-step-indicator="document"><span>1</span> Government ID</li>
+            <li data-idv-step-indicator="face"><span>2</span> Live face capture</li>
+            <li data-idv-step-indicator="analysis"><span>3</span> Analysis</li>
+          </ol>
+
+          <section class="idv-step" data-idv-step="document">
+            <div>
+              <p class="eyebrow">Step 1</p>
+              <h3>Upload a government photo ID.</h3>
+              <p class="form-note">Use a clear photo or scan. For this lab, the image is converted in the browser and the server stores a hash only.</p>
+            </div>
+            <div class="idv-document-grid">
+              <div class="field-group">
+                <label for="idImageUpload">Government ID image</label>
+                <input id="idImageUpload" type="file" accept="image/png,image/jpeg,image/webp" data-image-to-hidden="idImageDataUrl">
+                <input type="hidden" name="idImageDataUrl" data-image-hidden="idImageDataUrl">
+              </div>
+              <div class="idv-preview" data-idv-id-preview>
+                <span>ID preview</span>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="button button--primary button--blue" type="button" data-idv-next="face" disabled>Continue to Face Capture</button>
+              <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+            </div>
+          </section>
+
+          <section class="idv-step" data-idv-step="face" hidden>
+            <div>
+              <p class="eyebrow">Step 2</p>
+              <h3>Look into the camera until your face is captured.</h3>
+              <p class="form-note">MediaPipe Face Detection runs in the browser. The capture button enables once one face is centered and confidently detected.</p>
+            </div>
+            <div class="idv-camera-shell">
+              <div class="idv-camera-frame" data-idv-camera-frame>
+                <video data-idv-video autoplay muted playsinline></video>
+                <canvas data-idv-canvas hidden></canvas>
+                <div class="idv-face-guide" aria-hidden="true"></div>
+                <div class="idv-camera-placeholder" data-idv-camera-placeholder>
+                  <strong>Camera not started</strong>
+                  <span>Start the camera and keep your face inside the guide.</span>
+                </div>
+              </div>
+              <div class="idv-camera-status" data-idv-status>Waiting for camera permission.</div>
+            </div>
+            <input type="hidden" name="faceImageDataUrl" data-image-hidden="faceImageDataUrl">
+            <input type="hidden" name="faceDetectionScore" data-idv-face-score>
+            <input type="hidden" name="faceDetectionProvider" value="mediapipe-face-detection">
+            <div class="modal-actions">
+              <button class="button button--primary button--blue" type="button" data-idv-start-camera>Start Camera</button>
+              <button class="button button--secondary button--dark-text" type="button" data-idv-capture disabled>Capture Face</button>
+              <button class="button button--ghost" type="button" data-idv-back="document">Back</button>
+            </div>
+          </section>
+
+          <section class="idv-step" data-idv-step="analysis" hidden>
+            <div>
+              <p class="eyebrow">Step 3</p>
+              <h3>Review analysis and submit validation.</h3>
+              <p class="form-note">The lab adapter compares the captured evidence and records provider metadata, hashes, and a score. Start over if the capture does not look right.</p>
+            </div>
+            <div class="idv-analysis-grid">
+              <div class="idv-preview" data-idv-analysis-id>
+                <span>ID evidence ready</span>
+              </div>
+              <div class="idv-preview" data-idv-analysis-face>
+                <span>Face capture ready</span>
+              </div>
+              <article class="note-panel idv-result-panel">
+                <strong data-idv-analysis-title>Ready for local analysis</strong>
+                <span data-idv-analysis-copy>Submit when both evidence items look correct, or start over to recapture.</span>
+              </article>
+            </div>
+            <div class="modal-actions">
+              <button class="button button--primary button--blue" type="submit" data-idv-submit>Submit Validation</button>
+              <button class="button button--secondary button--dark-text" type="button" data-idv-start-over>Start Over</button>
+              <button class="button button--ghost" type="button" data-idv-back="face">Back</button>
+            </div>
+          </section>
+
+          <article class="note-panel">
+            <strong>Production note</strong>
+            <span>This lab uses Apache-2.0 MediaPipe Face Detection for readiness checks. Use a reviewed IDV workflow and retention policy before processing real identity documents in production.</span>
+          </article>
+        </form>
+      </section>
+    </div>
+  {{/if}}
+
+  {{#each orgAdmin.credentials}}
+    <div class="app-modal" id="{{detailModalId}}" hidden>
+      <div class="app-modal__backdrop" data-modal-close></div>
+      <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="detail-title-{{id}}">
+        <div class="app-modal__head">
+          <div>
+            <p class="eyebrow">{{statusLabel}}</p>
+            <h2 id="detail-title-{{id}}">{{displayName}}</h2>
             <p>{{holderEmail}}</p>
           </div>
-          <span class="credential-status">{{statusLabel}}</span>
+          <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
         </div>
-
         <div class="tag-row">
           <span>{{personTypeLabel}}</span>
           <span>{{divisionName}}</span>
           <span>Invite expires {{inviteExpiresLabel}}</span>
-          {{#each roleLabels}}
-            <span>{{this}}</span>
-          {{/each}}
-          {{#if coAdminStatus}}
-            <span>Co-admin: {{coAdminStatus}}</span>
-          {{/if}}
+          {{#each roleLabels}}<span>{{this}}</span>{{/each}}
+          {{#if coAdminStatus}}<span>Co-admin: {{coAdminStatus}}</span>{{/if}}
           <span>{{consentStatusLabel}}</span>
         </div>
-
-        <details>
-          <summary>Credential profile and transactions</summary>
-          <dl class="claim-list">
-            {{#each claimFields}}
-              <div>
-                <dt>{{label}}</dt>
-                <dd>{{value}}</dd>
-              </div>
-            {{/each}}
-          </dl>
-          <div class="consent-panel">
-            <h4>Consent-scoped claims</h4>
-            <p>Only claims granted by the holder are available to this organization context.</p>
+        <div class="modal-split">
+          <div>
+            <h3>Credential profile</h3>
+            <dl class="claim-list">
+              {{#each claimFields}}
+                <div><dt>{{label}}</dt><dd>{{value}}</dd></div>
+              {{/each}}
+            </dl>
+          </div>
+          <div>
+            <h3>Consent-scoped claims</h3>
             <div class="tag-row">
-              {{#each requestedClaimLabels}}
-                <span>Requested: {{this}}</span>
-              {{/each}}
-              {{#each deltaClaimLabels}}
-                <span>Delta supplied: {{this}}</span>
-              {{/each}}
+              {{#each requestedClaimLabels}}<span>Requested: {{this}}</span>{{/each}}
+              {{#each deltaClaimLabels}}<span>Delta supplied: {{this}}</span>{{/each}}
             </div>
             {{#if sharedClaimFields}}
               <dl class="claim-list">
                 {{#each sharedClaimFields}}
-                  <div>
-                    <dt>{{label}}</dt>
-                    <dd>{{value}}</dd>
-                  </div>
+                  <div><dt>{{label}}</dt><dd>{{value}}</dd></div>
                 {{/each}}
               </dl>
             {{/if}}
           </div>
-          <div class="event-list event-list--compact">
-            {{#each events}}
-              <details>
-                <summary>{{title}} <span>{{createdAt}}</span></summary>
-                <pre>{{details}}</pre>
-              </details>
-            {{/each}}
-          </div>
-        </details>
-
+        </div>
+        <div class="event-list event-list--compact">
+          {{#each events}}
+            <details>
+              <summary>{{title}} <span>{{createdAt}}</span></summary>
+              <pre>{{details}}</pre>
+            </details>
+          {{/each}}
+        </div>
         {{#if ../orgAdmin.isAdmin}}
-          <details>
-            <summary>Admin actions</summary>
-            <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/update" method="post">
-              <div class="field-row">
-                <div class="field-group">
-                  <label for="holder-{{id}}">Holder email</label>
-                  <input id="holder-{{id}}" name="holderEmail" type="email" value="{{holderEmail}}">
-                </div>
-                <div class="field-group">
-                  <label for="name-{{id}}">Display name</label>
-                  <input id="name-{{id}}" name="displayName" type="text" value="{{displayName}}">
-                </div>
-                <div class="field-group">
-                  <label for="type-{{id}}">Person type</label>
-                  <select id="type-{{id}}" name="personType">
-                    {{#each personTypeOptions}}
-                      <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
-                    {{/each}}
-                  </select>
-                </div>
-                <div class="field-group">
-                  <label for="division-{{id}}">Division</label>
-                  <select id="division-{{id}}" name="divisionId">
-                    {{#each divisionOptions}}
-                      <option value="{{id}}" {{#if selected}}selected{{/if}}>{{indentedName}}</option>
-                    {{/each}}
-                  </select>
-                </div>
-                <div class="field-group">
-                  <label for="ttl-{{id}}">Invite expiry days</label>
-                  <input id="ttl-{{id}}" name="inviteTtlDays" type="number" min="1" max="365" value="{{inviteTtlDays}}">
-                </div>
+          <div class="modal-actions">
+            <button class="button button--primary button--blue" type="button" data-modal-target="#{{editModalId}}">Edit</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-target="#{{inviteModalId}}">Invite QR</button>
+            {{#if (eq status "invited")}}
+              <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/accept" method="post">
+                <button class="button button--secondary button--dark-text" type="submit">Mark Accepted</button>
+              </form>
+            {{/if}}
+            {{#if (eq status "active")}}
+              {{#if coAdminRequestId}}
+                <form action="{{../dashboardBasePath}}/admin/co-admin/{{coAdminRequestId}}/admin/accept" method="post">
+                  <button class="button button--secondary button--dark-text" type="submit">Accept Admin Challenge</button>
+                </form>
+                <form action="{{../dashboardBasePath}}/admin/co-admin/{{coAdminRequestId}}/holder/accept" method="post">
+                  <button class="button button--secondary button--dark-text" type="submit">Accept Holder Challenge</button>
+                </form>
+                <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/co-admin/revoke" method="post">
+                  <button class="button button--ghost" type="submit">Revoke Co-admin</button>
+                </form>
+              {{else}}
+                <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/co-admin/request" method="post">
+                  <button class="button button--secondary button--dark-text" type="submit">Promote to Co-admin</button>
+                </form>
+              {{/if}}
+            {{/if}}
+            {{#unless (eq status "revoked")}}
+              <button class="button button--ghost" type="button" data-modal-target="#{{revokeModalId}}">Revoke</button>
+            {{/unless}}
+          </div>
+        {{/if}}
+      </section>
+    </div>
+
+    {{#if ../orgAdmin.isAdmin}}
+      <div class="app-modal" id="{{editModalId}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="edit-title-{{id}}">
+          <div class="app-modal__head">
+            <div>
+              <p class="eyebrow">Edit credential</p>
+              <h2 id="edit-title-{{id}}">{{displayName}}</h2>
+              <p>Update holder profile, roles, claims, and consent request scope.</p>
+            </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/update" method="post">
+            <div class="field-row">
+              <div class="field-group">
+                <label for="holder-{{id}}">Holder email</label>
+                <input id="holder-{{id}}" name="holderEmail" type="email" value="{{holderEmail}}">
               </div>
+              <div class="field-group">
+                <label for="name-{{id}}">Display name</label>
+                <input id="name-{{id}}" name="displayName" type="text" value="{{displayName}}">
+              </div>
+              <div class="field-group">
+                <label for="type-{{id}}">Person type</label>
+                <select id="type-{{id}}" name="personType">
+                  {{#each personTypeOptions}}
+                    <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="division-{{id}}">Division</label>
+                <select id="division-{{id}}" name="divisionId">
+                  {{#each divisionOptions}}
+                    <option value="{{id}}" {{#if selected}}selected{{/if}}>{{indentedName}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="ttl-{{id}}">Invite expiry days</label>
+                <input id="ttl-{{id}}" name="inviteTtlDays" type="number" min="1" max="365" value="{{inviteTtlDays}}">
+              </div>
+            </div>
+            <div>
+              <p class="form-note">Roles</p>
               <div class="checkbox-grid">
                 {{#each availableRoles}}
                   <label class="checkline">
@@ -429,94 +678,93 @@
                   </label>
                 {{/each}}
               </div>
-              <div class="claim-edit-grid">
-                {{#each claimFields}}
-                  <div class="field-group">
-                    <label for="credential-{{../id}}-{{key}}">{{label}}</label>
-                    <input id="credential-{{../id}}-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{value}}">
-                  </div>
+            </div>
+            <div class="claim-edit-grid">
+              {{#each claimFields}}
+                <div class="field-group">
+                  <label for="credential-{{../id}}-{{key}}">{{label}}</label>
+                  <input id="credential-{{../id}}-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{value}}">
+                </div>
+              {{/each}}
+            </div>
+            <div>
+              <p class="form-note">Claims to request by wallet consent challenge</p>
+              <div class="checkbox-grid">
+                {{#each consentClaimFields}}
+                  <label class="checkline">
+                    <input type="checkbox" name="requestedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
+                    <span>{{label}}</span>
+                  </label>
                 {{/each}}
               </div>
-              <div>
-                <p class="form-note">Claims to request by wallet consent challenge</p>
-                <div class="checkbox-grid">
-                  {{#each consentClaimFields}}
-                    <label class="checkline">
-                      <input type="checkbox" name="requestedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
-                      <span>{{label}}</span>
-                    </label>
-                  {{/each}}
-                </div>
-              </div>
-              <button class="button button--primary button--blue" type="submit">Update Claims and Roles</button>
-            </form>
-
-            <div class="consent-actions">
-              <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/consent/request" method="post">
-                <p class="form-note">Send a wallet challenge requesting consent to share these claims with {{organizationName}}.</p>
-                <div class="checkbox-grid">
-                  {{#each consentClaimFields}}
-                    <label class="checkline">
-                      <input type="checkbox" name="requestedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
-                      <span>{{label}}</span>
-                    </label>
-                  {{/each}}
-                </div>
-                <button class="button button--secondary button--dark-text" type="submit">Request Claim Consent</button>
-              </form>
-
-              <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/consent/grant" method="post">
-                <p class="form-note">Lab simulator: record holder consent and optional delta claim values.</p>
-                <div class="claim-edit-grid">
-                  {{#each consentClaimFields}}
-                    <div class="field-group">
-                      <label for="consent-{{../id}}-{{key}}">
-                        <input type="checkbox" name="sharedClaimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
-                        {{label}}
-                      </label>
-                      <input id="consent-{{../id}}-{{key}}" name="consent_claim_{{key}}" type="{{type}}" value="{{value}}">
-                    </div>
-                  {{/each}}
-                </div>
-                <button class="button button--primary button--blue" type="submit">Simulate Wallet Consent</button>
-              </form>
             </div>
-
-            <div class="credential-actions">
-              {{#if (eq status "invited")}}
-                <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/accept" method="post">
-                  <button class="button button--primary" type="submit">Mark Accepted</button>
-                </form>
-              {{/if}}
-              {{#if (eq status "active")}}
-                {{#if coAdminRequestId}}
-                  <form action="{{../dashboardBasePath}}/admin/co-admin/{{coAdminRequestId}}/admin/accept" method="post">
-                    <button class="button button--secondary button--dark-text" type="submit">Accept Admin Challenge</button>
-                  </form>
-                  <form action="{{../dashboardBasePath}}/admin/co-admin/{{coAdminRequestId}}/holder/accept" method="post">
-                    <button class="button button--secondary button--dark-text" type="submit">Accept Holder Challenge</button>
-                  </form>
-                  <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/co-admin/revoke" method="post">
-                    <button class="button button--ghost" type="submit">Revoke Co-admin</button>
-                  </form>
-                {{else}}
-                  <form action="{{../dashboardBasePath}}/admin/credentials/{{id}}/co-admin/request" method="post">
-                    <button class="button button--secondary button--dark-text" type="submit">Promote to Co-admin</button>
-                  </form>
-                {{/if}}
-              {{/if}}
-              {{#unless (eq status "revoked")}}
-                <form class="inline-revoke-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/revoke" method="post">
-                  <input name="reason" type="text" placeholder="Revocation reason">
-                  <button class="button button--ghost" type="submit">Revoke Credential</button>
-                </form>
-              {{/unless}}
+            <div class="modal-actions">
+              <button class="button button--primary button--blue" type="submit">Save Changes</button>
+              <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
             </div>
-          </details>
-        {{/if}}
-      </article>
-    {{/each}}
-  </div>
+          </form>
+        </section>
+      </div>
+
+      <div class="app-modal" id="{{inviteModalId}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="invite-title-{{id}}">
+          <div class="app-modal__head">
+            <div>
+              <p class="eyebrow">Wallet invite</p>
+              <h2 id="invite-title-{{id}}">Invite {{displayName}}</h2>
+              <p>Send this QR or copyable link to the holder. Expiry: {{inviteExpiresLabel}}.</p>
+            </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <article class="demo-qr-card">
+            <img class="demo-qr-card__image" src="{{inviteQrCodeDataUrl}}" alt="{{displayName}} credential invitation QR code">
+            <code class="demo-qr-card__url">{{inviteUrl}}</code>
+            <button class="button button--secondary button--dark-text demo-qr-card__copy" type="button" data-copy-value="{{inviteUrl}}">Copy invite link</button>
+            <details class="demo-qr-card__details">
+              <summary>Web fallback link</summary>
+              <code class="demo-qr-card__url">{{webInviteUrl}}</code>
+              <button class="button button--secondary button--dark-text demo-qr-card__copy" type="button" data-copy-value="{{webInviteUrl}}">Copy web link</button>
+            </details>
+          </article>
+          <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/reinvite" method="post">
+            <div class="field-group">
+              <label for="reinvite-ttl-{{id}}">Reset invite expiry days</label>
+              <input id="reinvite-ttl-{{id}}" name="inviteTtlDays" type="number" min="1" max="365" value="{{inviteTtlDays}}">
+            </div>
+            <div class="modal-actions">
+              <button class="button button--primary button--blue" type="submit">Re-issue Invite</button>
+              <button class="button button--secondary button--dark-text" type="button" data-modal-close>Close</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <div class="app-modal" id="{{revokeModalId}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="revoke-title-{{id}}">
+          <div class="app-modal__head">
+            <div>
+              <p class="eyebrow">Confirm revocation</p>
+              <h2 id="revoke-title-{{id}}">Revoke {{displayName}}?</h2>
+              <p>The credential will show disabled in the wallet organization context and remain in audit history.</p>
+            </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <form class="wizard-form" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/revoke" method="post">
+            <div class="field-group">
+              <label for="revoke-reason-{{id}}">Revocation reason</label>
+              <input id="revoke-reason-{{id}}" name="reason" type="text" placeholder="Employment ended, duplicate invite, role changed">
+            </div>
+            <div class="modal-actions">
+              <button class="button button--ghost" type="submit">Revoke Credential</button>
+              <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    {{/if}}
+  {{/each}}
 </section>
 
 <section id="external-wallet-ledger" class="band band--light">
@@ -588,65 +836,115 @@
 
 <section id="roles-claims" class="band band--light">
   <div class="section-heading">
-    <p class="eyebrow">Roles and claims</p>
-    <h2>Define what this organization can issue.</h2>
+    <p class="eyebrow">Configuration</p>
+    <h2>Define roles and claims for this workspace.</h2>
+    <p>These tiles control what appears on issued credentials and what the wallet can consent to share by organization context.</p>
   </div>
-  <div class="admin-grid">
-    <article class="platform-card">
-      <h3>Roles</h3>
+  <div class="configuration-grid" data-tour-anchor="configure">
+    <article class="config-tile">
+      <div class="config-tile__head">
+        <span class="platform-icon">ROLE</span>
+        <div>
+          <p class="eyebrow">Access model</p>
+          <h3>Roles</h3>
+          <p>{{orgAdmin.roles.length}} role definitions available for credential assignment.</p>
+        </div>
+      </div>
+      {{#if orgAdmin.isAdmin}}
+        <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-role">Add Role</button>
+      {{/if}}
       <div class="definition-list">
         {{#each orgAdmin.roles}}
           <div>
             <strong>{{name}}</strong>
             <span>{{description}}</span>
             {{#if ../orgAdmin.isAdmin}}
-              <form action="{{../dashboardBasePath}}/admin/roles/{{id}}/delete" method="post">
-                <button class="button button--ghost" type="submit">Delete</button>
-              </form>
+              <div class="row-actions">
+                <button class="icon-button" type="button" data-modal-target="#role-edit-{{id}}">Edit</button>
+                <button class="icon-button icon-button--danger" type="button" data-modal-target="#role-delete-{{id}}">Revoke</button>
+              </div>
             {{/if}}
           </div>
         {{/each}}
       </div>
+    </article>
+
+    <article class="config-tile">
+      <div class="config-tile__head">
+        <span class="platform-icon">CLM</span>
+        <div>
+          <p class="eyebrow">Consent data</p>
+          <h3>Claims</h3>
+          <p>{{orgAdmin.claimDefinitions.length}} claim definitions available for issue and wallet consent.</p>
+        </div>
+      </div>
       {{#if orgAdmin.isAdmin}}
+        <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-claim">Add Claim</button>
+      {{/if}}
+      <div class="definition-list">
+        {{#each orgAdmin.claimDefinitions}}
+          <div>
+            <strong>{{label}}</strong>
+            <span>{{key}} · {{type}}{{#if required}} · required{{/if}}</span>
+            {{#if ../orgAdmin.isAdmin}}
+              <div class="row-actions">
+                <button class="icon-button" type="button" data-modal-target="#claim-edit-{{id}}">Edit</button>
+                <button class="icon-button icon-button--danger" type="button" data-modal-target="#claim-delete-{{id}}">Revoke</button>
+              </div>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    </article>
+  </div>
+
+  {{#if orgAdmin.isAdmin}}
+    <div class="app-modal" id="modal-add-role" hidden>
+      <div class="app-modal__backdrop" data-modal-close></div>
+      <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="add-role-title">
+        <div class="app-modal__head">
+          <div>
+            <p class="eyebrow">Role</p>
+            <h2 id="add-role-title">Add role</h2>
+          </div>
+          <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+        </div>
         <form class="wizard-form" action="{{dashboardBasePath}}/admin/roles" method="post">
           <div class="field-group">
-            <label for="roleName">Role name</label>
-            <input id="roleName" name="name" type="text">
+            <label class="field-label" for="roleName">Role name <span class="field-tooltip" tabindex="0" data-tooltip="A short privilege label that can be assigned to one or more credential holders.">?</span></label>
+            <input id="roleName" name="name" type="text" required>
           </div>
           <div class="field-group">
             <label for="roleDescription">Description</label>
             <textarea id="roleDescription" name="description" rows="3"></textarea>
           </div>
-          <button class="button button--primary button--blue" type="submit">Create Role</button>
-        </form>
-      {{/if}}
-    </article>
-
-    <article class="platform-card">
-      <h3>Claims</h3>
-      <div class="definition-list">
-        {{#each orgAdmin.claimDefinitions}}
-          <div>
-            <strong>{{label}}</strong>
-            <span>{{key}} · {{type}}</span>
-            {{#if ../orgAdmin.isAdmin}}
-              <form action="{{../dashboardBasePath}}/admin/claims/{{id}}/delete" method="post">
-                <button class="button button--ghost" type="submit">Delete</button>
-              </form>
-            {{/if}}
+          <div class="modal-actions">
+            <button class="button button--primary button--blue" type="submit">Create Role</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
           </div>
-        {{/each}}
-      </div>
-      {{#if orgAdmin.isAdmin}}
+        </form>
+      </section>
+    </div>
+
+    <div class="app-modal" id="modal-add-claim" hidden>
+      <div class="app-modal__backdrop" data-modal-close></div>
+      <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="add-claim-title">
+        <div class="app-modal__head">
+          <div>
+            <p class="eyebrow">Claim</p>
+            <h2 id="add-claim-title">Add claim</h2>
+          </div>
+          <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+        </div>
         <form class="wizard-form" action="{{dashboardBasePath}}/admin/claims" method="post">
           <div class="field-row">
             <div class="field-group">
-              <label for="claimLabel">Claim label</label>
-              <input id="claimLabel" name="label" type="text">
+              <label class="field-label" for="claimLabel">Claim label <span class="field-tooltip" tabindex="0" data-tooltip="Human-readable label shown in admin forms and wallet context.">?</span></label>
+              <input id="claimLabel" name="label" type="text" required>
             </div>
             <div class="field-group">
-              <label for="claimKey">Claim key</label>
-              <input id="claimKey" name="key" type="text">
+              <label class="field-label" for="claimKey">Claim key <span class="field-tooltip" tabindex="0" data-tooltip="Stable machine-readable key. Use letters, numbers, or underscore.">?</span></label>
+              <input id="claimKey" name="key" type="text" required>
             </div>
           </div>
           <div class="field-row">
@@ -668,11 +966,127 @@
             <input name="required" type="checkbox" value="yes">
             <span>Required claim</span>
           </label>
-          <button class="button button--primary button--blue" type="submit">Create Claim</button>
+          <div class="modal-actions">
+            <button class="button button--primary button--blue" type="submit">Create Claim</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+          </div>
         </form>
-      {{/if}}
-    </article>
-  </div>
+      </section>
+    </div>
+
+    {{#each orgAdmin.roles}}
+      <div class="app-modal" id="role-edit-{{id}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="role-edit-title-{{id}}">
+          <div class="app-modal__head">
+            <div>
+              <p class="eyebrow">Role</p>
+              <h2 id="role-edit-title-{{id}}">Edit {{name}}</h2>
+            </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <form class="wizard-form" action="{{../dashboardBasePath}}/admin/roles/{{id}}/update" method="post">
+            <div class="field-group">
+              <label for="role-name-{{id}}">Role name</label>
+              <input id="role-name-{{id}}" name="name" type="text" value="{{name}}" required>
+            </div>
+            <div class="field-group">
+              <label for="role-description-{{id}}">Description</label>
+              <textarea id="role-description-{{id}}" name="description" rows="3">{{description}}</textarea>
+            </div>
+            <div class="modal-actions">
+              <button class="button button--primary button--blue" type="submit">Save Role</button>
+              <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+            </div>
+          </form>
+        </section>
+      </div>
+      <div class="app-modal" id="role-delete-{{id}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="role-delete-title-{{id}}">
+          <div class="app-modal__head">
+            <div>
+              <p class="eyebrow">Confirm role revoke</p>
+              <h2 id="role-delete-title-{{id}}">Revoke {{name}}?</h2>
+              <p>This removes the role from future choices and from assigned credentials.</p>
+            </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <form class="modal-actions" action="{{../dashboardBasePath}}/admin/roles/{{id}}/delete" method="post">
+            <button class="button button--ghost" type="submit">Revoke Role</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+          </form>
+        </section>
+      </div>
+    {{/each}}
+
+    {{#each orgAdmin.claimDefinitions}}
+      <div class="app-modal" id="claim-edit-{{id}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="claim-edit-title-{{id}}">
+          <div class="app-modal__head">
+            <div>
+              <p class="eyebrow">Claim</p>
+              <h2 id="claim-edit-title-{{id}}">Edit {{label}}</h2>
+            </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <form class="wizard-form" action="{{../dashboardBasePath}}/admin/claims/{{id}}/update" method="post">
+            <div class="field-row">
+              <div class="field-group">
+                <label for="claim-label-{{id}}">Claim label</label>
+                <input id="claim-label-{{id}}" name="label" type="text" value="{{label}}" required>
+              </div>
+              <div class="field-group">
+                <label for="claim-key-{{id}}">Claim key</label>
+                <input id="claim-key-{{id}}" name="key" type="text" value="{{key}}" required>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="claim-type-{{id}}">Type</label>
+                <select id="claim-type-{{id}}" name="type">
+                  <option value="text" {{#if (eq type "text")}}selected{{/if}}>Text</option>
+                  <option value="email" {{#if (eq type "email")}}selected{{/if}}>Email</option>
+                  <option value="number" {{#if (eq type "number")}}selected{{/if}}>Number</option>
+                  <option value="date" {{#if (eq type "date")}}selected{{/if}}>Date</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="claim-default-{{id}}">Default value</label>
+                <input id="claim-default-{{id}}" name="defaultValue" type="text" value="{{defaultValue}}">
+              </div>
+            </div>
+            <label class="checkline">
+              <input name="required" type="checkbox" value="yes" {{#if required}}checked{{/if}}>
+              <span>Required claim</span>
+            </label>
+            <div class="modal-actions">
+              <button class="button button--primary button--blue" type="submit">Save Claim</button>
+              <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+            </div>
+          </form>
+        </section>
+      </div>
+      <div class="app-modal" id="claim-delete-{{id}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="claim-delete-title-{{id}}">
+          <div class="app-modal__head">
+            <div>
+              <p class="eyebrow">Confirm claim revoke</p>
+              <h2 id="claim-delete-title-{{id}}">Revoke {{label}}?</h2>
+              <p>This removes the claim from credential templates and existing profile values.</p>
+            </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <form class="modal-actions" action="{{../dashboardBasePath}}/admin/claims/{{id}}/delete" method="post">
+            <button class="button button--ghost" type="submit">Revoke Claim</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+          </form>
+        </section>
+      </div>
+    {{/each}}
+  {{/if}}
 </section>
 
 <section id="org-branding" class="band band--white">
@@ -794,7 +1208,7 @@
 <section class="band band--white">
   <div class="section-heading">
     <p class="eyebrow">Identity platforms</p>
-    <h2>Connect Aegis ID to the platforms this subscriber uses.</h2>
+    <h2>Connect Aegis ID to the platforms and assurance methods this subscriber uses.</h2>
   </div>
 
   <div class="platform-grid">

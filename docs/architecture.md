@@ -19,12 +19,12 @@ flowchart LR
   end
 
   subgraph "Aries Interoperability Lab"
-    Bifold["Bifold / Credo Wallet"]
+    AegisMobile["Vanguard Aegis ID mobile app"]
     Mediator["ACA-Py Mediator"]
     AriesIssuer["ACA-Py Issuer"]
     AriesVerifier["ACA-Py Verifier"]
     VON["VON / Indy Dev Ledger"]
-    Bifold <--> Mediator
+    AegisMobile <--> Mediator
     Mediator <--> AriesIssuer
     Mediator <--> AriesVerifier
     AriesIssuer --> VON
@@ -57,7 +57,7 @@ The production path should not depend on ACA-Py, DIDComm, AnonCreds, or VON. The
 ## Aries Lab Path
 
 1. Start ACA-Py mediator, issuer, and verifier.
-2. Connect a Bifold/Credo-compatible wallet.
+2. Connect the Vanguard Aegis ID mobile app or an approved lab wallet adapter.
 3. Publish a schema and credential definition against a development ledger when needed.
 4. Issue a test credential.
 5. Request and verify an AnonCreds proof.

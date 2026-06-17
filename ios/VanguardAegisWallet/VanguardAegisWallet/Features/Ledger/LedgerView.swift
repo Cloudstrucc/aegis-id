@@ -15,7 +15,7 @@ struct LedgerView: View {
                 ContentUnavailableView(
                     "No wallet ledger entries",
                     systemImage: "list.bullet.rectangle.portrait",
-                    description: Text("Fetch connected app challenges, then accept them to build a local high-assurance action ledger.")
+                    description: Text("Fetch connected app challenges after Verified ID or YubiKey web sign-in, then accept them to build a local high-assurance action ledger.")
                 )
             } else {
                 Section("Wallet challenge ledger") {

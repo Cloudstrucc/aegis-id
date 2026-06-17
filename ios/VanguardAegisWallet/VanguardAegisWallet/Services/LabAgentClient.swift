@@ -1,11 +1,18 @@
 import Foundation
 
 struct LabAgentClient {
-    var holderAdminURL = URL(string: "http://localhost:6011")!
-    var issuerAdminURL = URL(string: "http://localhost:4011")!
-    var webAppURL = URL(string: "http://localhost:3000")!
+    var holderAdminURL = AegisWalletEnvironment.holderAdminURL
+    var issuerAdminURL = AegisWalletEnvironment.issuerAdminURL
+    var webAppURL = AegisWalletEnvironment.webAppURL
 
     func acceptInvitation(rawURL: String) async throws -> LabAcceptance {
+        if usesHostedLabBridge {
+            return try await post(
+                webAppURL.appending(path: "api/wallet-lab/accept-invitation"),
+                body: try JSONEncoder().encode(HostedInvitationAcceptanceRequest(rawInvitationUrl: rawURL))
+            )
+        }
+
         let invitationData = try invitationPayloadData(from: rawURL)
         let invitation = try JSONDecoder().decode(OOBInvitation.self, from: invitationData)
         let response: OOBReceiveResponse = try await post(
@@ -34,6 +41,19 @@ struct LabAgentClient {
     }
 
     func issueMockCredential(issuerConnectionId: String, subjectEmail: String) async throws {
+        if usesHostedLabBridge {
+            _ = try await post(
+                webAppURL.appending(path: "api/wallet-lab/issuer-mock-credential"),
+                body: try JSONEncoder().encode(
+                    HostedIssueMockCredentialRequest(
+                        issuerConnectionId: issuerConnectionId,
+                        subjectEmail: subjectEmail
+                    )
+                )
+            ) as HostedOKResponse
+            return
+        }
+
         let content = """
         Vanguard mock credential offer:
         type=VanguardEmployeeCredential
@@ -48,6 +68,14 @@ struct LabAgentClient {
     }
 
     func sendChallenge(issuerConnectionId: String) async throws -> String? {
+        if usesHostedLabBridge {
+            let response: HostedIssuerChallengeResponse = try await post(
+                webAppURL.appending(path: "api/wallet-lab/issuer-challenge"),
+                body: try JSONEncoder().encode(HostedIssuerChallengeRequest(issuerConnectionId: issuerConnectionId))
+            )
+            return response.threadId
+        }
+
         let ping: PingResponse = try await post(
             issuerAdminURL.appending(path: "connections/\(issuerConnectionId)/send-ping"),
             body: try JSONEncoder().encode(["comment": "Vanguard Aegis ID simulator wallet challenge"])
@@ -62,6 +90,19 @@ struct LabAgentClient {
     }
 
     func sendHolderMessage(holderConnectionId: String, content: String) async throws {
+        if usesHostedLabBridge {
+            _ = try await post(
+                webAppURL.appending(path: "api/wallet-lab/holder-message"),
+                body: try JSONEncoder().encode(
+                    HostedHolderMessageRequest(
+                        holderConnectionId: holderConnectionId,
+                        content: content
+                    )
+                )
+            ) as HostedOKResponse
+            return
+        }
+
         _ = try await post(
             holderAdminURL.appending(path: "connections/\(holderConnectionId)/send-message"),
             body: try JSONEncoder().encode(["content": content])
@@ -122,6 +163,10 @@ struct LabAgentClient {
 
     func fetchOrganizationProfile(organizationId: String) async throws -> OrganizationProfile {
         try await get(webAppURL.appending(path: "api/organizations/\(organizationId)/profile"))
+    }
+
+    private var usesHostedLabBridge: Bool {
+        AegisWalletEnvironment.usesHostedWebApp
     }
 
     private func waitForIssuerConnection(invitationId: String?) async throws -> AgentConnectionRecord? {
@@ -241,12 +286,39 @@ struct OOBInvitation: Decodable {
     }
 }
 
-struct LabAcceptance {
+struct LabAcceptance: Decodable {
     var holderConnectionId: String
     var issuerConnectionId: String?
     var invitationMessageId: String?
     var holderState: String
     var issuerState: String?
+}
+
+struct HostedInvitationAcceptanceRequest: Encodable {
+    var rawInvitationUrl: String
+}
+
+struct HostedIssueMockCredentialRequest: Encodable {
+    var issuerConnectionId: String
+    var subjectEmail: String
+}
+
+struct HostedIssuerChallengeRequest: Encodable {
+    var issuerConnectionId: String
+}
+
+struct HostedIssuerChallengeResponse: Decodable {
+    var ok: Bool
+    var threadId: String?
+}
+
+struct HostedHolderMessageRequest: Encodable {
+    var holderConnectionId: String
+    var content: String
+}
+
+struct HostedOKResponse: Decodable {
+    var ok: Bool
 }
 
 struct OOBReceiveResponse: Decodable {

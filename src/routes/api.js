@@ -3,9 +3,13 @@ const express = require('express');
 const config = require('../config');
 const { createMicrosoftVerifiedIdAdapter } = require('../adapters/microsoft/verified-id-adapter');
 const {
+  acceptInvitationWithHolder,
   createOutOfBandInvitation,
   describeInvitationError,
-  getAriesStatus
+  getAriesStatus,
+  issueMockCredential,
+  sendHolderMessage,
+  sendIssuerWalletChallenge
 } = require('../adapters/aries/aries-lab-adapter');
 const {
   buildDemoEmployeeClaims,
@@ -13,7 +17,12 @@ const {
   getPresentationPolicy
 } = require('../services/credential-policy-service');
 const { getOrganizationProfile } = require('../services/org-admin-service');
-const { saveTransaction, listTransactions } = require('../services/transaction-store');
+const {
+  getTransaction,
+  saveTransaction,
+  listTransactions,
+  updateTransactionByState
+} = require('../services/transaction-store');
 const { writeAuditEvent } = require('../services/audit-service');
 const {
   acceptExternalWalletChallenge,
@@ -70,6 +79,11 @@ router.post('/issuer/create-offer', async (req, res, next) => {
 router.post('/issuer/callback', async (req, res, next) => {
   try {
     validateCallbackApiKey(req);
+    await updateTransactionByState(req.body?.state, {
+      status: req.body?.requestStatus || 'callback',
+      callbackStatus: req.body?.requestStatus || null,
+      callbackPayload: req.body
+    });
     await writeAuditEvent('verified-id.issuance.callback', {
       state: req.body?.state,
       status: req.body?.requestStatus,
@@ -84,7 +98,11 @@ router.post('/issuer/callback', async (req, res, next) => {
 
 router.post('/verifier/create-request', async (req, res, next) => {
   try {
-    const policy = getPresentationPolicy();
+    const policy = {
+      ...getPresentationPolicy(),
+      purpose: req.body?.purpose,
+      clientName: req.body?.appName
+    };
     const result = await verifiedId.createPresentationRequest(policy);
 
     await saveTransaction({
@@ -94,7 +112,10 @@ router.post('/verifier/create-request', async (req, res, next) => {
       status: 'created',
       mode: result.mode,
       requestUrl: result.requestUrl,
-      expiresAt: result.expiresAt
+      expiresAt: result.expiresAt,
+      appName: req.body?.appName || null,
+      subject: req.body?.subject || null,
+      purpose: req.body?.purpose || null
     });
     await writeAuditEvent('verified-id.presentation.created', {
       transactionId: result.id,
@@ -113,6 +134,16 @@ router.post('/verifier/callback', async (req, res, next) => {
     validateCallbackApiKey(req);
     const claims = req.body?.verifiedCredentialsData?.[0]?.claims || req.body?.claims || {};
     const decision = evaluatePresentation(claims);
+    const callbackStatus = req.body?.requestStatus || null;
+
+    await updateTransactionByState(req.body?.state, {
+      status: callbackStatus === 'presentation_verified' ? 'verified' : callbackStatus || 'callback',
+      callbackStatus,
+      subject: req.body?.subject || null,
+      claims,
+      decision,
+      callbackPayload: req.body
+    });
 
     await writeAuditEvent('verified-id.presentation.callback', {
       state: req.body?.state,
@@ -143,9 +174,84 @@ router.post('/aries/:agent/invitation', async (req, res, next) => {
   }
 });
 
+router.post('/wallet-lab/accept-invitation', async (req, res, next) => {
+  try {
+    if (!req.body?.rawInvitationUrl) {
+      const error = new Error('rawInvitationUrl is required.');
+      error.status = 400;
+      throw error;
+    }
+
+    res.status(202).json(await acceptInvitationWithHolder(req.body.rawInvitationUrl));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet-lab/issuer-mock-credential', async (req, res, next) => {
+  try {
+    if (!req.body?.issuerConnectionId) {
+      const error = new Error('issuerConnectionId is required.');
+      error.status = 400;
+      throw error;
+    }
+
+    res.status(202).json(
+      await issueMockCredential(req.body.issuerConnectionId, {
+        subjectEmail: req.body.subjectEmail
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet-lab/issuer-challenge', async (req, res, next) => {
+  try {
+    if (!req.body?.issuerConnectionId) {
+      const error = new Error('issuerConnectionId is required.');
+      error.status = 400;
+      throw error;
+    }
+
+    res.status(202).json(await sendIssuerWalletChallenge(req.body.issuerConnectionId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet-lab/holder-message', async (req, res, next) => {
+  try {
+    if (!req.body?.holderConnectionId || !req.body?.content) {
+      const error = new Error('holderConnectionId and content are required.');
+      error.status = 400;
+      throw error;
+    }
+
+    res.status(202).json(await sendHolderMessage(req.body.holderConnectionId, req.body.content));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/transactions', async (req, res, next) => {
   try {
     res.json(await listTransactions());
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/transactions/:transactionId', async (req, res, next) => {
+  try {
+    const transaction = await getTransaction(req.params.transactionId);
+    if (!transaction) {
+      const error = new Error('Transaction not found.');
+      error.status = 404;
+      throw error;
+    }
+
+    res.json(transaction);
   } catch (error) {
     next(error);
   }

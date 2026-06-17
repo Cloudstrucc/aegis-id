@@ -1,0 +1,1779 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vanguard Aegis ID and Microsoft Verified ID</title>
+  <style>
+    :root {
+      --ink: #061625;
+      --ink-2: #0d2a42;
+      --muted: #5f6f83;
+      --soft: #f5f9fd;
+      --paper: #ffffff;
+      --line: #dce8f3;
+      --line-2: #edf3f9;
+      --blue: #1769e0;
+      --cyan: #00b7c7;
+      --green: #19b97a;
+      --amber: #f7b955;
+      --radius: 8px;
+      --max: 1120px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    img,
+    svg {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--ink);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(4rem, 8vw, 7.4rem);
+      font-weight: 850;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      font-size: clamp(2.6rem, 5vw, 5.4rem);
+      font-weight: 820;
+      margin-bottom: 18px;
+    }
+
+    h3 {
+      font-size: 1.42rem;
+      font-weight: 820;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .print-button {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 20;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 12px 17px;
+      color: var(--paper);
+      background: var(--ink);
+      font-weight: 760;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(6, 22, 37, 0.18);
+    }
+
+    .shell {
+      overflow: hidden;
+    }
+
+    .page {
+      width: min(var(--max), calc(100% - 44px));
+      margin: 0 auto;
+      padding: 92px 0;
+    }
+
+    .page--wide {
+      width: min(1240px, calc(100% - 44px));
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      align-items: center;
+      padding-top: 28px;
+      padding-bottom: 64px;
+      background:
+        linear-gradient(180deg, #ffffff 0%, #ffffff 58%, #f7fbff 100%);
+    }
+
+    .topbar {
+      width: min(var(--max), calc(100% - 44px));
+      margin: 0 auto;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 20px;
+      padding: 22px 0;
+    }
+
+    .topbar img {
+      width: 284px;
+      height: auto;
+      filter: saturate(1.22) contrast(1.22) brightness(0.78);
+      opacity: 0.96;
+    }
+
+    .hero-grid {
+      width: min(var(--max), calc(100% - 44px));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(390px, 0.72fr);
+      gap: 44px;
+      align-items: center;
+    }
+
+    .hero-grid > div:first-child {
+      min-width: 0;
+      max-width: 780px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--blue);
+      font-size: 0.84rem;
+      font-weight: 850;
+      margin: 0 0 18px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+    }
+
+    .lead {
+      max-width: 780px;
+      color: #2d3d50;
+      font-size: clamp(1.35rem, 2.4vw, 2.05rem);
+      line-height: 1.28;
+      margin-bottom: 34px;
+    }
+
+    .hero-actions,
+    .inline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 0 18px;
+      color: var(--ink);
+      background: var(--paper);
+      font-weight: 780;
+      text-decoration: none;
+    }
+
+    .button:hover {
+      text-decoration: none;
+      border-color: var(--blue);
+    }
+
+    .button--primary {
+      color: #ffffff;
+      background: var(--blue);
+      border-color: var(--blue);
+    }
+
+    .cover-visual {
+      width: min(560px, 100%);
+      min-height: 580px;
+      display: grid;
+      align-items: center;
+      justify-self: end;
+      position: relative;
+    }
+
+    .device-stack {
+      display: grid;
+      width: 100%;
+      gap: 20px;
+    }
+
+    .screen {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      box-shadow: 0 26px 80px rgba(6, 22, 37, 0.12);
+      overflow: hidden;
+    }
+
+    .screen__chrome {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--line-2);
+      padding: 0 14px;
+      background: #fbfdff;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .screen__body {
+      padding: 30px;
+    }
+
+    .mini-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .mini-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      font-weight: 850;
+    }
+
+    .aegis-mark,
+    .ms-mark,
+    .app-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 880;
+      background: linear-gradient(135deg, var(--blue), var(--cyan) 55%, var(--green));
+      overflow: hidden;
+    }
+
+    .aegis-mark img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
+
+    .ms-mark {
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      padding: 6px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+    }
+
+    .ms-mark i {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .ms-mark i:nth-child(1) { background: #f25022; }
+    .ms-mark i:nth-child(2) { background: #7fba00; }
+    .ms-mark i:nth-child(3) { background: #00a4ef; }
+    .ms-mark i:nth-child(4) { background: #ffb900; }
+
+    .screen-title {
+      font-size: 2rem;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+
+    .screen-copy {
+      max-width: 460px;
+      margin-bottom: 24px;
+      font-size: 0.98rem;
+    }
+
+    .status-row,
+    .metric-row {
+      display: grid;
+      gap: 10px;
+    }
+
+    .status-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .status-pill {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fbfdff;
+    }
+
+    .status-pill strong {
+      display: block;
+      color: var(--ink);
+      font-size: 0.92rem;
+      margin-bottom: 3px;
+    }
+
+    .status-pill span {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .phone-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: start;
+      justify-items: center;
+    }
+
+    .phone {
+      width: min(340px, 100%);
+      margin-inline: auto;
+      border: 10px solid #091522;
+      border-radius: 38px;
+      background: #ffffff;
+      box-shadow: 0 24px 60px rgba(6, 22, 37, 0.2);
+      overflow: hidden;
+    }
+
+    .phone__notch {
+      width: 70px;
+      height: 8px;
+      border-radius: 999px;
+      background: #091522;
+      margin: 12px auto 0;
+    }
+
+    .phone__body {
+      padding: 22px 16px 18px;
+    }
+
+    .credential-card {
+      border-radius: var(--radius);
+      padding: 16px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--ink), var(--ink-2));
+      min-height: 168px;
+    }
+
+    .credential-card__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 44px;
+    }
+
+    .verified-dot {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--green);
+      font-weight: 900;
+      font-size: 0.8rem;
+    }
+
+    .wallet-action {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fbfdff;
+    }
+
+    .wallet-action strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .wallet-action span {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .band {
+      border-top: 1px solid var(--line-2);
+    }
+
+    .band--soft {
+      background: var(--soft);
+    }
+
+    .section-kicker {
+      max-width: 840px;
+      font-size: 1.32rem;
+      color: #2d3d50;
+      line-height: 1.35;
+      margin-bottom: 46px;
+    }
+
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--line);
+    }
+
+    .toc a {
+      min-height: 172px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px;
+      color: var(--ink);
+      background: #ffffff;
+      text-decoration: none;
+    }
+
+    .toc a:hover {
+      background: #fbfdff;
+      text-decoration: none;
+    }
+
+    .toc small {
+      color: var(--blue);
+      font-weight: 850;
+    }
+
+    .toc strong {
+      display: block;
+      font-size: 1.22rem;
+      margin-bottom: 6px;
+    }
+
+    .toc span {
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 0.86fr 1.14fr;
+      gap: 70px;
+      align-items: center;
+    }
+
+    .split--reverse {
+      grid-template-columns: 1.12fr 0.88fr;
+    }
+
+    .quiet-list {
+      display: grid;
+      gap: 20px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .quiet-list li {
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+    }
+
+    .quiet-list strong {
+      display: block;
+      color: var(--ink);
+      font-size: 1.12rem;
+      margin-bottom: 6px;
+    }
+
+    .quiet-list span {
+      color: var(--muted);
+    }
+
+    .diagram {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 28px;
+      background: #ffffff;
+    }
+
+    .rail {
+      display: grid;
+      grid-template-columns: 1fr 46px 1fr 46px 1fr 46px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .node {
+      min-height: 164px;
+      display: grid;
+      align-content: center;
+      gap: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      background: #fbfdff;
+    }
+
+    .node h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .node p {
+      margin: 0;
+      font-size: 0.94rem;
+    }
+
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+    }
+
+    .arrow span {
+      position: relative;
+      display: block;
+      width: 56px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 999px;
+    }
+
+    .arrow span::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      border-right: 2px solid currentColor;
+      border-top: 2px solid currentColor;
+      transform: translateY(-50%) rotate(45deg);
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-row strong {
+      color: var(--ink);
+    }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--line);
+    }
+
+    .proof-card {
+      padding: 28px;
+      background: #ffffff;
+    }
+
+    .proof-card strong {
+      display: block;
+      color: var(--ink);
+      font-size: 1.2rem;
+      margin: 14px 0 8px;
+    }
+
+    .proof-card p {
+      font-size: 0.98rem;
+      margin-bottom: 0;
+    }
+
+    .problem-grid,
+    .value-grid,
+    .journey-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--line);
+    }
+
+    .problem-card,
+    .value-card,
+    .journey-card {
+      min-height: 230px;
+      padding: 28px;
+      background: #ffffff;
+    }
+
+    .problem-card small,
+    .value-card small,
+    .journey-card small {
+      color: var(--blue);
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .problem-card strong,
+    .value-card strong,
+    .journey-card strong {
+      display: block;
+      margin: 16px 0 10px;
+      color: var(--ink);
+      font-size: 1.24rem;
+      line-height: 1.15;
+    }
+
+    .connector-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .connector-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--ink);
+      background: #ffffff;
+      font-weight: 760;
+    }
+
+    .connector-chip span {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      font-size: 0.66rem;
+      font-weight: 850;
+    }
+
+    .journey-line {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .journey-step {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      background: #ffffff;
+    }
+
+    .journey-step::after {
+      content: "";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      width: 13px;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .journey-step:last-child::after {
+      display: none;
+    }
+
+    .journey-step small {
+      color: var(--blue);
+      font-weight: 850;
+    }
+
+    .journey-step strong {
+      display: block;
+      margin: 12px 0 6px;
+      color: var(--ink);
+      line-height: 1.15;
+    }
+
+    .journey-step span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .yubikey-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--ink), var(--blue));
+      font-size: 0.78rem;
+      font-weight: 880;
+    }
+
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .mock-caption {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 12px 0 0;
+    }
+
+    .phone-row .mock-caption {
+      width: min(340px, 100%);
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .dashboard-shot .screen__body {
+      padding: 0;
+    }
+
+    .dash-hero {
+      padding: 22px;
+      background: linear-gradient(135deg, #ffffff, #edf6ff);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dash-table {
+      display: grid;
+      gap: 0;
+      padding: 16px;
+    }
+
+    .dash-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.8fr 0.75fr;
+      gap: 10px;
+      align-items: center;
+      min-height: 46px;
+      border-bottom: 1px solid var(--line-2);
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .dash-row:first-child {
+      color: var(--ink);
+      font-weight: 850;
+    }
+
+    .chip {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      color: #06734e;
+      background: #e8fff5;
+      font-size: 0.78rem;
+      font-weight: 850;
+    }
+
+    .portal-shot {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .portal-hero {
+      padding: 40px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--ink), var(--blue));
+    }
+
+    .portal-hero h3,
+    .portal-hero p {
+      color: #ffffff;
+    }
+
+    .portal-hero p {
+      opacity: 0.82;
+      margin-bottom: 0;
+    }
+
+    .portal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--line);
+    }
+
+    .portal-tile {
+      min-height: 130px;
+      padding: 22px;
+      background: #ffffff;
+    }
+
+    .portal-tile strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+
+    .portal-tile span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 18px;
+    }
+
+    .scenario {
+      display: grid;
+      grid-template-columns: 58px 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .avatar {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      font-weight: 850;
+    }
+
+    .scenario h3 {
+      margin-bottom: 5px;
+      font-size: 1.12rem;
+    }
+
+    .scenario p {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    .scenario__tag {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+
+    .matrix {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .matrix-row {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr 1.1fr;
+      gap: 1px;
+      background: var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .matrix-row:last-child {
+      border-bottom: 0;
+    }
+
+    .matrix-row > div {
+      padding: 22px;
+      background: #ffffff;
+    }
+
+    .matrix-row--head > div {
+      color: #ffffff;
+      background: var(--ink);
+      font-size: 0.86rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .matrix strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .matrix p {
+      margin: 0;
+      font-size: 0.96rem;
+    }
+
+    .talk-track {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+
+    .quote-panel {
+      min-height: 360px;
+      display: grid;
+      align-content: end;
+      border-radius: var(--radius);
+      padding: 34px;
+      color: #ffffff;
+      background: var(--ink);
+    }
+
+    .quote-panel p {
+      color: #ffffff;
+      font-size: 1.6rem;
+      line-height: 1.25;
+      margin-bottom: 0;
+    }
+
+    .steps {
+      counter-reset: steps;
+      display: grid;
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .steps li {
+      counter-increment: steps;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .steps li::before {
+      content: counter(steps);
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #ffffff;
+      background: var(--blue);
+      font-weight: 850;
+    }
+
+    .steps strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .steps span {
+      color: var(--muted);
+    }
+
+    .source-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .source-strip a {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--ink);
+      font-weight: 760;
+      background: #ffffff;
+    }
+
+    .source-strip a:hover {
+      border-color: var(--blue);
+      text-decoration: none;
+    }
+
+    .fine-print {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 28px;
+    }
+
+    @media (max-width: 980px) {
+      .hero-grid,
+      .split,
+      .split--reverse,
+      .screenshot-grid,
+      .talk-track {
+        grid-template-columns: 1fr;
+      }
+
+      .cover-visual {
+        min-height: auto;
+        justify-self: stretch;
+      }
+
+      .toc,
+      .proof-grid,
+      .problem-grid,
+      .value-grid,
+      .journey-grid,
+      .journey-line {
+        grid-template-columns: 1fr;
+      }
+
+      .rail {
+        grid-template-columns: 1fr;
+      }
+
+      .arrow {
+        transform: rotate(90deg);
+        min-height: 48px;
+      }
+
+      .status-row,
+      .portal-body,
+      .matrix-row {
+        grid-template-columns: 1fr;
+      }
+
+      .scenario {
+        grid-template-columns: 58px 1fr;
+      }
+
+      .scenario__tag {
+        grid-column: 2;
+        width: fit-content;
+      }
+
+      .journey-step::after {
+        display: none;
+      }
+    }
+
+    @media (max-width: 620px) {
+      h1 {
+        font-size: 3.4rem;
+      }
+
+      h2 {
+        font-size: 2.6rem;
+      }
+
+      .page,
+      .topbar,
+      .hero-grid {
+        width: min(100% - 28px, var(--max));
+      }
+
+      .page {
+        padding: 64px 0;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .topbar img {
+        width: 247px;
+      }
+
+      .screen__body,
+      .diagram {
+        padding: 18px;
+      }
+
+      .phone-row {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        width: min(330px, 100%);
+      }
+    }
+
+    @media print {
+      @page {
+        size: letter;
+        margin: 0.48in;
+      }
+
+      body {
+        background: #ffffff;
+      }
+
+      .print-button {
+        display: none;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .page,
+      .topbar,
+      .hero-grid {
+        width: 100%;
+      }
+
+      .page {
+        padding: 0.2in 0;
+        break-after: page;
+        page-break-after: always;
+      }
+
+      .page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+      }
+
+      .hero-grid,
+      .split,
+      .split--reverse,
+      .screenshot-grid,
+      .talk-track {
+        gap: 0.34in;
+      }
+
+      h1 {
+        font-size: 56pt;
+      }
+
+      h2 {
+        font-size: 34pt;
+      }
+
+      .lead,
+      .section-kicker {
+        font-size: 14pt;
+      }
+
+      .screen,
+      .diagram,
+      .toc,
+      .proof-grid,
+      .matrix,
+      .portal-shot,
+      .quote-panel,
+      .steps li {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      .scenario,
+      .proof-card,
+      .problem-card,
+      .value-card,
+      .journey-card,
+      .journey-step,
+      .node,
+      .screen,
+      .portal-shot {
+        break-inside: avoid;
+      }
+
+      .band {
+        border-top: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="print-button" type="button" data-print>Export PDF</button>
+
+  <div class="shell">
+    <div class="hero" id="cover">
+      <div class="topbar">
+        <img src="../images/vanguard-cloud-services-logo.png" alt="Vanguard Cloud Services">
+      </div>
+
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Vanguard Cloud Services - Aegis ID</p>
+          <h1>Identity assurance for real business decisions.</h1>
+          <p class="lead">
+            Vanguard Aegis ID helps organizations prove who someone is, what they are allowed to do,
+            and whether they personally approved a sensitive action across Microsoft 365, enterprise
+            web apps, portals, badges, and contractor workflows.
+          </p>
+          <div class="hero-actions">
+            <a class="button button--primary" href="#story">Read the story</a>
+            <a class="button" href="#demo">View demo flow</a>
+          </div>
+        </div>
+
+        <div class="cover-visual" aria-label="Aegis ID and Verified ID product mockup">
+          <div class="device-stack">
+            <div class="screen">
+              <div class="screen__chrome">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+              <div class="screen__body">
+                <div class="mini-nav">
+                  <div class="mini-logo">
+                    <span class="aegis-mark">
+                      <img src="../images/cloudstrucc-verified-id-logo-mark.png" alt="">
+                    </span>
+                    <span>Aegis ID</span>
+                  </div>
+                  <span class="chip">Assurance required</span>
+                </div>
+                <h2 class="screen-title">Business Expenses</h2>
+                <p class="screen-copy">
+                  One policy layer for Verified ID, YubiKey/FIDO2, OIDC/SAML apps, wallet challenges, and ledger evidence.
+                </p>
+                <div class="status-row">
+                  <div class="status-pill"><strong>Credential</strong><span>Verified ID</span></div>
+                  <div class="status-pill"><strong>Step-up</strong><span>YubiKey 5C NFC</span></div>
+                  <div class="status-pill"><strong>Decision</strong><span>Aegis ledger</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phone-row">
+              <div class="phone">
+                <div class="phone__notch"></div>
+                <div class="phone__body">
+                  <div class="credential-card">
+                    <div class="credential-card__top">
+                      <span>Verified ID</span>
+                      <span class="verified-dot">OK</span>
+                    </div>
+                    <strong>Verified Employee</strong>
+                    <span>Vanguard Cloud Services</span>
+                  </div>
+                  <div class="wallet-action">
+                    <strong>Wallet challenge</strong>
+                    <span>Approve EXP-2026-1048</span>
+                  </div>
+                  <div class="wallet-action">
+                    <strong>YubiKey step-up</strong>
+                    <span>Tap key for admin action</span>
+                  </div>
+                </div>
+              </div>
+              <p class="mock-caption">
+                Aegis ID supports multiple assurance modes: Microsoft Verified ID for portable credentials,
+                YubiKey/FIDO2 for hardware-backed step-up, and wallet challenges for signed business actions.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="story">
+      <p class="eyebrow">Product overview</p>
+      <h2>Aegis ID closes the gap between login and trust.</h2>
+      <p class="section-kicker">
+        Conventional authentication tells an application that a user signed in. It usually does not prove
+        whether the user still belongs to the right organization, consented to share specific claims,
+        tapped a hardware key, accepted a role change, or personally approved a high-value decision.
+      </p>
+
+      <div class="problem-grid">
+        <div class="problem-card">
+          <small>Problem 01</small>
+          <strong>Access decisions are scattered.</strong>
+          <p>Roles live in one platform, credentials in another, approvals in email, and audit history in application logs.</p>
+        </div>
+        <div class="problem-card">
+          <small>Problem 02</small>
+          <strong>Authentication is not consent.</strong>
+          <p>A login event does not prove a user agreed to share claims or accepted a specific business action.</p>
+        </div>
+        <div class="problem-card">
+          <small>Problem 03</small>
+          <strong>Identity must travel.</strong>
+          <p>Employees, contractors, departments, partners, and external portals often need portable proof beyond one app.</p>
+        </div>
+      </div>
+
+      <div class="value-grid" style="margin-top: 34px;">
+        <div class="value-card">
+          <small>Executive value</small>
+          <strong>Reduce risk in sensitive decisions.</strong>
+          <p>Require stronger proof for approvals, administrator changes, claims sharing, badge access, and contractor onboarding.</p>
+        </div>
+        <div class="value-card">
+          <small>Management value</small>
+          <strong>See who has access and why.</strong>
+          <p>Give administrators a clean organization view of invited, active, disabled, revoked, and elevated users.</p>
+        </div>
+        <div class="value-card">
+          <small>IT value</small>
+          <strong>Connect to the stack you already use.</strong>
+          <p>Work with Entra, Verified ID, YubiKey/FIDO2, OIDC, SAML, Keycloak, Okta, custom web apps, and portal scenarios.</p>
+        </div>
+      </div>
+
+      <div class="toc">
+        <a href="#architecture">
+          <small>01</small>
+          <span><strong>Assurance Architecture</strong> How Aegis combines credential, hardware, app, and wallet evidence.</span>
+        </a>
+        <a href="#screens">
+          <small>02</small>
+          <span><strong>Product Experience</strong> What executives, admins, users, and auditors actually see.</span>
+        </a>
+        <a href="#scenarios">
+          <small>03</small>
+          <span><strong>User Journeys</strong> Expenses, web apps, badges, contractors, and administrator step-up.</span>
+        </a>
+        <a href="#decision">
+          <small>04</small>
+          <span><strong>Why Not Just Login?</strong> When normal auth is enough and when Aegis adds assurance.</span>
+        </a>
+        <a href="#demo">
+          <small>05</small>
+          <span><strong>Demo Flow</strong> Show Verified ID, YubiKey, and Aegis wallet challenge versions.</span>
+        </a>
+        <a href="#references">
+          <small>06</small>
+          <span><strong>Implementation Notes</strong> QR/deep links, YubiKey, Power Pages, OIDC, and SAML.</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="band band--soft" id="architecture">
+      <div class="page page--wide">
+        <div class="split">
+          <div>
+            <p class="eyebrow">Assurance architecture</p>
+            <h2>One policy layer for many kinds of proof.</h2>
+            <p class="section-kicker">
+              Aegis ID does not force every organization into one identity pattern. It can use Microsoft
+              Verified ID for portable credentials, YubiKey/FIDO2 for hardware-backed assurance, and
+              OIDC/SAML for standard application integration.
+            </p>
+            <ul class="quiet-list">
+              <li>
+                <strong>Portable credential proof</strong>
+                <span>Use Microsoft Verified ID when a credential needs to be presented across departments, portals, or external organizations.</span>
+              </li>
+              <li>
+                <strong>Hardware-backed step-up</strong>
+                <span>Use YubiKey 5C NFC and FIDO2/WebAuthn when the moment requires phishing-resistant local proof.</span>
+              </li>
+              <li>
+                <strong>Application and badge decisions</strong>
+                <span>Use Aegis wallet challenges and policy to record approvals, revocations, access changes, and ID checks.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="diagram" aria-label="Verified ID and Aegis architecture diagram">
+            <div class="rail">
+              <div class="node">
+                <div class="logo-row">
+                  <span class="ms-mark"><i></i><i></i><i></i><i></i></span>
+                  <strong>Microsoft Verified ID</strong>
+                </div>
+                <p>Credential issuance, Authenticator presentation, Request Service API callbacks.</p>
+              </div>
+              <div class="arrow" aria-hidden="true">
+                <span></span>
+              </div>
+              <div class="node">
+                <div class="logo-row">
+                  <span class="yubikey-mark">YK</span>
+                  <strong>YubiKey FIDO2</strong>
+                </div>
+                <p>Hardware-backed sign-in, administrator step-up, NFC mobile flows, and phishing-resistant checks.</p>
+              </div>
+              <div class="arrow" aria-hidden="true">
+                <span></span>
+              </div>
+              <div class="node">
+                <div class="logo-row">
+                  <span class="aegis-mark"><img src="../images/cloudstrucc-verified-id-logo-mark.png" alt=""></span>
+                  <strong>Aegis ID</strong>
+                </div>
+                <p>Org policy, consent, claims, roles, challenge payloads, revocation, ledger evidence.</p>
+              </div>
+              <div class="arrow" aria-hidden="true">
+                <span></span>
+              </div>
+              <div class="node">
+                <div class="logo-row">
+                  <span class="app-mark">APP</span>
+                  <strong>Web Apps and Badges</strong>
+                </div>
+                <p>OIDC/SAML apps, Power Pages, contractor portals, physical badges, and high-value approvals.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="proof-grid" style="margin-top: 56px;">
+          <div class="proof-card">
+            <span class="ms-mark"><i></i><i></i><i></i><i></i></span>
+            <strong>Credential proof</strong>
+            <p>Can this person present a trusted credential issued by a known authority?</p>
+          </div>
+          <div class="proof-card">
+            <span class="yubikey-mark">YK</span>
+            <strong>Hardware proof</strong>
+            <p>Did this user perform a phishing-resistant FIDO2 step-up with an approved YubiKey?</p>
+          </div>
+          <div class="proof-card">
+            <span class="app-mark">LOG</span>
+            <strong>Action proof</strong>
+            <p>What did the user approve, reject, accept, revoke, or consent to?</p>
+          </div>
+        </div>
+        <div class="connector-strip">
+          <span class="connector-chip"><span>AD</span> Active Directory</span>
+          <span class="connector-chip"><span>EID</span> Microsoft Entra ID</span>
+          <span class="connector-chip"><span>VID</span> Verified ID</span>
+          <span class="connector-chip"><span>YK</span> YubiKey 5C NFC</span>
+          <span class="connector-chip"><span>OIDC</span> OpenID Connect</span>
+          <span class="connector-chip"><span>SAML</span> SAML</span>
+          <span class="connector-chip"><span>ID</span> Digital badge / ID</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page page--wide" id="screens">
+      <p class="eyebrow">Product experience</p>
+      <h2>Simple screens for complex assurance.</h2>
+      <p class="section-kicker">
+        Executives see risk reduction. Managers see who has access and why. IT teams see a standards-based
+        integration model. Users see a small number of clear prompts at the exact moments that matter.
+      </p>
+
+      <div class="screenshot-grid">
+        <div>
+          <div class="screen dashboard-shot">
+            <div class="screen__chrome">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+            <div class="screen__body">
+              <div class="dash-hero">
+                <div class="mini-logo">
+                  <span class="aegis-mark"><img src="../images/cloudstrucc-verified-id-logo-mark.png" alt=""></span>
+                  <span>Organization dashboard</span>
+                </div>
+                <h3 style="margin-top: 24px;">People, credentials, and assurance</h3>
+                <p style="margin-bottom: 0;">Invite, verify, step-up, promote, revoke, and audit users across the organization.</p>
+              </div>
+              <div class="dash-table">
+                <div class="dash-row"><span>User</span><span>Role</span><span>Status</span></div>
+                <div class="dash-row"><span>Maya Chen</span><span>Verified ID</span><span class="chip">Active</span></div>
+                <div class="dash-row"><span>Jon Bell</span><span>Contractor</span><span class="chip">Invited</span></div>
+                <div class="dash-row"><span>Avery Smith</span><span>YubiKey step-up</span><span class="chip">Required</span></div>
+              </div>
+            </div>
+          </div>
+          <p class="mock-caption">Administrator view: manage identity proof, assurance method, roles, and wallet challenge history.</p>
+        </div>
+
+        <div>
+          <div class="portal-shot">
+            <div class="portal-hero">
+              <div class="mini-logo" style="color: #ffffff;">
+                <span class="app-mark">APP</span>
+                <span>Business Expenses</span>
+              </div>
+              <h3 style="margin-top: 26px;">Approval requires stronger assurance.</h3>
+              <p>Verified ID or YubiKey step-up for entry. Aegis wallet challenge for every high-value decision.</p>
+            </div>
+            <div class="portal-body">
+              <div class="portal-tile">
+                <strong>EXP-2026-1048</strong>
+                <span>Cloud security assessment - CAD 4,250.00</span>
+              </div>
+              <div class="portal-tile">
+                <strong>Ledger event</strong>
+                <span>Action payload, actor, timestamp, result, and app context.</span>
+              </div>
+            </div>
+          </div>
+          <p class="mock-caption">Application view: business users stay in the app while Aegis adds proof, consent, and evidence.</p>
+        </div>
+      </div>
+
+      <div class="journey-line" aria-label="Client-facing user journey">
+        <div class="journey-step">
+          <small>01</small>
+          <strong>User signs in</strong>
+          <span>Entra, OIDC, SAML, or local app flow starts the session.</span>
+        </div>
+        <div class="journey-step">
+          <small>02</small>
+          <strong>Aegis checks policy</strong>
+          <span>The organization, app, role, risk, and action determine the proof needed.</span>
+        </div>
+        <div class="journey-step">
+          <small>03</small>
+          <strong>User proves assurance</strong>
+          <span>Verified ID presentation, YubiKey/FIDO2 step-up, or Aegis wallet challenge.</span>
+        </div>
+        <div class="journey-step">
+          <small>04</small>
+          <strong>App continues</strong>
+          <span>The user completes the portal, badge, approval, or admin workflow.</span>
+        </div>
+        <div class="journey-step">
+          <small>05</small>
+          <strong>Evidence is retained</strong>
+          <span>Aegis records the action payload, status, timestamp, and audit context.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="band band--soft" id="scenarios">
+      <div class="page">
+        <p class="eyebrow">User journeys</p>
+        <h2>Where Aegis ID creates business value.</h2>
+        <p class="section-kicker">
+          Aegis ID is not a replacement for every login. It is the assurance layer for moments where
+          ordinary authentication does not provide enough business confidence or evidence.
+        </p>
+
+        <div class="scenario-list">
+          <div class="scenario">
+            <div class="avatar">01</div>
+            <div>
+              <h3>Expense or contract approval</h3>
+              <p>A finance approver signs a high-value decision. The ledger stores the application, action, amount, actor, and timestamp.</p>
+            </div>
+            <span class="scenario__tag">Wallet challenge</span>
+          </div>
+          <div class="scenario">
+            <div class="avatar">02</div>
+            <div>
+              <h3>OIDC/SAML web application access</h3>
+              <p>Aegis adds credential proof, claim consent, or YubiKey step-up before releasing claims to the relying application.</p>
+            </div>
+            <span class="scenario__tag">Web apps</span>
+          </div>
+          <div class="scenario">
+            <div class="avatar">03</div>
+            <div>
+              <h3>Digital badge or field identification</h3>
+              <p>A worker presents an employee, contractor, visitor, or site-access credential. Aegis tracks who issued it and whether it is active.</p>
+            </div>
+            <span class="scenario__tag">Badge / ID</span>
+          </div>
+          <div class="scenario">
+            <div class="avatar">04</div>
+            <div>
+              <h3>Contractor moves between organizations</h3>
+              <p>The credential holder can join a new organization without giving the previous organization access to unrelated claims.</p>
+            </div>
+            <span class="scenario__tag">Consent</span>
+          </div>
+          <div class="scenario">
+            <div class="avatar">05</div>
+            <div>
+              <h3>Administrator performs a sensitive action</h3>
+              <p>Aegis requires YubiKey/FIDO2 step-up before revocation, claim export, role promotion, or privileged configuration changes.</p>
+            </div>
+            <span class="scenario__tag">YubiKey 5C NFC</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="decision">
+      <p class="eyebrow">Why not just login?</p>
+      <h2>Authentication gets you in. Aegis proves the moment.</h2>
+      <p class="section-kicker">
+        Passwordless login, MFA, Conditional Access, and RBAC are essential. They are still not always enough
+        for portable credentials, explicit claim consent, administrator step-up, badge-style identification,
+        or signed business decisions that need a durable evidence trail.
+      </p>
+
+      <div class="matrix">
+        <div class="matrix-row matrix-row--head">
+          <div>Assurance path</div>
+          <div>Use when</div>
+          <div>Value proposition</div>
+        </div>
+        <div class="matrix-row">
+          <div><strong>Conventional auth</strong><p>Entra, AD, OIDC, SAML, RBAC</p></div>
+          <div><p>The app only needs normal sign-in and role-based access to low- or medium-risk resources.</p></div>
+          <div><p>Keep it simple. Aegis does not need to replace basic login where basic login is enough.</p></div>
+        </div>
+        <div class="matrix-row">
+          <div><strong>Aegis wallet challenge</strong><p>Action evidence</p></div>
+          <div><p>The organization needs proof that a user accepted a specific approval, consent, revocation, or role change.</p></div>
+          <div><p>Records who did what, for which application, with what payload, and at what time.</p></div>
+        </div>
+        <div class="matrix-row">
+          <div><strong>Microsoft Verified ID</strong><p>Portable credential proof</p></div>
+          <div><p>The user needs to present an employee, contractor, badge, or eligibility credential outside a single app.</p></div>
+          <div><p>Users can scan a QR code or open a deep link in Authenticator. The QR code is a transport mechanism, not the trust model.</p></div>
+        </div>
+        <div class="matrix-row">
+          <div><strong>YubiKey FIDO2</strong><p>Hardware-backed step-up</p></div>
+          <div><p>The organization wants a phishing-resistant factor for admin actions, sensitive approvals, or device-bound assurance.</p></div>
+          <div><p>A YubiKey does not present a Verified ID credential; it signs a WebAuthn/FIDO2 challenge. Aegis can use it as a separate assurance path.</p></div>
+        </div>
+        <div class="matrix-row">
+          <div><strong>Aegis + Verified ID + YubiKey</strong><p>High-assurance workflows</p></div>
+          <div><p>The customer needs Microsoft-native credential proof, hardware-backed step-up, app policy, and an audit trail.</p></div>
+          <div><p>Credential proves eligibility. YubiKey proves hardware-backed presence. Aegis governs and records the decision.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="band band--soft" id="demo">
+      <div class="page page--wide">
+        <div class="split split--reverse">
+          <div class="talk-track">
+            <div class="quote-panel">
+              <p>
+                Aegis ID is the assurance control plane. Verified ID and YubiKey are proof methods.
+                The ledger is the record of what happened next.
+              </p>
+            </div>
+            <ol class="steps">
+              <li>
+                <div>
+                  <strong>Choose the assurance path</strong>
+                  <span>Use Verified ID for portable credential proof or YubiKey/FIDO2 for hardware-backed step-up.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Prove the user or context</strong>
+                  <span>Authenticator shares a credential, or the YubiKey signs a WebAuthn challenge with user verification.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Approve an expense</strong>
+                  <span>The app sends a high-value decision payload to the Aegis wallet challenge and policy service.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Show the ledger</strong>
+                  <span>Credential proof, hardware step-up, approval, consent, and revocation events become visible to the org.</span>
+                </div>
+              </li>
+            </ol>
+          </div>
+          <div>
+            <p class="eyebrow">Demo flow</p>
+            <h2>Two versions of the same product story.</h2>
+            <p class="section-kicker">
+              For a Microsoft-native audience, show Verified ID in Authenticator. For a hardware-backed
+              security audience, show YubiKey 5C NFC as the step-up factor. In both cases, Aegis ID
+              governs the policy and records the business decision.
+            </p>
+            <div class="inline-actions">
+              <a class="button button--primary" href="https://vanguard-aegis-id-65067d.azurewebsites.net/">Open Aegis demo</a>
+              <a class="button" href="https://vanguardcs.ca/">Vanguard website</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="references">
+      <p class="eyebrow">Implementation notes</p>
+      <h2>How this fits real enterprise environments.</h2>
+      <p class="section-kicker">
+        Verified ID can be started by QR code or deep link. A QR code is convenient when the request is
+        displayed on a desktop and scanned by a phone; a deep link is better when the user is already on
+        a mobile device. YubiKey is different: it is not a Verified ID wallet. It is a FIDO2/WebAuthn
+        security key that can be used by Aegis ID for hardware-backed sign-in and step-up.
+      </p>
+      <div class="value-grid">
+        <div class="value-card">
+          <small>Microsoft-native</small>
+          <strong>Verified ID path</strong>
+          <p>Use when the user needs to present a portable employee, contractor, badge, or eligibility credential in Authenticator.</p>
+        </div>
+        <div class="value-card">
+          <small>Hardware-backed</small>
+          <strong>YubiKey path</strong>
+          <p>Use when the user needs to tap a YubiKey 5C NFC or USB-C key to satisfy phishing-resistant WebAuthn/FIDO2 step-up.</p>
+        </div>
+        <div class="value-card">
+          <small>Standards-based apps</small>
+          <strong>OIDC / SAML path</strong>
+          <p>Use when Power Pages, Keycloak, Okta, SaaS apps, or custom web apps need claims and assurance from Aegis ID.</p>
+        </div>
+      </div>
+      <div class="source-strip">
+        <a href="https://vanguardcs.ca/">Vanguard Cloud Services</a>
+        <a href="https://vanguard-aegis-id-65067d.azurewebsites.net/">Aegis ID demo</a>
+        <a href="https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api">Microsoft Verified ID presentation API</a>
+        <a href="https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-passkeys-fido2">Microsoft Entra passkeys/FIDO2</a>
+        <a href="https://www.yubico.com/product/yubikey-5c-nfc/">YubiKey 5C NFC</a>
+        <a href="https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-provider">Power Pages OIDC provider</a>
+      </div>
+      <p class="fine-print">
+        Before production, harden OIDC signing, JWKS, client secrets, storage, monitoring, callback security,
+        privacy policy, retention, and revocation workflows. Microsoft and Yubico product names are used to
+        describe interoperability with the Aegis ID product offer.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
+  </script>
+</body>
+</html>

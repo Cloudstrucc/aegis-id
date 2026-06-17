@@ -1,0 +1,46 @@
+<section class="container py-5" data-verified-id-transaction="{{request.id}}" data-return-to="{{returnTo}}">
+  <div class="row justify-content-center">
+    <div class="col-xl-10">
+      <div class="card shadow border-0">
+        <div class="card-body p-4 p-lg-5">
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-6">
+              <span class="badge text-bg-primary mb-3">{{transaction.status}}</span>
+              <h1 class="h2">Verified ID proof required</h1>
+              <p class="text-muted">
+                Scan this request with Microsoft Authenticator and share your Vanguard Verified Employee credential before opening the expense table.
+              </p>
+              <dl class="row">
+                <dt class="col-sm-4">Application</dt>
+                <dd class="col-sm-8">Business Expenses</dd>
+                <dt class="col-sm-4">Request</dt>
+                <dd class="col-sm-8"><code>{{request.id}}</code></dd>
+                <dt class="col-sm-4">Status</dt>
+                <dd class="col-sm-8"><span data-verified-id-status>{{transaction.status}}</span></dd>
+              </dl>
+              <div class="alert alert-secondary" data-verified-id-message>
+                Waiting for Microsoft Authenticator.
+              </div>
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" href="{{request.requestUrl}}">Open Authenticator</a>
+                <a class="btn btn-outline-primary" href="{{returnTo}}">Refresh manually</a>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="verified-id-card text-center">
+                {{#if request.qrCodeDataUrl}}
+                  <img src="{{request.qrCodeDataUrl}}" alt="Microsoft Verified ID presentation QR code">
+                {{/if}}
+                <p class="small text-muted mt-3 mb-0">QR expires at {{request.expiresAt}}</p>
+              </div>
+            </div>
+          </div>
+          <hr class="my-4">
+          <p class="small text-muted mb-0">
+            Demo sequence: OIDC proves browser session ownership, Verified ID proves portable employee eligibility, and the Aegis wallet challenge signs each expense decision.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

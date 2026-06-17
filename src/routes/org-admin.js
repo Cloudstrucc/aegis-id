@@ -14,12 +14,16 @@ const {
   grantCredentialConsent,
   issueCredential,
   markCredentialAccepted,
+  reissueCredentialInvitation,
   requestCredentialConsent,
   requestCoAdmin,
   revokeCoAdmin,
   revokeCredential,
+  submitAdminIdentityVerification,
   updateBranding,
-  updateCredentialProfile
+  updateClaimDefinition,
+  updateCredentialProfile,
+  updateRole
 } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
@@ -47,6 +51,12 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:cre
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:credentialId/update', withOrg(async ({ subscription, workspace, req, res }) => {
   await updateCredentialProfile(workspace, subscription, req.params.credentialId, req.body);
   await audit('org.credential.updated', subscription, workspace, { credentialId: req.params.credentialId });
+  res.redirect(303, orgAdminPath(subscription.id, workspace.id, req.params.credentialId));
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:credentialId/reinvite', withOrg(async ({ subscription, workspace, req, res }) => {
+  await reissueCredentialInvitation(workspace, subscription, req.params.credentialId, req.body);
+  await audit('org.credential.reinvited', subscription, workspace, { credentialId: req.params.credentialId });
   res.redirect(303, orgAdminPath(subscription.id, workspace.id, req.params.credentialId));
 }));
 
@@ -95,6 +105,12 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/roles/:roleId/de
   res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#roles-claims`);
 }));
 
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/roles/:roleId/update', withOrg(async ({ subscription, workspace, req, res }) => {
+  await updateRole(workspace, subscription, req.params.roleId, req.body);
+  await audit('org.role.updated', subscription, workspace, { roleId: req.params.roleId });
+  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#roles-claims`);
+}));
+
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/claims', withOrg(async ({ subscription, workspace, req, res }) => {
   await createClaimDefinition(workspace, subscription, req.body);
   await audit('org.claim.created', subscription, workspace, { key: req.body.key });
@@ -104,6 +120,12 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/claims', withOrg
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/claims/:claimId/delete', withOrg(async ({ subscription, workspace, req, res }) => {
   await deleteClaimDefinition(workspace, subscription, req.params.claimId);
   await audit('org.claim.deleted', subscription, workspace, { claimId: req.params.claimId });
+  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#roles-claims`);
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/claims/:claimId/update', withOrg(async ({ subscription, workspace, req, res }) => {
+  await updateClaimDefinition(workspace, subscription, req.params.claimId, req.body);
+  await audit('org.claim.updated', subscription, workspace, { claimId: req.params.claimId });
   res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#roles-claims`);
 }));
 
@@ -123,6 +145,15 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/branding', withO
   await updateBranding(workspace, subscription, req.body);
   await audit('org.branding.updated', subscription, workspace, { paletteId: req.body.paletteId });
   res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#org-branding`);
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/identity-verification', withOrg(async ({ subscription, workspace, req, res }) => {
+  const verification = await submitAdminIdentityVerification(workspace, subscription, req.body);
+  await audit('org.admin.identity.verification.submitted', subscription, workspace, {
+    status: verification.status,
+    provider: verification.provider
+  });
+  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#credential-admin`);
 }));
 
 function withOrg(handler) {

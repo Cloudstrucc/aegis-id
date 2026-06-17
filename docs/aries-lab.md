@@ -1,6 +1,6 @@
 # Aries Interoperability Lab
 
-The Aries lab is intentionally separate from the Microsoft-native production path. Use it to test DIDComm, ACA-Py, Bifold/Credo-compatible wallets, AnonCreds, mediator flows, and development-ledger behavior.
+The Aries lab is intentionally separate from the Microsoft-native production path. Use it to test DIDComm, ACA-Py, the Vanguard Aegis ID mobile app, AnonCreds, mediator flows, and development-ledger behavior.
 
 ## Start Agents
 

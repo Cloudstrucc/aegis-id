@@ -46,6 +46,7 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
     requestCredentialConsent,
     requestCoAdmin,
     revokeCredential,
+    submitAdminIdentityVerification,
     updateBranding
   } = require('../src/services/org-admin-service');
 
@@ -98,6 +99,16 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
   const coAdminRequest = await requestCoAdmin(workspace, subscription, credential.id);
   await acceptCoAdminChallenge(workspace, subscription, coAdminRequest.id, 'admin');
   await acceptCoAdminChallenge(workspace, subscription, coAdminRequest.id, 'holder');
+  const verification = await submitAdminIdentityVerification(workspace, subscription, {
+    idImageDataUrl: 'data:image/jpeg;base64,Z292ZXJubWVudC1pZA==',
+    faceImageDataUrl: 'data:image/jpeg;base64,bGl2ZS1mYWNlLWNhcHR1cmU=',
+    faceDetectionScore: '0.94',
+    faceDetectionProvider: 'mediapipe-face-detection'
+  });
+  assert.equal(verification.status, 'verified');
+  assert.equal(verification.captureProvider, 'mediapipe-face-detection');
+  assert.equal(verification.idImageHash.length, 64);
+  assert.equal(verification.faceImageHash.length, 64);
 
   const adminView = await getOrgAdminView(workspace, subscription);
   const activeCredential = adminView.credentials.find((item) => item.id === credential.id);
@@ -107,7 +118,10 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
   assert.equal(activeCredential.divisionName, 'Finance');
   assert.equal(activeCredential.consentStatusLabel, 'Consent granted');
   assert.equal(adminView.orgChartNodes.some((node) => node.name === 'Finance'), true);
-  assert.equal(adminView.peopleTable.filteredCount, 1);
+  assert.equal(adminView.peopleTable.filteredCount, 2);
+  assert.equal(adminView.peopleTable.rows[0].isAdminProfile, true);
+  assert.equal(adminView.peopleTable.rows[0].holderEmail, 'admin@vanguardcs.ca');
+  assert.equal(adminView.peopleTable.rows[0].verification.status, 'verified');
   assert.equal(adminView.coAdminCount, 1);
   assert.equal(adminView.customPaletteSelected, true);
 

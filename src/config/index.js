@@ -1,12 +1,31 @@
 const path = require('node:path');
 const dotenv = require('dotenv');
 
-dotenv.config();
-
 const rootDir = path.resolve(__dirname, '..', '..');
+dotenv.config({ path: resolveEnvFile(rootDir) });
 
 function resolveFromRoot(value, fallback) {
   return path.resolve(rootDir, value || fallback);
+}
+
+function resolveEnvFile(baseDir) {
+  const envName =
+    process.env.APP_ENV ||
+    process.env.DEPLOY_ENV ||
+    (process.env.NODE_ENV === 'production' ? 'prod' : 'local');
+
+  const fileNameByEnv = {
+    prod: '.env',
+    production: '.env',
+    local: '.env.local',
+    localhost: '.env.local',
+    dev: '.env.dev',
+    development: '.env.dev',
+    qa: '.env.qa',
+    test: '.env.qa'
+  };
+
+  return path.join(baseDir, fileNameByEnv[envName] || envName || '.env.local');
 }
 
 const config = {
@@ -14,7 +33,14 @@ const config = {
     name: 'Vanguard Cloud Services - Aegis ID',
     env: process.env.NODE_ENV || 'development',
     port: Number.parseInt(process.env.PORT || '3000', 10),
-    publicBaseUrl: process.env.PUBLIC_BASE_URL || 'http://localhost:3000'
+    publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.APP_PUBLIC_BASE_URL || 'http://localhost:3000',
+    iosTestFlightUrl: process.env.IOS_TESTFLIGHT_PUBLIC_URL || '',
+    androidTestingUrl: process.env.ANDROID_TESTING_URL || '',
+    businessExpensesUrl:
+      process.env.BUSINESS_EXPENSES_APP_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://vanguard-business-expenses-65067d.azurewebsites.net'
+        : 'http://localhost:4300')
   },
   paths: {
     root: rootDir,
@@ -53,9 +79,14 @@ const config = {
     callbackApiKey: process.env.VID_CALLBACK_API_KEY || ''
   },
   aries: {
+    holderAdminUrl: process.env.ARIES_HOLDER_ADMIN_URL || 'http://localhost:6011',
     issuerAdminUrl: process.env.ARIES_ISSUER_ADMIN_URL || 'http://localhost:4011',
     verifierAdminUrl: process.env.ARIES_VERIFIER_ADMIN_URL || 'http://localhost:5011',
-    mediatorAdminUrl: process.env.ARIES_MEDIATOR_ADMIN_URL || 'http://localhost:3011'
+    mediatorAdminUrl: process.env.ARIES_MEDIATOR_ADMIN_URL || 'http://localhost:3011',
+    holderAdminApiKey: process.env.ARIES_HOLDER_ADMIN_API_KEY || process.env.ARIES_ADMIN_API_KEY || '',
+    issuerAdminApiKey: process.env.ARIES_ISSUER_ADMIN_API_KEY || process.env.ARIES_ADMIN_API_KEY || '',
+    verifierAdminApiKey: process.env.ARIES_VERIFIER_ADMIN_API_KEY || process.env.ARIES_ADMIN_API_KEY || '',
+    mediatorAdminApiKey: process.env.ARIES_MEDIATOR_ADMIN_API_KEY || process.env.ARIES_ADMIN_API_KEY || ''
   },
   oidcWalletDemo: {
     mode: process.env.OIDC_WALLET_DEMO_MODE || 'mock',

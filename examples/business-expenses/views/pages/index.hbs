@@ -2,10 +2,10 @@
   <div class="container py-5">
     <div class="row align-items-center g-4">
       <div class="col-lg-7">
-        <span class="badge text-bg-success mb-3">Aegis ID OIDC + wallet signature</span>
-        <h1 class="display-5 fw-bold">Business expense approvals with wallet-backed assurance.</h1>
+        <span class="badge text-bg-success mb-3">Verified ID + YubiKey + wallet signature</span>
+        <h1 class="display-5 fw-bold">Business expense approvals with the right assurance path.</h1>
         <p class="lead">
-          This standalone app signs users in with Aegis ID, then requires a wallet challenge for sign-in and every approve/reject decision.
+          Sign in with Aegis ID, prove eligibility with Microsoft Verified ID or hardware-backed presence with YubiKey/FIDO2, then sign each approve/reject decision with the Aegis wallet ledger.
         </p>
         {{#unless configured}}
           <div class="alert alert-warning">
@@ -15,11 +15,23 @@
         <div class="d-flex flex-wrap gap-2">
           <form action="/auth/start" method="post">
             <input type="hidden" name="intent" value="sign-in">
-            <button class="btn btn-light btn-lg" type="submit">Sign in with Aegis ID</button>
+            <input type="hidden" name="authMethod" value="verified-id">
+            <button class="btn btn-light btn-lg" type="submit">Sign in with Verified ID</button>
           </form>
           <form action="/auth/start" method="post">
             <input type="hidden" name="intent" value="register">
-            <button class="btn btn-outline-light btn-lg" type="submit">Register with Aegis ID</button>
+            <input type="hidden" name="authMethod" value="verified-id">
+            <button class="btn btn-outline-light btn-lg" type="submit">Register with Verified ID</button>
+          </form>
+          <form action="/auth/start" method="post">
+            <input type="hidden" name="intent" value="sign-in">
+            <input type="hidden" name="authMethod" value="yubikey">
+            <button class="btn btn-outline-light btn-lg" type="submit">Sign in with YubiKey</button>
+          </form>
+          <form action="/auth/start" method="post">
+            <input type="hidden" name="intent" value="sign-in">
+            <input type="hidden" name="authMethod" value="wallet">
+            <button class="btn btn-outline-light btn-lg" type="submit">Use wallet-only lab</button>
           </form>
         </div>
       </div>
@@ -29,10 +41,13 @@
             <h2 class="h4">Assurance flow</h2>
             <ol class="list-group list-group-numbered mt-3">
               <li class="list-group-item">OIDC authorization through Aegis ID</li>
-              <li class="list-group-item">Wallet challenge for registration or sign-in</li>
+              <li class="list-group-item">Verified ID presentation or YubiKey FIDO2 step-up</li>
               <li class="list-group-item">Expense decision challenge per approval/rejection</li>
-              <li class="list-group-item">Ledger record in app dashboard and iOS wallet</li>
+              <li class="list-group-item">Ledger record in app dashboard and wallet</li>
             </ol>
+            <div class="alert alert-info mt-3 mb-0">
+              Verified ID proves portable eligibility. YubiKey proves hardware-backed presence. The Aegis wallet challenge records the high-value approval action.
+            </div>
           </div>
         </div>
       </div>
