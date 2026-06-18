@@ -14,15 +14,29 @@
   {{#if hasOrganizations}}
     <div class="organization-grid">
       {{#each organizations}}
-        <a class="organization-tile" href="{{dashboardPath}}">
+        <article class="organization-tile {{#if isDisabled}}organization-tile--disabled{{/if}}">
           <div class="organization-tile__mark" aria-hidden="true">V</div>
-          <div>
-            <span class="track-label">{{roleLabel}}</span>
+          <div class="organization-tile__body">
+            <span class="track-label">{{roleLabel}} / {{statusLabel}}</span>
             <h3>{{organization}}</h3>
             <p>{{#if updatedAt}}Updated {{updatedAt}}{{else}}Ready to configure{{/if}}</p>
           </div>
-          <span class="organization-tile__arrow" aria-hidden="true">&rarr;</span>
-        </a>
+          <div class="organization-tile__actions">
+            <a class="button button--blue" href="{{dashboardPath}}">Open</a>
+            {{#if isDisabled}}
+              <form action="/organizations/{{subscriptionId}}/{{id}}/enable" method="post">
+                <button class="button button--ghost" type="submit">Enable</button>
+              </form>
+            {{else}}
+              <form action="/organizations/{{subscriptionId}}/{{id}}/disable" method="post">
+                <button class="button button--ghost" type="submit">Disable</button>
+              </form>
+            {{/if}}
+            <form action="/organizations/{{subscriptionId}}/{{id}}/delete" method="post" data-confirm-message="Delete this organization workspace from your list? Audit history is retained.">
+              <button class="button button--ghost" type="submit">Delete</button>
+            </form>
+          </div>
+        </article>
       {{/each}}
     </div>
   {{else}}

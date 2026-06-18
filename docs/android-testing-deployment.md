@@ -117,6 +117,7 @@ Use this when testing with a stable group of Android users.
 8. Accept the challenge in the Android wallet.
 9. Confirm the Ledger tab shows the challenge history.
 10. Confirm the Organizations tab shows roles, claims, and revocation state.
+11. Optional passkey test: open wallet **Settings > Wallet passkey assurance**, register a passkey, set the org **YubiKey > Wallet approval passkey policy** to **Required**, and approve a Business Expenses decision. The Ledger action should require passkey verification before acceptance.
 
 ## Notes
 

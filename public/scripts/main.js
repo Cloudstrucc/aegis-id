@@ -150,6 +150,18 @@ document.addEventListener('click', async (event) => {
   }
 });
 
+document.addEventListener('submit', (event) => {
+  const form = event.target.closest('[data-confirm-message]');
+  if (!form) {
+    return;
+  }
+
+  const message = form.dataset.confirmMessage || 'Are you sure?';
+  if (!window.confirm(message)) {
+    event.preventDefault();
+  }
+});
+
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && videoModal && !videoModal.hidden) {
     closeVideoModal();

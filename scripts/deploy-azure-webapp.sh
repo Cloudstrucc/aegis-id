@@ -261,8 +261,9 @@ if [[ "$VERIFY_ONLY" != "1" ]]; then
     IOS_TESTFLIGHT_PUBLIC_URL ANDROID_TESTING_URL \
     USER_STORE_PATH SUBSCRIPTION_STORE_PATH SUBSCRIBER_WORKSPACE_STORE_PATH TRANSACTION_STORE_PATH \
     ISSUER_ORG_STORE_PATH ORG_ADMIN_STORE_PATH ORG_ADMIN_EVENT_STORE_PATH OIDC_WALLET_SESSION_STORE_PATH \
-    OIDC_CODE_STORE_PATH WALLET_CHALLENGE_STORE_PATH AUDIT_STORE_PATH \
+    OIDC_CODE_STORE_PATH WALLET_CHALLENGE_STORE_PATH WALLET_PASSKEY_STORE_PATH AUDIT_STORE_PATH \
     DEFAULT_MFA_METHOD PASSKEY_RP_NAME PASSKEY_RP_ID PASSKEY_ORIGIN \
+    IOS_APP_TEAM_ID IOS_APP_BUNDLE_ID ANDROID_APP_PACKAGE_NAME ANDROID_SHA256_CERT_FINGERPRINTS \
     VID_MODE AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET VID_CLIENT_NAME VID_AUTHORITY_DID \
     VID_MANIFEST_URL VID_CREDENTIAL_TYPE VID_CALLBACK_API_KEY \
     ARIES_HOLDER_ADMIN_URL ARIES_ISSUER_ADMIN_URL ARIES_VERIFIER_ADMIN_URL ARIES_MEDIATOR_ADMIN_URL \
@@ -309,6 +310,12 @@ wait_for_webapp_running "$DEPLOY_TIMEOUT_SECONDS"
 
 log "Polling app health endpoint"
 wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/api/health" 200 "$DEPLOY_TIMEOUT_SECONDS"
+
+log "Verifying mobile app association documents"
+wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/.well-known/apple-app-site-association" 200 180
+assert_content_type_contains "${APP_PUBLIC_BASE_URL%/}/.well-known/apple-app-site-association" "application/json"
+wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/.well-known/assetlinks.json" 200 180
+assert_content_type_contains "${APP_PUBLIC_BASE_URL%/}/.well-known/assetlinks.json" "application/json"
 
 log "Verifying MediaPipe runtime assets"
 wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/vendor/mediapipe/face_detection/face_detection.js" 200 180

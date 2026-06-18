@@ -14,6 +14,8 @@ The verified subscriber becomes the first organization administrator. After the 
 /dashboard/<subscription-id>
 ```
 
+The organization selector at `/organizations/<subscription-id>` now includes lifecycle controls. Administrators can open an organization workspace, disable it temporarily, re-enable it, or delete it from the active selector. Disabled organizations remain visible with a disabled status so operators can pause onboarding without losing context. Deleted workspaces are removed from the active selector and should be treated as pilot cleanup unless a production retention workflow is added.
+
 The dashboard shows each platform Aegis ID can connect to:
 
 - Microsoft Entra Verified ID / Azure

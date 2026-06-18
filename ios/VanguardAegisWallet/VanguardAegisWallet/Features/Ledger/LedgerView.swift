@@ -61,6 +61,12 @@ private struct LedgerRow: View {
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
             }
+
+            if transaction.requiresPasskey == true {
+                Label("Passkey required", systemImage: "person.badge.key")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(VanguardTheme.blue)
+            }
         }
         .padding(.vertical, 4)
     }
@@ -111,6 +117,12 @@ private struct LedgerDetailView: View {
                         if let remoteId = transaction.remoteId {
                             LabeledContent("Nonce", value: remoteId)
                         }
+                        if transaction.requiresPasskey == true {
+                            LabeledContent("Required assurance", value: transaction.requiredAssurance ?? "passkey")
+                        }
+                        if let passkeyEvidenceLabel = transaction.passkeyEvidenceLabel {
+                            LabeledContent("Passkey evidence", value: passkeyEvidenceLabel)
+                        }
                     }
 
                     Section("Decision") {
@@ -151,6 +163,8 @@ private struct LedgerDetailView: View {
                 } label: {
                     if isWorking {
                         Label("Recording decision...", systemImage: "hourglass")
+                    } else if transaction.requiresPasskey == true {
+                        Label("Verify Passkey And \(actionButtonTitle(for: transaction))", systemImage: "person.badge.key")
                     } else {
                         Label(actionButtonTitle(for: transaction), systemImage: "checkmark.shield")
                     }

@@ -3,6 +3,8 @@ const express = require('express');
 const { requireAuthenticated } = require('../middleware/auth');
 const { getSubscriptionForUser } = require('../services/subscription-service');
 const {
+  deleteWorkspaceForSubscription,
+  disableWorkspaceForSubscription,
   listWorkspacesForSubscription,
   registerWorkspaceForSubscription
 } = require('../services/platform-service');
@@ -46,6 +48,54 @@ router.post('/organizations/:subscriptionId', async (req, res, next) => {
     });
 
     res.redirect(303, `${workspace.dashboardPath}?welcome=1`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/organizations/:subscriptionId/:workspaceId/disable', async (req, res, next) => {
+  try {
+    const subscription = await loadSubscription(req);
+    const workspace = await disableWorkspaceForSubscription(subscription, req.params.workspaceId, true);
+    await writeAuditEvent('organization.workspace.disabled', {
+      subscriptionId: subscription.id,
+      workspaceId: workspace.id,
+      organization: workspace.organization,
+      actorEmail: subscription.email
+    });
+    res.redirect(303, `/organizations/${subscription.id}`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/organizations/:subscriptionId/:workspaceId/enable', async (req, res, next) => {
+  try {
+    const subscription = await loadSubscription(req);
+    const workspace = await disableWorkspaceForSubscription(subscription, req.params.workspaceId, false);
+    await writeAuditEvent('organization.workspace.enabled', {
+      subscriptionId: subscription.id,
+      workspaceId: workspace.id,
+      organization: workspace.organization,
+      actorEmail: subscription.email
+    });
+    res.redirect(303, `/organizations/${subscription.id}`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/organizations/:subscriptionId/:workspaceId/delete', async (req, res, next) => {
+  try {
+    const subscription = await loadSubscription(req);
+    const workspace = await deleteWorkspaceForSubscription(subscription, req.params.workspaceId);
+    await writeAuditEvent('organization.workspace.deleted', {
+      subscriptionId: subscription.id,
+      workspaceId: workspace.id,
+      organization: workspace.organization,
+      actorEmail: subscription.email
+    });
+    res.redirect(303, `/organizations/${subscription.id}`);
   } catch (error) {
     next(error);
   }

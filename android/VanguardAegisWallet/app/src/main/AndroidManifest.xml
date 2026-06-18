@@ -25,6 +25,16 @@
                     android:host="invite"
                     android:scheme="aegisid" />
             </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="vanguard-aegis-id-65067d.azurewebsites.net"
+                    android:pathPrefix="/wallet"
+                    android:scheme="https" />
+            </intent-filter>
         </activity>
     </application>
 </manifest>

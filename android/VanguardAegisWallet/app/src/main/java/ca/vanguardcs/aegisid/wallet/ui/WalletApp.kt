@@ -62,12 +62,17 @@ import ca.vanguardcs.aegisid.wallet.model.WalletConnectionState
 import ca.vanguardcs.aegisid.wallet.model.WalletTransaction
 import ca.vanguardcs.aegisid.wallet.model.WalletTransactionStatus
 import ca.vanguardcs.aegisid.wallet.model.WalletTransactionType
+import org.json.JSONObject
 import java.text.DateFormat
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WalletApp(store: WalletStore) {
+fun WalletApp(
+    store: WalletStore,
+    onCreatePasskey: suspend (String) -> JSONObject,
+    onGetPasskey: suspend (String) -> JSONObject
+) {
     var selectedTab by rememberSaveable { mutableStateOf(WalletTab.Home) }
 
     LaunchedEffect(Unit) {
@@ -123,9 +128,9 @@ fun WalletApp(store: WalletStore) {
                     WalletTab.Home -> HomeScreen(store)
                     WalletTab.Scan -> ScanScreen(store)
                     WalletTab.Organizations -> OrganizationsScreen(store)
-                    WalletTab.Ledger -> LedgerScreen(store)
+                    WalletTab.Ledger -> LedgerScreen(store, onGetPasskey)
                     WalletTab.Connections -> ConnectionsScreen(store)
-                    WalletTab.Settings -> SettingsScreen()
+                    WalletTab.Settings -> SettingsScreen(store, onCreatePasskey)
                 }
 
                 store.challengeBanner?.let { banner ->
@@ -323,7 +328,7 @@ private fun OrganizationsScreen(store: WalletStore) {
 }
 
 @Composable
-private fun LedgerScreen(store: WalletStore) {
+private fun LedgerScreen(store: WalletStore, onGetPasskey: suspend (String) -> JSONObject) {
     val challengeTransactions = store.transactions
         .filter { it.type == WalletTransactionType.Challenge }
         .sortedByDescending { it.createdAt }
@@ -342,7 +347,11 @@ private fun LedgerScreen(store: WalletStore) {
             }
         } else {
             items(challengeTransactions, key = { it.id }) { transaction ->
-                TransactionCard(transaction = transaction, onAccept = { store.acceptTransaction(transaction) })
+                TransactionCard(
+                    transaction = transaction,
+                    onAccept = { store.acceptTransaction(transaction) },
+                    onAcceptWithPasskey = { store.acceptTransactionWithPasskey(transaction, onGetPasskey) }
+                )
             }
         }
     }
@@ -368,7 +377,13 @@ private fun ConnectionsScreen(store: WalletStore) {
 }
 
 @Composable
-private fun SettingsScreen() {
+private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String) -> JSONObject) {
+    var passkeySubject by rememberSaveable { mutableStateOf(store.walletPasskeySubject) }
+
+    LaunchedEffect(Unit) {
+        store.refreshWalletPasskeyStatus()
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -393,6 +408,56 @@ private fun SettingsScreen() {
                 Text(
                     "This Android pilot sends lab actions to the hosted Aegis ID bridge, which talks to ACA-Py with server-side admin credentials. It is not a production wallet engine and should not be used with real credentials.",
                     color = Color.Gray
+                )
+            }
+        }
+        item {
+            AegisCard {
+                StatusBadge("Optional assurance", VanguardColors.Green)
+                Text("Wallet passkey assurance", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "Register a device passkey when an organization requires phishing-resistant proof before approving wallet challenges.",
+                    color = Color.Gray
+                )
+                OutlinedTextField(
+                    value = passkeySubject,
+                    onValueChange = {
+                        passkeySubject = it
+                        store.updateWalletPasskeySubject(it)
+                    },
+                    label = { Text("Wallet subject") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                KeyValue(
+                    "Status",
+                    if (store.walletPasskeyStatus?.registered == true) {
+                        "${store.walletPasskeyStatus?.credentialCount ?: 0} passkey credential(s) registered"
+                    } else {
+                        "No wallet passkey registered"
+                    }
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = { store.registerWalletPasskey(onCreatePasskey) },
+                        enabled = !store.isWorking,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Register passkey")
+                    }
+                    OutlinedButton(
+                        onClick = { store.refreshWalletPasskeyStatus() },
+                        enabled = !store.isWorking,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Refresh")
+                    }
+                }
+                FeedbackMessages(
+                    isWorking = store.isWorking,
+                    importMessage = null,
+                    importError = null,
+                    labMessage = store.lastLabMessage,
+                    labError = store.lastLabError
                 )
             }
         }
@@ -471,7 +536,11 @@ private fun ConnectionCard(connection: WalletConnection, store: WalletStore) {
 }
 
 @Composable
-private fun TransactionCard(transaction: WalletTransaction, onAccept: () -> Unit) {
+private fun TransactionCard(
+    transaction: WalletTransaction,
+    onAccept: () -> Unit,
+    onAcceptWithPasskey: () -> Unit
+) {
     AegisCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -482,6 +551,11 @@ private fun TransactionCard(transaction: WalletTransaction, onAccept: () -> Unit
         }
 
         Text(transaction.detail, color = Color.Gray)
+        if (transaction.requiresPasskey) {
+            StatusBadge("Passkey required", VanguardColors.Green)
+        }
+        transaction.requiredAssurance?.let { KeyValue("Required assurance", it) }
+        transaction.passkeyEvidenceLabel?.let { KeyValue("Passkey evidence", it) }
         if (transaction.resourceType != null && transaction.resourceId != null) {
             KeyValue("Resource", "${transaction.resourceType}: ${transaction.resourceId}")
         }
@@ -495,10 +569,13 @@ private fun TransactionCard(transaction: WalletTransaction, onAccept: () -> Unit
         }
         KeyValue("Created", formatDate(transaction.createdAt))
         if (transaction.status == WalletTransactionStatus.PendingAcceptance || transaction.status == WalletTransactionStatus.Received || transaction.status == WalletTransactionStatus.Failed) {
-            ElevatedButton(onClick = onAccept, modifier = Modifier.fillMaxWidth()) {
+            ElevatedButton(
+                onClick = if (transaction.requiresPasskey) onAcceptWithPasskey else onAccept,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Icon(Icons.Outlined.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(8.dp))
-                Text(actionButtonTitle(transaction))
+                Text(if (transaction.requiresPasskey) "Verify passkey and ${actionButtonTitle(transaction).replaceFirstChar { it.lowercase() }}" else actionButtonTitle(transaction))
             }
         }
     }

@@ -12,6 +12,7 @@ For the simple QA and partner distribution runbook, see
 - Issues mock credentials for lab testing.
 - Sends and accepts wallet challenges.
 - Fetches OIDC wallet challenges from the Aegis ID web app.
+- Registers and uses wallet passkeys with Android Credential Manager when an org requires passkey-backed approvals.
 - Shows local ledger entries for authentication and high-assurance app actions.
 - Shows credential organizations, roles, claims, revocation state, and organization branding when available.
 
@@ -46,6 +47,35 @@ Enable USB debugging on the phone, connect it, then run:
 cd android/VanguardAegisWallet
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+## Wallet Passkey Approval Assurance
+
+Wallet passkeys are optional. Use them when an organization requires phishing-resistant proof before approving wallet challenges.
+
+1. Deploy Aegis ID to HTTPS.
+2. Sign the Android build you plan to distribute.
+3. Find the SHA-256 certificate fingerprint for that build and set it in Aegis ID:
+
+   ```bash
+   az webapp config appsettings set \
+     --resource-group rg-vanguard-aegis-id \
+     --name vanguard-aegis-id-65067d \
+     --settings \
+       ANDROID_APP_PACKAGE_NAME=ca.vanguardcs.aegisid.wallet \
+       ANDROID_SHA256_CERT_FINGERPRINTS="<sha256-fingerprint>"
+   ```
+
+4. Redeploy or restart Aegis ID and confirm:
+
+   ```text
+   https://vanguard-aegis-id-65067d.azurewebsites.net/.well-known/assetlinks.json
+   ```
+
+5. In the Android wallet, open **Settings > Wallet passkey assurance**.
+6. Enter the wallet subject email and tap **Register passkey**.
+7. When a Ledger item shows **Passkey required**, tap **Verify passkey and accept...** to complete Android Credential Manager and submit the signed wallet approval.
+
+Without a valid Digital Asset Links file for the exact signing certificate, Android may refuse to create or use passkeys for the Aegis ID relying-party domain.
 
 ## Recommended Partner Distribution
 

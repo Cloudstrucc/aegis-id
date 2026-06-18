@@ -30,6 +30,13 @@ const {
   getWalletChallenge,
   listWalletChallengeLedger
 } = require('../services/wallet-challenge-service');
+const {
+  finishWalletPasskeyAuthentication,
+  finishWalletPasskeyRegistration,
+  getWalletPasskeyStatus,
+  startWalletPasskeyAuthentication,
+  startWalletPasskeyRegistration
+} = require('../services/wallet-passkey-service');
 
 const router = express.Router();
 const verifiedId = createMicrosoftVerifiedIdAdapter();
@@ -265,6 +272,59 @@ router.get('/organizations/:organizationId/profile', async (req, res, next) => {
   }
 });
 
+router.get('/wallet/passkeys/status', async (req, res, next) => {
+  try {
+    res.json(await getWalletPasskeyStatus(req.query.subject));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/passkeys/register/options', async (req, res, next) => {
+  try {
+    res.json(await startWalletPasskeyRegistration(req.body, getPasskeyRequestInfo(req)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/passkeys/register/verify', async (req, res, next) => {
+  try {
+    const status = await finishWalletPasskeyRegistration(req.body, getPasskeyRequestInfo(req));
+    await writeAuditEvent('wallet-passkey.registered', {
+      subject: status.subject,
+      passkeyCount: status.passkeyCount,
+      source: req.body.source || 'wallet-api'
+    });
+    res.json({ ok: true, status });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/passkeys/authenticate/options', async (req, res, next) => {
+  try {
+    res.json(await startWalletPasskeyAuthentication(req.body, getPasskeyRequestInfo(req)));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/passkeys/authenticate/verify', async (req, res, next) => {
+  try {
+    const evidence = await finishWalletPasskeyAuthentication(req.body, getPasskeyRequestInfo(req));
+    await writeAuditEvent('wallet-passkey.verified', {
+      subject: evidence.subject,
+      credentialId: evidence.credentialId,
+      challengeId: evidence.challengeId,
+      source: req.body.source || 'wallet-api'
+    });
+    res.json({ ok: true, evidence });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/wallet-challenges', async (req, res, next) => {
   try {
     const challenge = await createExternalWalletChallenge(req.body);
@@ -334,6 +394,45 @@ router.post('/wallet-challenges/:challengeId/accept', async (req, res, next) => 
   }
 });
 
+router.post('/wallet-challenges/:challengeId/accept-with-passkey', async (req, res, next) => {
+  try {
+    const current = await getWalletChallenge(req.params.challengeId);
+    const evidence = await finishWalletPasskeyAuthentication(
+      {
+        subject: req.body.subject || current.subject,
+        challengeId: req.body.challengeId || req.params.challengeId,
+        response: req.body.response || req.body.passkeyResponse
+      },
+      getPasskeyRequestInfo(req)
+    );
+    const challenge = await acceptExternalWalletChallenge(req.params.challengeId, {
+      acceptedBy: evidence.subject,
+      source: req.body.source || 'wallet-passkey',
+      passkeyEvidence: evidence
+    });
+    await writeAuditEvent('wallet-challenge.accepted.passkey', {
+      challengeId: challenge.id,
+      appName: challenge.appName,
+      appInstanceId: challenge.appInstanceId,
+      organizationId: challenge.organizationId,
+      action: challenge.action,
+      resourceType: challenge.resourceType,
+      resourceId: challenge.resourceId,
+      subject: challenge.subject,
+      credentialId: evidence.credentialId,
+      assurance: evidence.assurance
+    });
+    res.json({
+      ok: true,
+      status: challenge.status,
+      evidence,
+      challenge
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 function validateCallbackApiKey(req) {
   if (!config.verifiedId.callbackApiKey) {
     return;
@@ -344,6 +443,13 @@ function validateCallbackApiKey(req) {
     error.status = 401;
     throw error;
   }
+}
+
+function getPasskeyRequestInfo(req) {
+  return {
+    origin: `${req.protocol}://${req.get('host')}`,
+    rpId: req.hostname
+  };
 }
 
 async function tryCreateIosWalletInvitation() {

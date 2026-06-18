@@ -57,6 +57,7 @@ const FIELD_HELP_TEXT = {
   tenantDisplayName: 'Enter the friendly tenant name shown to operators, for example Vanguard Cloud Services.',
   testMode: 'Choose Mock to validate local UI behavior, or Live to call Microsoft Entra Verified ID with tenant configuration.',
   userVerification: 'Choose whether users must unlock the key with a PIN or biometric gesture before the FIDO2 assertion is accepted.',
+  walletApprovalPasskeyPolicy: 'Choose whether wallet approvals for this organization should require a verified passkey assertion before Aegis ID accepts the challenge.',
   verifiedIdAdminRole: 'Enter the Entra role assigned to the operator completing Verified ID setup. Authentication Policy Administrator is commonly required.',
   verifiedIdAuthorityDid: 'Paste the issuer authority DID from the Verified ID portal. This is the DID the verifier should trust.',
   yubiKeyModel: 'Enter the approved hardware key model for this policy, such as YubiKey 5C NFC.'
@@ -207,6 +208,11 @@ function getPlatformDefinitions() {
               ['enabled', 'Enable YubiKey 5C NFC mobile flows'],
               ['desktop-only', 'Desktop only'],
               ['disabled', 'Not used']
+            ]),
+            selectField('walletApprovalPasskeyPolicy', 'Wallet approval passkey policy', [
+              ['disabled', 'Do not require passkeys for wallet approvals'],
+              ['preferred', 'Allow passkey assurance when the wallet has one'],
+              ['required', 'Require passkey assurance before approvals are accepted']
             ]),
             textareaField('adminStepUpPolicy', 'Aegis step-up triggers', 'administrator sign-in\nco-admin promotion\ncredential revocation\nclaims export\nhigh-value approval'),
             textField('sampleUserEmail', 'Sample pilot user', 'identity@vanguardcs.ca')
@@ -436,7 +442,7 @@ async function registerWorkspaceForSubscription(subscription, input = {}) {
 async function listWorkspacesForSubscription(subscription) {
   const workspaces = await store.read();
   return workspaces
-    .filter((workspace) => workspaceBelongsToSubscription(workspace, subscription))
+    .filter((workspace) => workspaceBelongsToSubscription(workspace, subscription) && workspace.status !== 'deleted')
     .map((workspace) => decorateWorkspaceForSubscription(ensureMembership(workspace, subscription), subscription))
     .sort((left, right) => new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime());
 }
@@ -456,6 +462,53 @@ async function getWorkspaceForSubscription(subscription, workspaceId) {
   }
 
   return workspaces.find((workspace) => workspace.id === workspaceId) || null;
+}
+
+async function disableWorkspaceForSubscription(subscription, workspaceId, disabled = true) {
+  const workspaces = await store.read();
+  const workspace = workspaces.find((item) => item.id === workspaceId && workspaceBelongsToSubscription(item, subscription));
+  if (!workspace) {
+    throw notFound('Organization workspace not found for this subscriber.');
+  }
+  assertWorkspaceOwnerOrAdmin(workspace, subscription);
+
+  workspace.status = disabled ? 'disabled' : 'active';
+  workspace.disabledAt = disabled ? new Date().toISOString() : null;
+  workspace.updatedAt = new Date().toISOString();
+  await store.write(workspaces);
+  return decorateWorkspaceForSubscription(ensureMembership(workspace, subscription), subscription);
+}
+
+async function deleteWorkspaceForSubscription(subscription, workspaceId) {
+  const workspaces = await store.read();
+  const workspace = workspaces.find((item) => item.id === workspaceId && workspaceBelongsToSubscription(item, subscription));
+  if (!workspace) {
+    throw notFound('Organization workspace not found for this subscriber.');
+  }
+  assertWorkspaceOwnerOrAdmin(workspace, subscription);
+
+  workspace.status = 'deleted';
+  workspace.deletedAt = new Date().toISOString();
+  workspace.updatedAt = new Date().toISOString();
+  await store.write(workspaces);
+  return workspace;
+}
+
+async function getWorkspaceAssurancePolicy(workspaceId) {
+  const workspaces = await store.read();
+  const workspace = workspaces.find((item) => item.id === workspaceId);
+  const platformState = workspace?.platforms?.['yubikey-fido2'];
+  const data = platformState?.data || {};
+
+  return {
+    workspaceId,
+    policyName: data.fido2PolicyName || 'Aegis hardware-backed assurance',
+    relyingPartyId: data.relyingPartyId || config.auth.passkeyRpId || '',
+    userVerification: data.userVerification || 'required',
+    nfcEnrollment: data.nfcEnrollment || 'enabled',
+    walletApprovalPasskeyPolicy: data.walletApprovalPasskeyPolicy || 'disabled',
+    configured: Boolean(platformState && platformState.status !== 'not-started')
+  };
 }
 
 async function setWorkspaceMemberRole(workspaceId, email, role = 'contributor', metadata = {}) {
@@ -800,6 +853,7 @@ function runYubiKeyReadinessTest(platformState, input = {}) {
   const attestation = data.attestationPolicy || 'required';
   const userVerification = data.userVerification || 'required';
   const nfcEnrollment = data.nfcEnrollment || 'enabled';
+  const walletApprovalPasskeyPolicy = data.walletApprovalPasskeyPolicy || 'disabled';
   const triggers = splitLines(data.adminStepUpPolicy || 'administrator sign-in\ncredential revocation\nhigh-value approval');
 
   return {
@@ -814,6 +868,7 @@ function runYubiKeyReadinessTest(platformState, input = {}) {
       userVerification,
       attestationPolicy: attestation,
       nfcMobileSupport: nfcEnrollment,
+      walletApprovalPasskeyPolicy,
       sampleUserEmail: data.sampleUserEmail || 'identity@vanguardcs.ca',
       stepUpTriggers: triggers,
       checklist: [
@@ -821,6 +876,9 @@ function runYubiKeyReadinessTest(platformState, input = {}) {
         'Require PIN or biometric user verification for admin and high-value operations.',
         'Record key assignment, spare key ownership, and replacement workflow in the organization policy.',
         'Use Aegis wallet challenges for business action evidence after the hardware-backed sign-in or step-up.',
+        walletApprovalPasskeyPolicy === 'required'
+          ? 'Aegis wallet approvals for this org will require a verified wallet passkey assertion before challenge acceptance.'
+          : 'Wallet passkey approval remains optional unless this policy is changed to required.',
         'For Entra-backed tenants, align this policy with passkey/FIDO2 authentication methods and Conditional Access authentication strength.'
       ]
     }
@@ -898,6 +956,9 @@ async function ensureWorkspaceInList(workspaces, subscription, workspaceId) {
 }
 
 function workspaceBelongsToSubscription(workspace, subscription) {
+  if (workspace.status === 'deleted') {
+    return false;
+  }
   if (workspace.subscriptionId === subscription.id || normalizeEmail(workspace.ownerEmail) === normalizeEmail(subscription.email)) {
     return true;
   }
@@ -930,6 +991,9 @@ function ensureMembership(workspace, subscription, defaultRole = 'administrator'
 function decorateWorkspaceForSubscription(workspace, subscription) {
   return {
     ...workspace,
+    status: workspace.status || 'active',
+    statusLabel: workspaceStatusLabel(workspace.status),
+    isDisabled: workspace.status === 'disabled',
     role: normalizeRole(workspace.role),
     roleLabel: roleLabel(workspace.role),
     dashboardPath: dashboardPath(subscription.id, workspace.id)
@@ -947,6 +1011,24 @@ function normalizeRole(value = '') {
 
 function roleLabel(role = '') {
   return normalizeRole(role) === 'contributor' ? 'Contributor' : 'Administrator';
+}
+
+function workspaceStatusLabel(status = '') {
+  return status === 'disabled' ? 'Disabled' : 'Active';
+}
+
+function assertWorkspaceOwnerOrAdmin(workspace, subscription) {
+  const email = normalizeEmail(subscription.email);
+  if (normalizeEmail(workspace.ownerEmail) === email) {
+    return;
+  }
+  const member = (workspace.members || []).find((item) => normalizeEmail(item.email) === email);
+  if (member?.role === 'administrator' && !member.revokedAt) {
+    return;
+  }
+  const error = new Error('Organization administrator access is required.');
+  error.status = 403;
+  throw error;
 }
 
 function normalizeOrganization(value = '') {
@@ -1043,11 +1125,14 @@ module.exports = {
   buildMetadataUrl,
   buildWizardView,
   createWorkspaceForSubscription,
+  deleteWorkspaceForSubscription,
+  disableWorkspaceForSubscription,
   getWorkspaceForSubscription,
   getOrCreateWorkspace,
   getPlatformDefinition,
   getPlatformDefinitions,
   getWorkspace,
+  getWorkspaceAssurancePolicy,
   listWorkspacesForSubscription,
   registerWorkspaceForSubscription,
   revokeWorkspaceMemberRole,

@@ -127,6 +127,55 @@ struct LabAgentClient {
     }
 
     func acceptWalletChallenge(acceptPath: String) async throws {
+        try await acceptWalletChallenge(acceptPath: acceptPath, body: ["source": "ios-wallet"])
+    }
+
+    func acceptWalletChallenge(acceptPath: String, subject: String, challengeId: String?, passkeyResponse: WalletPasskeyCeremonyResponse) async throws {
+        let body = WalletPasskeyChallengeAcceptanceRequest(
+            subject: subject,
+            source: "ios-wallet-passkey",
+            challengeId: challengeId,
+            response: passkeyResponse
+        )
+        try await acceptWalletChallenge(acceptPath: acceptPath, body: body)
+    }
+
+    func fetchWalletPasskeyStatus(subject: String) async throws -> WalletPasskeyStatus {
+        try await get(
+            webAppURL.appending(path: "api/wallet/passkeys/status"),
+            queryItems: [URLQueryItem(name: "subject", value: subject)]
+        )
+    }
+
+    func startWalletPasskeyRegistration(subject: String, displayName: String) async throws -> WalletPasskeyOptionsEnvelope {
+        try await post(
+            webAppURL.appending(path: "api/wallet/passkeys/register/options"),
+            body: try JSONEncoder().encode(WalletPasskeySubjectRequest(subject: subject, displayName: displayName, challengeId: nil))
+        )
+    }
+
+    func finishWalletPasskeyRegistration(subject: String, response: WalletPasskeyCeremonyResponse) async throws -> WalletPasskeyVerificationEnvelope {
+        try await post(
+            webAppURL.appending(path: "api/wallet/passkeys/register/verify"),
+            body: try JSONEncoder().encode(WalletPasskeyVerificationRequest(subject: subject, source: "ios-wallet", challengeId: nil, response: response))
+        )
+    }
+
+    func startWalletPasskeyAuthentication(subject: String, challengeId: String?) async throws -> WalletPasskeyOptionsEnvelope {
+        try await post(
+            webAppURL.appending(path: "api/wallet/passkeys/authenticate/options"),
+            body: try JSONEncoder().encode(WalletPasskeySubjectRequest(subject: subject, displayName: nil, challengeId: challengeId))
+        )
+    }
+
+    func finishWalletPasskeyAuthentication(subject: String, challengeId: String?, response: WalletPasskeyCeremonyResponse) async throws -> WalletPasskeyVerificationEnvelope {
+        try await post(
+            webAppURL.appending(path: "api/wallet/passkeys/authenticate/verify"),
+            body: try JSONEncoder().encode(WalletPasskeyVerificationRequest(subject: subject, source: "ios-wallet", challengeId: challengeId, response: response))
+        )
+    }
+
+    private func acceptWalletChallenge<Body: Encodable>(acceptPath: String, body: Body) async throws {
         let trimmed = acceptPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let url: URL
         if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
@@ -139,7 +188,7 @@ struct LabAgentClient {
         }
         _ = try await post(
             url,
-            body: try JSONEncoder().encode(["source": "ios-wallet"])
+            body: try JSONEncoder().encode(body)
         ) as OIDCWalletChallengeAcceptance
     }
 
@@ -386,6 +435,9 @@ struct OIDCWalletChallenge: Decodable, Hashable {
     var title: String?
     var detail: String?
     var acceptPath: String?
+    var passkeyAcceptPath: String?
+    var requiresPasskey: Bool?
+    var requiredAssurance: String?
     var payloadFields: [WalletChallengePayloadField]?
 }
 
@@ -393,6 +445,26 @@ struct OIDCWalletChallengeAcceptance: Decodable {
     var ok: Bool
     var status: String
     var appUrl: String?
+}
+
+struct WalletPasskeySubjectRequest: Encodable {
+    var subject: String
+    var displayName: String?
+    var challengeId: String?
+}
+
+struct WalletPasskeyVerificationRequest: Encodable {
+    var subject: String
+    var source: String
+    var challengeId: String?
+    var response: WalletPasskeyCeremonyResponse
+}
+
+struct WalletPasskeyChallengeAcceptanceRequest: Encodable {
+    var subject: String
+    var source: String
+    var challengeId: String?
+    var response: WalletPasskeyCeremonyResponse
 }
 
 struct IssuerOrganizationConnectionRegistration: Encodable {

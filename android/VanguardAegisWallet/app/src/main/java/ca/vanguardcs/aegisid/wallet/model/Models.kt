@@ -128,6 +128,10 @@ data class WalletTransaction(
     val remoteId: String? = null,
     val webSessionId: String? = null,
     val webAcceptPath: String? = null,
+    val requiresPasskey: Boolean = false,
+    val requiredAssurance: String? = null,
+    val passkeyAcceptPath: String? = null,
+    val passkeyEvidenceLabel: String? = null,
     val appName: String? = null,
     val action: String? = null,
     val resourceType: String? = null,
@@ -146,6 +150,10 @@ data class WalletTransaction(
         .putOpt("remoteId", remoteId)
         .putOpt("webSessionId", webSessionId)
         .putOpt("webAcceptPath", webAcceptPath)
+        .put("requiresPasskey", requiresPasskey)
+        .putOpt("requiredAssurance", requiredAssurance)
+        .putOpt("passkeyAcceptPath", passkeyAcceptPath)
+        .putOpt("passkeyEvidenceLabel", passkeyEvidenceLabel)
         .putOpt("appName", appName)
         .putOpt("action", action)
         .putOpt("resourceType", resourceType)
@@ -165,6 +173,10 @@ data class WalletTransaction(
             remoteId = json.optStringOrNull("remoteId"),
             webSessionId = json.optStringOrNull("webSessionId"),
             webAcceptPath = json.optStringOrNull("webAcceptPath"),
+            requiresPasskey = json.optBoolean("requiresPasskey", false),
+            requiredAssurance = json.optStringOrNull("requiredAssurance"),
+            passkeyAcceptPath = json.optStringOrNull("passkeyAcceptPath"),
+            passkeyEvidenceLabel = json.optStringOrNull("passkeyEvidenceLabel"),
             appName = json.optStringOrNull("appName"),
             action = json.optStringOrNull("action"),
             resourceType = json.optStringOrNull("resourceType"),
@@ -227,6 +239,9 @@ data class OidcWalletChallenge(
     val title: String?,
     val detail: String?,
     val acceptPath: String?,
+    val passkeyAcceptPath: String?,
+    val requiresPasskey: Boolean,
+    val requiredAssurance: String?,
     val payloadFields: List<WalletChallengePayloadField>
 ) {
     companion object {
@@ -246,7 +261,24 @@ data class OidcWalletChallenge(
             title = json.optStringOrNull("title"),
             detail = json.optStringOrNull("detail"),
             acceptPath = json.optStringOrNull("acceptPath"),
+            passkeyAcceptPath = json.optStringOrNull("passkeyAcceptPath"),
+            requiresPasskey = json.optBoolean("requiresPasskey", false),
+            requiredAssurance = json.optStringOrNull("requiredAssurance"),
             payloadFields = json.optJSONArray("payloadFields").toObjectList(WalletChallengePayloadField::fromJson)
+        )
+    }
+}
+
+data class WalletPasskeyStatus(
+    val subject: String,
+    val registered: Boolean,
+    val credentialCount: Int
+) {
+    companion object {
+        fun fromJson(json: JSONObject) = WalletPasskeyStatus(
+            subject = json.optString("subject"),
+            registered = json.optBoolean("registered", false),
+            credentialCount = json.optInt("credentialCount", 0)
         )
     }
 }

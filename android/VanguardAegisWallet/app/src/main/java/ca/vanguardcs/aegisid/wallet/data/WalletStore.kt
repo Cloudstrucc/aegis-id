@@ -14,6 +14,7 @@ import ca.vanguardcs.aegisid.wallet.model.OrganizationProfile
 import ca.vanguardcs.aegisid.wallet.model.WalletChallengeBanner
 import ca.vanguardcs.aegisid.wallet.model.WalletConnection
 import ca.vanguardcs.aegisid.wallet.model.WalletConnectionState
+import ca.vanguardcs.aegisid.wallet.model.WalletPasskeyStatus
 import ca.vanguardcs.aegisid.wallet.model.WalletTransaction
 import ca.vanguardcs.aegisid.wallet.model.WalletTransactionStatus
 import ca.vanguardcs.aegisid.wallet.model.WalletTransactionType
@@ -43,6 +44,10 @@ class WalletStore(
     var lastLabError by mutableStateOf<String?>(null)
         private set
     var challengeBanner by mutableStateOf<WalletChallengeBanner?>(null)
+        private set
+    var walletPasskeySubject by mutableStateOf(preferences.getString("walletPasskeySubject", "identity@vanguardcs.ca") ?: "identity@vanguardcs.ca")
+        private set
+    var walletPasskeyStatus by mutableStateOf<WalletPasskeyStatus?>(null)
         private set
     var isWorking by mutableStateOf(false)
         private set
@@ -269,7 +274,37 @@ class WalletStore(
         }
     }
 
+    fun updateWalletPasskeySubject(subject: String) {
+        val normalized = subject.trim().ifBlank { "identity@vanguardcs.ca" }
+        walletPasskeySubject = normalized
+        preferences.edit().putString("walletPasskeySubject", normalized).apply()
+    }
+
+    fun refreshWalletPasskeyStatus() {
+        viewModelScope.launch {
+            try {
+                walletPasskeyStatus = labClient.fetchWalletPasskeyStatus(walletPasskeySubject)
+            } catch (error: Exception) {
+                lastLabError = "Passkey status refresh failed: ${error.message}"
+            }
+        }
+    }
+
+    fun registerWalletPasskey(createPasskey: suspend (String) -> JSONObject) {
+        runLabOperation {
+            val options = labClient.startWalletPasskeyRegistration(walletPasskeySubject, walletPasskeySubject)
+            val response = createPasskey(options.toString())
+            walletPasskeyStatus = labClient.finishWalletPasskeyRegistration(walletPasskeySubject, response)
+            lastLabMessage = "Wallet passkey registered for $walletPasskeySubject."
+        }
+    }
+
     fun acceptTransaction(transaction: WalletTransaction) {
+        if (transaction.requiresPasskey) {
+            lastLabError = "This wallet challenge requires passkey assurance."
+            return
+        }
+
         val connection = connection(transaction.connectionId)
         if (connection == null) {
             lastLabError = "Connection unavailable for this wallet transaction."
@@ -298,6 +333,54 @@ class WalletStore(
             } else {
                 "Challenge accepted and response sent."
             }
+        }
+    }
+
+    fun acceptTransactionWithPasskey(transaction: WalletTransaction, getPasskey: suspend (String) -> JSONObject) {
+        val connection = connection(transaction.connectionId)
+        if (connection == null) {
+            lastLabError = "Connection unavailable for this wallet transaction."
+            return
+        }
+
+        runLabOperation {
+            val challengeId = transaction.webSessionId ?: transaction.remoteId ?: transaction.id
+            val options = labClient.startWalletPasskeyAuthentication(walletPasskeySubject, challengeId)
+            val passkeyResponse = getPasskey(options.toString())
+            val currentConnection = current(connection) ?: connection
+            if (transaction.type == WalletTransactionType.Challenge && currentConnection.holderConnectionId != null) {
+                labClient.sendHolderMessage(
+                    currentConnection.holderConnectionId,
+                    "Vanguard Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id} with passkey assurance."
+                )
+            }
+            val evidence = if (transaction.webAcceptPath != null) {
+                null
+            } else {
+                labClient.finishWalletPasskeyAuthentication(walletPasskeySubject, challengeId, passkeyResponse)
+                    .optJSONObject("evidence")
+            }
+            when {
+                transaction.webAcceptPath != null -> labClient.acceptWalletChallengeWithPasskey(
+                    acceptPath = transaction.passkeyAcceptPath ?: transaction.webAcceptPath,
+                    subject = walletPasskeySubject,
+                    challengeId = challengeId,
+                    passkeyResponse = passkeyResponse
+                )
+                transaction.webSessionId != null -> labClient.acceptOidcWalletChallenge(transaction.webSessionId)
+            }
+
+            updateTransaction(transaction.id) {
+                it.copy(
+                    status = WalletTransactionStatus.Accepted,
+                    passkeyEvidenceLabel = "Passkey verified for ${evidence?.optString("subject") ?: walletPasskeySubject}"
+                )
+            }
+            if (transaction.type == WalletTransactionType.Challenge || transaction.type == WalletTransactionType.Credential) {
+                updateConnection(connection.id) { it.copy(state = WalletConnectionState.Connected) }
+            }
+            walletPasskeyStatus = labClient.fetchWalletPasskeyStatus(walletPasskeySubject)
+            lastLabMessage = "Challenge accepted with wallet passkey assurance."
         }
     }
 
@@ -346,6 +429,9 @@ class WalletStore(
                     remoteId = challenge.nonce,
                     webSessionId = challenge.sessionId,
                     webAcceptPath = challenge.acceptPath,
+                    requiresPasskey = challenge.requiresPasskey,
+                    requiredAssurance = challenge.requiredAssurance,
+                    passkeyAcceptPath = challenge.passkeyAcceptPath,
                     appName = challenge.appName,
                     action = challenge.action,
                     resourceType = challenge.resourceType,

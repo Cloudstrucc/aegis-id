@@ -1375,9 +1375,9 @@ textarea:focus {
 
 .organization-tile {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) auto;
+  grid-template-columns: 52px minmax(0, 1fr);
   gap: 14px;
-  align-items: center;
+  align-items: start;
   min-height: 152px;
   padding: 22px;
   color: inherit;
@@ -1385,13 +1385,11 @@ textarea:focus {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  text-decoration: none;
 }
 
-.organization-tile:hover,
-.organization-tile:focus-visible {
-  border-color: var(--cyan-500);
-  outline: 3px solid rgba(0, 183, 199, 0.18);
+.organization-tile--disabled {
+  background: #f8fbff;
+  opacity: 0.78;
 }
 
 .organization-tile h3 {
@@ -1401,6 +1399,10 @@ textarea:focus {
 .organization-tile p {
   margin: 0;
   color: var(--muted);
+}
+
+.organization-tile__body {
+  min-width: 0;
 }
 
 .organization-tile__mark {
@@ -1415,10 +1417,22 @@ textarea:focus {
   font-weight: 900;
 }
 
-.organization-tile__arrow {
-  color: var(--blue-600);
-  font-size: 26px;
-  font-weight: 900;
+.organization-tile__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.organization-tile__actions form {
+  margin: 0;
+}
+
+.organization-tile__actions .button {
+  min-height: 38px;
+  padding-inline: 14px;
+  font-size: 14px;
 }
 
 .empty-state-panel {

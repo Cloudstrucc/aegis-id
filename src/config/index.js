@@ -56,6 +56,7 @@ const config = {
     oidcWalletSessions: resolveFromRoot(process.env.OIDC_WALLET_SESSION_STORE_PATH, 'data/oidc-wallet-sessions.json'),
     oidcCodes: resolveFromRoot(process.env.OIDC_CODE_STORE_PATH, 'data/oidc-codes.json'),
     walletChallenges: resolveFromRoot(process.env.WALLET_CHALLENGE_STORE_PATH, 'data/wallet-challenges.json'),
+    walletPasskeys: resolveFromRoot(process.env.WALLET_PASSKEY_STORE_PATH, 'data/wallet-passkeys.json'),
     audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json')
   },
   auth: {
@@ -64,6 +65,15 @@ const config = {
     passkeyRpName: process.env.PASSKEY_RP_NAME || 'Vanguard Cloud Services - Aegis ID',
     passkeyRpId: process.env.PASSKEY_RP_ID || '',
     passkeyOrigin: process.env.PASSKEY_ORIGIN || ''
+  },
+  mobileApps: {
+    iosTeamId: process.env.IOS_APP_TEAM_ID || 'GL46AP73ZQ',
+    iosBundleId: process.env.IOS_APP_BUNDLE_ID || 'ca.vanguardcs.aegisid.wallet',
+    androidPackageName: process.env.ANDROID_APP_PACKAGE_NAME || 'ca.vanguardcs.aegisid.wallet',
+    androidSha256CertFingerprints: (process.env.ANDROID_SHA256_CERT_FINGERPRINTS || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
   },
   verifiedId: {
     mode: process.env.VID_MODE || 'mock',

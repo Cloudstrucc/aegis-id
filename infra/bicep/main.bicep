@@ -135,6 +135,10 @@ resource site 'Microsoft.Web/sites@2023-12-01' = {
           value: '${dataRoot}/wallet-challenges.json'
         }
         {
+          name: 'WALLET_PASSKEY_STORE_PATH'
+          value: '${dataRoot}/wallet-passkeys.json'
+        }
+        {
           name: 'AUDIT_STORE_PATH'
           value: '${dataRoot}/audit-events.json'
         }

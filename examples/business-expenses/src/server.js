@@ -25,6 +25,7 @@ const config = {
   issuerConnectionId: process.env.AEGIS_ISSUER_CONNECTION_ID || '',
   verifiedIdEnabled: process.env.VERIFIED_ID_AUTH_ENABLED !== 'false',
   yubiKeyEnabled: process.env.YUBIKEY_AUTH_ENABLED !== 'false',
+  walletPasskeyApprovalsRequired: process.env.AEGIS_WALLET_PASSKEY_APPROVALS_REQUIRED === 'true',
   appName: 'Business Expenses',
   appInstanceId: 'business-expenses-demo'
 };
@@ -338,6 +339,7 @@ app.post('/expenses/:expenseId/:action', requireAuthenticated, async (req, res, 
       resourceType: 'expense',
       resourceId: expense.id,
       subject: req.session.user.email,
+      requiredAssurance: config.walletPasskeyApprovalsRequired ? 'passkey' : undefined,
       payload: {
         appName: config.appName,
         action,

@@ -55,6 +55,26 @@ Wallet-friendly use cases include:
 
 YubiKey is still important, but it solves a different problem: phishing-resistant authentication to accounts and admin surfaces. It is not meant to be the portable credential container, ID badge, signature artifact, or cross-organization proof wallet.
 
+## Wallet Passkey Approval Assurance
+
+Aegis ID now supports an optional wallet passkey layer for high-value wallet challenge approvals. This is separate from subscriber sign-in MFA:
+
+- Subscriber sign-in passkeys protect access to the Aegis ID web dashboard.
+- Wallet passkeys protect approvals made from the Aegis ID iOS or Android wallet.
+- YubiKey/FIDO2 policy controls decide whether wallet approvals are `disabled`, `preferred`, or `required` for an organization.
+
+To enable it for an organization, open the workspace dashboard, choose **Set Up YubiKey**, and set **Wallet approval passkey policy**:
+
+| Policy | Behavior |
+| --- | --- |
+| `disabled` | Normal wallet challenge approval. No passkey required. |
+| `preferred` | Wallets can register/use passkeys, but approvals are not blocked without one. |
+| `required` | Aegis ID rejects wallet challenge acceptance unless the mobile wallet completes a passkey assertion first. |
+
+In the mobile wallet, open **Settings > Wallet passkey assurance**, enter the wallet subject email, and tap **Register passkey**. When a challenge requires passkey assurance, the Ledger action changes to **Verify passkey and accept...** and the accepted ledger entry records passkey evidence.
+
+This is useful for expense approvals, contract approval, admin promotion, revocation, and other events where the organization wants a stronger, signed proof of user presence at the exact decision moment.
+
 ## Repository Layout
 
 ```text
@@ -300,7 +320,13 @@ az webapp config appsettings set \
     VID_CALLBACK_API_KEY="<strong-shared-callback-key>" \
     PUBLIC_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net \
     APP_PUBLIC_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net \
-    BUSINESS_EXPENSES_APP_URL=https://vanguard-business-expenses-65067d.azurewebsites.net
+    BUSINESS_EXPENSES_APP_URL=https://vanguard-business-expenses-65067d.azurewebsites.net \
+    PASSKEY_RP_ID=vanguard-aegis-id-65067d.azurewebsites.net \
+    PASSKEY_ORIGIN=https://vanguard-aegis-id-65067d.azurewebsites.net \
+    IOS_APP_TEAM_ID=GL46AP73ZQ \
+    IOS_APP_BUNDLE_ID=ca.vanguardcs.aegisid.wallet \
+    ANDROID_APP_PACKAGE_NAME=ca.vanguardcs.aegisid.wallet \
+    ANDROID_SHA256_CERT_FINGERPRINTS="<android-upload-or-app-signing-sha256>"
 ```
 
 Do not commit real `AZURE_CLIENT_SECRET` or `VID_CALLBACK_API_KEY` values. Set them directly in Azure App Service settings or move them to Key Vault before production use.
@@ -317,6 +343,11 @@ Do not commit real `AZURE_CLIENT_SECRET` or `VID_CALLBACK_API_KEY` values. Set t
 | `VID_CALLBACK_API_KEY` | Shared secret used to protect callbacks from the Verified ID Request Service. |
 | `PUBLIC_BASE_URL` / `APP_PUBLIC_BASE_URL` | Public HTTPS base URL used for callbacks, QR payloads, and deep links. |
 | `BUSINESS_EXPENSES_APP_URL` | URL shown on the signed-in home page for the standalone Business Expenses example app. |
+| `PASSKEY_RP_ID` | WebAuthn relying-party ID. In Azure, use the host only, for example `vanguard-aegis-id-65067d.azurewebsites.net`. |
+| `PASSKEY_ORIGIN` | WebAuthn origin. In Azure, use the full HTTPS origin, for example `https://vanguard-aegis-id-65067d.azurewebsites.net`. |
+| `WALLET_PASSKEY_STORE_PATH` | File-backed pilot store for mobile wallet passkey credential metadata. Use `/home/data/...` on Azure when you want persistence across deploys. |
+| `IOS_APP_TEAM_ID` / `IOS_APP_BUNDLE_ID` | Published in `/.well-known/apple-app-site-association` for iOS passkey and app-link association. |
+| `ANDROID_APP_PACKAGE_NAME` / `ANDROID_SHA256_CERT_FINGERPRINTS` | Published in `/.well-known/assetlinks.json` for Android passkey and app-link association. |
 
 ### Keycloak OIDC
 
@@ -554,6 +585,13 @@ Production refresh deploy:
 cd /Users/frederickpearson/repos/aegis-id
 bash scripts/deploy-azure-webapp.sh --env prod
 ```
+
+The script also verifies:
+
+- `/api/health`
+- `/.well-known/apple-app-site-association`
+- `/.well-known/assetlinks.json`
+- MediaPipe runtime assets used by the ID verification pilot
 
 Future dev/QA refresh deploys:
 

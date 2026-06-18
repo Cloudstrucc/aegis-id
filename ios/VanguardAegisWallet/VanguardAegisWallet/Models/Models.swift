@@ -188,6 +188,10 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
     var action: String?
     var resourceType: String?
     var resourceId: String?
+    var requiresPasskey: Bool?
+    var requiredAssurance: String?
+    var passkeyAcceptPath: String?
+    var passkeyEvidenceLabel: String?
     var payloadFields: [WalletChallengePayloadField]?
     var createdAt: Date
     var updatedAt: Date
@@ -205,6 +209,10 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
         action: String? = nil,
         resourceType: String? = nil,
         resourceId: String? = nil,
+        requiresPasskey: Bool = false,
+        requiredAssurance: String? = nil,
+        passkeyAcceptPath: String? = nil,
+        passkeyEvidenceLabel: String? = nil,
         payloadFields: [WalletChallengePayloadField]? = nil
     ) {
         self.id = UUID()
@@ -220,6 +228,10 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
         self.action = action
         self.resourceType = resourceType
         self.resourceId = resourceId
+        self.requiresPasskey = requiresPasskey
+        self.requiredAssurance = requiredAssurance
+        self.passkeyAcceptPath = passkeyAcceptPath
+        self.passkeyEvidenceLabel = passkeyEvidenceLabel
         self.payloadFields = payloadFields
         self.createdAt = Date()
         self.updatedAt = Date()
@@ -274,4 +286,70 @@ enum WalletTransactionStatus: String, Codable, Hashable, CaseIterable {
             return "Failed"
         }
     }
+}
+
+struct WalletPasskeyStatus: Codable, Equatable {
+    var subject: String
+    var displayName: String
+    var passkeyCount: Int
+    var lastRegisteredAt: String?
+    var lastAuthenticatedAt: String?
+}
+
+struct WalletPasskeyOptionsEnvelope: Codable, Equatable {
+    var subject: String
+    var challengeId: String?
+    var options: WalletPasskeyOptions
+}
+
+struct WalletPasskeyOptions: Codable, Equatable {
+    var challenge: String
+    var rp: WalletPasskeyRelyingParty?
+    var user: WalletPasskeyUser?
+    var timeout: Int?
+}
+
+struct WalletPasskeyRelyingParty: Codable, Equatable {
+    var id: String?
+    var name: String?
+}
+
+struct WalletPasskeyUser: Codable, Equatable {
+    var id: String?
+    var name: String?
+    var displayName: String?
+}
+
+struct WalletPasskeyCeremonyResponse: Codable, Equatable {
+    var id: String
+    var rawId: String
+    var type: String
+    var authenticatorAttachment: String?
+    var response: WalletPasskeyAuthenticatorResponse
+}
+
+struct WalletPasskeyAuthenticatorResponse: Codable, Equatable {
+    var clientDataJSON: String
+    var attestationObject: String?
+    var authenticatorData: String?
+    var signature: String?
+    var userHandle: String?
+    var transports: [String]?
+}
+
+struct WalletPasskeyVerificationEnvelope: Codable, Equatable {
+    var ok: Bool
+    var status: WalletPasskeyStatus?
+    var evidence: WalletPasskeyEvidence?
+}
+
+struct WalletPasskeyEvidence: Codable, Equatable {
+    var subject: String
+    var assurance: String
+    var userVerified: Bool
+    var credentialId: String
+    var rpId: String
+    var origin: String
+    var challengeId: String?
+    var verifiedAt: String
 }

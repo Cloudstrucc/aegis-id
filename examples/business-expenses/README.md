@@ -6,7 +6,7 @@ Standalone Node.js/Express app showing how an organization can use Vanguard Aegi
 - Microsoft Entra Verified ID presentation on registration/sign-in.
 - YubiKey 5C NFC / FIDO2 browser step-up on registration/sign-in.
 - Wallet challenge for high-value approve/reject expense decisions.
-- Ledger reporting in the web app, Aegis ID dashboard, and iOS wallet.
+- Ledger reporting in the web app, Aegis ID dashboard, and Aegis ID mobile wallet.
 
 ## 1. Prerequisites
 
@@ -19,7 +19,7 @@ Standalone Node.js/Express app showing how an organization can use Vanguard Aegi
 
 2. In Aegis ID, create or open an organization dashboard.
 3. Create an org issuer invitation from the dashboard.
-4. Import and accept that invitation in the iOS wallet simulator.
+4. Import and accept that invitation in the iOS simulator wallet or Android wallet.
 5. Copy the organization workspace ID and set it as `AEGIS_ORGANIZATION_ID`.
 6. Configure live Microsoft Entra Verified ID in Aegis ID and issue a `VerifiedEmployee` credential to Microsoft Authenticator.
 
@@ -40,7 +40,10 @@ AEGIS_ORGANIZATION_ID=<your-aegis-organization-workspace-id>
 APP_PUBLIC_BASE_URL=http://localhost:4300
 VERIFIED_ID_AUTH_ENABLED=true
 YUBIKEY_AUTH_ENABLED=true
+AEGIS_WALLET_PASSKEY_APPROVALS_REQUIRED=false
 ```
+
+Set `AEGIS_WALLET_PASSKEY_APPROVALS_REQUIRED=true` when you want every approve/reject decision to require mobile wallet passkey assurance. You can also leave it `false` and enforce the same behavior centrally from the Aegis ID organization dashboard by setting **Set Up YubiKey > Wallet approval passkey policy > Required**.
 
 ## 3. Run
 
@@ -72,11 +75,11 @@ http://localhost:4300
    - Open the issuer connection.
    - Tap **Fetch OIDC challenges**.
    - Open the new challenge in **Ledger** or the connection transaction list.
-   - Accept the challenge.
+   - Accept the challenge. If the organization requires wallet passkey assurance, register a passkey in wallet **Settings** first, then use **Verify passkey and accept...**.
 8. Review the signed action in:
    - Business Expenses `/ledger`
    - Aegis ID organization dashboard, **External app ledger**
-   - iOS wallet **Ledger** tab
+   - Aegis ID mobile wallet **Ledger** tab
 
 ### YubiKey path
 
@@ -85,7 +88,7 @@ http://localhost:4300
 3. Insert or tap a YubiKey 5C NFC / security key when the browser WebAuthn prompt appears.
 4. If you do not have a key available during the demo, use **Record pilot fallback**. It is clearly marked as a simulated pilot event.
 5. Return to Business Expenses. The expense table opens.
-6. Approve or reject an expense, then accept the Aegis wallet challenge in the mobile wallet.
+6. Approve or reject an expense, then accept the Aegis wallet challenge in the mobile wallet. If passkey approvals are required, the wallet prompts for the device passkey before the callback is accepted.
 7. Open `/ledger` to see both **YubiKey assurance events** and **Aegis ID challenge records**.
 
 The landing page also includes **Use wallet-only lab** if you want to show the original Aegis wallet challenge as the sign-in step instead of Microsoft Verified ID or YubiKey.
@@ -119,6 +122,7 @@ AEGIS_ID_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net
 VERIFIED_ID_AUTH_ENABLED=true
 YUBIKEY_AUTH_ENABLED=true
 OIDC_CLIENT_ID=business-expenses-demo
+AEGIS_WALLET_PASSKEY_APPROVALS_REQUIRED=false
 ```
 
 Future dev/QA deployments use their own env files and must have a matching Aegis organization workspace ID before deploying:

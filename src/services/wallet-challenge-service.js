@@ -4,6 +4,7 @@ const config = require('../config');
 const { sendWalletChallenge } = require('../adapters/aries/aries-lab-adapter');
 const FileJsonStore = require('./file-json-store');
 const { getIssuerOrganization } = require('./issuer-organization-service');
+const { getWorkspaceAssurancePolicy } = require('./platform-service');
 
 const store = new FileJsonStore(config.paths.walletChallenges, []);
 
@@ -32,6 +33,7 @@ async function createExternalWalletChallenge(input = {}) {
   const resourceType = normalizeText(input.resourceType, 80);
   const resourceId = normalizeText(input.resourceId, 120);
   const payload = normalizePayload(input.payload);
+  const assurance = await resolveChallengeAssurance(input);
 
   if (!subject) {
     throw validationError('Wallet challenge subject is required.');
@@ -74,6 +76,7 @@ async function createExternalWalletChallenge(input = {}) {
     action,
     resourceType,
     resourceId,
+    assurance,
     payload,
     payloadFields: payloadToFields(payload),
     threadId: null,
@@ -133,6 +136,15 @@ async function acceptExternalWalletChallenge(challengeId, input = {}) {
   if (records[index].status === 'accepted') {
     return decorateChallenge(records[index]);
   }
+  if (records[index].assurance?.requiresPasskey && !input.passkeyEvidence) {
+    const error = validationError('This wallet challenge requires passkey assurance before it can be accepted.');
+    error.status = 409;
+    error.details = {
+      challengeId,
+      requiredAssurance: records[index].assurance.requiredAssurance || 'passkey'
+    };
+    throw error;
+  }
 
   records[index] = {
     ...records[index],
@@ -140,6 +152,7 @@ async function acceptExternalWalletChallenge(challengeId, input = {}) {
     acceptedAt: nowIso(),
     acceptedBy: normalizeText(input.acceptedBy, 180) || records[index].subject,
     acceptanceSource: normalizeText(input.source, 80) || 'wallet-api',
+    passkeyEvidence: input.passkeyEvidence || records[index].passkeyEvidence || null,
     updatedAt: nowIso()
   };
   await store.write(records);
@@ -191,7 +204,39 @@ function decorateChallenge(record) {
     title: `${record.appName}: ${actionLabel(record.action)}`,
     detail: buildChallengeDetail(record),
     acceptPath: `/api/wallet-challenges/${record.id}/accept`,
+    passkeyAcceptPath: `/api/wallet-challenges/${record.id}/accept-with-passkey`,
+    requiresPasskey: Boolean(record.assurance?.requiresPasskey),
+    requiredAssurance: record.assurance?.requiredAssurance || 'wallet',
     payloadFields: record.payloadFields || payloadToFields(record.payload)
+  };
+}
+
+async function resolveChallengeAssurance(input = {}) {
+  const requested = normalizeText(input.requiredAssurance, 80) || (input.requiresPasskey ? 'passkey' : '');
+  if (requested) {
+    return {
+      requiredAssurance: requested,
+      requiresPasskey: requested === 'passkey',
+      source: 'request'
+    };
+  }
+
+  if (input.organizationId) {
+    const policy = await getWorkspaceAssurancePolicy(input.organizationId);
+    if (policy.walletApprovalPasskeyPolicy === 'required') {
+      return {
+        requiredAssurance: 'passkey',
+        requiresPasskey: true,
+        source: 'organization-policy',
+        policyName: policy.policyName
+      };
+    }
+  }
+
+  return {
+    requiredAssurance: 'wallet',
+    requiresPasskey: false,
+    source: 'default'
   };
 }
 
@@ -204,6 +249,7 @@ function buildChallengeContent(record) {
     `action=${record.action}`,
     `resourceType=${record.resourceType || 'n/a'}`,
     `resourceId=${record.resourceId || 'n/a'}`,
+    `requiredAssurance=${record.assurance?.requiredAssurance || 'wallet'}`,
     `timestamp=${record.createdAt}`,
     'Payload:',
     JSON.stringify(record.payload, null, 2),

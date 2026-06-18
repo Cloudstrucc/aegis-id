@@ -13,6 +13,7 @@ It currently provides:
 - Mock credential offer and acceptance transactions.
 - Wallet challenge send/accept transactions over the local ACA-Py connection.
 - OIDC web-app challenge fetch and accept flow for `/demo/oidc-wallet`.
+- Optional wallet passkey registration and challenge approval using `AuthenticationServices`.
 - URL scheme hooks for `aegisid://` and `aegisid://`.
 
 Verified ID and YubiKey are web-app assurance methods in this demo. Microsoft Authenticator presents Verified ID credentials, and the browser performs YubiKey/FIDO2 WebAuthn step-up. The iOS wallet receives the downstream Aegis wallet challenge, signs the high-value action, and records the ledger event.
@@ -122,6 +123,30 @@ https://vanguard-aegis-id-65067d.azurewebsites.net
 That default is stored as `AEGIS_WEB_APP_BASE_URL` in `VanguardAegisWallet/Info.plist`. Change that value only when intentionally testing a local web app.
 
 The simulator bridge still uses local ACA-Py admin URLs for DIDComm lab operations: `http://localhost:4011` for issuer admin and `http://localhost:6011` for holder admin. Those local admin URLs are simulator-lab controls and are not expected to work from a physical iPhone.
+
+## Wallet Passkey Approval Assurance
+
+Wallet passkeys are optional. Use them only when an organization requires extra assurance for approvals, revocations, admin promotion, contract decisions, or expense decisions.
+
+1. Deploy Aegis ID to HTTPS.
+2. Confirm the web app serves:
+
+   ```text
+   https://vanguard-aegis-id-65067d.azurewebsites.net/.well-known/apple-app-site-association
+   ```
+
+3. In Xcode, keep the app bundle ID and associated domain entitlement aligned:
+
+   ```text
+   ca.vanguardcs.aegisid.wallet
+   webcredentials:vanguard-aegis-id-65067d.azurewebsites.net
+   ```
+
+4. In the iOS wallet, open **Settings > Wallet passkey assurance**.
+5. Enter the wallet subject email and tap **Register passkey**.
+6. When a Ledger item shows **Passkey required**, tap **Verify Passkey And ...** to complete Face ID/Touch ID/device passcode and submit the signed wallet approval.
+
+For local simulator testing, passkey behavior depends on the simulator and associated-domain state. Real-device testing is the better validation path once TestFlight is configured.
 
 ## Platform Coverage From The Wallet Perspective
 

@@ -66,6 +66,40 @@ function createApp() {
   app.use(morgan(config.app.env === 'production' ? 'combined' : 'dev'));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use(express.json({ limit: '2mb' }));
+  app.get('/.well-known/apple-app-site-association', (req, res) => {
+    const appId = `${config.mobileApps.iosTeamId}.${config.mobileApps.iosBundleId}`;
+    res.type('application/json').send({
+      webcredentials: {
+        apps: [appId]
+      },
+      applinks: {
+        apps: [],
+        details: [
+          {
+            appIDs: [appId],
+            components: [
+              {
+                '/': '/wallet/*',
+                comment: 'Vanguard Aegis ID mobile wallet handoff links.'
+              }
+            ]
+          }
+        ]
+      }
+    });
+  });
+  app.get('/.well-known/assetlinks.json', (req, res) => {
+    res.type('application/json').send(
+      config.mobileApps.androidSha256CertFingerprints.map((fingerprint) => ({
+        relation: ['delegate_permission/common.handle_all_urls', 'delegate_permission/common.get_login_creds'],
+        target: {
+          namespace: 'android_app',
+          package_name: config.mobileApps.androidPackageName,
+          sha256_cert_fingerprints: [fingerprint]
+        }
+      }))
+    );
+  });
   app.use('/images', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Access-Control-Allow-Origin', '*');

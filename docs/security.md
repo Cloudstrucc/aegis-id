@@ -21,10 +21,13 @@
 
 The demo stores users in `data/users.json` and subscriptions in `data/subscriptions.json`. That keeps the first Azure App Service deployment simple, but production should move account, subscription, MFA, and organization data to a durable system with access controls, retention policy, and export/delete workflows.
 
+Wallet passkey registrations are stored in `data/wallet-passkeys.json` by default. The store contains WebAuthn credential public keys, counters, device metadata, and last-used timestamps, not private keys. For production, move this to durable storage, add deletion/export workflows, and define retention for passkey-backed wallet approval evidence.
+
 ## Subscriber Dashboard
 
 - Subscriber dashboard, organization subscription, setup wizard, and OIDC demo pages require Passport.js authentication.
 - Organization subscription is available only after email, SMS, or passkey second-factor verification.
+- Wallet passkeys are optional approval assurance for the mobile wallet. Enforce them only where organization policy requires stronger proof for approvals, revocations, role changes, or other high-value actions.
 - Treat local email/SMS development codes as a dev-only stand-in for a real provider such as Azure Communication Services, SendGrid, Twilio, or Microsoft Graph mail.
 - Do not persist Azure client secrets or IdP client secrets in the local JSON workspace store.
 - Add CSRF protection before accepting production form posts.

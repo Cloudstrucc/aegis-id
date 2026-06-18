@@ -4,6 +4,7 @@ import ca.vanguardcs.aegisid.wallet.BuildConfig
 import ca.vanguardcs.aegisid.wallet.model.LabAcceptance
 import ca.vanguardcs.aegisid.wallet.model.OidcWalletChallenge
 import ca.vanguardcs.aegisid.wallet.model.OrganizationProfile
+import ca.vanguardcs.aegisid.wallet.model.WalletPasskeyStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -61,6 +62,66 @@ class LabAgentClient(
 
     suspend fun acceptWalletChallenge(acceptPath: String) {
         postJson(resolvePathOrUrl(acceptPath), JSONObject().put("source", "android-wallet"))
+    }
+
+    suspend fun acceptWalletChallengeWithPasskey(
+        acceptPath: String,
+        subject: String,
+        challengeId: String,
+        passkeyResponse: JSONObject
+    ) {
+        postJson(
+            resolvePathOrUrl(acceptPath),
+            JSONObject()
+                .put("source", "android-wallet")
+                .put("subject", subject)
+                .put("challengeId", challengeId)
+                .put("passkeyResponse", passkeyResponse)
+        )
+    }
+
+    suspend fun fetchWalletPasskeyStatus(subject: String): WalletPasskeyStatus {
+        val encoded = URLEncoder.encode(subject, Charsets.UTF_8.name())
+        return WalletPasskeyStatus.fromJson(getJson("/api/wallet/passkeys/status?subject=$encoded"))
+    }
+
+    suspend fun startWalletPasskeyRegistration(subject: String, displayName: String): JSONObject {
+        return postJson(
+            "/api/wallet/passkeys/register/options",
+            JSONObject()
+                .put("subject", subject)
+                .put("displayName", displayName)
+        ).getJSONObject("options")
+    }
+
+    suspend fun finishWalletPasskeyRegistration(subject: String, response: JSONObject): WalletPasskeyStatus {
+        return WalletPasskeyStatus.fromJson(
+            postJson(
+                "/api/wallet/passkeys/register/verify",
+                JSONObject()
+                    .put("subject", subject)
+                    .put("response", response)
+            ).getJSONObject("status")
+        )
+    }
+
+    suspend fun startWalletPasskeyAuthentication(subject: String, challengeId: String): JSONObject {
+        return postJson(
+            "/api/wallet/passkeys/authenticate/options",
+            JSONObject()
+                .put("subject", subject)
+                .put("challengeId", challengeId)
+        ).getJSONObject("options")
+    }
+
+    suspend fun finishWalletPasskeyAuthentication(subject: String, challengeId: String, response: JSONObject): JSONObject {
+        return postJson(
+            "/api/wallet/passkeys/authenticate/verify",
+            JSONObject()
+                .put("subject", subject)
+                .put("challengeId", challengeId)
+                .put("response", response)
+        )
     }
 
     suspend fun registerIssuerOrganizationConnection(
