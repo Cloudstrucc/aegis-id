@@ -149,8 +149,19 @@ class VerifiedIdClient {
 
     if (missing.length) {
       const error = new Error('Verified ID live mode is missing configuration.');
-      error.status = 500;
-      error.details = { missing };
+      error.status = 503;
+      error.expose = true;
+      error.details = {
+        missing,
+        recommendedFix:
+          'Set the missing App Service configuration values or switch VID_MODE to mock for this environment.',
+        portalChecklist: [
+          'If this environment should use live Microsoft Entra Verified ID, set AZURE_CLIENT_SECRET from the Entra app registration client secret.',
+          'Set VID_CALLBACK_API_KEY to a strong random shared callback key.',
+          'Confirm VID_AUTHORITY_DID, VID_MANIFEST_URL, VID_CREDENTIAL_TYPE, AZURE_TENANT_ID, and AZURE_CLIENT_ID match the Verified ID credential contract.',
+          'If this environment is only for UI or wallet-lab testing, set VID_MODE=mock instead of live.'
+        ]
+      };
       throw error;
     }
   }

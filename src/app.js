@@ -171,9 +171,14 @@ function createApp() {
     }
 
     const status = error.status || 500;
+    const shouldExpose = error.expose || status < 500;
     const payload = {
-      message: status >= 500 ? 'Something went wrong.' : error.message,
-      details: config.app.env === 'production' ? undefined : error.details || error.stack
+      message: shouldExpose ? error.message : 'Something went wrong.',
+      details: shouldExpose
+        ? error.details
+        : config.app.env === 'production'
+          ? undefined
+          : error.details || error.stack
     };
 
     if (req.path.startsWith('/api')) {

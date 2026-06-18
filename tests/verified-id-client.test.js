@@ -3,6 +3,35 @@ const assert = require('node:assert/strict');
 
 const VerifiedIdClient = require('../src/services/verified-id-client');
 
+test('VerifiedIdClient exposes missing live configuration safely', async () => {
+  const client = new VerifiedIdClient({
+    publicBaseUrl: 'https://aegis.example.com',
+    config: {
+      mode: 'live',
+      tenantId: 'tenant-id',
+      clientId: 'client-id',
+      clientSecret: '',
+      scope: '3db474b9-6a0c-4840-96ac-1fceb342124f/.default',
+      apiBaseUrl: 'https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials',
+      authorityDid: 'did:web:aegis.example.com',
+      manifestUrl: 'https://aegis.example.com/manifest.json',
+      credentialType: 'EmployeeCredential',
+      clientName: 'Vanguard Aegis ID'
+    }
+  });
+
+  await assert.rejects(
+    () => client.createIssuanceRequest({ claims: { email: 'identity@example.com' } }),
+    (error) => {
+      assert.equal(error.status, 503);
+      assert.equal(error.expose, true);
+      assert.deepEqual(error.details.missing, ['AZURE_CLIENT_SECRET']);
+      assert.match(error.details.recommendedFix, /VID_MODE to mock/i);
+      return true;
+    }
+  );
+});
+
 test('VerifiedIdClient explains missing Microsoft Verified ID app roles', async () => {
   const originalFetch = global.fetch;
   let requestBody = null;

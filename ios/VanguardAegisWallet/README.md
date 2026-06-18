@@ -37,6 +37,69 @@ xcodebuild \
   build
 ```
 
+## iOS Environments
+
+The project has separate shared schemes and bundle identifiers so production, dev, and QA builds can be installed on the same iPhone.
+
+| Environment | Xcode scheme | Bundle ID | Display name | Aegis web app |
+| --- | --- | --- | --- | --- |
+| Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `Aegis ID` | `https://vanguard-aegis-id-65067d.azurewebsites.net` |
+| Dev | `VanguardAegisWallet Dev` | `ca.vanguardcs.aegisid.wallet.dev` | `Aegis ID Dev` | `https://vanguard-aegis-id-dev-65067d.azurewebsites.net` |
+| QA | `VanguardAegisWallet QA` | `ca.vanguardcs.aegisid.wallet.qa` | `Aegis ID QA` | `https://vanguard-aegis-id-qa-65067d.azurewebsites.net` |
+
+The matching associated-domain entitlements are:
+
+```text
+VanguardAegisWallet.entitlements       -> vanguard-aegis-id-65067d.azurewebsites.net
+VanguardAegisWallet-Dev.entitlements   -> vanguard-aegis-id-dev-65067d.azurewebsites.net
+VanguardAegisWallet-QA.entitlements    -> vanguard-aegis-id-qa-65067d.azurewebsites.net
+```
+
+Before testing wallet passkeys in dev or QA, deploy the matching Aegis ID web app so these endpoints return the matching bundle ID:
+
+```text
+https://vanguard-aegis-id-dev-65067d.azurewebsites.net/.well-known/apple-app-site-association
+https://vanguard-aegis-id-qa-65067d.azurewebsites.net/.well-known/apple-app-site-association
+```
+
+The root `.env.dev` and `.env.qa` files set `IOS_APP_BUNDLE_ID` to the dev/QA bundle identifiers so the web app publishes the correct Apple association document.
+
+Simulator builds:
+
+```bash
+xcodebuild \
+  -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
+  -scheme "VanguardAegisWallet Dev" \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+
+xcodebuild \
+  -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
+  -scheme "VanguardAegisWallet QA" \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+Device/TestFlight archive builds:
+
+```bash
+xcodebuild archive \
+  -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
+  -scheme "VanguardAegisWallet Dev" \
+  -destination 'generic/platform=iOS' \
+  -archivePath /tmp/VanguardAegisWallet-Dev.xcarchive \
+  -allowProvisioningUpdates
+
+xcodebuild archive \
+  -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
+  -scheme "VanguardAegisWallet QA" \
+  -destination 'generic/platform=iOS' \
+  -archivePath /tmp/VanguardAegisWallet-QA.xcarchive \
+  -allowProvisioningUpdates
+```
+
 ## Complete Simulator Test Process
 
 Use this flow when testing the wallet side of Vanguard Cloud Services - Aegis ID from the iOS Simulator.
@@ -114,13 +177,13 @@ After OIDC login succeeds in the browser:
 5. Tap **Accept challenge** on the pending OIDC wallet challenge.
 6. The browser redirects to the protected app after the wallet callback succeeds.
 
-The wallet uses the hosted Aegis ID web app by default:
+The production wallet uses the hosted Aegis ID web app by default:
 
 ```text
 https://vanguard-aegis-id-65067d.azurewebsites.net
 ```
 
-That default is stored as `AEGIS_WEB_APP_BASE_URL` in `VanguardAegisWallet/Info.plist`. Change that value only when intentionally testing a local web app.
+That value is supplied by the selected Xcode build configuration as `AEGIS_WEB_APP_BASE_URL`; do not edit `Info.plist` directly for environment switching.
 
 The simulator bridge still uses local ACA-Py admin URLs for DIDComm lab operations: `http://localhost:4011` for issuer admin and `http://localhost:6011` for holder admin. Those local admin URLs are simulator-lab controls and are not expected to work from a physical iPhone.
 

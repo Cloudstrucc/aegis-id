@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>AEGIS_WEB_APP_BASE_URL</key>
-	<string>https://vanguard-aegis-id-65067d.azurewebsites.net</string>
+	<string>$(AEGIS_WEB_APP_BASE_URL)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Aegis Wallet</string>
+	<string>$(AEGIS_APP_DISPLAY_NAME)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,10 +26,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>CFBundleURLName</key>
-			<string>Vanguard Aegis ID Wallet</string>
+			<string>$(AEGIS_APP_DISPLAY_NAME)</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>aegisid</string>
+				<string>$(AEGIS_URL_SCHEME)</string>
 			</array>
 		</dict>
 	</array>

@@ -11,11 +11,13 @@ The wallet is currently a lab/testing shell for Aegis ID and ACA-Py interoperabi
 ## Current Local Build Status
 
 - Xcode project: `ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj`
-- Scheme: `VanguardAegisWallet`
+- Schemes: `VanguardAegisWallet`, `VanguardAegisWallet Dev`, `VanguardAegisWallet QA`
 - Apple team configured in project: `GL46AP73ZQ`
-- Current bundle identifier in the working tree: `fp613`
-- Simulator build: passing
-- iOS archive: passing
+- Production bundle identifier: `ca.vanguardcs.aegisid.wallet`
+- Dev bundle identifier: `ca.vanguardcs.aegisid.wallet.dev`
+- QA bundle identifier: `ca.vanguardcs.aegisid.wallet.qa`
+- Simulator build: passing for Dev and QA
+- iOS archive: requires Apple Developer/App Store Connect permissions and matching App IDs/profiles
 - App Store Connect export/upload: blocked by Apple account permissions
 
 The App Store Connect export failed with:
@@ -35,25 +37,27 @@ No profiles for 'fp613' were found
    - App Manager
    - Developer
 3. Confirm the Apple Developer team ID to use in Xcode.
-4. Choose the permanent bundle ID before first TestFlight upload.
+4. Create or confirm App IDs for each environment you want to distribute.
 
-Recommended bundle ID:
+Recommended bundle IDs:
 
 ```text
-com.vanguardcs.aegiswallet
+ca.vanguardcs.aegisid.wallet
+ca.vanguardcs.aegisid.wallet.dev
+ca.vanguardcs.aegisid.wallet.qa
 ```
-
-If App Store Connect already has an app record with another bundle ID, use that exact ID instead.
 
 ## App Store Connect App Record
 
-Create the app in App Store Connect:
+Create separate app records in App Store Connect if you want separate TestFlight channels/installable apps:
 
 - Platform: iOS
-- Name: `Vanguard Aegis ID`
+- Production name: `Vanguard Aegis ID`
+- Dev name: `Vanguard Aegis ID Dev`
+- QA name: `Vanguard Aegis ID QA`
 - Primary language: English
-- Bundle ID: the permanent bundle ID selected above
-- SKU: `vanguard-aegis-id-wallet`
+- Bundle ID: the matching environment bundle ID
+- SKU examples: `vanguard-aegis-id-wallet`, `vanguard-aegis-id-wallet-dev`, `vanguard-aegis-id-wallet-qa`
 - User access: Full Access unless the app should be scoped
 
 ## Xcode Project Settings
@@ -68,11 +72,19 @@ In the `VanguardAegisWallet` target:
 
 - Signing & Capabilities:
   - Team: Vanguard Cloud Services Apple Developer team
-  - Bundle Identifier: permanent App Store Connect bundle ID
+  - Bundle Identifier: selected by the scheme/build configuration
   - Automatically manage signing: enabled
 - General:
   - Version: `0.1.0`
   - Build: increment for every upload, for example `2`, `3`, `4`
+
+Environment mapping:
+
+| Environment | Scheme | Bundle ID | Associated domain |
+| --- | --- | --- | --- |
+| Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `webcredentials:vanguard-aegis-id-65067d.azurewebsites.net` |
+| Dev | `VanguardAegisWallet Dev` | `ca.vanguardcs.aegisid.wallet.dev` | `webcredentials:vanguard-aegis-id-dev-65067d.azurewebsites.net` |
+| QA | `VanguardAegisWallet QA` | `ca.vanguardcs.aegisid.wallet.qa` | `webcredentials:vanguard-aegis-id-qa-65067d.azurewebsites.net` |
 
 ## Local Validation Commands
 
@@ -87,15 +99,43 @@ xcodebuild \
   build
 ```
 
+Dev simulator build:
+
+```bash
+xcodebuild \
+  -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
+  -scheme "VanguardAegisWallet Dev" \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+QA simulator build:
+
+```bash
+xcodebuild \
+  -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
+  -scheme "VanguardAegisWallet QA" \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
 iOS archive:
 
 ```bash
 xcodebuild archive \
   -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
-  -scheme VanguardAegisWallet \
-  -configuration Release \
+  -scheme "VanguardAegisWallet Dev" \
   -destination 'generic/platform=iOS' \
-  -archivePath /tmp/VanguardAegisWallet.xcarchive \
+  -archivePath /tmp/VanguardAegisWallet-Dev.xcarchive \
+  -allowProvisioningUpdates
+
+xcodebuild archive \
+  -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
+  -scheme "VanguardAegisWallet QA" \
+  -destination 'generic/platform=iOS' \
+  -archivePath /tmp/VanguardAegisWallet-QA.xcarchive \
   -allowProvisioningUpdates
 ```
 
@@ -103,7 +143,7 @@ Export an App Store Connect IPA:
 
 ```bash
 xcodebuild -exportArchive \
-  -archivePath /tmp/VanguardAegisWallet.xcarchive \
+  -archivePath /tmp/VanguardAegisWallet-Dev.xcarchive \
   -exportOptionsPlist /tmp/VanguardAegisWalletExportOptions.plist \
   -exportPath /tmp/VanguardAegisWalletExport \
   -allowProvisioningUpdates
