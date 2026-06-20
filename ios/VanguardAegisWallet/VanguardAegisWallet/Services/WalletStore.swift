@@ -840,6 +840,9 @@ private final class WalletPasskeyCoordinator: NSObject, ASAuthorizationControlle
             name: name,
             userID: userId
         )
+        securityKeyRequest.credentialParameters = [
+            ASAuthorizationPublicKeyCredentialParameters(algorithm: ASCOSEAlgorithmIdentifier.ES256)
+        ]
 
         switch preference {
         case .securityKey:
