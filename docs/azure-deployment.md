@@ -61,6 +61,24 @@ The seeded profile uses the subscription suffix `0e75d1` for globally unique Azu
 | `dev` | `vanguard-aegis-id-dev-0e75d1` | `vanguard-business-expenses-dev-0e75d1` |
 | `qa` | `vanguard-aegis-id-qa-0e75d1` | `vanguard-business-expenses-qa-0e75d1` |
 
+The Aegis ID app and Business Expenses app share the Aegis ID App Service plan by default. This avoids Azure failing with `FreeLinuxSkuNotAllowedInResourceGroup` when a second Free Linux App Service plan is requested in the same resource group.
+
+If Azure still blocks Free Linux in the target subscription or region, rerun provisioning with a paid Basic plan override:
+
+```bash
+APP_SERVICE_SKU_NAME=B1 APP_SERVICE_SKU_TIER=Basic \
+  bash scripts/provision-azure-lab-env.sh --env prod --tenant vanguardcs
+```
+
+Fresh Azure subscriptions may also need resource providers registered before App Service or ACA-Py Azure Container Instances can be created. The provision script registers these automatically after selecting the subscription:
+
+```bash
+az provider register --namespace Microsoft.Web --wait
+az provider register --namespace Microsoft.ContainerInstance --wait
+```
+
+If your account cannot register providers, ask a subscription Owner to run those two commands once.
+
 Fill these tenant-prefixed values manually before provisioning or deploying:
 
 ```env
@@ -248,6 +266,10 @@ export AZURE_SUBSCRIPTION_ID=7719c366-5f64-439a-a6c6-65067d5a97e4
 export AZURE_RESOURCE_GROUP=rg-vanguard-aegis-id-dev
 export AEGIS_WEBAPP_NAME=vanguard-aegis-id-dev-65067d
 export BUSINESS_WEBAPP_NAME=vanguard-business-expenses-dev-65067d
+export APP_SERVICE_PLAN_NAME="${AEGIS_WEBAPP_NAME}-plan"
+export BUSINESS_APP_SERVICE_PLAN_NAME="$APP_SERVICE_PLAN_NAME"
+export APP_SERVICE_SKU_NAME=F1
+export APP_SERVICE_SKU_TIER=Free
 
 export ARIES_HOLDER_NAME=vanguard-aegis-holder-dev-65067d
 export ARIES_ISSUER_NAME=vanguard-aegis-issuer-dev-65067d
@@ -288,6 +310,9 @@ az deployment group create \
   --template-file infra/bicep/main.bicep \
   --parameters \
     appName="$AEGIS_WEBAPP_NAME" \
+    appServicePlanName="$APP_SERVICE_PLAN_NAME" \
+    skuName="$APP_SERVICE_SKU_NAME" \
+    skuTier="$APP_SERVICE_SKU_TIER" \
     publicBaseUrl="https://${AEGIS_WEBAPP_NAME}.azurewebsites.net" \
     sessionSecret="$(openssl rand -hex 32)" \
     azureTenantId="$AZURE_TENANT_ID"
@@ -297,12 +322,17 @@ az deployment group create \
 
 Use the same App Service Bicep baseline to create the second Node.js App Service. The Business Expenses deploy script replaces the Aegis-specific app settings with the standalone example app settings later. The app currently hosts both **Expense Approvals** and **E-Signatures**.
 
+When both apps are in the same resource group, reuse the Aegis ID plan for the Business Expenses app. This is the recommended free-tier-friendly layout.
+
 ```bash
 az deployment group create \
   --resource-group "$AZURE_RESOURCE_GROUP" \
   --template-file infra/bicep/main.bicep \
   --parameters \
     appName="$BUSINESS_WEBAPP_NAME" \
+    appServicePlanName="$BUSINESS_APP_SERVICE_PLAN_NAME" \
+    skuName="$APP_SERVICE_SKU_NAME" \
+    skuTier="$APP_SERVICE_SKU_TIER" \
     publicBaseUrl="https://${BUSINESS_WEBAPP_NAME}.azurewebsites.net" \
     sessionSecret="$(openssl rand -hex 32)" \
     azureTenantId="$AZURE_TENANT_ID"

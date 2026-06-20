@@ -155,6 +155,7 @@ BUSINESS_ENV_FILE_PATH="$(resolve_env_file "$ROOT_DIR/examples/business-expenses
 load_env_file "$ENV_FILE_PATH" || die "Unable to load environment file: $ENV_FILE_PATH"
 TENANT_KEYS=(
   AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP AZURE_WEBAPP_NAME AZURE_LOCATION
+  APP_SERVICE_PLAN_NAME BUSINESS_APP_SERVICE_PLAN_NAME APP_SERVICE_SKU_NAME APP_SERVICE_SKU_TIER
   APP_PUBLIC_BASE_URL PUBLIC_BASE_URL BUSINESS_EXPENSES_APP_URL WEBSITE_NODE_DEFAULT_VERSION
   IOS_TESTFLIGHT_PUBLIC_URL ANDROID_TESTING_URL
   USER_STORE_PATH SUBSCRIPTION_STORE_PATH SUBSCRIBER_WORKSPACE_STORE_PATH TRANSACTION_STORE_PATH
@@ -326,6 +327,29 @@ create_acapy_container() {
     --output none
 }
 
+ensure_provider_registered() {
+  local namespace="$1"
+  local state
+
+  state="$(
+    az provider show \
+      --namespace "$namespace" \
+      --query registrationState \
+      --output tsv 2>/dev/null || true
+  )"
+
+  if [[ "$state" == "Registered" ]]; then
+    log "Azure resource provider is registered: $namespace"
+    return 0
+  fi
+
+  log "Registering Azure resource provider: $namespace"
+  az provider register \
+    --namespace "$namespace" \
+    --wait \
+    --output none
+}
+
 require_cmd az
 require_cmd awk
 require_cmd curl
@@ -354,12 +378,24 @@ fi
 
 AZURE_RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-$default_resource_group}"
 AZURE_WEBAPP_NAME="${AZURE_WEBAPP_NAME:-$default_aegis_webapp}"
+APP_SERVICE_PLAN_NAME="${APP_SERVICE_PLAN_NAME:-${AZURE_WEBAPP_NAME}-plan}"
+APP_SERVICE_SKU_NAME="${APP_SERVICE_SKU_NAME:-F1}"
+APP_SERVICE_SKU_TIER="${APP_SERVICE_SKU_TIER:-Free}"
 APP_PUBLIC_BASE_URL="${APP_PUBLIC_BASE_URL:-https://${AZURE_WEBAPP_NAME}.azurewebsites.net}"
 
 BUSINESS_RESOURCE_GROUP="$(read_active_env_value "$BUSINESS_ENV_FILE_PATH" AZURE_RESOURCE_GROUP)"
 BUSINESS_WEBAPP_NAME="$(read_active_env_value "$BUSINESS_ENV_FILE_PATH" AZURE_WEBAPP_NAME)"
+business_env_plan_name="$(read_active_env_value "$BUSINESS_ENV_FILE_PATH" APP_SERVICE_PLAN_NAME)"
 BUSINESS_RESOURCE_GROUP="${BUSINESS_RESOURCE_GROUP:-$AZURE_RESOURCE_GROUP}"
 BUSINESS_WEBAPP_NAME="${BUSINESS_WEBAPP_NAME:-$default_business_webapp}"
+BUSINESS_APP_SERVICE_PLAN_NAME="${BUSINESS_APP_SERVICE_PLAN_NAME:-$business_env_plan_name}"
+if [[ -z "$BUSINESS_APP_SERVICE_PLAN_NAME" ]]; then
+  if [[ "$BUSINESS_RESOURCE_GROUP" == "$AZURE_RESOURCE_GROUP" ]]; then
+    BUSINESS_APP_SERVICE_PLAN_NAME="$APP_SERVICE_PLAN_NAME"
+  else
+    BUSINESS_APP_SERVICE_PLAN_NAME="${BUSINESS_WEBAPP_NAME}-plan"
+  fi
+fi
 BUSINESS_PUBLIC_BASE_URL="https://${BUSINESS_WEBAPP_NAME}.azurewebsites.net"
 
 ARIES_HOLDER_NAME="${ARIES_HOLDER_NAME:-$default_aries_holder}"
@@ -388,6 +424,11 @@ fi
 log "Selecting Azure subscription"
 az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 
+ensure_provider_registered Microsoft.Web
+if [[ "$SKIP_CONTAINERS" != "1" ]]; then
+  ensure_provider_registered Microsoft.ContainerInstance
+fi
+
 log "Creating or updating resource group: $AZURE_RESOURCE_GROUP"
 az group create \
   --name "$AZURE_RESOURCE_GROUP" \
@@ -409,6 +450,9 @@ if [[ "$SKIP_APP_SERVICES" != "1" ]]; then
     --template-file "$ROOT_DIR/infra/bicep/main.bicep" \
     --parameters \
       appName="$AZURE_WEBAPP_NAME" \
+      appServicePlanName="$APP_SERVICE_PLAN_NAME" \
+      skuName="$APP_SERVICE_SKU_NAME" \
+      skuTier="$APP_SERVICE_SKU_TIER" \
       publicBaseUrl="$APP_PUBLIC_BASE_URL" \
       sessionSecret="$(random_hex)" \
       azureTenantId="$AZURE_TENANT_ID" \
@@ -420,6 +464,9 @@ if [[ "$SKIP_APP_SERVICES" != "1" ]]; then
     --template-file "$ROOT_DIR/infra/bicep/main.bicep" \
     --parameters \
       appName="$BUSINESS_WEBAPP_NAME" \
+      appServicePlanName="$BUSINESS_APP_SERVICE_PLAN_NAME" \
+      skuName="$APP_SERVICE_SKU_NAME" \
+      skuTier="$APP_SERVICE_SKU_TIER" \
       publicBaseUrl="$BUSINESS_PUBLIC_BASE_URL" \
       sessionSecret="$(random_hex)" \
       azureTenantId="$AZURE_TENANT_ID" \
@@ -471,6 +518,10 @@ fi
 log "Saving environment values"
 set_active_env_value "$ENV_FILE_PATH" "AZURE_RESOURCE_GROUP" "$AZURE_RESOURCE_GROUP"
 set_active_env_value "$ENV_FILE_PATH" "AZURE_WEBAPP_NAME" "$AZURE_WEBAPP_NAME"
+set_active_env_value "$ENV_FILE_PATH" "APP_SERVICE_PLAN_NAME" "$APP_SERVICE_PLAN_NAME"
+set_active_env_value "$ENV_FILE_PATH" "BUSINESS_APP_SERVICE_PLAN_NAME" "$BUSINESS_APP_SERVICE_PLAN_NAME"
+set_active_env_value "$ENV_FILE_PATH" "APP_SERVICE_SKU_NAME" "$APP_SERVICE_SKU_NAME"
+set_active_env_value "$ENV_FILE_PATH" "APP_SERVICE_SKU_TIER" "$APP_SERVICE_SKU_TIER"
 set_active_env_value "$ENV_FILE_PATH" "PUBLIC_BASE_URL" "$APP_PUBLIC_BASE_URL"
 set_active_env_value "$ENV_FILE_PATH" "APP_PUBLIC_BASE_URL" "$APP_PUBLIC_BASE_URL"
 set_active_env_value "$ENV_FILE_PATH" "BUSINESS_EXPENSES_APP_URL" "$BUSINESS_PUBLIC_BASE_URL"
@@ -482,13 +533,14 @@ set_active_env_value "$ENV_FILE_PATH" "ARIES_MEDIATOR_ADMIN_URL" "http://${ARIES
 
 set_active_env_value "$BUSINESS_ENV_FILE_PATH" "AZURE_RESOURCE_GROUP" "$BUSINESS_RESOURCE_GROUP"
 set_active_env_value "$BUSINESS_ENV_FILE_PATH" "AZURE_WEBAPP_NAME" "$BUSINESS_WEBAPP_NAME"
+set_active_env_value "$BUSINESS_ENV_FILE_PATH" "APP_SERVICE_PLAN_NAME" "$BUSINESS_APP_SERVICE_PLAN_NAME"
 set_active_env_value "$BUSINESS_ENV_FILE_PATH" "APP_PUBLIC_BASE_URL" "$BUSINESS_PUBLIC_BASE_URL"
 set_active_env_value "$BUSINESS_ENV_FILE_PATH" "AEGIS_ID_BASE_URL" "$APP_PUBLIC_BASE_URL"
 
 if [[ "$SKIP_CONTAINERS" != "1" ]]; then
   log "Validating Azure lab resources"
   prepare_args=(
-    --env "$DEPLOY_ENV" \
+    --env "$DEPLOY_ENV"
     --admin-api-key "$ADMIN_API_KEY"
   )
   if [[ -n "${TENANT_PROFILE:-}" ]]; then
@@ -499,23 +551,20 @@ else
   log "Skipping prepare validation because containers were skipped"
 fi
 
-cat <<EOF
+tenant_arg=""
+if [[ -n "${TENANT_PROFILE:-}" ]]; then
+  tenant_arg=" --tenant $TENANT_PROFILE"
+fi
 
-Provisioning complete for $DEPLOY_ENV.
-
-Env files updated:
-  $ENV_FILE_PATH
-  $BUSINESS_ENV_FILE_PATH
-
-Next:
-  bash scripts/deploy-azure-webapp.sh --env $DEPLOY_ENV${TENANT_PROFILE:+ --tenant $TENANT_PROFILE}
-
-Then create an organization in the $DEPLOY_ENV Aegis ID web app, set $(active_env_key AEGIS_ORGANIZATION_ID) in:
-  $BUSINESS_ENV_FILE_PATH
-
-Then:
-  bash scripts/deploy-azure-business-expenses.sh --env $DEPLOY_ENV${TENANT_PROFILE:+ --tenant $TENANT_PROFILE}
-
-If you lose the ACA-Py admin key, recreate the lab containers:
-  bash scripts/provision-azure-lab-env.sh --env $DEPLOY_ENV${TENANT_PROFILE:+ --tenant $TENANT_PROFILE} --recreate-containers
-EOF
+printf '\nProvisioning complete for %s.\n\n' "$DEPLOY_ENV"
+printf 'Env files updated:\n'
+printf '  %s\n' "$ENV_FILE_PATH"
+printf '  %s\n\n' "$BUSINESS_ENV_FILE_PATH"
+printf 'Next:\n'
+printf '  bash scripts/deploy-azure-webapp.sh --env %s%s\n\n' "$DEPLOY_ENV" "$tenant_arg"
+printf 'Then create an organization in the %s Aegis ID web app, set %s in:\n' "$DEPLOY_ENV" "$(active_env_key AEGIS_ORGANIZATION_ID)"
+printf '  %s\n\n' "$BUSINESS_ENV_FILE_PATH"
+printf 'Then:\n'
+printf '  bash scripts/deploy-azure-business-expenses.sh --env %s%s\n\n' "$DEPLOY_ENV" "$tenant_arg"
+printf 'If you lose the ACA-Py admin key, recreate the lab containers:\n'
+printf '  bash scripts/provision-azure-lab-env.sh --env %s%s --recreate-containers\n' "$DEPLOY_ENV" "$tenant_arg"

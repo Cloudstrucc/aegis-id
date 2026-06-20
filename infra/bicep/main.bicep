@@ -4,6 +4,9 @@ param location string = resourceGroup().location
 @description('Globally unique App Service app name. Use lowercase letters, numbers, and hyphens.')
 param appName string
 
+@description('App Service plan name. Use the same value for multiple apps when they should share one plan.')
+param appServicePlanName string = '${appName}-plan'
+
 @description('App Service plan SKU. F1 keeps the web app on the Free tier where available.')
 param skuName string = 'F1'
 
@@ -27,7 +30,7 @@ var defaultHostName = '${appName}.azurewebsites.net'
 var dataRoot = '/home/data'
 
 resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
-  name: '${appName}-plan'
+  name: appServicePlanName
   location: location
   kind: 'linux'
   sku: {
