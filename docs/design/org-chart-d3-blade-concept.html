@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vanguard Aegis ID - Org Chart Blade Concept</title>
+  <style>
+    :root {
+      --navy: #061625;
+      --navy-2: #092033;
+      --ink: #0a1626;
+      --muted: #64748b;
+      --line: #d9e4ef;
+      --soft: #f4f8fc;
+      --panel: #ffffff;
+      --blue: #2268e8;
+      --cyan: #00a6b8;
+      --green: #15915f;
+      --amber: #b7791f;
+      --danger: #b43832;
+      --shadow: 0 18px 44px rgba(7, 22, 38, 0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(34, 104, 232, 0.08), transparent 34%),
+        linear-gradient(220deg, rgba(0, 166, 184, 0.10), transparent 38%),
+        #edf4fa;
+    }
+
+    a,
+    button {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      min-height: 88px;
+      align-items: center;
+      gap: 24px;
+      padding: 14px 6%;
+      color: #ffffff;
+      background: rgba(6, 22, 37, 0.82);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: min(250px, 28vw);
+      height: auto;
+      display: block;
+    }
+
+    .brand-pill {
+      padding: 6px 10px;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      margin-left: auto;
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .workspace-topbar {
+      display: flex;
+      min-height: 64px;
+      align-items: center;
+      gap: 16px;
+      padding: 0 24px;
+      color: #ffffff;
+      background: var(--navy);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .workspace-mark {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      place-items: center;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border-radius: 8px;
+      font-weight: 950;
+    }
+
+    .workspace-topbar strong,
+    .workspace-topbar span {
+      display: block;
+      line-height: 1.1;
+    }
+
+    .workspace-topbar span {
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .workspace-tabs {
+      display: flex;
+      gap: 22px;
+      margin-left: auto;
+      color: rgba(255, 255, 255, 0.72);
+      font-weight: 850;
+    }
+
+    .workspace-tabs .active {
+      color: #ffffff;
+    }
+
+    .avatar {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      color: var(--navy);
+      background: #ffffff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .workspace-shell {
+      display: grid;
+      grid-template-columns: 68px 312px minmax(0, 1fr);
+      min-height: calc(100vh - 152px);
+    }
+
+    .rail {
+      padding: 14px 10px;
+      color: rgba(255, 255, 255, 0.68);
+      background: var(--navy-2);
+      border-right: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    .rail a {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      place-items: center;
+      margin-bottom: 8px;
+      color: inherit;
+      border-radius: 8px;
+      font-weight: 950;
+    }
+
+    .rail a.active,
+    .rail a:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .blade-nav {
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.94);
+      border-right: 1px solid var(--line);
+      box-shadow: 8px 0 24px rgba(7, 22, 38, 0.06);
+    }
+
+    .blade-head {
+      padding: 22px 22px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .blade-head h1 {
+      margin: 8px 0;
+      color: var(--ink);
+      font-size: 24px;
+      line-height: 1.05;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .blade-head p:not(.eyebrow) {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.55;
+    }
+
+    .org-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      padding: 10px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .org-chip > span {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      border-radius: 8px;
+      font-weight: 950;
+    }
+
+    .org-chip strong,
+    .org-chip small {
+      display: block;
+    }
+
+    .org-chip small {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .menu {
+      display: grid;
+      gap: 2px;
+      padding: 14px;
+    }
+
+    .menu-label {
+      margin: 14px 10px 8px;
+      color: #7b8ba0;
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .menu a {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr) auto;
+      min-height: 52px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      color: #25354a;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .menu a > span:first-child {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      color: var(--blue);
+      background: rgba(34, 104, 232, 0.1);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .menu a small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .menu a.active {
+      color: var(--blue);
+      background: #e8f0ff;
+    }
+
+    .menu a.active > span:first-child {
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+    }
+
+    .advice {
+      margin: 0 14px 18px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--green);
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .advice strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .advice span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .workspace-content {
+      min-width: 0;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .blade-panel {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+    }
+
+    .section-heading {
+      display: grid;
+      gap: 8px;
+      max-width: 1040px;
+      margin-bottom: 18px;
+    }
+
+    .section-heading h2 {
+      max-width: 900px;
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(34px, 4vw, 58px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .section-heading p:not(.eyebrow) {
+      max-width: 900px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .toolbar__group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: #ffffff;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .button--primary {
+      color: #ffffff;
+      background: var(--blue);
+      border-color: var(--blue);
+      box-shadow: 0 10px 24px rgba(7, 22, 38, 0.06);
+    }
+
+    .button--danger {
+      color: #ffffff;
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .button--ghost {
+      color: var(--danger);
+      background: #fff7f7;
+      border-color: #f1c4c4;
+    }
+
+    .button[disabled] {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .chart-card {
+      overflow: hidden;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .chart-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      min-height: 92px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .metric strong,
+    .metric span {
+      display: block;
+    }
+
+    .metric strong {
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .metric span {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .chart-shell {
+      position: relative;
+      overflow: hidden;
+      min-height: 640px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 28px 28px;
+      background-color: #f8fbff;
+    }
+
+    .chart-container {
+      width: 100%;
+      height: 640px;
+    }
+
+    .chart-fallback {
+      display: grid;
+      min-width: 980px;
+      gap: 36px;
+      padding: 42px;
+      place-items: center;
+    }
+
+    .fallback-level {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .org-card {
+      width: 260px;
+      min-height: 130px;
+      padding: 14px;
+      color: var(--ink);
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      box-shadow: 0 16px 32px rgba(7, 22, 38, 0.08);
+      cursor: pointer;
+    }
+
+    .org-card--root {
+      width: 330px;
+      border-left-color: var(--green);
+      background: linear-gradient(180deg, #ffffff, #f7fbff);
+    }
+
+    .org-card__top {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .org-card h3 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.15;
+    }
+
+    .org-card p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    .node-avatar {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      place-items: center;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border-radius: 8px;
+      font-weight: 950;
+    }
+
+    .node-avatar--person {
+      border-radius: 50%;
+      background: linear-gradient(135deg, #334155, var(--green));
+    }
+
+    .node-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .node-tags span {
+      padding: 5px 8px;
+      color: #405169;
+      background: #f2f7fb;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .chart-tools {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 12px 30px rgba(7, 22, 38, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .alert {
+      display: none;
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid #f1c27d;
+      border-left: 5px solid var(--amber);
+      border-radius: 8px;
+      color: #71480f;
+      background: #fff8e8;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .alert.is-visible {
+      display: block;
+    }
+
+    .site-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 6%;
+      color: rgba(255, 255, 255, 0.7);
+      background: var(--navy);
+      border-top: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    .site-footer img {
+      width: 130px;
+      height: auto;
+    }
+
+    .modal {
+      position: fixed;
+      z-index: 40;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: rgba(6, 22, 37, 0.62);
+      backdrop-filter: blur(10px);
+    }
+
+    .modal.is-open {
+      display: grid;
+    }
+
+    .modal-panel {
+      width: min(720px, 100%);
+      max-height: min(760px, calc(100vh - 48px));
+      overflow: auto;
+      padding: 22px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 30px 80px rgba(7, 22, 38, 0.28);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .modal-head h2 {
+      margin: 6px 0 0;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1;
+    }
+
+    .close-button {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 950;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field--full {
+      grid-column: 1 / -1;
+    }
+
+    label,
+    .field-note {
+      color: #405169;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 11px;
+      color: var(--ink);
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 94px;
+      resize: vertical;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .checkline {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbff;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .checkline input {
+      width: 16px;
+      min-width: 16px;
+      min-height: 16px;
+      padding: 0;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    .blocked-panel {
+      display: none;
+      margin: 12px 0;
+      padding: 14px;
+      color: #71480f;
+      background: #fff8e8;
+      border: 1px solid #f1c27d;
+      border-left: 5px solid var(--amber);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .blocked-panel.is-visible {
+      display: block;
+    }
+
+    .people-strip {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .person-row {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .person-row span:first-child {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      color: #ffffff;
+      background: linear-gradient(135deg, #334155, var(--green));
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    @media (max-width: 1100px) {
+      .workspace-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .rail,
+      .blade-nav {
+        display: none;
+      }
+
+      .chart-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .site-header,
+      .workspace-topbar,
+      .site-footer {
+        flex-wrap: wrap;
+      }
+
+      .site-nav,
+      .workspace-tabs {
+        width: 100%;
+        margin-left: 0;
+        overflow: auto;
+      }
+
+      .workspace-content {
+        padding: 16px;
+      }
+
+      .toolbar {
+        align-items: stretch;
+      }
+
+      .toolbar__group,
+      .button,
+      .chart-meta,
+      .form-grid,
+      .checkbox-grid {
+        width: 100%;
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand-lockup" href="#">
+      <img class="brand-logo" src="../tutorial/assets/vanguard-cloud-services-logo.png" alt="Vanguard Cloud Services">
+      <span class="brand-pill">Aegis ID</span>
+    </a>
+    <nav class="site-nav" aria-label="Portal navigation">
+      <a href="#">Get Started Guide</a>
+      <a href="#">Account</a>
+      <a href="#">Subscribe Org</a>
+      <a href="#">Architecture</a>
+      <a href="#">OIDC Demo</a>
+      <a href="#">Sign out</a>
+    </nav>
+  </header>
+
+  <div class="workspace-topbar">
+    <span class="workspace-mark">V</span>
+    <div>
+      <strong>Vanguard Aegis ID</strong>
+      <span>Organization workspace</span>
+    </div>
+    <nav class="workspace-tabs" aria-label="Workspace areas">
+      <a class="active" href="#">Portal</a>
+      <a href="#">Integrations</a>
+      <a href="#">Ledger</a>
+    </nav>
+    <span class="avatar">FP</span>
+  </div>
+
+  <main class="workspace-shell">
+    <aside class="rail" aria-label="Workspace shortcuts">
+      <a class="active" href="#">D</a>
+      <a href="#">P</a>
+      <a href="#">I</a>
+      <a href="#">L</a>
+      <a href="#">S</a>
+    </aside>
+
+    <aside class="blade-nav" aria-label="Cloudstrucc workspace menu">
+      <div class="blade-head">
+        <p class="eyebrow">Organization</p>
+        <h1>Cloudstrucc</h1>
+        <p>Manage people, credentials, roles, claims, integrations, branding, and audit evidence for this workspace.</p>
+        <div class="org-chip">
+          <span>V</span>
+          <div>
+            <strong>Workspace active</strong>
+            <small>Administrator workspace</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="menu">
+        <p class="menu-label">Overview</p>
+        <a href="#"><span>01</span><strong>Dashboard</strong><small>Home</small></a>
+        <a href="#"><span>02</span><strong>People</strong><small>Users</small></a>
+        <a href="#"><span>03</span><strong>Credentials</strong><small>Issue</small></a>
+        <p class="menu-label">Configuration</p>
+        <a href="#"><span>04</span><strong>Roles</strong><small>RBAC</small></a>
+        <a href="#"><span>05</span><strong>Claims</strong><small>Data</small></a>
+        <a class="active" href="#"><span>06</span><strong>Org chart</strong><small>Units</small></a>
+        <a href="#"><span>07</span><strong>Branding</strong><small>Theme</small></a>
+        <p class="menu-label">Assurance</p>
+        <a href="#"><span>08</span><strong>Integrations</strong><small>IdP</small></a>
+        <a href="#"><span>09</span><strong>Issuer orgs</strong><small>Wallet</small></a>
+        <a href="#"><span>10</span><strong>Wallet events</strong><small>Audit</small></a>
+        <a href="#"><span>11</span><strong>App ledger</strong><small>Apps</small></a>
+        <a href="#"><span>12</span><strong>Admin verification</strong><small>IDV</small></a>
+        <a href="#"><span>13</span><strong>Settings</strong><small>Policy</small></a>
+      </nav>
+
+      <article class="advice">
+        <strong>Next best action</strong>
+        <span>Use the org chart when a department needs its own default roles, claim requests, or user reporting node.</span>
+      </article>
+    </aside>
+
+    <section class="workspace-content">
+      <div class="blade-panel">
+        <div class="section-heading">
+          <p class="eyebrow">Org chart</p>
+          <h2>Map divisions, people, and policy.</h2>
+          <p>Use the organization chart to model departments, expand divisions to see credential holders, and open modals for add, edit, delete, and node details.</p>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar__group">
+            <button class="button button--primary" type="button" data-open-modal="addDivision">Add division</button>
+            <button class="button" type="button" id="expandAll">Expand all</button>
+            <button class="button" type="button" id="collapsePeople">Hide people</button>
+            <button class="button" type="button" id="fitChart">Fit chart</button>
+          </div>
+          <div class="toolbar__group">
+            <button class="button" type="button" data-open-modal="importPicture">Upload node picture</button>
+            <button class="button" type="button">Export PNG</button>
+          </div>
+        </div>
+
+        <div class="alert" id="chartAlert">
+          Finance cannot be deleted while users belong to it. Go to People, filter by Finance, then revoke those users or edit each user and transfer them to another division.
+        </div>
+
+        <article class="chart-card">
+          <div class="chart-meta">
+            <div class="metric"><strong>4</strong><span>Division nodes</span></div>
+            <div class="metric"><strong>5</strong><span>Credential holders visible when expanded</span></div>
+            <div class="metric"><strong>3</strong><span>Role templates attached</span></div>
+            <div class="metric"><strong>8</strong><span>Claims inherited from parent policy</span></div>
+          </div>
+
+          <div class="chart-shell" aria-label="Interactive org chart concept">
+            <div class="chart-container" id="chart"></div>
+            <div class="chart-tools">
+              <button class="button" type="button" id="zoomOut">-</button>
+              <button class="button" type="button" id="zoomIn">+</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <img src="../tutorial/assets/vanguard-cloud-services-logo.png" alt="Vanguard Cloud Services">
+    <span>© 2026 Vanguard Cloud Services</span>
+  </footer>
+
+  <div class="modal" id="addDivision" aria-hidden="true">
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="addDivisionTitle">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Org chart editor</p>
+          <h2 id="addDivisionTitle">Add a division.</h2>
+        </div>
+        <button class="close-button" type="button" data-close-modal>Close</button>
+      </div>
+      <form class="form-grid" id="addDivisionForm">
+        <div class="field">
+          <label for="divisionName">Division name</label>
+          <input id="divisionName" name="divisionName" type="text" value="Legal">
+        </div>
+        <div class="field">
+          <label for="parentNode">Parent node</label>
+          <select id="parentNode" name="parentNode">
+            <option value="cloudstrucc">Cloudstrucc</option>
+            <option value="finance">Finance</option>
+            <option value="hr">HR</option>
+            <option value="delivery">Delivery</option>
+          </select>
+        </div>
+        <div class="field field--full">
+          <label for="divisionDescription">Description</label>
+          <textarea id="divisionDescription" name="divisionDescription">Contract review, delegated signing, and high-value approval policy.</textarea>
+        </div>
+        <div class="field">
+          <label for="nodePhoto">Optional node picture</label>
+          <input id="nodePhoto" name="nodePhoto" type="file" accept="image/*">
+        </div>
+        <div class="field">
+          <label for="divisionOwner">Division owner</label>
+          <input id="divisionOwner" name="divisionOwner" type="text" value="Unassigned">
+        </div>
+        <div class="field field--full">
+          <span class="field-note">Default roles for this division</span>
+          <div class="checkbox-grid">
+            <label class="checkline"><input type="checkbox" checked> Employee</label>
+            <label class="checkline"><input type="checkbox"> Contractor</label>
+            <label class="checkline"><input type="checkbox" checked> Approver</label>
+            <label class="checkline"><input type="checkbox"> Admin Eligible</label>
+          </div>
+        </div>
+        <div class="field field--full">
+          <span class="field-note">Claims normally requested in this division</span>
+          <div class="checkbox-grid">
+            <label class="checkline"><input type="checkbox" checked> Employee ID</label>
+            <label class="checkline"><input type="checkbox" checked> Email</label>
+            <label class="checkline"><input type="checkbox" checked> Department</label>
+            <label class="checkline"><input type="checkbox"> Spending limit</label>
+          </div>
+        </div>
+      </form>
+      <div class="modal-actions">
+        <button class="button" type="button" data-close-modal>Cancel</button>
+        <button class="button button--primary" type="button" id="saveDivision">Add Division</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="nodeDetails" aria-hidden="true">
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="nodeDetailsTitle">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow" id="nodeDetailsType">Division details</p>
+          <h2 id="nodeDetailsTitle">Finance</h2>
+        </div>
+        <button class="close-button" type="button" data-close-modal>Close</button>
+      </div>
+      <div class="blocked-panel" id="deleteBlocked">
+        This division has active users. Open the People blade, filter by this division, then revoke those users or edit them to another division before deleting the node.
+      </div>
+      <form class="form-grid">
+        <div class="field">
+          <label for="editNodeName">Name</label>
+          <input id="editNodeName" name="editNodeName" type="text" value="Finance">
+        </div>
+        <div class="field">
+          <label for="editNodeParent">Parent node</label>
+          <select id="editNodeParent" name="editNodeParent">
+            <option>Cloudstrucc</option>
+            <option>Finance</option>
+            <option>HR</option>
+            <option>Delivery</option>
+          </select>
+        </div>
+        <div class="field field--full">
+          <label for="editNodeDescription">Description</label>
+          <textarea id="editNodeDescription" name="editNodeDescription">Expense approvals, finance claims, and wallet-signed policy decisions.</textarea>
+        </div>
+        <div class="field field--full">
+          <span class="field-note">People in this division</span>
+          <div class="people-strip" id="peopleStrip"></div>
+        </div>
+      </form>
+      <div class="modal-actions">
+        <button class="button" type="button" data-open-modal="addDivision" data-close-current>Add child division</button>
+        <button class="button" type="button" id="saveNode">Save changes</button>
+        <button class="button button--ghost" type="button" id="deleteNode">Delete node</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="deleteConfirm" aria-hidden="true">
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Confirm delete</p>
+          <h2 id="deleteConfirmTitle">Delete this division?</h2>
+        </div>
+        <button class="close-button" type="button" data-close-modal>Close</button>
+      </div>
+      <p class="muted">This demo only removes the node from the local concept. In the product, deletion would be audited and blocked when users or credentials are still assigned.</p>
+      <div class="modal-actions">
+        <button class="button" type="button" data-close-modal>Cancel</button>
+        <button class="button button--danger" type="button" id="confirmDelete">Delete Division</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="importPicture" aria-hidden="true">
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="importPictureTitle">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Node image</p>
+          <h2 id="importPictureTitle">Upload a picture.</h2>
+        </div>
+        <button class="close-button" type="button" data-close-modal>Close</button>
+      </div>
+      <div class="form-grid">
+        <div class="field field--full">
+          <label for="pictureUpload">Division or leader image</label>
+          <input id="pictureUpload" type="file" accept="image/*">
+        </div>
+        <div class="field field--full">
+          <p class="muted">Concept note: this could be stored as an org-node avatar for divisions or as a holder profile image when the node is expanded to show people.</p>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="button button--primary" type="button" data-close-modal>Done</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-org-chart@3.1.0"></script>
+  <script>
+    const data = [
+      { id: 'cloudstrucc', parentId: '', name: 'Cloudstrucc', type: 'division', initials: 'ORG', title: 'Root organization', path: 'Cloudstrucc', users: 0, roles: ['Employee', 'Contractor', 'Admin Eligible'], claims: ['Employee ID', 'Email', 'Department'] },
+      { id: 'finance', parentId: 'cloudstrucc', name: 'Finance', type: 'division', initials: 'FIN', title: 'Expense approvals and finance attestations', path: 'Cloudstrucc / Finance', users: 2, roles: ['Approver', 'Employee'], claims: ['Department', 'Spending limit'] },
+      { id: 'hr', parentId: 'cloudstrucc', name: 'HR', type: 'division', initials: 'HR', title: 'Employment status and onboarding policy', path: 'Cloudstrucc / HR', users: 1, roles: ['Employee'], claims: ['Employment status'] },
+      { id: 'delivery', parentId: 'cloudstrucc', name: 'Delivery', type: 'division', initials: 'DLV', title: 'Contractor and project delivery users', path: 'Cloudstrucc / Delivery', users: 2, roles: ['Contractor'], claims: ['Project', 'Region'] },
+      { id: 'p1', parentId: 'finance', name: 'Ava Patel', type: 'person', initials: 'AP', title: 'Finance approver', path: 'Cloudstrucc / Finance', users: 0, roles: ['Approver'], claims: ['Email', 'Employee ID'] },
+      { id: 'p2', parentId: 'finance', name: 'Mika Chen', type: 'person', initials: 'MC', title: 'Expense reviewer', path: 'Cloudstrucc / Finance', users: 0, roles: ['Employee'], claims: ['Email'] },
+      { id: 'p3', parentId: 'hr', name: 'Nora Singh', type: 'person', initials: 'NS', title: 'HR credential admin', path: 'Cloudstrucc / HR', users: 0, roles: ['Admin Eligible'], claims: ['Employment status'] },
+      { id: 'p4', parentId: 'delivery', name: 'Evan Brooks', type: 'person', initials: 'EB', title: 'Contractor lead', path: 'Cloudstrucc / Delivery', users: 0, roles: ['Contractor'], claims: ['Project'] },
+      { id: 'p5', parentId: 'delivery', name: 'Leah Martin', type: 'person', initials: 'LM', title: 'Delivery approver', path: 'Cloudstrucc / Delivery', users: 0, roles: ['Approver'], claims: ['Region'] }
+    ];
+
+    let chart = null;
+    let showPeople = true;
+    let selectedNode = null;
+
+    function visibleData() {
+      return showPeople ? data : data.filter((node) => node.type === 'division');
+    }
+
+    function nodeTemplate(node) {
+      const d = node.data || node;
+      const isPerson = d.type === 'person';
+      const classes = ['org-card', d.parentId ? '' : 'org-card--root'].filter(Boolean).join(' ');
+      const tags = [...(d.roles || []), ...(d.claims || [])].slice(0, 5).map((item) => `<span>${item}</span>`).join('');
+      return `
+        <div class="${classes}" data-node-id="${d.id}">
+          <div class="org-card__top">
+            <div>
+              <h3>${d.name}</h3>
+              <p>${d.title}</p>
+            </div>
+            <span class="node-avatar ${isPerson ? 'node-avatar--person' : ''}">${d.initials}</span>
+          </div>
+          <p>${d.path}</p>
+          <p>${isPerson ? 'Credential holder' : `${d.users} user${d.users === 1 ? '' : 's'} assigned`}</p>
+          <div class="node-tags">${tags}</div>
+        </div>
+      `;
+    }
+
+    function renderFallback() {
+      const divisions = data.filter((node) => node.type === 'division');
+      const people = showPeople ? data.filter((node) => node.type === 'person') : [];
+      const byParent = new Map();
+      for (const item of [...divisions, ...people]) {
+        const parent = item.parentId || '';
+        if (!byParent.has(parent)) byParent.set(parent, []);
+        byParent.get(parent).push(item);
+      }
+      const root = data.find((item) => item.id === 'cloudstrucc');
+      const children = byParent.get(root.id) || [];
+      const grandchildren = children.flatMap((child) => byParent.get(child.id) || []);
+      document.getElementById('chart').innerHTML = `
+        <div class="chart-fallback">
+          <div class="fallback-level">${nodeTemplate(root)}</div>
+          <div class="fallback-level">${children.map(nodeTemplate).join('')}</div>
+          ${grandchildren.length ? `<div class="fallback-level">${grandchildren.map(nodeTemplate).join('')}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function renderChart() {
+      if (window.d3 && window.d3.OrgChart) {
+        chart = new window.d3.OrgChart()
+          .container('#chart')
+          .data(visibleData())
+          .nodeWidth(() => 286)
+          .nodeHeight((d) => d.data.type === 'person' ? 142 : 164)
+          .childrenMargin(() => 58)
+          .compactMarginBetween(() => 28)
+          .compactMarginPair(() => 64)
+          .siblingsMargin(() => 34)
+          .buttonContent(() => '<div style="border:1px solid #d9e4ef;background:#fff;border-radius:8px;padding:4px 8px;font-weight:900;color:#2268e8;">+</div>')
+          .nodeContent((d) => nodeTemplate(d))
+          .render();
+      } else {
+        renderFallback();
+      }
+    }
+
+    function openModal(id) {
+      document.querySelectorAll('.modal').forEach((modal) => {
+        modal.classList.toggle('is-open', modal.id === id);
+        modal.setAttribute('aria-hidden', modal.id === id ? 'false' : 'true');
+      });
+    }
+
+    function closeModals() {
+      document.querySelectorAll('.modal').forEach((modal) => {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+      });
+    }
+
+    function openNodeDetails(id) {
+      const node = data.find((item) => item.id === id);
+      if (!node) return;
+      selectedNode = node;
+      const people = data.filter((item) => item.type === 'person' && item.parentId === node.id);
+      document.getElementById('nodeDetailsType').textContent = node.type === 'person' ? 'Credential holder' : 'Division details';
+      document.getElementById('nodeDetailsTitle').textContent = node.name;
+      document.getElementById('editNodeName').value = node.name;
+      document.getElementById('editNodeDescription').value = node.title;
+      document.getElementById('deleteBlocked').classList.toggle('is-visible', node.type === 'division' && people.length > 0);
+      document.getElementById('deleteNode').disabled = node.id === 'cloudstrucc';
+      document.getElementById('peopleStrip').innerHTML = people.length
+        ? people.map((person) => `<div class="person-row"><span>${person.initials}</span><strong>${person.name}</strong><small>${person.title}</small></div>`).join('')
+        : '<p class="muted">No credential holders assigned directly to this node.</p>';
+      openModal('nodeDetails');
+    }
+
+    document.addEventListener('click', (event) => {
+      const openTarget = event.target.closest('[data-open-modal]');
+      if (openTarget) {
+        if (openTarget.hasAttribute('data-close-current')) closeModals();
+        openModal(openTarget.dataset.openModal);
+      }
+
+      if (event.target.closest('[data-close-modal]')) {
+        closeModals();
+      }
+
+      const node = event.target.closest('[data-node-id]');
+      if (node) {
+        openNodeDetails(node.dataset.nodeId);
+      }
+    });
+
+    document.getElementById('saveDivision').addEventListener('click', () => {
+      const name = document.getElementById('divisionName').value.trim() || 'New Division';
+      const parentId = document.getElementById('parentNode').value;
+      const id = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+      const parent = data.find((node) => node.id === parentId);
+      data.push({
+        id,
+        parentId,
+        name,
+        type: 'division',
+        initials: name.slice(0, 3).toUpperCase(),
+        title: document.getElementById('divisionDescription').value.trim() || 'New policy division',
+        path: `${parent?.path || 'Cloudstrucc'} / ${name}`,
+        users: 0,
+        roles: ['Employee'],
+        claims: ['Email']
+      });
+      closeModals();
+      renderChart();
+    });
+
+    document.getElementById('saveNode').addEventListener('click', () => {
+      if (!selectedNode) return;
+      selectedNode.name = document.getElementById('editNodeName').value.trim() || selectedNode.name;
+      selectedNode.title = document.getElementById('editNodeDescription').value.trim() || selectedNode.title;
+      closeModals();
+      renderChart();
+    });
+
+    document.getElementById('deleteNode').addEventListener('click', () => {
+      if (!selectedNode || selectedNode.id === 'cloudstrucc') return;
+      const people = data.filter((item) => item.type === 'person' && item.parentId === selectedNode.id);
+      if (selectedNode.type === 'division' && people.length > 0) {
+        document.getElementById('deleteBlocked').classList.add('is-visible');
+        document.getElementById('chartAlert').classList.add('is-visible');
+        return;
+      }
+      openModal('deleteConfirm');
+    });
+
+    document.getElementById('confirmDelete').addEventListener('click', () => {
+      if (!selectedNode) return;
+      const index = data.findIndex((node) => node.id === selectedNode.id);
+      if (index > -1) data.splice(index, 1);
+      selectedNode = null;
+      closeModals();
+      renderChart();
+    });
+
+    document.getElementById('collapsePeople').addEventListener('click', (event) => {
+      showPeople = !showPeople;
+      event.currentTarget.textContent = showPeople ? 'Hide people' : 'Show people';
+      renderChart();
+    });
+
+    document.getElementById('expandAll').addEventListener('click', () => {
+      if (chart) chart.expandAll();
+    });
+
+    document.getElementById('fitChart').addEventListener('click', () => {
+      if (chart) chart.fit();
+    });
+
+    document.getElementById('zoomIn').addEventListener('click', () => {
+      if (chart) chart.zoomIn();
+    });
+
+    document.getElementById('zoomOut').addEventListener('click', () => {
+      if (chart) chart.zoomOut();
+    });
+
+    window.addEventListener('load', renderChart);
+  </script>
+</body>
+</html>

@@ -68,14 +68,6 @@
           <h1>Choose a workspace blade.</h1>
           <p>{{#if welcome}}Subscription captured. Start with a focused blade for people, credentials, integrations, and assurance policies.{{else}}This default view stays intentionally light. Use the menu blade or the tiles below to open focused management surfaces for people, credentials, claims, roles, integrations, branding, and audit evidence.{{/if}}</p>
         </div>
-        <div class="toolbar">
-          {{#if orgAdmin.canManageAdminAssurance}}
-            <a class="button button--secondary button--dark-text" href="#admin-verification" data-blade-link="admin-verification">Verify admin</a>
-          {{/if}}
-          {{#if orgAdmin.canManagePeople}}
-            <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user">Add user</button>
-          {{/if}}
-        </div>
       </div>
 
       {{#if orgAdmin.canManageAdminAssurance}}
@@ -87,7 +79,7 @@
               <p>Admins can keep working during the grace period, but higher-trust deployments should validate the original subscriber and co-admins.</p>
             </div>
             <div class="identity-reminder__actions">
-              <a class="button button--secondary button--dark-text" href="#admin-verification" data-blade-link="admin-verification">Open IDV</a>
+              <a class="button button--secondary button--dark-text" href="#admin-verification" data-blade-link="admin-verification">Verify</a>
               <button class="button button--secondary button--dark-text" type="button" data-dismiss-banner>Dismiss</button>
             </div>
           </aside>
@@ -226,6 +218,11 @@
           </select>
           <select name="peopleType" aria-label="Filter by person type">
             {{#each orgAdmin.peopleTable.personTypeOptions}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+          <select name="peopleDivision" aria-label="Filter by division">
+            {{#each orgAdmin.peopleTable.divisionOptions}}
               <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
             {{/each}}
           </select>
@@ -824,102 +821,201 @@
 <section id="org-structure" class="band band--white blade-panel" data-blade-panel="org-structure">
   <div class="section-heading">
     <p class="eyebrow">Org chart</p>
-    <h2>Map divisions to policy.</h2>
-    <p>Use a draw.io-style surface to model departments and attach default roles, claim requirements, and approver groups.</p>
+    <h2>Map divisions, people, and policy.</h2>
+    <p>Use the chart to model departments, attach default roles and claims, and inspect the credential holders assigned to each division.</p>
   </div>
   <article class="blade-guidance">
     <strong>Why this matters</strong>
-    <span>Create a division when a department needs its own default roles, claim requests, or policy notes. The selected division is applied during credential issuance.</span>
+    <span>Create a division when a department needs its own policy defaults. Expand people to see assigned holders, then click a division or person for details.</span>
   </article>
-  <div class="structure-layout structure-layout--editor">
-    <article class="platform-card">
+
+  <div class="org-chart-toolbar">
+    <div>
+      <p class="eyebrow">Division hierarchy</p>
+      <h3>Organization structure</h3>
+    </div>
+    <div class="org-chart-toolbar__actions">
+      {{#if orgAdmin.canManageOrgChart}}
+        <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-division">Add Division</button>
+      {{/if}}
+      <button class="button button--secondary button--dark-text" type="button" data-org-chart-action="toggle-people">Hide people</button>
+      <button class="button button--secondary button--dark-text" type="button" data-org-chart-action="expand">Expand all</button>
+      <button class="button button--secondary button--dark-text" type="button" data-org-chart-action="fit">Fit chart</button>
+    </div>
+  </div>
+
+  <article class="org-chart-alert" data-org-chart-alert hidden></article>
+
+  <div class="org-chart-metrics">
+    <article><strong>{{orgAdmin.orgChartStats.divisionCount}}</strong><span>Division nodes</span></article>
+    <article><strong>{{orgAdmin.orgChartStats.holderCount}}</strong><span>Credential holders visible when expanded</span></article>
+    <article><strong>{{orgAdmin.orgChartStats.roleCount}}</strong><span>Role templates attached</span></article>
+    <article><strong>{{orgAdmin.orgChartStats.inheritedClaimCount}}</strong><span>Claims inherited from parent policy</span></article>
+  </div>
+
+  <article class="org-chart-card">
+    <div class="org-chart-card__head">
       <div class="platform-card__head">
         <span class="platform-icon">ORG</span>
         <div>
           <span class="track-label">Sub-organizations</span>
-          <h3>Organization structure</h3>
+          <h3>Interactive org chart</h3>
         </div>
       </div>
-      <div class="org-chart-canvas" aria-label="Organization structure tree">
-        <div class="org-chart-tree">
-          {{#each orgAdmin.orgChartLevels}}
-            <div class="org-chart-level" style="--level: {{depth}};">
-              {{#each nodes}}
-                <div class="org-node">
-                  <strong>{{name}}</strong>
-                  <span>{{path}}</span>
-                  <small>{{credentialCount}} credential{{#unless (eq credentialCount 1)}}s{{/unless}}</small>
-                  <div class="tag-row">
-                    {{#each roleLabels}}<span>{{this}}</span>{{/each}}
-                    {{#each claimLabels}}<span>{{this}}</span>{{/each}}
-                  </div>
-                </div>
+      <div class="org-chart-zoom">
+        <button class="icon-button" type="button" data-org-chart-action="zoom-out" aria-label="Zoom out">−</button>
+        <button class="icon-button" type="button" data-org-chart-action="zoom-in" aria-label="Zoom in">+</button>
+      </div>
+    </div>
+    <div class="org-chart-d3-shell" aria-label="Organization chart canvas">
+      <div class="org-chart-d3" data-org-chart-container></div>
+      <div class="org-chart-empty" data-org-chart-fallback hidden>
+        <strong>Unable to load the interactive chart.</strong>
+        <span>Refresh the page or confirm the d3-org-chart assets are available.</span>
+      </div>
+    </div>
+  </article>
+
+  <script src="/vendor/d3/d3.min.js" defer></script>
+  <script src="/vendor/d3-flextree/d3-flextree.min.js" defer></script>
+  <script src="/vendor/d3-org-chart/d3-org-chart.min.js" defer></script>
+  <script id="org-chart-data" type="application/json">{{{json orgAdmin.orgChartData}}}</script>
+
+  {{#if orgAdmin.canManageOrgChart}}
+    <div class="app-modal" id="modal-add-division" hidden>
+      <div class="app-modal__backdrop" data-modal-close></div>
+      <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="modal-add-division-title">
+        <div class="app-modal__head">
+          <div>
+            <p class="eyebrow">Org chart editor</p>
+            <h2 id="modal-add-division-title">Add a division</h2>
+            <p>Create a child division, assign defaults, and optionally upload a node image.</p>
+          </div>
+          <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+        </div>
+        <form class="wizard-form" action="{{dashboardBasePath}}/admin/org-units" method="post">
+          <div class="field-row">
+            <div class="field-group">
+              <label for="orgUnitName">Division name</label>
+              <input id="orgUnitName" name="name" type="text" placeholder="Finance, HR, Delivery">
+            </div>
+            <div class="field-group">
+              <label for="orgUnitParent">Parent node</label>
+              <select id="orgUnitParent" name="parentId">
+                {{#each orgAdmin.orgUnitOptions}}
+                  <option value="{{id}}">{{indentedName}}</option>
+                {{/each}}
+              </select>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="orgUnitDescription">Description</label>
+            <textarea id="orgUnitDescription" name="description" rows="3" placeholder="Optional privileges or business context."></textarea>
+          </div>
+          <div class="field-group">
+            <label for="orgUnitAvatar">Node picture</label>
+            <input id="orgUnitAvatar" type="file" accept="image/*" data-image-to-hidden="org-unit-avatar-new">
+            <input type="hidden" name="avatarDataUrl" data-image-hidden="org-unit-avatar-new">
+          </div>
+          <div>
+            <p class="form-note">Default roles for this node</p>
+            <div class="checkbox-grid">
+              {{#each orgAdmin.roles}}
+                <label class="checkline">
+                  <input type="checkbox" name="roleIds" value="{{id}}">
+                  <span>{{name}}</span>
+                </label>
               {{/each}}
             </div>
-          {{/each}}
-        </div>
-      </div>
-    </article>
-    <aside class="org-chart-side">
-      <article class="platform-card">
-        <div class="platform-card__head">
-          <span class="platform-icon">UNT</span>
+          </div>
           <div>
-            <span class="track-label">Current nodes</span>
-            <h3>Divisions</h3>
-          </div>
-        </div>
-        <div class="definition-list definition-list--compact">
-          {{#each orgAdmin.orgChartNodes}}
-            <div>
-              <strong>{{name}}</strong>
-              <span>{{path}}<br><small>{{credentialCount}} credential{{#unless (eq credentialCount 1)}}s{{/unless}}</small></span>
-              {{#if ../orgAdmin.canManageOrgChart}}
-                {{#unless (eq id "unit-root")}}
-                  <form action="{{../dashboardBasePath}}/admin/org-units/{{id}}/delete" method="post">
-                    <button class="icon-button icon-button--danger" type="submit">Delete</button>
-                  </form>
-                {{/unless}}
-              {{/if}}
+            <p class="form-note">Claims normally requested in this node</p>
+            <div class="checkbox-grid">
+              {{#each orgAdmin.claimDefinitions}}
+                <label class="checkline">
+                  <input type="checkbox" name="claimKeys" value="{{key}}">
+                  <span>{{label}}</span>
+                </label>
+              {{/each}}
             </div>
-          {{/each}}
-        </div>
-      </article>
+          </div>
+          <div class="modal-actions">
+            <button class="button button--primary button--blue" type="submit">Add Division</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+          </div>
+        </form>
+      </section>
+    </div>
 
-      {{#if orgAdmin.canManageOrgChart}}
-        <article class="platform-card">
-          <div class="platform-card__head">
-            <span class="platform-icon">DIV</span>
+    {{#each orgAdmin.orgChartNodes}}
+      <div class="app-modal" id="{{detailModalId}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="org-unit-title-{{id}}">
+          <div class="app-modal__head">
             <div>
-              <span class="track-label">Org chart editor</span>
-              <h3>Add a division</h3>
+              <p class="eyebrow">{{#if (eq id "unit-root")}}Root organization{{else}}Division details{{/if}}</p>
+              <h2 id="org-unit-title-{{id}}">{{name}}</h2>
+              <p>{{path}} · {{credentialCount}} credential{{#unless (eq credentialCount 1)}}s{{/unless}}</p>
             </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
           </div>
-          <form class="wizard-form" action="{{dashboardBasePath}}/admin/org-units" method="post">
+
+          {{#if deleteBlocked}}
+            <article class="note-panel note-panel--warning">
+              <strong>This division has active users.</strong>
+              <span>Open the People blade, filter by this division, then revoke those users or edit them to another division before deleting the node.</span>
+              <a class="button button--secondary button--dark-text" href="{{peopleFilterUrl}}">Open filtered people list</a>
+            </article>
+          {{/if}}
+
+          <form class="wizard-form" action="{{../dashboardBasePath}}/admin/org-units/{{id}}/update" method="post">
             <div class="field-row">
               <div class="field-group">
-                <label for="orgUnitName">Division name</label>
-                <input id="orgUnitName" name="name" type="text" placeholder="Finance, HR, Delivery">
+                <label for="orgUnitName-{{id}}">Name</label>
+                <input id="orgUnitName-{{id}}" name="name" type="text" value="{{name}}">
               </div>
+              {{#unless (eq id "unit-root")}}
+                <div class="field-group">
+                  <label for="orgUnitParent-{{id}}">Parent node</label>
+                  <select id="orgUnitParent-{{id}}" name="parentId">
+                    {{#each parentOptions}}
+                      <option value="{{id}}" {{#if selected}}selected{{/if}}>{{indentedName}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+              {{/unless}}
               <div class="field-group">
-                <label for="orgUnitParent">Parent node</label>
-                <select id="orgUnitParent" name="parentId">
-                  {{#each orgAdmin.orgUnitOptions}}
-                    <option value="{{id}}">{{indentedName}}</option>
-                  {{/each}}
-                </select>
+                <label for="orgUnitAvatar-{{id}}">Node picture</label>
+                <input id="orgUnitAvatar-{{id}}" type="file" accept="image/*" data-image-to-hidden="org-unit-avatar-{{id}}">
+                <input type="hidden" name="avatarDataUrl" value="{{avatarDataUrl}}" data-image-hidden="org-unit-avatar-{{id}}">
               </div>
             </div>
             <div class="field-group">
-              <label for="orgUnitDescription">Description</label>
-              <textarea id="orgUnitDescription" name="description" rows="3" placeholder="Optional privileges or business context."></textarea>
+              <label for="orgUnitDescription-{{id}}">Description</label>
+              <textarea id="orgUnitDescription-{{id}}" name="description" rows="4" placeholder="Optional privileges or business context.">{{description}}</textarea>
+            </div>
+            <div>
+              <p class="form-note">People in this division</p>
+              {{#if people}}
+                <div class="org-chart-people-list">
+                  {{#each people}}
+                    <button class="org-chart-person-row" type="button" data-modal-target="#{{detailModalId}}">
+                      <span>{{initials}}</span>
+                      <strong>{{displayName}}</strong>
+                      <small>{{personTypeLabel}}</small>
+                    </button>
+                  {{/each}}
+                </div>
+              {{else}}
+                <p class="form-note">No credential holders are currently assigned to this division.</p>
+              {{/if}}
             </div>
             <div>
               <p class="form-note">Default roles for this node</p>
               <div class="checkbox-grid">
-                {{#each orgAdmin.roles}}
+                {{#each availableRoles}}
                   <label class="checkline">
-                    <input type="checkbox" name="roleIds" value="{{id}}">
+                    <input type="checkbox" name="roleIds" value="{{id}}" {{#if checked}}checked{{/if}}>
                     <span>{{name}}</span>
                   </label>
                 {{/each}}
@@ -928,20 +1024,34 @@
             <div>
               <p class="form-note">Claims normally requested in this node</p>
               <div class="checkbox-grid">
-                {{#each orgAdmin.claimDefinitions}}
+                {{#each availableClaims}}
                   <label class="checkline">
-                    <input type="checkbox" name="claimKeys" value="{{key}}">
+                    <input type="checkbox" name="claimKeys" value="{{key}}" {{#if checked}}checked{{/if}}>
                     <span>{{label}}</span>
                   </label>
                 {{/each}}
               </div>
             </div>
-            <button class="button button--primary button--blue" type="submit">Add Division</button>
+            <div class="modal-actions">
+              {{#unless (eq id "unit-root")}}
+                <button class="button button--secondary button--dark-text" type="button" data-modal-target="#modal-add-division">Add child division</button>
+              {{/unless}}
+              <button class="button button--primary button--blue" type="submit">Save changes</button>
+              <button class="button button--secondary button--dark-text" type="button" data-modal-close>Close</button>
+            </div>
           </form>
-        </article>
-      {{/if}}
-    </aside>
-  </div>
+
+          {{#unless (eq id "unit-root")}}
+            {{#if canDelete}}
+              <form class="modal-actions" action="{{../dashboardBasePath}}/admin/org-units/{{id}}/delete" method="post" data-confirm-message="Delete this division? Child divisions will move to the parent node.">
+                <button class="button button--ghost" type="submit">Delete node</button>
+              </form>
+            {{/if}}
+          {{/unless}}
+        </section>
+      </div>
+    {{/each}}
+  {{/if}}
 </section>
 {{/if}}
 

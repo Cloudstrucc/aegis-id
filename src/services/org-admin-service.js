@@ -373,7 +373,9 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
   const revokedCount = credentials.filter((credential) => credential.status === 'revoked').length;
   const coAdminCount = credentials.filter((credential) => credential.coAdminStatus === 'approved').length;
   const adminProfile = buildAdminProfile(workspace, subscription, state);
-  const peopleTable = buildPeopleTable(credentials, query, viewer.canSeeAdminProfile ? adminProfile : null);
+  const peopleTable = buildPeopleTable(credentials, query, viewer.canSeeAdminProfile ? adminProfile : null, state);
+  const orgChartNodes = buildOrgChartNodes(state, credentials);
+  const orgChartData = buildOrgChartData(state, orgChartNodes, credentials);
 
   return {
     ...state,
@@ -390,8 +392,10 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
     peopleTable,
     personTypes: PERSON_TYPES,
     orgUnitOptions: buildOrgUnitOptions(state),
-    orgChartNodes: buildOrgChartNodes(state),
+    orgChartNodes,
     orgChartLevels: buildOrgChartLevels(state),
+    orgChartData,
+    orgChartStats: buildOrgChartStats(state, orgChartNodes, credentials),
     claimConsentOptions: state.claimDefinitions.map((claim) => ({
       ...claim,
       checked: Boolean(claim.required)
@@ -784,6 +788,7 @@ async function createOrgUnit(workspace, subscription, input = {}) {
     name,
     parentId,
     description: normalizeText(input.description, 300),
+    avatarDataUrl: normalizeDataUrl(input.avatarDataUrl),
     roleIds: normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId)),
     claimKeys: normalizeClaimSelection(state.claimDefinitions, input.claimKeys, []),
     createdAt: new Date().toISOString(),
@@ -792,6 +797,43 @@ async function createOrgUnit(workspace, subscription, input = {}) {
   state.orgUnits.push(unit);
   await writeState(state);
   await appendWorkspaceEvent(workspace, subscription, 'orgunit.created', {
+    orgUnitId: unit.id,
+    parentId: unit.parentId,
+    name: unit.name,
+    roleIds: unit.roleIds,
+    claimKeys: unit.claimKeys
+  });
+  return unit;
+}
+
+async function updateOrgUnit(workspace, subscription, unitId, input = {}) {
+  await assertOrgPrivilege(workspace, subscription, 'orgchart.manage');
+  const state = await getOrCreateState(workspace);
+  const unit = state.orgUnits.find((candidate) => candidate.id === unitId);
+  if (!unit) {
+    throw notFound('Sub-organization not found.');
+  }
+
+  const name = normalizeText(input.name, 120);
+  if (!name) {
+    throw validationError('Sub-organization name is required.');
+  }
+
+  const parentId = unitId === 'unit-root' ? '' : normalizeOrgUnitId(state, input.parentId);
+  if (parentId === unitId || isDescendantOrgUnit(state, parentId, unitId)) {
+    throw validationError('A division cannot be moved beneath itself or one of its child divisions.');
+  }
+
+  unit.name = name;
+  unit.parentId = parentId;
+  unit.description = normalizeText(input.description, 300);
+  unit.avatarDataUrl = normalizeDataUrl(input.avatarDataUrl);
+  unit.roleIds = normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
+  unit.claimKeys = normalizeClaimSelection(state.claimDefinitions, input.claimKeys, []);
+  unit.updatedAt = new Date().toISOString();
+
+  await writeState(state);
+  await appendWorkspaceEvent(workspace, subscription, 'orgunit.updated', {
     orgUnitId: unit.id,
     parentId: unit.parentId,
     name: unit.name,
@@ -813,15 +855,16 @@ async function deleteOrgUnit(workspace, subscription, unitId) {
     throw notFound('Sub-organization not found.');
   }
 
-  for (const credential of state.credentials) {
-    if (credential.divisionId === unitId) {
-      credential.divisionId = 'unit-root';
-      credential.updatedAt = new Date().toISOString();
-    }
+  const assignedCredentialCount = state.credentials.filter((credential) => credential.divisionId === unitId).length;
+  if (assignedCredentialCount > 0) {
+    throw validationError(
+      'This division has active users. Open the People blade, filter by this division, then revoke those users or edit them to another division before deleting the node.'
+    );
   }
+
   for (const child of state.orgUnits) {
     if (child.parentId === unitId) {
-      child.parentId = 'unit-root';
+      child.parentId = unit.parentId || 'unit-root';
       child.updatedAt = new Date().toISOString();
     }
   }
@@ -1711,6 +1754,7 @@ function normalizeOrgUnits(state) {
   const root = units.find((unit) => unit.id === 'unit-root') || defaultOrgUnits(state.organizationName)[0];
   root.name = root.name || state.organizationName || 'Organization';
   root.parentId = '';
+  root.avatarDataUrl = normalizeDataUrl(root.avatarDataUrl);
   root.roleIds = normalizeArray(root.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
   root.claimKeys = normalizeClaimSelection(state.claimDefinitions, root.claimKeys, state.claimDefinitions.map((claim) => claim.key));
 
@@ -1726,6 +1770,7 @@ function normalizeOrgUnits(state) {
       name: normalizeText(unit.name, 120) || 'Division',
       parentId: units.some((candidate) => candidate.id === unit.parentId) ? unit.parentId : 'unit-root',
       description: normalizeText(unit.description, 300),
+      avatarDataUrl: normalizeDataUrl(unit.avatarDataUrl),
       roleIds: normalizeArray(unit.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId)),
       claimKeys: normalizeClaimSelection(state.claimDefinitions, unit.claimKeys, []),
       createdAt: unit.createdAt || new Date().toISOString(),
@@ -1788,10 +1833,11 @@ function normalizeConsent(credential, state) {
   };
 }
 
-function buildPeopleTable(credentials, query = {}, adminProfile = null) {
+function buildPeopleTable(credentials, query = {}, adminProfile = null, state = null) {
   const search = normalizeText(query.peopleSearch, 120).toLowerCase();
   const status = ['all', 'invited', 'active', 'revoked'].includes(query.peopleStatus) ? query.peopleStatus : 'all';
   const personType = PERSON_TYPES.some((candidate) => candidate.id === query.peopleType) ? query.peopleType : 'all';
+  const division = state?.orgUnits?.some((candidate) => candidate.id === query.peopleDivision) ? query.peopleDivision : 'all';
   const sort = ['displayName', 'holderEmail', 'status', 'divisionName', 'inviteExpiresAt', 'consent'].includes(query.peopleSort)
     ? query.peopleSort
     : 'displayName';
@@ -1801,6 +1847,7 @@ function buildPeopleTable(credentials, query = {}, adminProfile = null) {
   let credentialRows = credentials.filter((credential) => {
     const matchesStatus = status === 'all' || credential.status === status;
     const matchesType = personType === 'all' || credential.personType === personType;
+    const matchesDivision = division === 'all' || credential.divisionId === division;
     const searchable = [
       credential.displayName,
       credential.holderEmail,
@@ -1811,17 +1858,17 @@ function buildPeopleTable(credentials, query = {}, adminProfile = null) {
       .join(' ')
       .toLowerCase();
     const matchesSearch = !search || searchable.includes(search);
-    return matchesStatus && matchesType && matchesSearch;
+    return matchesStatus && matchesType && matchesDivision && matchesSearch;
   });
 
   credentialRows = credentialRows.sort((left, right) => comparePeople(left, right, sort, direction));
-  const adminRow = adminProfile && adminMatchesPeopleFilters(adminProfile, { search, status, personType }) ? adminProfile : null;
+  const adminRow = adminProfile && adminMatchesPeopleFilters(adminProfile, { search, status, personType, division }) ? adminProfile : null;
   const rows = adminRow ? [adminRow, ...credentialRows] : credentialRows;
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const page = Math.min(Math.max(Number.parseInt(query.peoplePage || '1', 10) || 1, 1), pageCount);
   const start = (page - 1) * pageSize;
   const pagedRows = rows.slice(start, start + pageSize);
-  const filters = { peopleSearch: search, peopleStatus: status, peopleType: personType, peopleSort: sort, peopleDir: direction };
+  const filters = { peopleSearch: search, peopleStatus: status, peopleType: personType, peopleDivision: division, peopleSort: sort, peopleDir: direction };
 
   return {
     rows: pagedRows,
@@ -1831,6 +1878,7 @@ function buildPeopleTable(credentials, query = {}, adminProfile = null) {
     search,
     status,
     personType,
+    division,
     sort,
     direction,
     page,
@@ -1861,6 +1909,16 @@ function buildPeopleTable(credentials, query = {}, adminProfile = null) {
         label: candidate.name,
         selected: personType === candidate.id
       }))
+    ],
+    divisionOptions: [
+      { value: 'all', label: 'All divisions', selected: division === 'all' },
+      ...(state
+        ? buildOrgUnitOptions(state, division).map((unit) => ({
+            value: unit.id,
+            label: unit.indentedName,
+            selected: division === unit.id
+          }))
+        : [])
     ]
   };
 }
@@ -1868,6 +1926,7 @@ function buildPeopleTable(credentials, query = {}, adminProfile = null) {
 function adminMatchesPeopleFilters(adminProfile, filters) {
   const matchesStatus = filters.status === 'all' || filters.status === adminProfile.status;
   const matchesType = filters.personType === 'all' || filters.personType === adminProfile.personType;
+  const matchesDivision = filters.division === 'all' || filters.division === adminProfile.divisionId;
   const searchable = [
     adminProfile.displayName,
     adminProfile.holderEmail,
@@ -1878,7 +1937,7 @@ function adminMatchesPeopleFilters(adminProfile, filters) {
     .join(' ')
     .toLowerCase();
   const matchesSearch = !filters.search || searchable.includes(filters.search);
-  return matchesStatus && matchesType && matchesSearch;
+  return matchesStatus && matchesType && matchesDivision && matchesSearch;
 }
 
 function buildAdminProfile(workspace, subscription, state) {
@@ -1910,6 +1969,7 @@ function buildAdminProfile(workspace, subscription, state) {
     holderEmail: email,
     personType: 'administrator',
     personTypeLabel: 'Administrator',
+    divisionId: 'unit-root',
     divisionName: workspace.organization || state.organizationName,
     roleLabels: [normalizeEmail(workspace.ownerEmail) === email ? 'Original Subscriber' : 'Co-admin', 'Organization Admin'],
     status: 'active',
@@ -1988,7 +2048,52 @@ function buildOrgUnitOptions(state, selectedId = '') {
   }));
 }
 
-function buildOrgChartNodes(state) {
+function buildOrgUnitOptionsForUnits(units = [], excludedId = '', selectedId = '') {
+  const childrenByParent = new Map();
+  for (const unit of units) {
+    const parent = unit.parentId || '';
+    if (!childrenByParent.has(parent)) {
+      childrenByParent.set(parent, []);
+    }
+    childrenByParent.get(parent).push(unit);
+  }
+
+  const excluded = new Set();
+  const markExcluded = (unitId) => {
+    if (!unitId || excluded.has(unitId)) {
+      return;
+    }
+    excluded.add(unitId);
+    for (const child of childrenByParent.get(unitId) || []) {
+      markExcluded(child.id);
+    }
+  };
+  markExcluded(excludedId);
+
+  const options = [];
+  const visit = (unit, depth) => {
+    if (!excluded.has(unit.id)) {
+      options.push({
+        id: unit.id,
+        name: unit.name,
+        depth,
+        selected: (selectedId || 'unit-root') === unit.id,
+        indentedName: `${'-- '.repeat(depth)}${unit.name}`
+      });
+      for (const child of (childrenByParent.get(unit.id) || []).sort((left, right) => left.name.localeCompare(right.name))) {
+        visit(child, depth + 1);
+      }
+    }
+  };
+
+  const root = units.find((unit) => unit.id === 'unit-root') || units[0];
+  if (root) {
+    visit(root, 0);
+  }
+  return options;
+}
+
+function buildOrgChartNodes(state, decoratedCredentials = []) {
   const childrenByParent = new Map();
   for (const unit of state.orgUnits) {
     const parent = unit.parentId || '';
@@ -2006,13 +2111,45 @@ function buildOrgChartNodes(state) {
     const claimLabels = normalizeArray(unit.claimKeys)
       .map((key) => state.claimDefinitions.find((claim) => claim.key === key)?.label || key)
       .filter(Boolean);
+    const people = decoratedCredentials
+      .filter((credential) => credential.divisionId === unit.id)
+      .sort((left, right) => left.displayName.localeCompare(right.displayName))
+      .map((credential) => ({
+        id: credential.id,
+        displayName: credential.displayName,
+        holderEmail: credential.holderEmail,
+        personTypeLabel: credential.personTypeLabel,
+        status: credential.status,
+        statusLabel: credential.statusLabel,
+        roleLabels: credential.roleLabels,
+        detailModalId: credential.detailModalId,
+        initials: initialsFromName(credential.displayName || credential.holderEmail)
+      }));
     nodes.push({
       ...unit,
       depth,
       path: [...path, unit.name].join(' / '),
+      initials: initialsFromName(unit.name),
+      avatarDataUrl: normalizeDataUrl(unit.avatarDataUrl),
       roleLabels,
       claimLabels,
-      credentialCount: state.credentials.filter((credential) => credential.divisionId === unit.id).length
+      availableRoles: state.roles.map((role) => ({
+        ...role,
+        checked: normalizeArray(unit.roleIds).includes(role.id)
+      })),
+      availableClaims: state.claimDefinitions.map((claim) => ({
+        ...claim,
+        checked: normalizeArray(unit.claimKeys).includes(claim.key)
+      })),
+      parentOptions: buildOrgUnitOptionsForUnits(state.orgUnits, unit.id, unit.parentId || 'unit-root'),
+      credentialCount: state.credentials.filter((credential) => credential.divisionId === unit.id).length,
+      people,
+      hasPeople: people.length > 0,
+      detailModalId: `org-unit-detail-${unit.id}`,
+      updateModalId: `org-unit-detail-${unit.id}`,
+      canDelete: unit.id !== 'unit-root' && people.length === 0,
+      deleteBlocked: unit.id !== 'unit-root' && people.length > 0,
+      peopleFilterUrl: buildPeopleUrl({ peopleDivision: unit.id }, { peoplePage: 1 })
     });
     for (const child of (childrenByParent.get(unit.id) || []).sort((left, right) => left.name.localeCompare(right.name))) {
       visit(child, depth + 1, [...path, unit.name]);
@@ -2024,6 +2161,51 @@ function buildOrgChartNodes(state) {
     visit(root, 0, []);
   }
   return nodes;
+}
+
+function buildOrgChartData(state, orgChartNodes, credentials) {
+  const divisionNodes = orgChartNodes.map((unit) => ({
+    id: unit.id,
+    parentId: unit.parentId || '',
+    type: 'division',
+    name: unit.name,
+    path: unit.path,
+    description: unit.description || (unit.id === 'unit-root' ? 'Root organization' : ''),
+    initials: unit.initials,
+    avatarDataUrl: unit.avatarDataUrl,
+    credentialCount: unit.credentialCount,
+    roleLabels: unit.roleLabels,
+    claimLabels: unit.claimLabels,
+    modalId: unit.detailModalId,
+    depth: unit.depth
+  }));
+
+  const personNodes = credentials.map((credential) => ({
+    id: `person-${credential.id}`,
+    parentId: normalizeOrgUnitId(state, credential.divisionId),
+    type: 'person',
+    name: credential.displayName,
+    path: credential.holderEmail,
+    description: credential.personTypeLabel,
+    initials: initialsFromName(credential.displayName || credential.holderEmail),
+    status: credential.status,
+    statusLabel: credential.statusLabel,
+    roleLabels: credential.roleLabels,
+    claimLabels: [],
+    modalId: credential.detailModalId,
+    credentialId: credential.id
+  }));
+
+  return [...divisionNodes, ...personNodes];
+}
+
+function buildOrgChartStats(state, orgChartNodes, credentials) {
+  return {
+    divisionCount: Math.max(0, orgChartNodes.length - 1),
+    holderCount: credentials.length,
+    roleCount: state.roles.length,
+    inheritedClaimCount: state.claimDefinitions.length
+  };
 }
 
 function buildOrgChartLevels(state) {
@@ -2038,6 +2220,17 @@ function buildOrgChartLevels(state) {
     depth: index,
     nodes
   }));
+}
+
+function isDescendantOrgUnit(state, candidateId, ancestorId) {
+  let current = state.orgUnits.find((unit) => unit.id === candidateId);
+  while (current) {
+    if (current.parentId === ancestorId) {
+      return true;
+    }
+    current = state.orgUnits.find((unit) => unit.id === current.parentId);
+  }
+  return false;
 }
 
 function normalizeArray(value) {
@@ -2057,6 +2250,25 @@ function normalizeEmail(value = '') {
 
 function normalizeText(value = '', max = 400) {
   return String(value || '').trim().slice(0, max);
+}
+
+function normalizeDataUrl(value = '') {
+  const text = normalizeText(value, 1200000);
+  return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(text) ? text : '';
+}
+
+function initialsFromName(value = '') {
+  const words = normalizeText(value, 120)
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean);
+  if (words.length === 0) {
+    return 'ID';
+  }
+  return words
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
 }
 
 function normalizeClaimKey(value = '') {
@@ -2229,5 +2441,6 @@ module.exports = {
   updateBranding,
   updateClaimDefinition,
   updateCredentialProfile,
+  updateOrgUnit,
   updateRole
 };

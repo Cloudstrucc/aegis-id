@@ -7,6 +7,7 @@ const mediaPipeFaceDetectionBase = '/vendor/mediapipe/face_detection';
 let lastVideoTrigger = null;
 let lastAppModalTrigger = null;
 let faceDetectionLibraryPromise = null;
+let orgChartController = null;
 const idvWizardState = new WeakMap();
 
 const demoActions = {
@@ -32,6 +33,12 @@ const demoActions = {
 };
 
 document.addEventListener('click', async (event) => {
+  const printButton = event.target.closest('[data-print]');
+  if (printButton) {
+    window.print();
+    return;
+  }
+
   const copyButton = event.target.closest('[data-copy-value]');
   if (copyButton) {
     await copyToClipboard(copyButton);
@@ -41,6 +48,12 @@ document.addEventListener('click', async (event) => {
   const bladeLink = event.target.closest('[data-blade-link]');
   if (bladeLink) {
     activateWorkspaceBladeFromLink(bladeLink, event);
+    return;
+  }
+
+  const orgChartAction = event.target.closest('[data-org-chart-action]');
+  if (orgChartAction && orgChartController) {
+    orgChartController.run(orgChartAction.dataset.orgChartAction, orgChartAction);
     return;
   }
 
@@ -198,6 +211,7 @@ restoreDismissibleBanners();
 // The setup/configuration wizards remain available from the portal.
 // initWorkspaceTour();
 initWorkspaceBlade();
+initOrgChart();
 initAdminIdvWizard(document.querySelector('[data-idv-form]'));
 openInviteModalFromHash();
 
@@ -334,11 +348,190 @@ function findBladePanel(shell, key, hash) {
   return null;
 }
 
+function initOrgChart() {
+  const container = document.querySelector('[data-org-chart-container]');
+  const dataSource = document.getElementById('org-chart-data');
+  if (!container || !dataSource) {
+    return;
+  }
+
+  let nodes = [];
+  try {
+    nodes = JSON.parse(dataSource.textContent || '[]');
+  } catch (error) {
+    showOrgChartFallback(container, `Unable to parse org chart data: ${error.message}`);
+    return;
+  }
+
+  if (!Array.isArray(nodes) || nodes.length === 0) {
+    showOrgChartFallback(container, 'No org chart data is available yet.');
+    return;
+  }
+
+  const state = {
+    chart: null,
+    nodes,
+    showPeople: true
+  };
+
+  const render = () => {
+    const visibleNodes = state.showPeople ? state.nodes : state.nodes.filter((node) => node.type !== 'person');
+    if (!window.d3?.OrgChart) {
+      renderOrgChartFallback(container, visibleNodes);
+      return;
+    }
+
+    const chart = state.chart || new window.d3.OrgChart();
+    state.chart = chart;
+    chart
+      .container(container)
+      .data(visibleNodes)
+      .compact(false)
+      .nodeWidth((node) => (node.data.type === 'person' ? 320 : 420))
+      .nodeHeight((node) => (node.data.type === 'person' ? 124 : 220))
+      .childrenMargin(() => (state.showPeople ? 70 : 95))
+      .siblingsMargin(() => (state.showPeople ? 40 : 70))
+      .neighbourMargin(() => 60)
+      .buttonContent(({ node }) => {
+        const childCount = node?.children?.length || node?._children?.length || 0;
+        return childCount ? `<button class="org-chart-expand-button" type="button">+${childCount}</button>` : '';
+      })
+      .nodeContent((node) => renderOrgChartNode(node.data))
+      .onNodeClick((node) => {
+        const modalId = node?.data?.modalId;
+        if (modalId) {
+          openAppModal(`#${cssEscape(modalId)}`, container);
+        }
+      })
+      .render();
+
+    if (state.showPeople) {
+      chart.expandAll();
+    } else {
+      chart.expandAll?.();
+    }
+  };
+
+  container.addEventListener('click', (event) => {
+    const node = event.target.closest('[data-org-chart-modal]');
+    if (!node) {
+      return;
+    }
+    event.preventDefault();
+    openAppModal(`#${cssEscape(node.dataset.orgChartModal)}`, node);
+  });
+
+  orgChartController = {
+    run(action, trigger) {
+      if (action === 'toggle-people') {
+        state.showPeople = !state.showPeople;
+        trigger.textContent = state.showPeople ? 'Hide people' : 'Show people';
+        render();
+        window.setTimeout(() => state.chart?.fit?.(), 120);
+        return;
+      }
+      if (action === 'expand') {
+        state.chart?.expandAll?.();
+        state.chart?.fit?.();
+        return;
+      }
+      if (action === 'fit') {
+        state.chart?.fit?.();
+        return;
+      }
+      if (action === 'zoom-in') {
+        state.chart?.zoomIn?.();
+        return;
+      }
+      if (action === 'zoom-out') {
+        state.chart?.zoomOut?.();
+      }
+    }
+  };
+
+  render();
+  window.setTimeout(() => state.chart?.fit?.(), 250);
+}
+
+function renderOrgChartNode(node) {
+  const roleTags = (node.roleLabels || []).slice(0, 3).map((label) => `<span>${escapeHtml(label)}</span>`).join('');
+  const claimTags = (node.claimLabels || []).slice(0, 3).map((label) => `<span>${escapeHtml(label)}</span>`).join('');
+  const tags = roleTags || claimTags ? `<div class="org-chart-node__tags">${roleTags}${claimTags}</div>` : '';
+  const avatar = node.avatarDataUrl
+    ? `<img class="org-chart-node__avatar-image" src="${escapeAttribute(node.avatarDataUrl)}" alt="">`
+    : `<span>${escapeHtml(node.initials || 'ID')}</span>`;
+
+  if (node.type === 'person') {
+    return `
+      <button class="org-chart-node org-chart-node--person" type="button" data-org-chart-modal="${escapeAttribute(node.modalId || '')}">
+        <div class="org-chart-node__avatar">${avatar}</div>
+        <div class="org-chart-node__body">
+          <strong>${escapeHtml(node.name || 'Credential holder')}</strong>
+          <span>${escapeHtml(node.path || '')}</span>
+          <small>${escapeHtml(node.description || '')} · ${escapeHtml(node.statusLabel || '')}</small>
+          ${tags}
+        </div>
+      </button>
+    `;
+  }
+
+  return `
+    <button class="org-chart-node org-chart-node--division" type="button" data-org-chart-modal="${escapeAttribute(node.modalId || '')}">
+      <div class="org-chart-node__avatar">${avatar}</div>
+      <div class="org-chart-node__body">
+        <strong>${escapeHtml(node.name || 'Division')}</strong>
+        <span>${escapeHtml(node.description || node.path || '')}</span>
+        <small>${Number(node.credentialCount || 0)} ${Number(node.credentialCount || 0) === 1 ? 'user' : 'users'} assigned</small>
+        ${tags}
+      </div>
+    </button>
+  `;
+}
+
+function renderOrgChartFallback(container, nodes) {
+  container.innerHTML = `
+    <div class="org-chart-fallback-list">
+      ${nodes
+        .map(
+          (node) => `
+            <button type="button" data-org-chart-modal="${escapeAttribute(node.modalId || '')}" style="margin-left:${Number(node.depth || 0) * 28}px">
+              <strong>${escapeHtml(node.name || '')}</strong>
+              <span>${escapeHtml(node.path || node.description || '')}</span>
+            </button>
+          `
+        )
+        .join('')}
+    </div>
+  `;
+}
+
+function showOrgChartFallback(container, message) {
+  const fallback = document.querySelector('[data-org-chart-fallback]');
+  if (fallback) {
+    fallback.hidden = false;
+    fallback.querySelector('span').textContent = message;
+  }
+  container.hidden = true;
+}
+
 function cssEscape(value = '') {
   if (window.CSS?.escape) {
     return window.CSS.escape(value);
   }
   return String(value).replace(/["\\]/g, '\\$&');
+}
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeAttribute(value = '') {
+  return escapeHtml(value).replace(/`/g, '&#096;');
 }
 
 function applyRoleTemplate(select) {

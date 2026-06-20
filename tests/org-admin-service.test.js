@@ -47,7 +47,8 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
     requestCoAdmin,
     revokeCredential,
     submitAdminIdentityVerification,
-    updateBranding
+    updateBranding,
+    deleteOrgUnit
   } = require('../src/services/org-admin-service');
 
   const role = await createRole(workspace, subscription, {
@@ -122,7 +123,16 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
   assert.equal(activeCredential.divisionName, 'Finance');
   assert.equal(activeCredential.consentStatusLabel, 'Consent granted');
   assert.equal(adminView.orgChartNodes.some((node) => node.name === 'Finance'), true);
+  assert.equal(adminView.orgChartLevels.some((level) => level.depth === 1 && level.nodes.some((node) => node.name === 'Finance')), true);
+  assert.equal(adminView.orgChartData.some((node) => node.type === 'person' && node.parentId === division.id && node.modalId === activeCredential.detailModalId), true);
+  assert.equal(adminView.orgChartStats.divisionCount, 1);
   assert.equal(adminView.peopleTable.filteredCount, 2);
+  const financePeopleTable = await getOrgAdminView(workspace, subscription, { peopleDivision: division.id });
+  assert.equal(financePeopleTable.peopleTable.filteredCount, 1);
+  await assert.rejects(
+    () => deleteOrgUnit(workspace, subscription, division.id),
+    /This division has active users/
+  );
   assert.equal(adminView.peopleTable.rows[0].isAdminProfile, true);
   assert.equal(adminView.peopleTable.rows[0].holderEmail, 'admin@vanguardcs.ca');
   assert.equal(adminView.peopleTable.rows[0].verification.status, 'verified');

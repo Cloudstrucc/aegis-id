@@ -23,6 +23,7 @@ const {
   updateBranding,
   updateClaimDefinition,
   updateCredentialProfile,
+  updateOrgUnit,
   updateRole
 } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
@@ -132,6 +133,12 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/claims/:claimId/
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/org-units', withOrg(async ({ subscription, workspace, req, res }) => {
   await createOrgUnit(workspace, subscription, req.body);
   await audit('org.unit.created', subscription, workspace, { name: req.body.name });
+  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#org-structure`);
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/org-units/:unitId/update', withOrg(async ({ subscription, workspace, req, res }) => {
+  await updateOrgUnit(workspace, subscription, req.params.unitId, req.body);
+  await audit('org.unit.updated', subscription, workspace, { unitId: req.params.unitId });
   res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#org-structure`);
 }));
 

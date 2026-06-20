@@ -31,8 +31,75 @@ function registerHandlebars() {
     }
   }
   hbs.registerHelper('eq', (left, right) => left === right);
-  hbs.registerHelper('json', (value) => JSON.stringify(value, null, 2));
+  hbs.registerHelper('json', (value) => new hbs.handlebars.SafeString(safeJson(value, 2)));
+  hbs.registerHelper('jsonScript', (value) => new hbs.handlebars.SafeString(safeJson(value)));
   hbs.registerHelper('year', () => new Date().getFullYear());
+}
+
+function safeJson(value, spaces = 0) {
+  return JSON.stringify(value, null, spaces)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+function renderDocumentPage(filePath, options = {}) {
+  return (req, res, next) => {
+    try {
+      const documentPage = buildDocumentPage(filePath, options);
+      res.render('pages/document-page', {
+        title: options.title,
+        description: options.description,
+        bodyClass: options.bodyClass || 'document-page',
+        ...documentPage
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+function buildDocumentPage(filePath, options = {}) {
+  const html = fs.readFileSync(filePath, 'utf8');
+  const style = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)]
+    .map((match) => match[1].trim())
+    .join('\n\n');
+  const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] || '';
+  let content = '';
+
+  if (options.extract === 'main') {
+    content = body.match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1] || body;
+  } else {
+    content = body;
+  }
+
+  content = stripDocumentChrome(content, options);
+
+  return {
+    documentStyle: style,
+    documentHtml: content.trim(),
+    documentScripts: options.scripts || []
+  };
+}
+
+function stripDocumentChrome(content, options = {}) {
+  let output = content
+    .replace(/<script\b[\s\S]*?<\/script>/gi, '')
+    .replace(/<footer\b[\s\S]*?<\/footer>/gi, '');
+
+  if (options.removeTopbar) {
+    output = output.replace(/<header\s+class="topbar"[\s\S]*?<\/header>/i, '');
+    output = output.replace(/<div\s+class="topbar"[\s\S]*?<\/div>\s*/i, '');
+  }
+
+  output = output.replace(/href="get-started-guide\.html#/g, 'href="/docs/tutorial/get-started-guide.html#');
+  output = output.replace(/href="aegis-verified-id-value-story\.html#/g, 'href="/docs/aegis-verified-id-value-story.html#');
+  output = output.replace(/target="_blank"\s+rel="noopener"\s*(?=href="#|href="\/docs)/g, '');
+  output = output.replace(/\s+target="_blank"\s+rel="noopener"(?=>)/g, '');
+
+  return output;
 }
 
 function createApp() {
@@ -107,19 +174,6 @@ function createApp() {
     res.setHeader('Access-Control-Allow-Origin', '*');
     next();
   });
-  app.use(express.static(config.paths.public, { maxAge: config.app.env === 'production' ? '1d' : 0 }));
-  app.use(
-    '/docs/tutorial',
-    express.static(path.join(config.paths.root, 'docs', 'tutorial'), {
-      maxAge: config.app.env === 'production' ? '1d' : 0
-    })
-  );
-  app.use(
-    '/vendor/mediapipe/face_detection',
-    express.static(path.join(config.paths.root, 'node_modules', '@mediapipe', 'face_detection'), {
-      maxAge: config.app.env === 'production' ? '7d' : 0
-    })
-  );
   app.use(
     session({
       name: 'aegis.sid',
@@ -153,6 +207,56 @@ function createApp() {
     next();
   });
   app.use(attachAuthLocals);
+
+  app.get(
+    '/docs/tutorial/get-started-guide.html',
+    renderDocumentPage(path.join(config.paths.root, 'docs', 'tutorial', 'get-started-guide.html'), {
+      title: 'Get Started Guide',
+      description: 'Vanguard Aegis ID onboarding and assurance setup guide.',
+      extract: 'main',
+      removeTopbar: true,
+      scripts: [{ src: '/docs/tutorial/assets/get-started-guide.js' }]
+    })
+  );
+  app.get(
+    '/docs/aegis-verified-id-value-story.html',
+    renderDocumentPage(path.join(config.paths.public, 'docs', 'aegis-verified-id-value-story.html'), {
+      title: 'Product Brief',
+      description: 'Vanguard Aegis ID product brief and value story.',
+      removeTopbar: true
+    })
+  );
+  app.use(express.static(config.paths.public, { maxAge: config.app.env === 'production' ? '1d' : 0 }));
+  app.use(
+    '/docs/tutorial',
+    express.static(path.join(config.paths.root, 'docs', 'tutorial'), {
+      maxAge: config.app.env === 'production' ? '1d' : 0
+    })
+  );
+  app.use(
+    '/vendor/mediapipe/face_detection',
+    express.static(path.join(config.paths.root, 'node_modules', '@mediapipe', 'face_detection'), {
+      maxAge: config.app.env === 'production' ? '7d' : 0
+    })
+  );
+  app.use(
+    '/vendor/d3',
+    express.static(path.join(config.paths.root, 'node_modules', 'd3', 'dist'), {
+      maxAge: config.app.env === 'production' ? '7d' : 0
+    })
+  );
+  app.use(
+    '/vendor/d3-flextree',
+    express.static(path.join(config.paths.root, 'node_modules', 'd3-flextree', 'build'), {
+      maxAge: config.app.env === 'production' ? '7d' : 0
+    })
+  );
+  app.use(
+    '/vendor/d3-org-chart',
+    express.static(path.join(config.paths.root, 'node_modules', 'd3-org-chart', 'build'), {
+      maxAge: config.app.env === 'production' ? '7d' : 0
+    })
+  );
 
   app.use('/', authRoutes);
   app.use('/', accountRoutes);

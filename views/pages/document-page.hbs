@@ -1,0 +1,13 @@
+{{#if documentStyle}}
+  <style>
+    {{{documentStyle}}}
+  </style>
+{{/if}}
+
+<section class="embedded-document">
+  {{{documentHtml}}}
+</section>
+
+{{#each documentScripts}}
+  <script src="{{src}}" defer></script>
+{{/each}}
