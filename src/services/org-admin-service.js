@@ -64,17 +64,288 @@ const DEFAULT_ROLES = [
   {
     id: 'role-employee',
     name: 'Employee',
-    description: 'Standard employee credential holder.'
+    description: 'Standard employee credential holder.',
+    adminRole: false,
+    privilegeIds: ['workspace.view', 'credentials.view.own', 'claims.view.own', 'ledger.view.own']
   },
   {
     id: 'role-contractor',
     name: 'Contractor',
-    description: 'External contributor with portable proof of engagement.'
+    description: 'External contributor with portable proof of engagement.',
+    adminRole: false,
+    privilegeIds: ['workspace.view', 'credentials.view.own', 'claims.view.own', 'ledger.view.own']
   },
   {
     id: 'role-admin-eligible',
     name: 'Admin Eligible',
-    description: 'Credential holder can be nominated for co-administration.'
+    description: 'Credential holder can be nominated for co-administration.',
+    adminRole: false,
+    privilegeIds: [
+      'workspace.view',
+      'credentials.view.own',
+      'claims.view.own',
+      'ledger.view.own',
+      'admin.nomination.eligible'
+    ]
+  }
+];
+
+const PRIVILEGE_GROUPS = [
+  {
+    id: 'workspace',
+    name: 'Workspace',
+    description: 'Baseline access to the selected organization workspace.',
+    privileges: [
+      {
+        id: 'workspace.view',
+        name: 'View workspace',
+        description: 'Open the org workspace, dashboard guidance, and non-sensitive org context.'
+      },
+      {
+        id: 'org.profile.view',
+        name: 'View org profile',
+        description: 'See organization name, branding, divisions, and public wallet profile details.'
+      }
+    ]
+  },
+  {
+    id: 'people',
+    name: 'People and credentials',
+    description: 'Controls who can inspect, invite, update, and revoke credential holders.',
+    privileges: [
+      {
+        id: 'people.view',
+        name: 'View people directory',
+        description: 'See all credential holders and invitation status for the org.'
+      },
+      {
+        id: 'credentials.view.own',
+        name: 'View own credential',
+        description: 'See only the holder credential, roles, claims, and wallet events for this user.'
+      },
+      {
+        id: 'credentials.view.all',
+        name: 'View all credentials',
+        description: 'Open credential profile and transaction details for all holders.'
+      },
+      {
+        id: 'credentials.issue',
+        name: 'Issue credentials',
+        description: 'Invite employees, contractors, or admins and generate wallet QR links.'
+      },
+      {
+        id: 'credentials.update',
+        name: 'Update credentials',
+        description: 'Edit holder profile fields, role assignments, consent request scope, and expiry.'
+      },
+      {
+        id: 'credentials.revoke',
+        name: 'Revoke credentials',
+        description: 'Disable an issued credential and preserve the audit record.'
+      }
+    ]
+  },
+  {
+    id: 'configuration',
+    name: 'Claims and roles',
+    description: 'Defines what credentials contain and what a role is allowed to do.',
+    privileges: [
+      {
+        id: 'roles.view',
+        name: 'View roles',
+        description: 'Read the role catalog and understand what each role permits.'
+      },
+      {
+        id: 'roles.manage',
+        name: 'Manage roles',
+        description: 'Create, edit, revoke, and classify roles as admin or non-admin.'
+      },
+      {
+        id: 'roles.assign',
+        name: 'Assign roles',
+        description: 'Apply one or more roles to a credential holder.'
+      },
+      {
+        id: 'claims.view.own',
+        name: 'View own claims',
+        description: 'See the claims shared with this organization by the holder.'
+      },
+      {
+        id: 'claims.view.all',
+        name: 'View all claims',
+        description: 'Inspect credential claims across the organization.'
+      },
+      {
+        id: 'claims.manage',
+        name: 'Manage claims',
+        description: 'Create, edit, and revoke claim definitions used in credentials.'
+      },
+      {
+        id: 'claims.request',
+        name: 'Request claim consent',
+        description: 'Ask holders to share additional or updated claims by wallet challenge.'
+      }
+    ]
+  },
+  {
+    id: 'organization',
+    name: 'Org structure and branding',
+    description: 'Controls divisions, wallet visual context, and issuer configuration.',
+    privileges: [
+      {
+        id: 'orgchart.view',
+        name: 'View org chart',
+        description: 'See sub-organizations, divisions, inherited roles, and requested claims.'
+      },
+      {
+        id: 'orgchart.manage',
+        name: 'Manage org chart',
+        description: 'Create or remove divisions and assign default roles or claims.'
+      },
+      {
+        id: 'branding.view',
+        name: 'View branding',
+        description: 'Preview the palette and logo shown in the mobile wallet.'
+      },
+      {
+        id: 'branding.manage',
+        name: 'Manage branding',
+        description: 'Update the logo and color palette used in the org wallet context.'
+      }
+    ]
+  },
+  {
+    id: 'integrations',
+    name: 'Integrations and assurance',
+    description: 'Platform setup, issuer invitations, and high-assurance admin operations.',
+    privileges: [
+      {
+        id: 'integrations.view',
+        name: 'View integrations',
+        description: 'See configured Verified ID, YubiKey, OIDC, SAML, Keycloak, and Okta state.'
+      },
+      {
+        id: 'integrations.manage',
+        name: 'Manage integrations',
+        description: 'Open setup wizards, test providers, and create org issuer invitations.'
+      },
+      {
+        id: 'admin.nomination.eligible',
+        name: 'Admin nomination eligible',
+        description: 'Marks a holder as eligible for co-admin promotion after wallet challenges.'
+      },
+      {
+        id: 'admin.assurance.manage',
+        name: 'Manage admin assurance',
+        description: 'Submit or review administrator identity assurance requirements.'
+      }
+    ]
+  },
+  {
+    id: 'ledger',
+    name: 'Ledger and audit',
+    description: 'Evidence for wallet challenges, decisions, promotions, and revocations.',
+    privileges: [
+      {
+        id: 'ledger.view.own',
+        name: 'View own ledger',
+        description: 'See wallet challenge evidence associated with this holder.'
+      },
+      {
+        id: 'ledger.view.org',
+        name: 'View org ledger',
+        description: 'See wallet challenge evidence for the organization.'
+      },
+      {
+        id: 'ledger.export',
+        name: 'Export ledger',
+        description: 'Prepare evidence packages for audit, legal, or management review.'
+      }
+    ]
+  }
+];
+
+const ALL_PRIVILEGE_IDS = PRIVILEGE_GROUPS.flatMap((group) => group.privileges.map((privilege) => privilege.id));
+const HOLDER_BASE_PRIVILEGES = ['workspace.view', 'org.profile.view', 'credentials.view.own', 'claims.view.own', 'ledger.view.own'];
+const ADMIN_BASE_PRIVILEGES = ALL_PRIVILEGE_IDS;
+
+const ROLE_TEMPLATES = [
+  {
+    id: 'employee',
+    name: 'Employee holder',
+    description: 'Baseline holder access to their own credential, claims, and wallet ledger.',
+    adminRole: false,
+    privilegeIds: ['workspace.view', 'org.profile.view', 'credentials.view.own', 'claims.view.own', 'ledger.view.own']
+  },
+  {
+    id: 'manager',
+    name: 'Department manager',
+    description: 'View people, org structure, and org ledger without changing credentials.',
+    adminRole: false,
+    privilegeIds: [
+      'workspace.view',
+      'org.profile.view',
+      'people.view',
+      'credentials.view.own',
+      'credentials.view.all',
+      'claims.view.own',
+      'claims.view.all',
+      'orgchart.view',
+      'ledger.view.own',
+      'ledger.view.org'
+    ]
+  },
+  {
+    id: 'issuer',
+    name: 'Credential issuer',
+    description: 'Invite and update holders, request consent, and view ledger evidence.',
+    adminRole: false,
+    privilegeIds: [
+      'workspace.view',
+      'org.profile.view',
+      'people.view',
+      'credentials.view.own',
+      'credentials.view.all',
+      'credentials.issue',
+      'credentials.update',
+      'roles.view',
+      'roles.assign',
+      'claims.view.own',
+      'claims.view.all',
+      'claims.request',
+      'orgchart.view',
+      'ledger.view.own',
+      'ledger.view.org'
+    ]
+  },
+  {
+    id: 'auditor',
+    name: 'Auditor',
+    description: 'Read-only view of people, configuration, and audit evidence.',
+    adminRole: false,
+    privilegeIds: [
+      'workspace.view',
+      'org.profile.view',
+      'people.view',
+      'credentials.view.own',
+      'credentials.view.all',
+      'roles.view',
+      'claims.view.own',
+      'claims.view.all',
+      'orgchart.view',
+      'branding.view',
+      'integrations.view',
+      'ledger.view.own',
+      'ledger.view.org',
+      'ledger.export'
+    ]
+  },
+  {
+    id: 'admin',
+    name: 'Organization admin',
+    description: 'Full administrator role. Use sparingly and require wallet challenge approval.',
+    adminRole: true,
+    privilegeIds: ADMIN_BASE_PRIVILEGES
   }
 ];
 

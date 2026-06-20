@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vanguard Aegis ID - Organization Blade Menu Page Concepts</title>
+  <style>
+    :root {
+      --navy: #061625;
+      --ink: #0a1626;
+      --muted: #607086;
+      --line: #d8e4f0;
+      --soft: #f2f7fb;
+      --panel: #ffffff;
+      --blue: #2268e8;
+      --cyan: #00a6b8;
+      --green: #15915f;
+      --shadow: 0 20px 48px rgba(7, 22, 38, 0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(0, 166, 184, 0.13), transparent 34rem),
+        linear-gradient(135deg, rgba(34, 104, 232, 0.08), transparent 28rem),
+        #eef5fb;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .shell {
+      width: min(1480px, calc(100% - 48px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 380px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+      gap: 56px;
+      align-items: center;
+      padding: 56px 0 42px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 44px;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .eyebrow {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin: 12px 0 22px;
+      font-size: clamp(48px, 7vw, 92px);
+      line-height: 0.92;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 0;
+      color: #40536b;
+      font-size: clamp(19px, 2.2vw, 28px);
+      line-height: 1.35;
+    }
+
+    .hero-card {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card img {
+      width: 100%;
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .hero-card h2 {
+      margin: 18px 0 8px;
+      font-size: 24px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.74);
+      box-shadow: 0 12px 34px rgba(7, 22, 38, 0.05);
+    }
+
+    .toc a {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: #26384e;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .toc a:hover {
+      color: var(--blue);
+      border-color: rgba(34, 104, 232, 0.34);
+      background: #eef5ff;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 24px;
+      margin: 56px 0 20px;
+    }
+
+    .section-head h2 {
+      margin: 10px 0 8px;
+      font-size: clamp(34px, 4vw, 58px);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    .section-head p {
+      max-width: 840px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    .prototype-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--blue);
+      border-radius: 8px;
+      color: #fff;
+      background: var(--blue);
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      padding-bottom: 60px;
+    }
+
+    .page-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .page-shot {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 16 / 9.4;
+      border-bottom: 1px solid var(--line);
+      background: var(--soft);
+    }
+
+    .page-shot img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: top left;
+      transition: transform 180ms ease;
+    }
+
+    .page-card:hover .page-shot img {
+      transform: scale(1.015);
+    }
+
+    .page-body {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .page-title h3 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      min-height: 28px;
+      align-items: center;
+      padding: 0 10px;
+      border-radius: 999px;
+      color: #096b45;
+      background: #dff9ec;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .page-body p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .feature-list li {
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr);
+      align-items: start;
+      gap: 10px;
+      color: #33445a;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .feature-list span {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .button {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: #25364d;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .button.primary {
+      color: #fff;
+      border-color: var(--blue);
+      background: var(--blue);
+    }
+
+    .footer-note {
+      margin: 0 0 44px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1080px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .page-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 28px, 1480px);
+      }
+
+      .hero {
+        padding-top: 30px;
+        gap: 28px;
+      }
+
+      .brand {
+        margin-bottom: 28px;
+      }
+
+      .section-head {
+        grid-template-columns: 1fr;
+      }
+
+      .page-title {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero" id="top">
+      <div>
+        <div class="brand">
+          <div class="brand-mark">V</div>
+          <span>Vanguard Aegis ID</span>
+        </div>
+        <div class="eyebrow">Organization dashboard review pack</div>
+        <h1>Blade concepts for every workspace menu.</h1>
+        <p class="lead">A reviewable set of HTML menu-page concepts before the production dashboard is changed. Open any page in the blade prototype, compare the screens, then we can tune the flow together.</p>
+      </div>
+
+      <aside class="hero-card">
+        <img src="org-dashboard-blade-concept.png" alt="Organization dashboard blade concept preview">
+        <h2>Azure-style management model</h2>
+        <p>The left blade holds the workspace menu. The main blade renders one focused surface at a time, keeping the dashboard light and each admin workflow clearer.</p>
+      </aside>
+    </section>
+
+    <nav class="toc" aria-label="Menu concept links">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#people">People</a>
+      <a href="#credentials">Credentials</a>
+      <a href="#roles">Roles</a>
+      <a href="#claims">Claims</a>
+      <a href="#orgchart">Org chart</a>
+      <a href="#branding">Branding</a>
+      <a href="#integrations">Integrations</a>
+      <a href="#ledger">Wallet ledger</a>
+      <a href="#verification">Admin verification</a>
+      <a href="#settings">Settings</a>
+    </nav>
+
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Menu pages</div>
+        <h2>Each blade has one job.</h2>
+        <p>The concepts below show the page-level intent, the primary actions, and the visible UI shape for each organization management area.</p>
+      </div>
+      <a class="prototype-link" href="org-dashboard-blade-concept.html#dashboard" target="_blank" rel="noopener">Open interactive prototype</a>
+    </div>
+
+    <section class="page-grid" aria-label="Organization menu page concepts">
+      <article class="page-card" id="dashboard">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#dashboard" target="_blank" rel="noopener">
+          <img src="org-blade-pages/dashboard.png" alt="Dashboard menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Dashboard</h3>
+            <span class="badge">Default blade</span>
+          </div>
+          <p>A light landing surface after selecting an organization. It explains the workspace areas and routes admins into focused blades.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Minimal summary with active holder, pending invite, credential type, and wallet challenge counts.</strong></li>
+            <li><span>2</span><strong>Quick action tiles for People, Credentials, Roles, Claims, Org chart, Integrations, Branding, and Ledger.</strong></li>
+            <li><span>3</span><strong>Dismissible administrator verification reminder with countdown context.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#dashboard" target="_blank" rel="noopener">Open dashboard concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="people">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#people" target="_blank" rel="noopener">
+          <img src="org-blade-pages/people.png" alt="People menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>People</h3>
+            <span class="badge">Directory</span>
+          </div>
+          <p>The operational home for credential holders, invited users, admins, contractors, and revoked identities.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Paginated, searchable, filterable table with status, division, roles, and last wallet event.</strong></li>
+            <li><span>2</span><strong>Row actions for view, edit, re-invite, revoke, promote to co-admin, and send wallet challenge.</strong></li>
+            <li><span>3</span><strong>Clicking a record opens a details modal with claims, roles, QR invite, and transaction history.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#people" target="_blank" rel="noopener">Open people concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="credentials">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#credentials" target="_blank" rel="noopener">
+          <img src="org-blade-pages/credentials.png" alt="Credentials menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Credentials</h3>
+            <span class="badge">Issuance</span>
+          </div>
+          <p>Creates and tracks the invitation used by the Aegis mobile wallet to accept organization credentials.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Invite form with holder email, expiry override, assigned roles, division, and requested claims.</strong></li>
+            <li><span>2</span><strong>Generated handoff modal with QR code, deep link, copy action, and email or SMS send action.</strong></li>
+            <li><span>3</span><strong>Status panel showing waiting, accepted, expired, revoked, or failed invite state.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#credentials" target="_blank" rel="noopener">Open credentials concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="roles">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#roles" target="_blank" rel="noopener">
+          <img src="org-blade-pages/roles.png" alt="Roles menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Roles</h3>
+            <span class="badge">RBAC</span>
+          </div>
+          <p>Defines what a credential holder can do inside the organization and connected applications.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Role cards for Org Admin, Expense Approver, Employee, Contractor, and custom roles.</strong></li>
+            <li><span>2</span><strong>Add or edit role modal with privileges, eligible claims, divisions, and challenge policy.</strong></li>
+            <li><span>3</span><strong>Co-admin role assignment can require dual wallet challenge before it becomes active.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#roles" target="_blank" rel="noopener">Open roles concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="claims">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#claims" target="_blank" rel="noopener">
+          <img src="org-blade-pages/claims.png" alt="Claims menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Claims</h3>
+            <span class="badge">Data model</span>
+          </div>
+          <p>Controls which claims can be issued, requested, shared by consent, or used in app authorization decisions.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Claim table with name, type, required state, consent mode, and connected use cases.</strong></li>
+            <li><span>2</span><strong>Add/edit claim modal for display name, data type, allowed values, source, and privacy behavior.</strong></li>
+            <li><span>3</span><strong>Support for delta claims when a new organization requests information not already shared.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#claims" target="_blank" rel="noopener">Open claims concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="orgchart">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#orgchart" target="_blank" rel="noopener">
+          <img src="org-blade-pages/orgchart.png" alt="Org chart menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Org chart</h3>
+            <span class="badge">Structure</span>
+          </div>
+          <p>A draw.io-style organization surface for divisions, departments, and default policy assignments.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Tree canvas for parent organization, divisions, departments, and sub-organizations.</strong></li>
+            <li><span>2</span><strong>Division form for default roles, requested claims, policy notes, and approver groups.</strong></li>
+            <li><span>3</span><strong>Credential issuance can inherit defaults from the selected organization node.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#orgchart" target="_blank" rel="noopener">Open org chart concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="branding">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#branding" target="_blank" rel="noopener">
+          <img src="org-blade-pages/branding.png" alt="Branding menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Branding</h3>
+            <span class="badge">Wallet context</span>
+          </div>
+          <p>Lets each organization control the look of credentials and challenge context inside the mobile app.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Logo upload, palette presets, custom colors, and live wallet profile preview.</strong></li>
+            <li><span>2</span><strong>Default Vanguard palette plus selectable alternates and a custom palette option.</strong></li>
+            <li><span>3</span><strong>Branding is applied only while a holder is viewing that organization context.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#branding" target="_blank" rel="noopener">Open branding concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="integrations">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#integrations" target="_blank" rel="noopener">
+          <img src="org-blade-pages/integrations.png" alt="Integrations menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Integrations</h3>
+            <span class="badge">Platforms</span>
+          </div>
+          <p>Houses setup wizards for Microsoft Verified ID, YubiKey/FIDO2, Keycloak, Okta, generic OIDC, and SAML.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>One tile per provider with current state, live test, setup wizard, and callback guidance.</strong></li>
+            <li><span>2</span><strong>Verified ID fields for tenant, app registration, authority DID, manifest URL, and credential type.</strong></li>
+            <li><span>3</span><strong>YubiKey/passkey policy controls for sign-in, wallet approvals, signatures, and admin actions.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#integrations" target="_blank" rel="noopener">Open integrations concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="ledger">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#ledger" target="_blank" rel="noopener">
+          <img src="org-blade-pages/ledger.png" alt="Wallet ledger menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Wallet ledger</h3>
+            <span class="badge">Evidence</span>
+          </div>
+          <p>Shows immutable wallet challenge activity for authentication, consent, approvals, promotions, signatures, and revocations.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Filterable event log with actor, resource, assurance level, timestamp, and evidence link.</strong></li>
+            <li><span>2</span><strong>Evidence modal can show payload, challenge ID, credential ID, passkey status, and request source.</strong></li>
+            <li><span>3</span><strong>Export and reporting actions support compliance and customer-facing audit packages.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#ledger" target="_blank" rel="noopener">Open ledger concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="verification">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#verification" target="_blank" rel="noopener">
+          <img src="org-blade-pages/verification.png" alt="Admin verification menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Admin verification</h3>
+            <span class="badge">Assurance</span>
+          </div>
+          <p>A step-by-step identity validation blade for original subscribers and co-admins.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Wizard step one uploads or captures government photo ID.</strong></li>
+            <li><span>2</span><strong>Wizard step two uses live webcam or front-facing camera face readiness checks.</strong></li>
+            <li><span>3</span><strong>Wizard step three reviews analysis and marks the admin profile validated or restarts.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#verification" target="_blank" rel="noopener">Open verification concept</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="page-card" id="settings">
+        <a class="page-shot" href="org-dashboard-blade-concept.html#settings" target="_blank" rel="noopener">
+          <img src="org-blade-pages/settings.png" alt="Settings menu page concept">
+        </a>
+        <div class="page-body">
+          <div class="page-title">
+            <h3>Settings</h3>
+            <span class="badge">Policy</span>
+          </div>
+          <p>Controls organization-level defaults, retention, challenge requirements, and lifecycle operations.</p>
+          <ul class="feature-list">
+            <li><span>1</span><strong>Invitation default expiry, challenge policy, ledger retention, and privacy controls.</strong></li>
+            <li><span>2</span><strong>Disable organization without deleting evidence, or delete after explicit confirmation.</strong></li>
+            <li><span>3</span><strong>Policy cards can open modals for exact edits without overwhelming the page.</strong></li>
+          </ul>
+          <div class="card-actions">
+            <a class="button primary" href="org-dashboard-blade-concept.html#settings" target="_blank" rel="noopener">Open settings concept</a>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <p class="footer-note">Review artifact only. These files are standalone HTML/CSS concepts under docs/design and are not wired into the Express/HBS app yet.</p>
+  </main>
+</body>
+</html>

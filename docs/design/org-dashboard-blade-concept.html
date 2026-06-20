@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vanguard Aegis ID - Organization Blade Dashboard Concept</title>
+  <style>
+    :root {
+      --navy: #061625;
+      --ink: #0a1626;
+      --muted: #64748b;
+      --line: #d9e4ef;
+      --soft: #f4f8fc;
+      --panel: #ffffff;
+      --blue: #2268e8;
+      --cyan: #00a6b8;
+      --green: #15915f;
+      --amber: #b7791f;
+      --danger: #c2413d;
+      --shadow: 0 18px 44px rgba(7, 22, 38, 0.08);
+      --blade-shadow: 8px 0 24px rgba(7, 22, 38, 0.06);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(34, 104, 232, 0.08), transparent 34%),
+        linear-gradient(220deg, rgba(0, 166, 184, 0.10), transparent 38%),
+        #edf4fa;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .topbar {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 0 24px;
+      color: #fff;
+      background: var(--navy);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .brand-copy strong {
+      font-size: 15px;
+    }
+
+    .brand-copy span {
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 12px;
+    }
+
+    .topbar nav {
+      display: flex;
+      gap: 18px;
+      margin-left: auto;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .topbar .avatar {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--navy);
+      background: #fff;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .portal {
+      display: grid;
+      grid-template-columns: 68px 312px minmax(0, 1fr);
+      min-height: calc(100vh - 64px);
+    }
+
+    .rail {
+      padding: 14px 10px;
+      color: rgba(255, 255, 255, 0.68);
+      background: #092033;
+      border-right: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    .rail a {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      font-weight: 900;
+    }
+
+    .rail a:first-child,
+    .rail a:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .menu-blade {
+      position: sticky;
+      top: 0;
+      height: calc(100vh - 64px);
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.94);
+      border-right: 1px solid var(--line);
+      box-shadow: var(--blade-shadow);
+    }
+
+    .blade-head {
+      padding: 22px 22px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .blade-head .crumb {
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .blade-head h1 {
+      margin: 8px 0 8px;
+      font-size: 24px;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .blade-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .org-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+    }
+
+    .org-logo {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 8px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      font-weight: 900;
+    }
+
+    .org-chip strong,
+    .org-chip span {
+      display: block;
+    }
+
+    .org-chip span {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .menu-group {
+      padding: 14px;
+    }
+
+    .menu-label {
+      margin: 14px 10px 8px;
+      color: #7b8ba0;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .menu-item {
+      display: grid;
+      grid-template-columns: 32px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      color: #25354a;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .menu-item span:first-child {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: var(--blue);
+      background: rgba(34, 104, 232, 0.10);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .menu-item small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .menu-item:hover {
+      color: var(--blue);
+      background: #eff5ff;
+    }
+
+    body:has(#dashboard:target) a[href="#dashboard"],
+    body:has(#people:target) a[href="#people"],
+    body:has(#credentials:target) a[href="#credentials"],
+    body:has(#roles:target) a[href="#roles"],
+    body:has(#claims:target) a[href="#claims"],
+    body:has(#orgchart:target) a[href="#orgchart"],
+    body:has(#branding:target) a[href="#branding"],
+    body:has(#integrations:target) a[href="#integrations"],
+    body:has(#ledger:target) a[href="#ledger"],
+    body:has(#verification:target) a[href="#verification"],
+    body:has(#settings:target) a[href="#settings"] {
+      color: var(--blue);
+      background: #e8f0ff;
+    }
+
+    .content-blade {
+      min-width: 0;
+      padding: 24px;
+      overflow: auto;
+    }
+
+    .content-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      display: none;
+      animation: lift 260ms ease both;
+    }
+
+    #dashboard {
+      display: block;
+    }
+
+    body:has(.panel:target) .panel {
+      display: none;
+    }
+
+    body:has(.panel:target) #dashboard {
+      display: none;
+    }
+
+    body:has(#dashboard:target) #dashboard,
+    body:has(#people:target) #people,
+    body:has(#credentials:target) #credentials,
+    body:has(#roles:target) #roles,
+    body:has(#claims:target) #claims,
+    body:has(#orgchart:target) #orgchart,
+    body:has(#branding:target) #branding,
+    body:has(#integrations:target) #integrations,
+    body:has(#ledger:target) #ledger,
+    body:has(#verification:target) #verification,
+    body:has(#settings:target) #settings {
+      display: block;
+    }
+
+    @keyframes lift {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 18px;
+    }
+
+    .panel-head .kicker {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .panel-head h2 {
+      margin: 8px 0 8px;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .panel-head p {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      min-width: 240px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 850;
+      box-shadow: 0 10px 24px rgba(7, 22, 38, 0.06);
+    }
+
+    .button.primary {
+      color: #fff;
+      border-color: var(--blue);
+      background: var(--blue);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .tile {
+      min-height: 148px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .tile:hover {
+      transform: translateY(-2px);
+      border-color: rgba(34, 104, 232, 0.34);
+      box-shadow: 0 22px 48px rgba(7, 22, 38, 0.12);
+    }
+
+    .icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .tile h3,
+    .card h3 {
+      margin: 14px 0 8px;
+      font-size: 19px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .tile p,
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.52;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .notice {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid rgba(183, 121, 31, 0.28);
+      border-radius: 8px;
+      background: #fff8e8;
+    }
+
+    .notice strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .notice p {
+      margin: 0;
+      color: #74521a;
+      font-size: 13px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 13px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      color: #52657c;
+      background: #f8fbfe;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .status.green {
+      color: #096b45;
+      background: #dcfce7;
+    }
+
+    .status.blue {
+      color: #1d4ed8;
+      background: #dbeafe;
+    }
+
+    .status.amber {
+      color: #87520b;
+      background: #fef3c7;
+    }
+
+    .status.red {
+      color: #9f2623;
+      background: #fee2e2;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+      gap: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: #405169;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fff;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    .field textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .swatch {
+      width: 42px;
+      height: 28px;
+      border: 2px solid #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px var(--line);
+      background: linear-gradient(135deg, var(--a), var(--b));
+    }
+
+    .org-tree {
+      min-height: 340px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 28px 28px;
+      background-color: #f8fbff;
+    }
+
+    .node {
+      width: fit-content;
+      min-width: 190px;
+      padding: 12px;
+      border-left: 4px solid var(--blue);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .node + .node {
+      margin-top: 18px;
+      margin-left: 42px;
+    }
+
+    .node strong,
+    .node span {
+      display: block;
+    }
+
+    .node span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .integration-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .integration {
+      min-height: 162px;
+    }
+
+    .integration .logo {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--ink);
+      font-weight: 950;
+    }
+
+    .policy-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .policy {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .policy strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .policy span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 1120px) {
+      .portal {
+        grid-template-columns: 60px 280px minmax(0, 1fr);
+      }
+
+      .grid,
+      .metric-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .integration-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        height: auto;
+        flex-wrap: wrap;
+        padding: 14px;
+      }
+
+      .topbar nav {
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .portal {
+        grid-template-columns: 1fr;
+      }
+
+      .rail {
+        display: none;
+      }
+
+      .menu-blade {
+        position: static;
+        height: auto;
+      }
+
+      .menu-group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .menu-label {
+        grid-column: 1 / -1;
+      }
+
+      .content-blade {
+        padding: 16px;
+      }
+
+      .panel-head {
+        flex-direction: column;
+      }
+
+      .toolbar {
+        justify-content: flex-start;
+      }
+
+      .grid,
+      .grid.two,
+      .metric-row,
+      .integration-grid,
+      .policy-row,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark">V</div>
+    <div class="brand-copy">
+      <strong>Vanguard Aegis ID</strong>
+      <span>Organization workspace concept</span>
+    </div>
+    <nav aria-label="Top navigation">
+      <a href="#dashboard">Portal</a>
+      <a href="#integrations">Integrations</a>
+      <a href="#ledger">Ledger</a>
+    </nav>
+    <div class="avatar" aria-label="Signed-in user">FP</div>
+  </header>
+
+  <main class="portal">
+    <aside class="rail" aria-label="Global navigation">
+      <a href="#dashboard" aria-label="Dashboard">D</a>
+      <a href="#people" aria-label="People">P</a>
+      <a href="#integrations" aria-label="Integrations">I</a>
+      <a href="#ledger" aria-label="Ledger">L</a>
+      <a href="#settings" aria-label="Settings">S</a>
+    </aside>
+
+    <aside class="menu-blade" aria-label="Organization blade menu">
+      <div class="blade-head">
+        <div class="crumb">Organization</div>
+        <h1>Cloudstrucc Inc.</h1>
+        <p>Manage people, credentials, claims, assurance policies, integrations, and wallet challenge evidence for this workspace.</p>
+        <div class="org-chip">
+          <div class="org-logo">C</div>
+          <div>
+            <strong>Workspace active</strong>
+            <span>Administrator access</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="menu-group" aria-label="Workspace menu">
+        <div class="menu-label">Overview</div>
+        <a class="menu-item" href="#dashboard"><span>01</span><strong>Dashboard</strong><small>Home</small></a>
+        <a class="menu-item" href="#people"><span>02</span><strong>People</strong><small>Users</small></a>
+        <a class="menu-item" href="#credentials"><span>03</span><strong>Credentials</strong><small>Issue</small></a>
+
+        <div class="menu-label">Configuration</div>
+        <a class="menu-item" href="#roles"><span>04</span><strong>Roles</strong><small>RBAC</small></a>
+        <a class="menu-item" href="#claims"><span>05</span><strong>Claims</strong><small>Data</small></a>
+        <a class="menu-item" href="#orgchart"><span>06</span><strong>Org chart</strong><small>Units</small></a>
+        <a class="menu-item" href="#branding"><span>07</span><strong>Branding</strong><small>Theme</small></a>
+
+        <div class="menu-label">Assurance</div>
+        <a class="menu-item" href="#integrations"><span>08</span><strong>Integrations</strong><small>IdP</small></a>
+        <a class="menu-item" href="#ledger"><span>09</span><strong>Wallet ledger</strong><small>Audit</small></a>
+        <a class="menu-item" href="#verification"><span>10</span><strong>Admin verification</strong><small>IDV</small></a>
+        <a class="menu-item" href="#settings"><span>11</span><strong>Settings</strong><small>Policy</small></a>
+      </nav>
+    </aside>
+
+    <section class="content-blade">
+      <div class="content-inner">
+        <section class="panel" id="dashboard">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Dashboard</div>
+              <h2>Choose a workspace blade.</h2>
+              <p>This default view stays intentionally light. Use the menu blade or the tiles below to open focused management surfaces for people, credentials, claims, roles, integrations, branding, and audit evidence.</p>
+            </div>
+            <div class="toolbar">
+              <a class="button" href="#verification">Verify admin</a>
+              <a class="button primary" href="#people">Add user</a>
+            </div>
+          </div>
+
+          <div class="notice">
+            <div class="icon">ID</div>
+            <div>
+              <strong>Administrator profile validation due in 23 days</strong>
+              <p>Admins can keep working during the grace period, but higher-trust deployments should validate the original subscriber and co-admins.</p>
+            </div>
+          </div>
+
+          <div class="metric-row">
+            <article class="card metric"><span>Active holders</span><strong>42</strong></article>
+            <article class="card metric"><span>Pending invites</span><strong>7</strong></article>
+            <article class="card metric"><span>Credential types</span><strong>3</strong></article>
+            <article class="card metric"><span>Wallet challenges</span><strong>186</strong></article>
+          </div>
+
+          <div class="grid">
+            <a class="card tile" href="#people">
+              <div>
+                <div class="icon">USR</div>
+                <h3>People</h3>
+                <p>Add employees, contractors, and co-admins. Re-invite, update claims, promote, revoke, or inspect a credential holder.</p>
+              </div>
+            </a>
+            <a class="card tile" href="#credentials">
+              <div>
+                <div class="icon">VID</div>
+                <h3>Credentials</h3>
+                <p>Create issuance invites, show QR codes, copy wallet links, and monitor acceptance status.</p>
+              </div>
+            </a>
+            <a class="card tile" href="#roles">
+              <div>
+                <div class="icon">RLS</div>
+                <h3>Roles</h3>
+                <p>Define admin, employee, contractor, approver, and department-specific roles used during issuance.</p>
+              </div>
+            </a>
+            <a class="card tile" href="#claims">
+              <div>
+                <div class="icon">CLM</div>
+                <h3>Claims</h3>
+                <p>Choose claim definitions, consent requirements, and delta fields requested during wallet challenges.</p>
+              </div>
+            </a>
+            <a class="card tile" href="#orgchart">
+              <div>
+                <div class="icon">ORG</div>
+                <h3>Org chart</h3>
+                <p>Model divisions, departments, reporting nodes, and default claim or role policies per node.</p>
+              </div>
+            </a>
+            <a class="card tile" href="#integrations">
+              <div>
+                <div class="icon">API</div>
+                <h3>Integrations</h3>
+                <p>Connect Microsoft Verified ID, YubiKey/FIDO2, Keycloak, Okta, generic OIDC, and SAML.</p>
+              </div>
+            </a>
+            <a class="card tile" href="#branding">
+              <div>
+                <div class="icon">BRD</div>
+                <h3>Branding</h3>
+                <p>Set logo, palette, and wallet context shown to holders inside the Aegis mobile app.</p>
+              </div>
+            </a>
+            <a class="card tile" href="#ledger">
+              <div>
+                <div class="icon">LOG</div>
+                <h3>Wallet ledger</h3>
+                <p>Review immutable challenge evidence for sign-in, approvals, co-admin changes, and revocations.</p>
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <section class="panel" id="people">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">People</div>
+              <h2>Manage credential holders.</h2>
+              <p>A single pageable directory for invited, active, revoked, and disabled holders. Row clicks open details; row actions handle edit, re-invite, revoke, promote, and challenge.</p>
+            </div>
+            <div class="toolbar">
+              <a class="button" href="#claims">Configure claims</a>
+              <a class="button primary" href="#credentials">Invite user</a>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Division</th>
+                  <th>Roles</th>
+                  <th>Status</th>
+                  <th>Last wallet event</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Frederick Pearson</strong><br><span class="status green">Validated admin</span></td>
+                  <td>fpearson@cloudstrucc.com</td>
+                  <td>Executive</td>
+                  <td>Org Admin, Approver</td>
+                  <td><span class="status green">Active</span></td>
+                  <td>Passkey approval, 4 min ago</td>
+                  <td><a class="button" href="#ledger">View</a></td>
+                </tr>
+                <tr>
+                  <td><strong>Amanda Chen</strong></td>
+                  <td>amanda@cloudstrucc.com</td>
+                  <td>Finance</td>
+                  <td>Employee, Expense Approver</td>
+                  <td><span class="status blue">Invited</span></td>
+                  <td>Credential invite sent</td>
+                  <td><a class="button" href="#credentials">Re-invite</a></td>
+                </tr>
+                <tr>
+                  <td><strong>Ravi Patel</strong></td>
+                  <td>ravi.contractor@example.com</td>
+                  <td>Delivery</td>
+                  <td>Contractor</td>
+                  <td><span class="status amber">Pending consent</span></td>
+                  <td>Claim delta requested</td>
+                  <td><a class="button" href="#claims">Review</a></td>
+                </tr>
+                <tr>
+                  <td><strong>Maya Laurent</strong></td>
+                  <td>maya@cloudstrucc.com</td>
+                  <td>Operations</td>
+                  <td>Employee</td>
+                  <td><span class="status red">Revoked</span></td>
+                  <td>Credential revoked</td>
+                  <td><a class="button" href="#ledger">Audit</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="credentials">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Credentials</div>
+              <h2>Issue and track wallet credentials.</h2>
+              <p>Create invitation links, show QR codes, set expiry, assign roles, and monitor whether the wallet accepted the invite.</p>
+            </div>
+            <div class="toolbar">
+              <a class="button primary" href="#credentials">Create issuance invite</a>
+            </div>
+          </div>
+          <div class="split">
+            <article class="card">
+              <div class="icon">QR</div>
+              <h3>New employee credential invite</h3>
+              <p>Invitation defaults to 7 days. Admins can override expiry, requested claims, assigned roles, and target division before sending.</p>
+              <div class="form-grid">
+                <div class="field"><label>Email</label><input value="new.employee@cloudstrucc.com"></div>
+                <div class="field"><label>Expires</label><select><option>7 days</option><option>24 hours</option><option>30 days</option></select></div>
+                <div class="field"><label>Roles</label><input value="Employee, Expense Approver"></div>
+                <div class="field"><label>Division</label><input value="Finance"></div>
+              </div>
+            </article>
+            <article class="card">
+              <div class="icon">URL</div>
+              <h3>Generated handoff</h3>
+              <p>Modal version would show the real QR code, copyable invite URL, expiry, and delivery actions for email/SMS.</p>
+              <div class="policy-row" style="grid-template-columns: 1fr;">
+                <div class="policy"><strong>Status</strong><span>Waiting for wallet acceptance</span></div>
+                <div class="policy"><strong>Invite ID</strong><span>cred-34082bba-e2d6...</span></div>
+                <div class="policy"><strong>Link</strong><span>aegisid://credential-invite?organization_id=...</span></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="roles">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Roles</div>
+              <h2>Define authorization roles.</h2>
+              <p>Roles can be assigned at issuance and changed through co-admin-approved wallet challenge workflows.</p>
+            </div>
+            <div class="toolbar"><a class="button primary" href="#roles">Add role</a></div>
+          </div>
+          <div class="grid two">
+            <article class="card"><div class="icon">ADM</div><h3>Org Admin</h3><p>Can issue credentials, revoke holders, manage claims, configure platforms, and assign co-admins.</p></article>
+            <article class="card"><div class="icon">APR</div><h3>Expense Approver</h3><p>Can approve high-value business expense records after wallet and passkey challenge.</p></article>
+            <article class="card"><div class="icon">EMP</div><h3>Employee</h3><p>Standard active holder role for internal users and badge-style organization membership.</p></article>
+            <article class="card"><div class="icon">CTR</div><h3>Contractor</h3><p>Scoped access for external users, with expiry and consent-limited claims.</p></article>
+          </div>
+        </section>
+
+        <section class="panel" id="claims">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Claims</div>
+              <h2>Control what credentials can carry.</h2>
+              <p>Claim definitions become reusable fields for issuance, presentation policies, consent prompts, and delta requests.</p>
+            </div>
+            <div class="toolbar"><a class="button primary" href="#claims">Add claim</a></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Claim</th><th>Type</th><th>Required</th><th>Consent</th><th>Used by</th></tr></thead>
+              <tbody>
+                <tr><td>employeeId</td><td>String</td><td>Yes</td><td>Issued by org</td><td>Badge, OIDC, expenses</td></tr>
+                <tr><td>department</td><td>String</td><td>No</td><td>Consent scoped</td><td>Org chart, app claims</td></tr>
+                <tr><td>assuranceLevel</td><td>Enum</td><td>Yes</td><td>Policy generated</td><td>Passkey approvals</td></tr>
+                <tr><td>employmentStatus</td><td>Enum</td><td>Yes</td><td>Revocation-sensitive</td><td>Access decisions</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="orgchart">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Org chart</div>
+              <h2>Map divisions to policy.</h2>
+              <p>Use a draw.io-style surface to model departments and attach default roles, claim requirements, and approver groups.</p>
+            </div>
+            <div class="toolbar"><a class="button primary" href="#orgchart">Add division</a></div>
+          </div>
+          <div class="split">
+            <div class="org-tree">
+              <div class="node"><strong>Cloudstrucc Inc.</strong><span>42 credentials, 8 claims</span></div>
+              <div class="node"><strong>Finance</strong><span>Expense Approver, Employee ID, Department</span></div>
+              <div class="node"><strong>Delivery</strong><span>Contractor, Project Code, Expiry Date</span></div>
+              <div class="node"><strong>Operations</strong><span>Employee, Badge Access, Assurance Level</span></div>
+            </div>
+            <article class="card">
+              <div class="icon">DIV</div>
+              <h3>Add a division</h3>
+              <div class="form-grid" style="grid-template-columns:1fr;">
+                <div class="field"><label>Division name</label><input value="Human Resources"></div>
+                <div class="field"><label>Parent node</label><select><option>Cloudstrucc Inc.</option><option>Operations</option></select></div>
+                <div class="field"><label>Default roles</label><input value="Employee, Admin Eligible"></div>
+                <div class="field"><label>Description</label><textarea>Optional business context and policy notes.</textarea></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="branding">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Branding</div>
+              <h2>Control the wallet context.</h2>
+              <p>Branding persists to the Aegis mobile wallet when holders view credentials and challenges in this organization context.</p>
+            </div>
+            <div class="toolbar"><a class="button primary" href="#branding">Save branding</a></div>
+          </div>
+          <div class="split">
+            <article class="card">
+              <div class="org-chip" style="margin-top:0;">
+                <div class="org-logo">C</div>
+                <div><strong>Cloudstrucc Inc.</strong><span>Aegis ID wallet profile</span></div>
+              </div>
+              <div class="swatches">
+                <span class="swatch" style="--a:#2268e8;--b:#00a6b8;"></span>
+                <span class="swatch" style="--a:#0a1626;--b:#15915f;"></span>
+                <span class="swatch" style="--a:#3157d5;--b:#7c3aed;"></span>
+                <span class="swatch" style="--a:#0f766e;--b:#84cc16;"></span>
+                <span class="swatch" style="--a:#0f172a;--b:#38bdf8;"></span>
+              </div>
+            </article>
+            <article class="card">
+              <div class="form-grid">
+                <div class="field"><label>Primary</label><input value="#2268E8"></div>
+                <div class="field"><label>Accent</label><input value="#00A6B8"></div>
+                <div class="field"><label>Background</label><input value="#F4F8FC"></div>
+                <div class="field"><label>Text</label><input value="#0A1626"></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="integrations">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Integrations</div>
+              <h2>Connect identity and assurance providers.</h2>
+              <p>Each provider opens a focused setup blade with tooltips, live tests, callback URLs, and policy review.</p>
+            </div>
+          </div>
+          <div class="integration-grid">
+            <article class="card integration"><div class="logo" style="background:#2563eb;">MS</div><h3>Microsoft Verified ID</h3><p>Configure tenant, authority DID, manifest URL, credential type, callback API key, issuance, and presentation.</p><p><span class="status green">Connected</span></p></article>
+            <article class="card integration"><div class="logo" style="background:#0f172a;">YK</div><h3>YubiKey / FIDO2</h3><p>Set passkey policy for sign-in, admin actions, wallet approvals, PDF signatures, and expense approvals.</p><p><span class="status blue">Required for approvals</span></p></article>
+            <article class="card integration"><div class="logo" style="background:#ef7c00;">KC</div><h3>Keycloak</h3><p>Map realms, clients, scopes, claims, groups, and roles for OIDC-backed applications.</p><p><span class="status amber">Draft</span></p></article>
+            <article class="card integration"><div class="logo" style="background:#00297a;">OK</div><h3>Okta</h3><p>Connect Okta OIDC, scopes, claims, and app integrations with wallet challenge policies.</p><p><span class="status amber">Not configured</span></p></article>
+            <article class="card integration"><div class="logo" style="background:#15915f;">OID</div><h3>Generic OIDC</h3><p>Register issuer metadata, authorization endpoint, token endpoint, JWKS, and claim mappings.</p><p><span class="status amber">Not configured</span></p></article>
+            <article class="card integration"><div class="logo" style="background:#334155;">SML</div><h3>SAML</h3><p>Upload metadata, map NameID and attributes, then require wallet challenges for sensitive actions.</p><p><span class="status amber">Not configured</span></p></article>
+          </div>
+        </section>
+
+        <section class="panel" id="ledger">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Wallet ledger</div>
+              <h2>Audit every high-value action.</h2>
+              <p>Immutable log entries preserve authentication, consent, invitation, approval, role change, passkey evidence, and revocation events.</p>
+            </div>
+            <div class="toolbar"><a class="button" href="#ledger">Export CSV</a><a class="button primary" href="#ledger">Run report</a></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Event</th><th>Actor</th><th>Resource</th><th>Assurance</th><th>Time</th><th>Evidence</th></tr></thead>
+              <tbody>
+                <tr><td>wallet.challenge.accepted</td><td>fpearson@cloudstrucc.com</td><td>OIDC sign-in</td><td>Passkey + wallet</td><td>09:18</td><td><a class="button" href="#ledger">View</a></td></tr>
+                <tr><td>credential.invited</td><td>fpearson@cloudstrucc.com</td><td>Amanda Chen</td><td>Admin session</td><td>08:52</td><td><a class="button" href="#ledger">View</a></td></tr>
+                <tr><td>role.promote.requested</td><td>fpearson@cloudstrucc.com</td><td>Ravi Patel</td><td>Dual challenge</td><td>Yesterday</td><td><a class="button" href="#ledger">View</a></td></tr>
+                <tr><td>credential.revoked</td><td>fpearson@cloudstrucc.com</td><td>Maya Laurent</td><td>Wallet challenge</td><td>Jun 18</td><td><a class="button" href="#ledger">View</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="verification">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Admin verification</div>
+              <h2>Validate administrator identity.</h2>
+              <p>A wizard-style flow validates government photo ID, live face capture readiness, and profile assurance before admin deadlines expire.</p>
+            </div>
+            <div class="toolbar"><a class="button primary" href="#verification">Start verification</a></div>
+          </div>
+          <div class="policy-row">
+            <article class="policy"><strong>1. Upload ID</strong><span>Capture or upload the government ID image and confirm document type.</span></article>
+            <article class="policy"><strong>2. Live face capture</strong><span>Use webcam or front-facing camera until the face is centered and ready.</span></article>
+            <article class="policy"><strong>3. Analysis</strong><span>Run matching and readiness checks, then mark the admin profile as validated.</span></article>
+          </div>
+        </section>
+
+        <section class="panel" id="settings">
+          <div class="panel-head">
+            <div>
+              <div class="kicker">Settings</div>
+              <h2>Workspace policy.</h2>
+              <p>Manage organization lifecycle, disable/delete controls, data retention, default invite expiry, and challenge requirements.</p>
+            </div>
+            <div class="toolbar"><a class="button primary" href="#settings">Save policy</a></div>
+          </div>
+          <div class="grid two">
+            <article class="card"><div class="icon">TTL</div><h3>Invite defaults</h3><p>Credential invitations expire after 7 days unless overridden during invite creation.</p></article>
+            <article class="card"><div class="icon">MFA</div><h3>Challenge policy</h3><p>Require wallet passkey assurance for approvals, co-admin changes, signatures, and revocations.</p></article>
+            <article class="card"><div class="icon">RET</div><h3>Retention</h3><p>Preserve immutable challenge logs while allowing holder profile updates and credential revocation.</p></article>
+            <article class="card"><div class="icon">ORG</div><h3>Organization lifecycle</h3><p>Disable or delete organization access while retaining audit evidence for legal and compliance review.</p></article>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
