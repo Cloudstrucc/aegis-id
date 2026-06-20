@@ -24,6 +24,8 @@ ADMIN_API_KEY="${ARIES_ADMIN_API_KEY:-}"
 AZURE_LOGIN="${AZURE_LOGIN:-auto}"
 AZURE_LOCATION="${AZURE_LOCATION:-canadacentral}"
 ACAPY_IMAGE="${ACAPY_IMAGE:-ghcr.io/openwallet-foundation/acapy-agent:1.6}"
+ACAPY_CPU="${ACAPY_CPU:-1}"
+ACAPY_MEMORY="${ACAPY_MEMORY:-1.5}"
 RECREATE_CONTAINERS="${RECREATE_CONTAINERS:-0}"
 SKIP_APP_SERVICES="${SKIP_APP_SERVICES:-0}"
 SKIP_CONTAINERS="${SKIP_CONTAINERS:-0}"
@@ -54,7 +56,7 @@ Options:
   --help                     Show this help.
 
 Environment overrides:
-  AZURE_LOCATION, ACAPY_IMAGE, AZURE_LOGIN
+  AZURE_LOCATION, ACAPY_IMAGE, ACAPY_CPU, ACAPY_MEMORY, AZURE_LOGIN
   ARIES_HOLDER_NAME, ARIES_ISSUER_NAME, ARIES_VERIFIER_NAME, ARIES_MEDIATOR_NAME
 EOF
 }
@@ -314,8 +316,8 @@ create_acapy_container() {
     --image "$ACAPY_IMAGE" \
     --location "$AZURE_LOCATION" \
     --os-type Linux \
-    --cpu 1 \
-    --memory 1.5 \
+    --cpu "$ACAPY_CPU" \
+    --memory "$ACAPY_MEMORY" \
     --restart-policy OnFailure \
     --ip-address Public \
     --dns-name-label "$name" \

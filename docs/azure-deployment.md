@@ -79,6 +79,22 @@ az provider register --namespace Microsoft.ContainerInstance --wait
 
 If your account cannot register providers, ask a subscription Owner to run those two commands once.
 
+The ACA-Py lab creates four Azure Container Instances per environment. At the default `ACAPY_CPU=1`, dev plus QA consumes eight ACI standard cores. A fresh prod run can hit the regional quota with `ContainerGroupQuotaReached` if partial prod containers already exist or the subscription has the default 10-core regional limit. For a three-environment pilot, use smaller prod containers or request a quota increase:
+
+```bash
+ACAPY_CPU=0.5 ACAPY_MEMORY=1.0 \
+  bash scripts/provision-azure-lab-env.sh --env prod --tenant vanguardcs --recreate-containers
+```
+
+You can inspect the current ACI core usage by listing containers in each resource group:
+
+```bash
+az container list \
+  --resource-group rg-vanguard-aegis-id \
+  --query "[].{name:name,cpu:containers[0].resources.requests.cpu,state:containers[0].instanceView.currentState.state}" \
+  --output table
+```
+
 Fill these tenant-prefixed values manually before provisioning or deploying:
 
 ```env
