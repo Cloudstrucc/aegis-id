@@ -9,6 +9,7 @@ set -Eeuo pipefail
 # Optional overrides:
 #   --env prod|dev|qa|local
 #   --env-file /absolute/path/to/.env
+#   --tenant alias-or-tenant-id
 #   AZURE_TENANT_ID=... AZURE_SUBSCRIPTION_ID=... AZURE_RESOURCE_GROUP=...
 #   AZURE_WEBAPP_NAME=... APP_PUBLIC_BASE_URL=... AEGIS_ID_BASE_URL=...
 #   AEGIS_ORGANIZATION_ID=... BUSINESS_SESSION_SECRET=... SKIP_NPM_INSTALL=1 AZURE_LOGIN=always
@@ -17,6 +18,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="$ROOT_DIR/examples/business-expenses"
 DEPLOY_ENV="${DEPLOY_ENV:-prod}"
 ENV_FILE="${ENV_FILE:-}"
+TENANT_PROFILE="${TENANT_PROFILE:-}"
 
 die() {
   printf '\nERROR: %s\n' "$*" >&2
@@ -43,6 +45,15 @@ while [[ $# -gt 0 ]]; do
       ENV_FILE="${1#*=}"
       shift
       ;;
+    --tenant|--tenant-profile)
+      [[ $# -ge 2 ]] || die "$1 requires a value"
+      TENANT_PROFILE="$2"
+      shift 2
+      ;;
+    --tenant=*|--tenant-profile=*)
+      TENANT_PROFILE="${1#*=}"
+      shift
+      ;;
     --skip-npm-install)
       SKIP_NPM_INSTALL=1
       shift
@@ -57,6 +68,14 @@ done
 source "$ROOT_DIR/scripts/env-loader.sh"
 ENV_FILE_PATH="$(resolve_env_file "$APP_DIR" "$DEPLOY_ENV" "$ENV_FILE")"
 load_env_file "$ENV_FILE_PATH" || die "Environment file not found: $ENV_FILE_PATH"
+TENANT_KEYS=(
+  AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP AZURE_WEBAPP_NAME WEBSITE_NODE_DEFAULT_VERSION
+  APP_PUBLIC_BASE_URL AEGIS_ID_BASE_URL SESSION_SECRET BUSINESS_SESSION_SECRET
+  AEGIS_OIDC_AUTHORIZATION_ENDPOINT AEGIS_OIDC_TOKEN_ENDPOINT OIDC_CLIENT_ID OIDC_SCOPE
+  VERIFIED_ID_AUTH_ENABLED YUBIKEY_AUTH_ENABLED AEGIS_WALLET_PASSKEY_APPROVALS_REQUIRED
+  AEGIS_ORGANIZATION_ID AEGIS_ISSUER_CONNECTION_ID
+)
+apply_tenant_profile "$TENANT_PROFILE" "${TENANT_KEYS[@]}" || die "Unable to apply tenant profile: $TENANT_PROFILE"
 export APP_ENV="$DEPLOY_ENV"
 
 AZURE_TENANT_ID="${AZURE_TENANT_ID:-24a46daa-7b87-4566-9eea-281326a1b75c}"
@@ -131,6 +150,9 @@ log "Base URL:      $APP_PUBLIC_BASE_URL"
 log "Aegis URL:     $AEGIS_ID_BASE_URL"
 log "Organization:  $AEGIS_ORGANIZATION_ID"
 log "Env file:      $ENV_FILE_PATH"
+if [[ -n "${TENANT_PROFILE:-}" ]]; then
+  log "Tenant profile:$TENANT_PROFILE"
+fi
 
 if [[ "${SKIP_NPM_INSTALL:-0}" != "1" ]]; then
   log "Installing Node dependencies"

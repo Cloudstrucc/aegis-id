@@ -37,6 +37,71 @@ You can also pass `--env-file /absolute/path/to/file` for one-off deploys. Exist
 
 Secrets are intentionally blank in templates. Fill in `SESSION_SECRET`, `AZURE_CLIENT_SECRET`, and `VID_CALLBACK_API_KEY` yourself. If these are blank, the web deploy script preserves the existing Azure setting when possible and generates `SESSION_SECRET` only when one does not already exist.
 
+## Tenant Profiles
+
+The deploy and provision scripts also support tenant-scoped env overlays. This lets the same `.env`, `.env.dev`, and `.env.qa` files carry multiple Azure tenant configurations without replacing the original Vanguard pilot values.
+
+Seed the new tenant profile that uses tenant ID `6b4b0578-e6a2-4693-8f4c-af55cb10de87`:
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+bash scripts/configure-tenant-profile.sh --tenant vanguardcs
+```
+
+The script writes `TENANT_VANGUARDCS_*` values into:
+
+- `.env`, `.env.dev`, `.env.qa`
+- `examples/business-expenses/.env`, `.env.dev`, `.env.qa`
+
+The seeded profile uses the subscription suffix `0e75d1` for globally unique Azure names:
+
+| Env | Aegis ID app | Business app |
+| --- | --- | --- |
+| `prod` | `vanguard-aegis-id-0e75d1` | `vanguard-business-expenses-0e75d1` |
+| `dev` | `vanguard-aegis-id-dev-0e75d1` | `vanguard-business-expenses-dev-0e75d1` |
+| `qa` | `vanguard-aegis-id-qa-0e75d1` | `vanguard-business-expenses-qa-0e75d1` |
+
+Fill these tenant-prefixed values manually before provisioning or deploying:
+
+```env
+TENANT_VANGUARDCS_AZURE_CLIENT_SECRET=
+TENANT_VANGUARDCS_VID_CALLBACK_API_KEY=
+TENANT_VANGUARDCS_SESSION_SECRET=
+```
+
+The ACA-Py admin key can be left blank for first provisioning. The provision script will generate and store it:
+
+```env
+TENANT_VANGUARDCS_ARIES_ADMIN_API_KEY=
+```
+
+After you create an organization workspace in each deployed Aegis ID environment, update the matching Business Expenses env file:
+
+```env
+TENANT_VANGUARDCS_AEGIS_ORGANIZATION_ID=<organization-workspace-id>
+```
+
+You can target the profile by alias or tenant ID:
+
+```bash
+bash scripts/deploy-azure-webapp.sh --env prod --tenant vanguardcs
+bash scripts/deploy-azure-webapp.sh --env prod --tenant 6b4b0578-e6a2-4693-8f4c-af55cb10de87
+```
+
+To add another tenant later, rerun the profile script with a different alias and values:
+
+```bash
+bash scripts/configure-tenant-profile.sh \
+  --tenant contoso \
+  --tenant-id "<tenant-id>" \
+  --subscription-id "<subscription-id>" \
+  --client-id "<verified-id-app-registration-client-id>" \
+  --authority-did "<verified-id-authority-did>" \
+  --manifest-url "<verified-id-manifest-url>" \
+  --credential-type "VerifiedEmployee" \
+  --resource-suffix "<globally-unique-suffix>"
+```
+
 ## CLI Deployment
 
 ```bash
@@ -71,7 +136,7 @@ az webapp browse \
   --name "<globally-unique-app-name>"
 ```
 
-## Provision Dev Or QA From Scratch
+## Provision Dev, QA, Or Prod From Scratch
 
 The deploy scripts refresh existing App Services. Use the provision script once per environment to create the resource group, App Services, ACA-Py Azure Container Instances, and env-file values. Then use the deploy scripts for normal code refreshes.
 
@@ -99,7 +164,20 @@ az account set --subscription 7719c366-5f64-439a-a6c6-65067d5a97e4
 bash scripts/provision-azure-lab-env.sh --env qa
 ```
 
-The provision script generates the shared ACA-Py admin API key automatically when `ARIES_ADMIN_API_KEY` is blank. It stores the key in `.env.dev` or `.env.qa` and uses it for all four lab agents. To supply your own key instead:
+For the additional `vanguardcs` tenant profile:
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+
+az login --tenant 6b4b0578-e6a2-4693-8f4c-af55cb10de87
+az account set --subscription 93471fe7-92b9-43a5-85b3-72b0ee0e75d1
+
+bash scripts/provision-azure-lab-env.sh --env prod --tenant vanguardcs
+bash scripts/provision-azure-lab-env.sh --env dev --tenant vanguardcs
+bash scripts/provision-azure-lab-env.sh --env qa --tenant vanguardcs
+```
+
+The provision script generates the shared ACA-Py admin API key automatically when `ARIES_ADMIN_API_KEY` is blank. It stores the key in the selected env file, or in the tenant-prefixed key when `--tenant` is used, and uses it for all four lab agents. To supply your own key instead:
 
 ```bash
 export ARIES_ADMIN_API_KEY="$(openssl rand -hex 32)"
@@ -123,10 +201,26 @@ After provisioning, deploy code:
 bash scripts/deploy-azure-webapp.sh --env dev
 ```
 
+For a tenant profile, include the same `--tenant` flag:
+
+```bash
+bash scripts/deploy-azure-webapp.sh --env prod --tenant vanguardcs
+bash scripts/deploy-azure-webapp.sh --env dev --tenant vanguardcs
+bash scripts/deploy-azure-webapp.sh --env qa --tenant vanguardcs
+```
+
 Then create an organization workspace in the dev/QA Aegis ID web app, copy the organization ID into the matching `examples/business-expenses/.env.dev` or `.env.qa`, and deploy the standalone example app:
 
 ```bash
 bash scripts/deploy-azure-business-expenses.sh --env dev
+```
+
+For the `vanguardcs` tenant profile, update `TENANT_VANGUARDCS_AEGIS_ORGANIZATION_ID` in the matching Business Expenses env file, then deploy:
+
+```bash
+bash scripts/deploy-azure-business-expenses.sh --env prod --tenant vanguardcs
+bash scripts/deploy-azure-business-expenses.sh --env dev --tenant vanguardcs
+bash scripts/deploy-azure-business-expenses.sh --env qa --tenant vanguardcs
 ```
 
 ### Manual Provisioning Reference

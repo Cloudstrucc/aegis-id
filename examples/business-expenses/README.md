@@ -153,6 +153,30 @@ bash scripts/deploy-azure-business-expenses.sh --env dev
 bash scripts/deploy-azure-business-expenses.sh --env qa
 ```
 
+For a second Azure tenant, seed the tenant profile from the repo root, create the Aegis ID environment first, then set the organization ID in the matching Business Expenses env file:
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+bash scripts/configure-tenant-profile.sh --tenant vanguardcs
+
+bash scripts/provision-azure-lab-env.sh --env prod --tenant vanguardcs
+bash scripts/deploy-azure-webapp.sh --env prod --tenant vanguardcs
+```
+
+After creating the production organization workspace in the new Aegis ID tenant, set:
+
+```env
+TENANT_VANGUARDCS_AEGIS_ORGANIZATION_ID=<organization-workspace-id>
+```
+
+Then deploy the example app:
+
+```bash
+bash scripts/deploy-azure-business-expenses.sh --env prod --tenant vanguardcs
+```
+
+Use the same pattern for `dev` and `qa` after their workspaces exist.
+
 ## Payload Shape
 
 Each expense decision challenge stores a payload similar to:

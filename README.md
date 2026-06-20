@@ -586,6 +586,18 @@ The deploy scripts now load environment files directly:
 
 Fill in secrets such as `SESSION_SECRET`, `AZURE_CLIENT_SECRET`, and `VID_CALLBACK_API_KEY` yourself. Blank secret values are not pushed over existing Azure App Service settings by the deploy script.
 
+To deploy the same codebase into another Azure tenant, seed a tenant profile and pass it to the provision/deploy scripts:
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+bash scripts/configure-tenant-profile.sh --tenant vanguardcs
+
+bash scripts/provision-azure-lab-env.sh --env prod --tenant vanguardcs
+bash scripts/deploy-azure-webapp.sh --env prod --tenant vanguardcs
+```
+
+The `--tenant` value can be the profile alias or the Azure tenant ID. The seeded `vanguardcs` profile targets tenant `6b4b0578-e6a2-4693-8f4c-af55cb10de87` and subscription `93471fe7-92b9-43a5-85b3-72b0ee0e75d1`. Fill the tenant-prefixed secrets in `.env`, `.env.dev`, `.env.qa`, and the matching Business Expenses env files before deployment.
+
 Production refresh deploy:
 
 ```bash
@@ -618,6 +630,15 @@ bash scripts/deploy-azure-webapp.sh --env dev
 bash scripts/deploy-azure-webapp.sh --env qa
 bash scripts/deploy-azure-business-expenses.sh --env dev
 bash scripts/deploy-azure-business-expenses.sh --env qa
+```
+
+Future tenant-profile refresh deploys:
+
+```bash
+bash scripts/deploy-azure-webapp.sh --env dev --tenant vanguardcs
+bash scripts/deploy-azure-webapp.sh --env qa --tenant vanguardcs
+bash scripts/deploy-azure-business-expenses.sh --env dev --tenant vanguardcs
+bash scripts/deploy-azure-business-expenses.sh --env qa --tenant vanguardcs
 ```
 
 More detail: [docs/azure-deployment.md](docs/azure-deployment.md)

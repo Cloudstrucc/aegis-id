@@ -11,6 +11,7 @@ set -Eeuo pipefail
 # Usage:
 #   bash scripts/provision-azure-lab-env.sh --env dev
 #   bash scripts/provision-azure-lab-env.sh --env qa
+#   bash scripts/provision-azure-lab-env.sh --env prod
 #
 # Recreate ACA-Py containers if you lost the admin key or need a clean wallet:
 #   bash scripts/provision-azure-lab-env.sh --env dev --recreate-containers
@@ -18,6 +19,7 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEPLOY_ENV="${DEPLOY_ENV:-dev}"
 ENV_FILE="${ENV_FILE:-}"
+TENANT_PROFILE="${TENANT_PROFILE:-}"
 ADMIN_API_KEY="${ARIES_ADMIN_API_KEY:-}"
 AZURE_LOGIN="${AZURE_LOGIN:-auto}"
 AZURE_LOCATION="${AZURE_LOCATION:-canadacentral}"
@@ -38,10 +40,12 @@ Provision Vanguard Aegis ID dev/QA Azure lab resources.
 Usage:
   bash scripts/provision-azure-lab-env.sh --env dev
   bash scripts/provision-azure-lab-env.sh --env qa
+  bash scripts/provision-azure-lab-env.sh --env prod
 
 Options:
-  --env dev|qa               Target environment. Defaults to dev.
+  --env dev|qa|prod          Target environment. Defaults to dev.
   --env-file PATH            Override the root Aegis ID env file.
+  --tenant VALUE             Tenant profile alias or Azure tenant ID from TENANT_<ALIAS>_AZURE_TENANT_ID.
   --admin-api-key KEY        Use this ACA-Py admin API key instead of generating one.
   --recreate-containers      Delete and recreate ACA-Py containers.
   --skip-app-services        Do not create/update App Services.
@@ -73,6 +77,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     --env-file=*)
       ENV_FILE="${1#*=}"
+      shift
+      ;;
+    --tenant|--tenant-profile)
+      [[ $# -ge 2 ]] || die "$1 requires a value"
+      TENANT_PROFILE="$2"
+      shift 2
+      ;;
+    --tenant=*|--tenant-profile=*)
+      TENANT_PROFILE="${1#*=}"
       shift
       ;;
     --admin-api-key)
@@ -122,8 +135,11 @@ case "$DEPLOY_ENV" in
   qa|test)
     DEPLOY_ENV="qa"
     ;;
+  prod|production)
+    DEPLOY_ENV="prod"
+    ;;
   *)
-    die "This script is only for dev or QA. Use --env dev or --env qa."
+    die "Use --env dev, --env qa, or --env prod."
     ;;
 esac
 
@@ -137,6 +153,25 @@ BUSINESS_ENV_FILE_PATH="$(resolve_env_file "$ROOT_DIR/examples/business-expenses
 [[ -f "$BUSINESS_ENV_FILE_PATH" ]] || die "Business Expenses environment file not found: $BUSINESS_ENV_FILE_PATH"
 
 load_env_file "$ENV_FILE_PATH" || die "Unable to load environment file: $ENV_FILE_PATH"
+TENANT_KEYS=(
+  AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP AZURE_WEBAPP_NAME AZURE_LOCATION
+  APP_PUBLIC_BASE_URL PUBLIC_BASE_URL BUSINESS_EXPENSES_APP_URL WEBSITE_NODE_DEFAULT_VERSION
+  IOS_TESTFLIGHT_PUBLIC_URL ANDROID_TESTING_URL
+  USER_STORE_PATH SUBSCRIPTION_STORE_PATH SUBSCRIBER_WORKSPACE_STORE_PATH TRANSACTION_STORE_PATH
+  ISSUER_ORG_STORE_PATH ORG_ADMIN_STORE_PATH ORG_ADMIN_EVENT_STORE_PATH OIDC_WALLET_SESSION_STORE_PATH
+  OIDC_CODE_STORE_PATH WALLET_CHALLENGE_STORE_PATH WALLET_PASSKEY_STORE_PATH AUDIT_STORE_PATH
+  SESSION_SECRET DEFAULT_MFA_METHOD PASSKEY_RP_NAME PASSKEY_RP_ID PASSKEY_ORIGIN
+  IOS_APP_TEAM_ID IOS_APP_BUNDLE_ID ANDROID_APP_PACKAGE_NAME ANDROID_SHA256_CERT_FINGERPRINTS
+  VID_MODE VID_CLIENT_NAME AZURE_CLIENT_ID AZURE_CLIENT_SECRET VID_AUTHORITY_DID
+  VID_MANIFEST_URL VID_CREDENTIAL_TYPE VID_CALLBACK_API_KEY
+  ARIES_HOLDER_NAME ARIES_ISSUER_NAME ARIES_VERIFIER_NAME ARIES_MEDIATOR_NAME
+  ARIES_HOLDER_ADMIN_URL ARIES_ISSUER_ADMIN_URL ARIES_VERIFIER_ADMIN_URL ARIES_MEDIATOR_ADMIN_URL
+  ARIES_ADMIN_API_KEY ARIES_HOLDER_ADMIN_API_KEY ARIES_ISSUER_ADMIN_API_KEY ARIES_VERIFIER_ADMIN_API_KEY
+  ARIES_MEDIATOR_ADMIN_API_KEY OIDC_WALLET_DEMO_MODE OIDC_WALLET_ISSUER OIDC_WALLET_PUBLIC_BASE_URL
+  OIDC_WALLET_AUTHORIZATION_ENDPOINT OIDC_WALLET_CLIENT_ID OIDC_WALLET_SCOPE OIDC_WALLET_SESSION_TTL_SECONDS
+  ACAPY_IMAGE
+)
+apply_tenant_profile "$TENANT_PROFILE" "${TENANT_KEYS[@]}" || die "Unable to apply tenant profile: $TENANT_PROFILE"
 
 log() {
   printf '\n[%s] %s\n' "$(date '+%H:%M:%S')" "$*"
@@ -202,6 +237,30 @@ set_env_value() {
   ' "$file" > "$tmp_file"
 
   mv "$tmp_file" "$file"
+}
+
+active_env_key() {
+  local key="$1"
+  if [[ -n "${TENANT_PROFILE:-}" ]]; then
+    printf 'TENANT_%s_%s\n' "$TENANT_PROFILE" "$key"
+  else
+    printf '%s\n' "$key"
+  fi
+}
+
+read_active_env_value() {
+  local file="$1"
+  local key="$2"
+
+  read_env_value "$file" "$(active_env_key "$key")"
+}
+
+set_active_env_value() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+
+  set_env_value "$file" "$(active_env_key "$key")" "$value"
 }
 
 random_hex() {
@@ -275,23 +334,41 @@ require_cmd openssl
 
 AZURE_TENANT_ID="${AZURE_TENANT_ID:-24a46daa-7b87-4566-9eea-281326a1b75c}"
 AZURE_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-7719c366-5f64-439a-a6c6-65067d5a97e4}"
-AZURE_RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-rg-vanguard-aegis-id-${DEPLOY_ENV}}"
-AZURE_WEBAPP_NAME="${AZURE_WEBAPP_NAME:-vanguard-aegis-id-${DEPLOY_ENV}-65067d}"
+if [[ "$DEPLOY_ENV" == "prod" ]]; then
+  default_resource_group="rg-vanguard-aegis-id"
+  default_aegis_webapp="vanguard-aegis-id-65067d"
+  default_business_webapp="vanguard-business-expenses-65067d"
+  default_aries_holder="vanguard-aegis-holder-65067d"
+  default_aries_issuer="vanguard-aegis-issuer-65067d"
+  default_aries_verifier="vanguard-aegis-verifier-65067d"
+  default_aries_mediator="vanguard-aegis-mediator-65067d"
+else
+  default_resource_group="rg-vanguard-aegis-id-${DEPLOY_ENV}"
+  default_aegis_webapp="vanguard-aegis-id-${DEPLOY_ENV}-65067d"
+  default_business_webapp="vanguard-business-expenses-${DEPLOY_ENV}-65067d"
+  default_aries_holder="vanguard-aegis-holder-${DEPLOY_ENV}-65067d"
+  default_aries_issuer="vanguard-aegis-issuer-${DEPLOY_ENV}-65067d"
+  default_aries_verifier="vanguard-aegis-verifier-${DEPLOY_ENV}-65067d"
+  default_aries_mediator="vanguard-aegis-mediator-${DEPLOY_ENV}-65067d"
+fi
+
+AZURE_RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-$default_resource_group}"
+AZURE_WEBAPP_NAME="${AZURE_WEBAPP_NAME:-$default_aegis_webapp}"
 APP_PUBLIC_BASE_URL="${APP_PUBLIC_BASE_URL:-https://${AZURE_WEBAPP_NAME}.azurewebsites.net}"
 
-BUSINESS_RESOURCE_GROUP="$(read_env_value "$BUSINESS_ENV_FILE_PATH" AZURE_RESOURCE_GROUP)"
-BUSINESS_WEBAPP_NAME="$(read_env_value "$BUSINESS_ENV_FILE_PATH" AZURE_WEBAPP_NAME)"
+BUSINESS_RESOURCE_GROUP="$(read_active_env_value "$BUSINESS_ENV_FILE_PATH" AZURE_RESOURCE_GROUP)"
+BUSINESS_WEBAPP_NAME="$(read_active_env_value "$BUSINESS_ENV_FILE_PATH" AZURE_WEBAPP_NAME)"
 BUSINESS_RESOURCE_GROUP="${BUSINESS_RESOURCE_GROUP:-$AZURE_RESOURCE_GROUP}"
-BUSINESS_WEBAPP_NAME="${BUSINESS_WEBAPP_NAME:-vanguard-business-expenses-${DEPLOY_ENV}-65067d}"
+BUSINESS_WEBAPP_NAME="${BUSINESS_WEBAPP_NAME:-$default_business_webapp}"
 BUSINESS_PUBLIC_BASE_URL="https://${BUSINESS_WEBAPP_NAME}.azurewebsites.net"
 
-ARIES_HOLDER_NAME="${ARIES_HOLDER_NAME:-vanguard-aegis-holder-${DEPLOY_ENV}-65067d}"
-ARIES_ISSUER_NAME="${ARIES_ISSUER_NAME:-vanguard-aegis-issuer-${DEPLOY_ENV}-65067d}"
-ARIES_VERIFIER_NAME="${ARIES_VERIFIER_NAME:-vanguard-aegis-verifier-${DEPLOY_ENV}-65067d}"
-ARIES_MEDIATOR_NAME="${ARIES_MEDIATOR_NAME:-vanguard-aegis-mediator-${DEPLOY_ENV}-65067d}"
+ARIES_HOLDER_NAME="${ARIES_HOLDER_NAME:-$default_aries_holder}"
+ARIES_ISSUER_NAME="${ARIES_ISSUER_NAME:-$default_aries_issuer}"
+ARIES_VERIFIER_NAME="${ARIES_VERIFIER_NAME:-$default_aries_verifier}"
+ARIES_MEDIATOR_NAME="${ARIES_MEDIATOR_NAME:-$default_aries_mediator}"
 
 if [[ -z "$ADMIN_API_KEY" ]]; then
-  ADMIN_API_KEY="$(read_env_value "$ENV_FILE_PATH" ARIES_ADMIN_API_KEY)"
+  ADMIN_API_KEY="$(read_active_env_value "$ENV_FILE_PATH" ARIES_ADMIN_API_KEY)"
 fi
 
 if [[ -z "$ADMIN_API_KEY" ]]; then
@@ -392,27 +469,32 @@ else
 fi
 
 log "Saving environment values"
-set_env_value "$ENV_FILE_PATH" "AZURE_RESOURCE_GROUP" "$AZURE_RESOURCE_GROUP"
-set_env_value "$ENV_FILE_PATH" "AZURE_WEBAPP_NAME" "$AZURE_WEBAPP_NAME"
-set_env_value "$ENV_FILE_PATH" "PUBLIC_BASE_URL" "$APP_PUBLIC_BASE_URL"
-set_env_value "$ENV_FILE_PATH" "APP_PUBLIC_BASE_URL" "$APP_PUBLIC_BASE_URL"
-set_env_value "$ENV_FILE_PATH" "BUSINESS_EXPENSES_APP_URL" "$BUSINESS_PUBLIC_BASE_URL"
-set_env_value "$ENV_FILE_PATH" "ARIES_ADMIN_API_KEY" "$ADMIN_API_KEY"
-set_env_value "$ENV_FILE_PATH" "ARIES_HOLDER_ADMIN_URL" "http://${ARIES_HOLDER_NAME}.${AZURE_LOCATION}.azurecontainer.io:6011"
-set_env_value "$ENV_FILE_PATH" "ARIES_ISSUER_ADMIN_URL" "http://${ARIES_ISSUER_NAME}.${AZURE_LOCATION}.azurecontainer.io:4011"
-set_env_value "$ENV_FILE_PATH" "ARIES_VERIFIER_ADMIN_URL" "http://${ARIES_VERIFIER_NAME}.${AZURE_LOCATION}.azurecontainer.io:5011"
-set_env_value "$ENV_FILE_PATH" "ARIES_MEDIATOR_ADMIN_URL" "http://${ARIES_MEDIATOR_NAME}.${AZURE_LOCATION}.azurecontainer.io:3011"
+set_active_env_value "$ENV_FILE_PATH" "AZURE_RESOURCE_GROUP" "$AZURE_RESOURCE_GROUP"
+set_active_env_value "$ENV_FILE_PATH" "AZURE_WEBAPP_NAME" "$AZURE_WEBAPP_NAME"
+set_active_env_value "$ENV_FILE_PATH" "PUBLIC_BASE_URL" "$APP_PUBLIC_BASE_URL"
+set_active_env_value "$ENV_FILE_PATH" "APP_PUBLIC_BASE_URL" "$APP_PUBLIC_BASE_URL"
+set_active_env_value "$ENV_FILE_PATH" "BUSINESS_EXPENSES_APP_URL" "$BUSINESS_PUBLIC_BASE_URL"
+set_active_env_value "$ENV_FILE_PATH" "ARIES_ADMIN_API_KEY" "$ADMIN_API_KEY"
+set_active_env_value "$ENV_FILE_PATH" "ARIES_HOLDER_ADMIN_URL" "http://${ARIES_HOLDER_NAME}.${AZURE_LOCATION}.azurecontainer.io:6011"
+set_active_env_value "$ENV_FILE_PATH" "ARIES_ISSUER_ADMIN_URL" "http://${ARIES_ISSUER_NAME}.${AZURE_LOCATION}.azurecontainer.io:4011"
+set_active_env_value "$ENV_FILE_PATH" "ARIES_VERIFIER_ADMIN_URL" "http://${ARIES_VERIFIER_NAME}.${AZURE_LOCATION}.azurecontainer.io:5011"
+set_active_env_value "$ENV_FILE_PATH" "ARIES_MEDIATOR_ADMIN_URL" "http://${ARIES_MEDIATOR_NAME}.${AZURE_LOCATION}.azurecontainer.io:3011"
 
-set_env_value "$BUSINESS_ENV_FILE_PATH" "AZURE_RESOURCE_GROUP" "$BUSINESS_RESOURCE_GROUP"
-set_env_value "$BUSINESS_ENV_FILE_PATH" "AZURE_WEBAPP_NAME" "$BUSINESS_WEBAPP_NAME"
-set_env_value "$BUSINESS_ENV_FILE_PATH" "APP_PUBLIC_BASE_URL" "$BUSINESS_PUBLIC_BASE_URL"
-set_env_value "$BUSINESS_ENV_FILE_PATH" "AEGIS_ID_BASE_URL" "$APP_PUBLIC_BASE_URL"
+set_active_env_value "$BUSINESS_ENV_FILE_PATH" "AZURE_RESOURCE_GROUP" "$BUSINESS_RESOURCE_GROUP"
+set_active_env_value "$BUSINESS_ENV_FILE_PATH" "AZURE_WEBAPP_NAME" "$BUSINESS_WEBAPP_NAME"
+set_active_env_value "$BUSINESS_ENV_FILE_PATH" "APP_PUBLIC_BASE_URL" "$BUSINESS_PUBLIC_BASE_URL"
+set_active_env_value "$BUSINESS_ENV_FILE_PATH" "AEGIS_ID_BASE_URL" "$APP_PUBLIC_BASE_URL"
 
 if [[ "$SKIP_CONTAINERS" != "1" ]]; then
   log "Validating Azure lab resources"
-  bash "$ROOT_DIR/scripts/prepare-azure-lab-env.sh" \
+  prepare_args=(
     --env "$DEPLOY_ENV" \
     --admin-api-key "$ADMIN_API_KEY"
+  )
+  if [[ -n "${TENANT_PROFILE:-}" ]]; then
+    prepare_args+=(--tenant "$TENANT_PROFILE")
+  fi
+  bash "$ROOT_DIR/scripts/prepare-azure-lab-env.sh" "${prepare_args[@]}"
 else
   log "Skipping prepare validation because containers were skipped"
 fi
@@ -426,14 +508,14 @@ Env files updated:
   $BUSINESS_ENV_FILE_PATH
 
 Next:
-  bash scripts/deploy-azure-webapp.sh --env $DEPLOY_ENV
+  bash scripts/deploy-azure-webapp.sh --env $DEPLOY_ENV${TENANT_PROFILE:+ --tenant $TENANT_PROFILE}
 
-Then create an organization in the $DEPLOY_ENV Aegis ID web app, set AEGIS_ORGANIZATION_ID in:
+Then create an organization in the $DEPLOY_ENV Aegis ID web app, set $(active_env_key AEGIS_ORGANIZATION_ID) in:
   $BUSINESS_ENV_FILE_PATH
 
 Then:
-  bash scripts/deploy-azure-business-expenses.sh --env $DEPLOY_ENV
+  bash scripts/deploy-azure-business-expenses.sh --env $DEPLOY_ENV${TENANT_PROFILE:+ --tenant $TENANT_PROFILE}
 
 If you lose the ACA-Py admin key, recreate the lab containers:
-  bash scripts/provision-azure-lab-env.sh --env $DEPLOY_ENV --recreate-containers
+  bash scripts/provision-azure-lab-env.sh --env $DEPLOY_ENV${TENANT_PROFILE:+ --tenant $TENANT_PROFILE} --recreate-containers
 EOF
