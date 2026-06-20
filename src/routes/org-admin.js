@@ -15,6 +15,8 @@ const {
   issueCredential,
   markCredentialAccepted,
   reissueCredentialInvitation,
+  resetAllProfileValidations,
+  resetCredentialProfileValidation,
   requestCredentialConsent,
   requestCoAdmin,
   revokeCoAdmin,
@@ -24,6 +26,7 @@ const {
   updateClaimDefinition,
   updateCredentialProfile,
   updateOrgUnit,
+  updateWorkspacePolicy,
   updateRole
 } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
@@ -52,6 +55,12 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:cre
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:credentialId/update', withOrg(async ({ subscription, workspace, req, res }) => {
   await updateCredentialProfile(workspace, subscription, req.params.credentialId, req.body);
   await audit('org.credential.updated', subscription, workspace, { credentialId: req.params.credentialId });
+  res.redirect(303, orgAdminPath(subscription.id, workspace.id, req.params.credentialId));
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:credentialId/reset-validation', withOrg(async ({ subscription, workspace, req, res }) => {
+  await resetCredentialProfileValidation(workspace, subscription, req.params.credentialId);
+  await audit('org.credential.validation.reset', subscription, workspace, { credentialId: req.params.credentialId });
   res.redirect(303, orgAdminPath(subscription.id, workspace.id, req.params.credentialId));
 }));
 
@@ -161,6 +170,18 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/identity-verific
     provider: verification.provider
   });
   res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#credential-admin`);
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/policy', withOrg(async ({ subscription, workspace, req, res }) => {
+  await updateWorkspacePolicy(workspace, subscription, req.body);
+  await audit('org.policy.updated', subscription, workspace, { policyScope: req.body.policyScope });
+  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#workspace-settings`);
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/profile-validations/reset-all', withOrg(async ({ subscription, workspace, req, res }) => {
+  await resetAllProfileValidations(workspace, subscription);
+  await audit('org.profile-validations.reset-all', subscription, workspace);
+  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#workspace-settings`);
 }));
 
 function withOrg(handler) {

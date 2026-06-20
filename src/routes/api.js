@@ -30,6 +30,7 @@ const { writeAuditEvent } = require('../services/audit-service');
 const {
   acceptExternalWalletChallenge,
   createExternalWalletChallenge,
+  declineExternalWalletChallenge,
   getWalletChallenge,
   listWalletChallengeLedger
 } = require('../services/wallet-challenge-service');
@@ -414,6 +415,35 @@ router.post('/wallet-challenges/:challengeId/accept', async (req, res, next) => 
       resourceType: challenge.resourceType,
       resourceId: challenge.resourceId,
       subject: challenge.subject,
+      source: req.body.source || 'wallet-api'
+    });
+    res.json({
+      ok: true,
+      status: challenge.status,
+      challenge
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet-challenges/:challengeId/decline', async (req, res, next) => {
+  try {
+    const challenge = await declineExternalWalletChallenge(req.params.challengeId, {
+      declinedBy: req.body.declinedBy,
+      reason: req.body.reason,
+      source: req.body.source || 'wallet-api'
+    });
+    await writeAuditEvent('wallet-challenge.declined', {
+      challengeId: challenge.id,
+      appName: challenge.appName,
+      appInstanceId: challenge.appInstanceId,
+      organizationId: challenge.organizationId,
+      action: challenge.action,
+      resourceType: challenge.resourceType,
+      resourceId: challenge.resourceId,
+      subject: challenge.subject,
+      reason: challenge.declineReason,
       source: req.body.source || 'wallet-api'
     });
     res.json({

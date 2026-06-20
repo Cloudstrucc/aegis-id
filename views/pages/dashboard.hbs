@@ -48,7 +48,7 @@
         {{#each items}}
           <a href="{{href}}" data-blade-link="{{key}}">
             <span>{{icon}}</span>
-            <strong>{{label}}</strong>
+            <strong>{{label}}{{#if statusTone}}<i class="blade-menu-status blade-menu-status--{{statusTone}}" title="{{statusLabel}}"></i>{{/if}}</strong>
             <small>{{description}}</small>
           </a>
         {{/each}}
@@ -203,7 +203,7 @@
       <div>
         <p class="eyebrow">People directory</p>
         <h3>Credential holders and invitations</h3>
-        <p>{{orgAdmin.peopleTable.pageSummary}} people shown. Invitations default to 7 days unless overridden.</p>
+        <p>{{orgAdmin.peopleTable.pageSummary}} people shown. Invitations default to {{orgAdmin.orgPolicy.inviteTtlLabel}} unless overridden.</p>
       </div>
       <div class="people-directory__tools">
         {{#if orgAdmin.canManagePeople}}
@@ -320,7 +320,7 @@
           <div>
             <p class="eyebrow">Issue credential</p>
             <h2 id="modal-add-user-title">Add a user to {{workspace.organization}}</h2>
-            <p>The invite defaults to 7 days. After the credential is created, the QR and link open automatically.</p>
+            <p>The invite defaults to {{orgAdmin.orgPolicy.inviteTtlLabel}}. After the credential is created, the QR and link open automatically.</p>
           </div>
           <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
         </div>
@@ -354,7 +354,7 @@
             </div>
             <div class="field-group">
               <label class="field-label" for="inviteTtlDays">Invite expiry days <span class="field-tooltip" tabindex="0" data-tooltip="Default is 7 days. Use a shorter window for high-risk invites or a longer one for partners who need scheduling time.">?</span></label>
-              <input id="inviteTtlDays" name="inviteTtlDays" type="number" min="1" max="365" value="7">
+              <input id="inviteTtlDays" name="inviteTtlDays" type="number" min="1" max="365" value="{{orgAdmin.orgPolicy.inviteTtlDays}}">
             </div>
           </div>
           <div>
@@ -411,6 +411,8 @@
           <div><dt>Organization</dt><dd>{{workspace.organization}}</dd></div>
           <div><dt>Verification</dt><dd>{{orgAdmin.adminProfile.verificationStatusLabel}}</dd></div>
           <div><dt>Deadline</dt><dd>{{orgAdmin.adminProfile.verificationDeadlineLabel}}</dd></div>
+          <div><dt>Last validated</dt><dd>{{orgAdmin.adminProfile.lastValidatedLabel}}</dd></div>
+          <div><dt>Next validation</dt><dd>{{orgAdmin.adminProfile.nextValidationDueLabel}}</dd></div>
         </dl>
         <div class="modal-actions">
           <button class="button button--primary button--blue" type="button" data-modal-target="#admin-identity-verification">Verify ID</button>
@@ -682,8 +684,27 @@
             </div>
             <div class="modal-actions">
               <button class="button button--primary button--blue" type="submit">Save Changes</button>
+              <button class="button button--secondary button--dark-text" type="button" data-modal-target="#credential-reset-validation-{{id}}">Reset Profile Validation</button>
               <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
             </div>
+          </form>
+        </section>
+      </div>
+
+      <div class="app-modal" id="credential-reset-validation-{{id}}" hidden>
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="credential-reset-validation-title-{{id}}">
+          <div class="app-modal__head">
+            <div>
+              <p class="eyebrow">Danger action</p>
+              <h2 id="credential-reset-validation-title-{{id}}">Reset validation for {{displayName}}?</h2>
+              <p>This sends an administrative wallet challenge and clears the current validation state for this profile. The user will need to complete validation again.</p>
+            </div>
+            <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+          </div>
+          <form class="modal-actions" action="{{../dashboardBasePath}}/admin/credentials/{{id}}/reset-validation" method="post">
+            <button class="button button--ghost" type="submit">Reset Validation</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
           </form>
         </section>
       </div>
@@ -835,8 +856,11 @@
       <h3>Organization structure</h3>
     </div>
     <div class="org-chart-toolbar__actions">
+      {{#if orgAdmin.canManagePeople}}
+        <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user">Add Person</button>
+      {{/if}}
       {{#if orgAdmin.canManageOrgChart}}
-        <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-division">Add Division</button>
+        <button class="button button--secondary button--dark-text" type="button" data-modal-target="#modal-add-division">Add Division</button>
       {{/if}}
       <button class="button button--secondary button--dark-text" type="button" data-org-chart-action="toggle-people">Hide people</button>
       <button class="button button--secondary button--dark-text" type="button" data-org-chart-action="expand">Expand all</button>
@@ -869,10 +893,6 @@
     </div>
     <div class="org-chart-d3-shell" aria-label="Organization chart canvas">
       <div class="org-chart-d3" data-org-chart-container></div>
-      <div class="org-chart-empty" data-org-chart-fallback hidden>
-        <strong>Unable to load the interactive chart.</strong>
-        <span>Refresh the page or confirm the d3-org-chart assets are available.</span>
-      </div>
     </div>
   </article>
 
@@ -1033,6 +1053,9 @@
               </div>
             </div>
             <div class="modal-actions">
+              {{#if ../orgAdmin.canManagePeople}}
+                <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user">Add Person</button>
+              {{/if}}
               {{#unless (eq id "unit-root")}}
                 <button class="button button--secondary button--dark-text" type="button" data-modal-target="#modal-add-division">Add child division</button>
               {{/unless}}
@@ -1082,14 +1105,18 @@
     <h2>Validate administrator identity.</h2>
     <p>A wizard-style flow validates government photo ID, live face capture readiness, and profile assurance before admin deadlines expire.</p>
   </div>
-  <article class="identity-reminder">
+  <article class="identity-reminder {{#if orgAdmin.adminProfile.isVerified}}identity-reminder--verified{{/if}}">
     <span class="platform-icon">IDV</span>
     <div>
       <strong>{{orgAdmin.adminProfile.verificationStatusLabel}}</strong>
-      <p>Deadline: {{orgAdmin.adminProfile.verificationDeadlineLabel}}. Admins can keep working during the grace period, but production deployments should validate the original subscriber and co-admins.</p>
+      {{#if orgAdmin.adminProfile.isVerified}}
+        <p>Last validated {{orgAdmin.adminProfile.lastValidatedLabel}}. Next profile validation is due {{orgAdmin.adminProfile.nextValidationDueLabel}} for security reasons.</p>
+      {{else}}
+        <p>Deadline: {{orgAdmin.adminProfile.verificationDeadlineLabel}}. Admins can keep working during the grace period, but production deployments should validate the original subscriber and co-admins.</p>
+      {{/if}}
     </div>
     <div class="identity-reminder__actions">
-      <button class="button button--primary button--blue" type="button" data-modal-target="#admin-identity-verification">Start verification</button>
+      <button class="button button--primary button--blue" type="button" data-modal-target="#admin-identity-verification">{{#if orgAdmin.adminProfile.isVerified}}Re-validate{{else}}Start verification{{/if}}</button>
     </div>
   </article>
   <div class="policy-row">
@@ -1120,17 +1147,23 @@
           <h3>Default expiry</h3>
         </div>
       </div>
-      <p>Credential invitations default to 7 days unless an admin overrides the expiry during issuance.</p>
+      <p>Current default: <strong>{{orgAdmin.orgPolicy.inviteTtlLabel}}</strong>. Admins can still override expiry during issuance.</p>
+      <div class="platform-card__actions">
+        <button class="button button--secondary button--dark-text" type="button" data-modal-target="#modal-policy-invite-expiry">Configure</button>
+      </div>
     </article>
     <article class="platform-card">
       <div class="platform-card__head">
-        <span class="platform-icon">MFA</span>
+        <span class="platform-icon">IDV</span>
         <div>
-          <span class="track-label">Challenge policy</span>
-          <h3>High-value actions</h3>
+          <span class="track-label">Profile validation</span>
+          <h3>Re-validation cadence</h3>
         </div>
       </div>
-      <p>Use integrations to require wallet passkey assurance for approvals, co-admin changes, signatures, and revocations.</p>
+      <p>Current cadence: <strong>{{orgAdmin.orgPolicy.adminRevalidationLabel}}</strong>. Admins can turn re-validation off for lab-only scenarios.</p>
+      <div class="platform-card__actions">
+        <button class="button button--secondary button--dark-text" type="button" data-modal-target="#modal-policy-admin-revalidation">Configure</button>
+      </div>
     </article>
     <article class="platform-card">
       <div class="platform-card__head">
@@ -1140,7 +1173,23 @@
           <h3>Ledger retention</h3>
         </div>
       </div>
-      <p>Preserve immutable challenge logs while allowing holder profile updates and credential revocation.</p>
+      <p>Current retention: <strong>{{orgAdmin.orgPolicy.ledgerRetentionLabel}}</strong>. Keep logs long enough for audit, reporting, and evidence review.</p>
+      <div class="platform-card__actions">
+        <button class="button button--secondary button--dark-text" type="button" data-modal-target="#modal-policy-ledger-retention">Configure</button>
+      </div>
+    </article>
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">RST</span>
+        <div>
+          <span class="track-label">Admin assurance</span>
+          <h3>Reset validation</h3>
+        </div>
+      </div>
+      <p>Clear profile validation for all organization users and require the next validation cycle to start over.</p>
+      <div class="platform-card__actions">
+        <button class="button button--ghost" type="button" data-modal-target="#modal-reset-all-validations">Reset All Users</button>
+      </div>
     </article>
     <article class="platform-card">
       <div class="platform-card__head">
@@ -1166,6 +1215,119 @@
         </form>
       </div>
     </article>
+  </div>
+
+  <div class="app-modal" id="modal-policy-invite-expiry" hidden>
+    <div class="app-modal__backdrop" data-modal-close></div>
+    <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-policy-invite-expiry-title">
+      <div class="app-modal__head">
+        <div>
+          <p class="eyebrow">Invitation policy</p>
+          <h2 id="modal-policy-invite-expiry-title">Change default invite expiry?</h2>
+          <p>This updates the default expiry used when admins create new credential invitations.</p>
+        </div>
+        <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+      </div>
+      <article class="note-panel note-panel--warning">
+        <strong>Wallet challenge required</strong>
+        <span>This policy change is recorded as an administrative wallet challenge event for audit history.</span>
+      </article>
+      <form class="wizard-form" action="{{dashboardBasePath}}/admin/policy" method="post">
+        <input type="hidden" name="policyScope" value="invite-expiry">
+        <div class="field-group">
+          <label for="policyInviteTtlDays">Default invitation expiry in days</label>
+          <input id="policyInviteTtlDays" name="inviteTtlDays" type="number" min="1" max="365" value="{{orgAdmin.orgPolicy.inviteTtlDays}}">
+        </div>
+        <div class="modal-actions">
+          <button class="button button--primary button--blue" type="submit">Confirm Change</button>
+          <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="app-modal" id="modal-policy-admin-revalidation" hidden>
+    <div class="app-modal__backdrop" data-modal-close></div>
+    <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-policy-admin-revalidation-title">
+      <div class="app-modal__head">
+        <div>
+          <p class="eyebrow">Admin assurance</p>
+          <h2 id="modal-policy-admin-revalidation-title">Configure profile re-validation?</h2>
+          <p>Use this to control how often administrator identity profiles must be refreshed.</p>
+        </div>
+        <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+      </div>
+      <article class="note-panel note-panel--warning">
+        <strong>Wallet challenge required</strong>
+        <span>Changing admin assurance policy affects every admin in this workspace and is written to the audit ledger.</span>
+      </article>
+      <form class="wizard-form" action="{{dashboardBasePath}}/admin/policy" method="post">
+        <input type="hidden" name="policyScope" value="admin-revalidation">
+        <label class="checkline">
+          <input type="checkbox" name="adminRevalidationEnabled" value="yes" {{#if orgAdmin.orgPolicy.adminRevalidationEnabled}}checked{{/if}}>
+          <span>Require periodic administrator re-validation</span>
+        </label>
+        <div class="field-group">
+          <label for="policyAdminRevalidationMonths">Re-validation cadence in months</label>
+          <input id="policyAdminRevalidationMonths" name="adminRevalidationMonths" type="number" min="1" max="36" value="{{orgAdmin.orgPolicy.adminRevalidationMonths}}">
+        </div>
+        <div class="modal-actions">
+          <button class="button button--primary button--blue" type="submit">Confirm Change</button>
+          <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="app-modal" id="modal-policy-ledger-retention" hidden>
+    <div class="app-modal__backdrop" data-modal-close></div>
+    <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-policy-ledger-retention-title">
+      <div class="app-modal__head">
+        <div>
+          <p class="eyebrow">Ledger policy</p>
+          <h2 id="modal-policy-ledger-retention-title">Change retention period?</h2>
+          <p>This sets the expected evidence retention period for wallet challenge records.</p>
+        </div>
+        <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+      </div>
+      <article class="note-panel note-panel--warning">
+        <strong>Review legal and audit needs first</strong>
+        <span>Reducing retention can affect reporting and evidence review. This change is recorded with a wallet challenge event.</span>
+      </article>
+      <form class="wizard-form" action="{{dashboardBasePath}}/admin/policy" method="post">
+        <input type="hidden" name="policyScope" value="ledger-retention">
+        <div class="field-group">
+          <label for="policyLedgerRetentionDays">Ledger retention in days</label>
+          <input id="policyLedgerRetentionDays" name="ledgerRetentionDays" type="number" min="30" max="3650" value="{{orgAdmin.orgPolicy.ledgerRetentionDays}}">
+        </div>
+        <div class="modal-actions">
+          <button class="button button--primary button--blue" type="submit">Confirm Change</button>
+          <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="app-modal" id="modal-reset-all-validations" hidden>
+    <div class="app-modal__backdrop" data-modal-close></div>
+    <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-reset-all-validations-title">
+      <div class="app-modal__head">
+        <div>
+          <p class="eyebrow">Danger zone</p>
+          <h2 id="modal-reset-all-validations-title">Reset validation for all users?</h2>
+          <p>Every administrator and credential holder in this workspace will be marked as needing profile validation again.</p>
+        </div>
+        <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+      </div>
+      <article class="note-panel note-panel--danger">
+        <strong>This cannot be silently undone</strong>
+        <span>Confirming sends an administrative wallet challenge, records an audit event, and clears the current profile validation state for all users in this organization.</span>
+      </article>
+      <form class="modal-actions" action="{{dashboardBasePath}}/admin/profile-validations/reset-all" method="post">
+        <button class="button button--ghost" type="submit">Reset All Validations</button>
+        <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+      </form>
+    </section>
   </div>
 </section>
 {{/if}}

@@ -159,6 +159,34 @@ async function acceptExternalWalletChallenge(challengeId, input = {}) {
   return decorateChallenge(records[index]);
 }
 
+async function declineExternalWalletChallenge(challengeId, input = {}) {
+  const records = await store.read();
+  const index = records.findIndex((candidate) => candidate.id === challengeId);
+  if (index === -1) {
+    throw notFound('Wallet challenge not found.');
+  }
+  if (records[index].status === 'declined') {
+    return decorateChallenge(records[index]);
+  }
+  if (records[index].status === 'accepted') {
+    const error = validationError('This wallet challenge has already been accepted.');
+    error.status = 409;
+    throw error;
+  }
+
+  records[index] = {
+    ...records[index],
+    status: 'declined',
+    declinedAt: nowIso(),
+    declinedBy: normalizeText(input.declinedBy, 180) || records[index].subject,
+    declineReason: normalizeText(input.reason, 300) || 'Declined in wallet',
+    declineSource: normalizeText(input.source, 80) || 'wallet-api',
+    updatedAt: nowIso()
+  };
+  await store.write(records);
+  return decorateChallenge(records[index]);
+}
+
 async function listPendingExternalWalletChallenges(connectionId) {
   const records = await store.read();
   return records
@@ -204,6 +232,7 @@ function decorateChallenge(record) {
     title: `${record.appName}: ${actionLabel(record.action)}`,
     detail: buildChallengeDetail(record),
     acceptPath: `/api/wallet-challenges/${record.id}/accept`,
+    declinePath: `/api/wallet-challenges/${record.id}/decline`,
     passkeyAcceptPath: `/api/wallet-challenges/${record.id}/accept-with-passkey`,
     requiresPasskey: Boolean(record.assurance?.requiresPasskey),
     requiredAssurance: record.assurance?.requiredAssurance || 'wallet',
@@ -331,6 +360,7 @@ function notFound(message) {
 module.exports = {
   acceptExternalWalletChallenge,
   createExternalWalletChallenge,
+  declineExternalWalletChallenge,
   getWalletChallenge,
   listPendingExternalWalletChallenges,
   listWalletChallengeLedger

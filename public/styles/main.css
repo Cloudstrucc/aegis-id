@@ -1598,7 +1598,13 @@ textarea:focus {
   font-weight: 950;
 }
 
-.workspace-blade__menu a strong,
+.workspace-blade__menu a strong {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
 .workspace-blade__menu a small {
   display: block;
 }
@@ -1619,6 +1625,23 @@ textarea:focus {
 .workspace-blade__menu a.is-active span {
   color: #ffffff;
   background: linear-gradient(135deg, var(--blue-600), var(--cyan-500));
+}
+
+.blade-menu-status {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
+}
+
+.blade-menu-status--warning {
+  background: #d98b12;
+}
+
+.blade-menu-status--success {
+  background: #18a86b;
 }
 
 .workspace-blade__advice {
@@ -2108,6 +2131,18 @@ textarea:focus {
   border-radius: 8px;
 }
 
+.note-panel--warning {
+  color: #684b14;
+  background: #fff8e8;
+  border-color: #f0ce8c;
+}
+
+.note-panel--danger {
+  color: #84251c;
+  background: #fff0ee;
+  border-color: #f0b5ae;
+}
+
 .form-note {
   margin: 0 0 8px;
   color: var(--muted);
@@ -2364,6 +2399,12 @@ textarea:focus {
   border-color: #f0b5ae;
 }
 
+.status-pill--declined {
+  color: #84251c;
+  background: #fff0ee;
+  border-color: #f0b5ae;
+}
+
 .tag-row--compact span {
   min-height: 24px;
   padding: 3px 7px;
@@ -2409,6 +2450,18 @@ textarea:focus {
 .identity-reminder p:last-child {
   color: #684b14;
   font-weight: 700;
+}
+
+.identity-reminder--verified {
+  color: #075f3f;
+  background: #ecfff6;
+  border-color: #9de8c6;
+  border-left-color: #18a86b;
+}
+
+.identity-reminder--verified p,
+.identity-reminder--verified p:last-child {
+  color: #075f3f;
 }
 
 .identity-reminder__actions {
@@ -3340,6 +3393,11 @@ textarea:focus {
   background: #e8fff4;
 }
 
+.auth-stepper__item--failed {
+  color: #84251c;
+  background: #fff0ee;
+}
+
 .claim-list {
   display: grid;
   gap: 1px;
@@ -4128,6 +4186,16 @@ body:has(.workspace-blade) main {
 .identity-reminder p {
   margin: 0;
   color: #74521a;
+}
+
+.identity-reminder--verified {
+  background: #ecfff6;
+  border-color: #9de8c6;
+  border-left-color: #18a86b;
+}
+
+.identity-reminder--verified p {
+  color: #075f3f;
 }
 
 .split-panel,

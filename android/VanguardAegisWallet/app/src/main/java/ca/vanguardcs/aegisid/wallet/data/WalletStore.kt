@@ -427,6 +427,41 @@ class WalletStore(
         }
     }
 
+    fun declineTransaction(transaction: WalletTransaction) {
+        val connection = connection(transaction.connectionId)
+        if (connection == null) {
+            lastLabError = "Connection unavailable for this wallet transaction."
+            return
+        }
+
+        runLabOperation {
+            val currentConnection = current(connection) ?: connection
+            if (transaction.type == WalletTransactionType.Challenge && currentConnection.holderConnectionId != null) {
+                labClient.sendHolderMessage(
+                    currentConnection.holderConnectionId,
+                    "Vanguard Aegis ID Android wallet declined challenge ${transaction.remoteId ?: transaction.id}.",
+                    currentConnection.invitation.sourceWebAppUrl
+                )
+            }
+            when {
+                transaction.webDeclinePath != null -> labClient.declineWalletChallenge(
+                    transaction.webDeclinePath,
+                    currentConnection.invitation.sourceWebAppUrl
+                )
+                transaction.webSessionId != null -> labClient.declineOidcWalletChallenge(
+                    transaction.webSessionId,
+                    currentConnection.invitation.sourceWebAppUrl
+                )
+            }
+
+            updateTransaction(transaction.id) { it.copy(status = WalletTransactionStatus.Declined) }
+            if (transaction.type == WalletTransactionType.Challenge) {
+                updateConnection(connection.id) { it.copy(state = WalletConnectionState.Connected) }
+            }
+            lastLabMessage = "Challenge declined and response sent."
+        }
+    }
+
     fun acceptTransactionWithPasskey(transaction: WalletTransaction, getPasskey: suspend (String) -> JSONObject) {
         val connection = connection(transaction.connectionId)
         if (connection == null) {
@@ -537,6 +572,7 @@ class WalletStore(
                     remoteId = challenge.nonce,
                     webSessionId = challenge.sessionId,
                     webAcceptPath = challenge.acceptPath,
+                    webDeclinePath = challenge.declinePath,
                     requiresPasskey = challenge.requiresPasskey,
                     requiredAssurance = challenge.requiredAssurance,
                     passkeyAcceptPath = challenge.passkeyAcceptPath,

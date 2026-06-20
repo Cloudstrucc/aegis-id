@@ -185,6 +185,7 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
     var remoteId: String?
     var webSessionId: String?
     var webAcceptPath: String?
+    var webDeclinePath: String?
     var appName: String?
     var action: String?
     var resourceType: String?
@@ -206,6 +207,7 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
         remoteId: String? = nil,
         webSessionId: String? = nil,
         webAcceptPath: String? = nil,
+        webDeclinePath: String? = nil,
         appName: String? = nil,
         action: String? = nil,
         resourceType: String? = nil,
@@ -225,6 +227,7 @@ struct WalletTransaction: Codable, Equatable, Hashable, Identifiable {
         self.remoteId = remoteId
         self.webSessionId = webSessionId
         self.webAcceptPath = webAcceptPath
+        self.webDeclinePath = webDeclinePath
         self.appName = appName
         self.action = action
         self.resourceType = resourceType
@@ -271,6 +274,7 @@ enum WalletTransactionStatus: String, Codable, Hashable, CaseIterable {
     case pendingAcceptance
     case accepted
     case sent
+    case declined
     case failed
 
     var title: String {
@@ -283,6 +287,8 @@ enum WalletTransactionStatus: String, Codable, Hashable, CaseIterable {
             return "Accepted"
         case .sent:
             return "Sent"
+        case .declined:
+            return "Declined"
         case .failed:
             return "Failed"
         }

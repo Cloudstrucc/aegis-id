@@ -523,6 +523,50 @@ final class WalletStore: ObservableObject {
         }
     }
 
+    func declineTransaction(_ transaction: WalletTransaction, for connection: WalletConnection) async {
+        clearLabMessages()
+
+        do {
+            if transaction.type == .challenge,
+               let holderConnectionId = current(connection)?.holderConnectionId {
+                try await labClient.sendHolderMessage(
+                    holderConnectionId: holderConnectionId,
+                    content: "Vanguard Aegis ID Wallet simulator declined challenge \(transaction.remoteId ?? transaction.id.uuidString).",
+                    sourceWebAppURL: connection.invitation.sourceWebAppURL
+                )
+            }
+
+            if let webDeclinePath = transaction.webDeclinePath {
+                try await labClient.declineWalletChallenge(
+                    declinePath: webDeclinePath,
+                    sourceWebAppURL: connection.invitation.sourceWebAppURL
+                )
+            } else if let webSessionId = transaction.webSessionId {
+                try await labClient.declineOIDCWalletChallenge(
+                    sessionId: webSessionId,
+                    sourceWebAppURL: connection.invitation.sourceWebAppURL
+                )
+            }
+
+            updateTransaction(transaction) { item in
+                item.status = .declined
+            }
+
+            if transaction.type == .challenge {
+                update(connection) { item in
+                    item.state = .connected
+                }
+            }
+
+            lastLabMessage = "Challenge declined and response sent."
+        } catch {
+            updateTransaction(transaction) { item in
+                item.status = .failed
+            }
+            lastLabError = error.localizedDescription
+        }
+    }
+
     func markReadyForDidExchange(_ connection: WalletConnection) {
         update(connection) { item in
             item.state = .readyForDidExchange
@@ -574,6 +618,7 @@ final class WalletStore: ObservableObject {
                 remoteId: challenge.nonce,
                 webSessionId: challenge.sessionId,
                 webAcceptPath: challenge.acceptPath,
+                webDeclinePath: challenge.declinePath,
                 appName: challenge.appName,
                 action: challenge.action,
                 resourceType: challenge.resourceType,

@@ -126,8 +126,22 @@ struct LabAgentClient {
         ) as OIDCWalletChallengeAcceptance
     }
 
+    func declineOIDCWalletChallenge(sessionId: String, sourceWebAppURL: String? = nil) async throws {
+        _ = try await post(
+            portalURL(sourceWebAppURL).appending(path: "api/oidc-wallet/challenges/\(sessionId)/decline"),
+            body: try JSONEncoder().encode(["reason": "Declined in iOS wallet"])
+        ) as OIDCWalletChallengeAcceptance
+    }
+
     func acceptWalletChallenge(acceptPath: String, sourceWebAppURL: String? = nil) async throws {
         try await acceptWalletChallenge(acceptPath: acceptPath, sourceWebAppURL: sourceWebAppURL, body: ["source": "ios-wallet"])
+    }
+
+    func declineWalletChallenge(declinePath: String, sourceWebAppURL: String? = nil) async throws {
+        try await postWalletChallenge(path: declinePath, sourceWebAppURL: sourceWebAppURL, body: [
+            "source": "ios-wallet",
+            "reason": "Declined in iOS wallet"
+        ])
     }
 
     func acceptWalletChallenge(acceptPath: String, subject: String, challengeId: String?, passkeyResponse: WalletPasskeyCeremonyResponse, sourceWebAppURL: String? = nil) async throws {
@@ -176,7 +190,11 @@ struct LabAgentClient {
     }
 
     private func acceptWalletChallenge<Body: Encodable>(acceptPath: String, sourceWebAppURL: String? = nil, body: Body) async throws {
-        let trimmed = acceptPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        try await postWalletChallenge(path: acceptPath, sourceWebAppURL: sourceWebAppURL, body: body)
+    }
+
+    private func postWalletChallenge<Body: Encodable>(path: String, sourceWebAppURL: String? = nil, body: Body) async throws {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
         let url: URL
         if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
             guard let absolute = URL(string: trimmed) else {
@@ -459,6 +477,7 @@ struct OIDCWalletChallenge: Decodable, Hashable {
     var title: String?
     var detail: String?
     var acceptPath: String?
+    var declinePath: String?
     var passkeyAcceptPath: String?
     var requiresPasskey: Bool?
     var requiredAssurance: String?

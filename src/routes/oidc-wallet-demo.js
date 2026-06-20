@@ -9,6 +9,7 @@ const {
   confirmWalletChallenge,
   createLoginRequest,
   createWalletChallenge,
+  declineWalletChallenge,
   getDemoSession,
   isAuthenticated,
   listPendingWalletChallenges,
@@ -192,6 +193,29 @@ router.post('/api/oidc-wallet/challenges/:sessionId/accept', async (req, res, ne
       ok: true,
       status: session.status,
       appUrl: `/demo/oidc-wallet/sessions/${session.id}/app`
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/api/oidc-wallet/challenges/:sessionId/decline', async (req, res, next) => {
+  try {
+    const session = await declineWalletChallenge(req.params.sessionId, {
+      reason: req.body.reason
+    });
+    await writeAuditEvent('oidc-wallet-demo.challenge.declined', {
+      sessionId: session.id,
+      connectionId: session.walletChallenge.connectionId,
+      challengeId: session.walletChallenge.id,
+      reason: session.walletChallenge.declineReason,
+      source: 'wallet-api'
+    });
+
+    res.json({
+      ok: true,
+      status: session.status,
+      walletChallenge: session.walletChallenge
     });
   } catch (error) {
     next(error);

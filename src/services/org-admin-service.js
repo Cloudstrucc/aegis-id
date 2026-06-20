@@ -351,6 +351,10 @@ const ROLE_TEMPLATES = [
 
 const DEFAULT_INVITE_TTL_DAYS = 7;
 const MAX_INVITE_TTL_DAYS = 365;
+const DEFAULT_LEDGER_RETENTION_DAYS = 365;
+const MAX_LEDGER_RETENTION_DAYS = 3650;
+const DEFAULT_ADMIN_REVALIDATION_MONTHS = 6;
+const MAX_ADMIN_REVALIDATION_MONTHS = 36;
 
 const PERSON_TYPES = [
   { id: 'employee', name: 'Employee' },
@@ -396,6 +400,7 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
     orgChartLevels: buildOrgChartLevels(state),
     orgChartData,
     orgChartStats: buildOrgChartStats(state, orgChartNodes, credentials),
+    orgPolicy: decorateOrgPolicy(state.policy),
     claimConsentOptions: state.claimDefinitions.map((claim) => ({
       ...claim,
       checked: Boolean(claim.required)
@@ -431,8 +436,8 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
         .filter((event) => normalizeEmail(event.data?.holderEmail || event.actorEmail) === viewer.email)
         .slice(0, 25)
         .map(decorateEvent),
-    bladeNavSections: buildBladeNavSections(viewer),
-    bladeNavItems: buildBladeNavItems(viewer)
+    bladeNavSections: buildBladeNavSections(viewer, adminProfile),
+    bladeNavItems: buildBladeNavItems(viewer, adminProfile)
   };
 }
 
@@ -447,7 +452,7 @@ async function issueCredential(workspace, subscription, input = {}) {
   }
 
   const now = new Date().toISOString();
-  const inviteTtlDays = normalizeInviteTtlDays(input.inviteTtlDays);
+  const inviteTtlDays = normalizeInviteTtlDays(input.inviteTtlDays || state.policy.inviteTtlDays);
   const requestedClaimKeys = normalizeClaimSelection(state.claimDefinitions, input.requestedClaimKeys);
   const credential = {
     id: crypto.randomUUID(),
@@ -604,6 +609,25 @@ async function updateCredentialProfile(workspace, subscription, credentialId, in
     divisionId: credential.divisionId,
     claims: credential.claims,
     requestedClaimKeys: credential.consent.requestedClaimKeys
+  });
+  return credential;
+}
+
+async function resetCredentialProfileValidation(workspace, subscription, credentialId) {
+  await assertOrgPrivilege(workspace, subscription, 'admin.assurance.manage');
+  const state = await getOrCreateState(workspace);
+  const credential = findCredential(state, credentialId);
+  const email = normalizeEmail(credential.holderEmail);
+  delete state.adminIdentityVerifications[email];
+  credential.updatedAt = new Date().toISOString();
+  await writeState(state);
+  await appendCredentialEvent(workspace, credential, subscription, 'wallet.challenge.accepted', {
+    challenge: 'reset-profile-validation',
+    target: email,
+    immutable: true
+  });
+  await appendCredentialEvent(workspace, credential, subscription, 'profile.validation.reset', {
+    target: email
   });
   return credential;
 }
@@ -993,6 +1017,56 @@ async function submitAdminIdentityVerification(workspace, subscription, input = 
   return record;
 }
 
+async function resetAllProfileValidations(workspace, subscription) {
+  await assertOrgPrivilege(workspace, subscription, 'admin.assurance.manage');
+  const state = await getOrCreateState(workspace);
+  state.adminIdentityVerifications = {};
+  await writeState(state);
+  await appendWorkspaceEvent(workspace, subscription, 'wallet.challenge.accepted', {
+    challenge: 'reset-all-profile-validations',
+    target: 'all-users',
+    immutable: true
+  });
+  await appendWorkspaceEvent(workspace, subscription, 'profile.validation.reset.all', {
+    resetCredentialCount: state.credentials.length + 1
+  });
+  return { resetCredentialCount: state.credentials.length + 1 };
+}
+
+async function updateWorkspacePolicy(workspace, subscription, input = {}) {
+  await assertOrgPrivilege(workspace, subscription, 'admin.assurance.manage');
+  const state = await getOrCreateState(workspace);
+  const nextPolicy = {
+    ...state.policy
+  };
+  const policyScope = normalizeText(input.policyScope, 80);
+  if (policyScope === 'invite-expiry' || input.inviteTtlDays !== undefined) {
+    nextPolicy.inviteTtlDays = normalizeInviteTtlDays(input.inviteTtlDays);
+  }
+  if (policyScope === 'ledger-retention' || input.ledgerRetentionDays !== undefined) {
+    nextPolicy.ledgerRetentionDays = normalizeLedgerRetentionDays(input.ledgerRetentionDays);
+  }
+  if (policyScope === 'admin-revalidation' || input.adminRevalidationMonths !== undefined || input.adminRevalidationEnabled !== undefined) {
+    nextPolicy.adminRevalidationEnabled = normalizeBoolean(input.adminRevalidationEnabled);
+    if (input.adminRevalidationMonths !== undefined) {
+      nextPolicy.adminRevalidationMonths = normalizeAdminRevalidationMonths(input.adminRevalidationMonths);
+    }
+  }
+  nextPolicy.updatedAt = new Date().toISOString();
+  state.policy = normalizeOrgPolicy(nextPolicy);
+  await writeState(state);
+  await appendWorkspaceEvent(workspace, subscription, 'wallet.challenge.accepted', {
+    challenge: 'workspace-policy-update',
+    policyScope,
+    immutable: true
+  });
+  await appendWorkspaceEvent(workspace, subscription, 'workspace.policy.updated', {
+    policyScope,
+    policy: state.policy
+  });
+  return state.policy;
+}
+
 async function requestCoAdmin(workspace, subscription, credentialId) {
   await assertOrgPrivilege(workspace, subscription, 'admin.assurance.manage');
   const state = await getOrCreateState(workspace);
@@ -1175,6 +1249,7 @@ async function getOrCreateState(workspace) {
     state.branding = state.branding || defaultBranding();
     state.orgUnits = state.orgUnits || defaultOrgUnits(state.organizationName);
     state.adminIdentityVerifications = state.adminIdentityVerifications || {};
+    state.policy = state.policy || defaultOrgPolicy();
     normalizeState(state);
     return state;
   }
@@ -1188,6 +1263,7 @@ async function getOrCreateState(workspace) {
     credentials: [],
     coAdminRequests: [],
     adminIdentityVerifications: {},
+    policy: defaultOrgPolicy(),
     branding: defaultBranding(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -1402,6 +1478,16 @@ function defaultBranding() {
   };
 }
 
+function defaultOrgPolicy() {
+  return {
+    inviteTtlDays: DEFAULT_INVITE_TTL_DAYS,
+    ledgerRetentionDays: DEFAULT_LEDGER_RETENTION_DAYS,
+    adminRevalidationEnabled: true,
+    adminRevalidationMonths: DEFAULT_ADMIN_REVALIDATION_MONTHS,
+    updatedAt: new Date().toISOString()
+  };
+}
+
 function defaultOrgUnits(organizationName) {
   const now = new Date().toISOString();
   return [
@@ -1423,6 +1509,29 @@ function normalizeState(state) {
   state.orgUnits = normalizeOrgUnits(state);
   state.credentials = state.credentials.map((credential) => normalizeCredential(credential, state));
   state.adminIdentityVerifications = normalizeAdminIdentityVerifications(state.adminIdentityVerifications);
+  state.policy = normalizeOrgPolicy(state.policy);
+}
+
+function normalizeOrgPolicy(policy = {}) {
+  return {
+    inviteTtlDays: normalizeInviteTtlDays(policy.inviteTtlDays),
+    ledgerRetentionDays: normalizeLedgerRetentionDays(policy.ledgerRetentionDays),
+    adminRevalidationEnabled: policy.adminRevalidationEnabled === undefined ? true : normalizeBoolean(policy.adminRevalidationEnabled),
+    adminRevalidationMonths: normalizeAdminRevalidationMonths(policy.adminRevalidationMonths),
+    updatedAt: policy.updatedAt || new Date().toISOString()
+  };
+}
+
+function decorateOrgPolicy(policy = defaultOrgPolicy()) {
+  const normalized = normalizeOrgPolicy(policy);
+  return {
+    ...normalized,
+    inviteTtlLabel: `${normalized.inviteTtlDays} day${normalized.inviteTtlDays === 1 ? '' : 's'}`,
+    ledgerRetentionLabel: `${normalized.ledgerRetentionDays} day${normalized.ledgerRetentionDays === 1 ? '' : 's'}`,
+    adminRevalidationLabel: normalized.adminRevalidationEnabled
+      ? `${normalized.adminRevalidationMonths} month${normalized.adminRevalidationMonths === 1 ? '' : 's'}`
+      : 'Off'
+  };
 }
 
 function normalizeRoleDefinitions(roles = []) {
@@ -1614,7 +1723,7 @@ function buildViewerAccess(workspace, subscription, state) {
   };
 }
 
-function buildBladeNavSections(viewer) {
+function buildBladeNavSections(viewer, adminProfile = null) {
   const sections = [
     {
       label: 'Overview',
@@ -1723,6 +1832,8 @@ function buildBladeNavSections(viewer) {
           label: 'Admin verification',
           description: 'IDV',
           icon: '12',
+          statusTone: adminProfile?.isVerified ? 'success' : 'warning',
+          statusLabel: adminProfile?.isVerified ? 'Profile validated' : 'Verification required',
           visible: viewer.canManageAdminAssurance
         },
         {
@@ -1745,8 +1856,8 @@ function buildBladeNavSections(viewer) {
     .filter((section) => section.items.length > 0);
 }
 
-function buildBladeNavItems(viewer) {
-  return buildBladeNavSections(viewer).flatMap((section) => section.items);
+function buildBladeNavItems(viewer, adminProfile = null) {
+  return buildBladeNavSections(viewer, adminProfile).flatMap((section) => section.items);
 }
 
 function normalizeOrgUnits(state) {
@@ -1956,6 +2067,11 @@ function buildAdminProfile(workspace, subscription, state) {
   const daysOpen = Math.max(0, Math.floor((Date.now() - new Date(registeredAt).getTime()) / (24 * 60 * 60 * 1000)));
   const daysRemaining = Math.max(0, 30 - daysOpen);
   const isVerified = verification.status === 'verified';
+  const policy = normalizeOrgPolicy(state.policy);
+  const verifiedAt = verification.verifiedAt || verification.updatedAt || null;
+  const nextValidationAt = policy.adminRevalidationEnabled && verifiedAt
+    ? addMonths(verifiedAt, policy.adminRevalidationMonths).toISOString()
+    : null;
 
   return {
     id: `admin-${crypto.createHash('sha1').update(email).digest('hex').slice(0, 12)}`,
@@ -1979,9 +2095,14 @@ function buildAdminProfile(workspace, subscription, state) {
     inviteExpired: false,
     consentStatusLabel: isVerified ? 'Profile validated' : 'ID verification due',
     verification,
+    isVerified,
     verificationStatusLabel: isVerified ? 'Profile validated' : 'Verification required',
     verificationDaysRemaining: daysRemaining,
     verificationDeadlineLabel: formatDate(addDays(registeredAt, 30).toISOString()),
+    lastValidatedLabel: verifiedAt ? formatDateTime(verifiedAt) : 'Not validated yet',
+    nextValidationDueLabel: nextValidationAt ? formatDate(nextValidationAt) : 'Re-validation disabled',
+    revalidationEnabled: policy.adminRevalidationEnabled,
+    revalidationMonths: policy.adminRevalidationMonths,
     showVerificationBanner: !isVerified,
     createdAt: registeredAt
   };
@@ -2311,9 +2432,31 @@ function normalizeInviteTtlDays(value) {
   return Math.min(parsed, MAX_INVITE_TTL_DAYS);
 }
 
+function normalizeLedgerRetentionDays(value) {
+  const parsed = Number.parseInt(value || String(DEFAULT_LEDGER_RETENTION_DAYS), 10);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return DEFAULT_LEDGER_RETENTION_DAYS;
+  }
+  return Math.min(parsed, MAX_LEDGER_RETENTION_DAYS);
+}
+
+function normalizeAdminRevalidationMonths(value) {
+  const parsed = Number.parseInt(value || String(DEFAULT_ADMIN_REVALIDATION_MONTHS), 10);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return DEFAULT_ADMIN_REVALIDATION_MONTHS;
+  }
+  return Math.min(parsed, MAX_ADMIN_REVALIDATION_MONTHS);
+}
+
 function addDays(value, days) {
   const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
   date.setUTCDate(date.getUTCDate() + days);
+  return date;
+}
+
+function addMonths(value, months) {
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  date.setUTCMonth(date.getUTCMonth() + months);
   return date;
 }
 
@@ -2343,6 +2486,17 @@ function formatDate(value) {
     return 'Not set';
   }
   return date.toISOString().slice(0, 10);
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return 'Not set';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'Not set';
+  }
+  return date.toISOString().replace('T', ' ').slice(0, 16);
 }
 
 function normalizeColor(value = '', fallback = '#0f4fa8') {
@@ -2433,6 +2587,8 @@ module.exports = {
   issueCredential,
   markCredentialAccepted,
   reissueCredentialInvitation,
+  resetAllProfileValidations,
+  resetCredentialProfileValidation,
   requestCredentialConsent,
   requestCoAdmin,
   revokeCoAdmin,
@@ -2442,5 +2598,6 @@ module.exports = {
   updateClaimDefinition,
   updateCredentialProfile,
   updateOrgUnit,
+  updateWorkspacePolicy,
   updateRole
 };

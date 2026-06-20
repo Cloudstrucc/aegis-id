@@ -350,7 +350,8 @@ private fun LedgerScreen(store: WalletStore, onGetPasskey: suspend (String) -> J
                 TransactionCard(
                     transaction = transaction,
                     onAccept = { store.acceptTransaction(transaction) },
-                    onAcceptWithPasskey = { store.acceptTransactionWithPasskey(transaction, onGetPasskey) }
+                    onAcceptWithPasskey = { store.acceptTransactionWithPasskey(transaction, onGetPasskey) },
+                    onDecline = { store.declineTransaction(transaction) }
                 )
             }
         }
@@ -539,7 +540,8 @@ private fun ConnectionCard(connection: WalletConnection, store: WalletStore) {
 private fun TransactionCard(
     transaction: WalletTransaction,
     onAccept: () -> Unit,
-    onAcceptWithPasskey: () -> Unit
+    onAcceptWithPasskey: () -> Unit,
+    onDecline: () -> Unit
 ) {
     AegisCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -576,6 +578,14 @@ private fun TransactionCard(
                 Icon(Icons.Outlined.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(8.dp))
                 Text(if (transaction.requiresPasskey) "Verify passkey and ${actionButtonTitle(transaction).replaceFirstChar { it.lowercase() }}" else actionButtonTitle(transaction))
+            }
+            if (transaction.type == WalletTransactionType.Challenge) {
+                OutlinedButton(
+                    onClick = onDecline,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Decline challenge", color = Color(0xFFC23B32), fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -686,6 +696,7 @@ private fun statusTint(state: WalletConnectionState): Color = when (state) {
 private fun transactionStatusTint(status: WalletTransactionStatus): Color = when (status) {
     WalletTransactionStatus.Accepted, WalletTransactionStatus.Sent -> VanguardColors.Green
     WalletTransactionStatus.PendingAcceptance, WalletTransactionStatus.Received -> VanguardColors.Blue
+    WalletTransactionStatus.Declined -> Color(0xFFC23B32)
     WalletTransactionStatus.Failed -> Color(0xFFC23B32)
 }
 

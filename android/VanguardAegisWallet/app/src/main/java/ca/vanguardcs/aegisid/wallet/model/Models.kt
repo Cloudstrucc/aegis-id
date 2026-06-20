@@ -99,6 +99,7 @@ enum class WalletTransactionStatus(val title: String) {
     PendingAcceptance("Pending acceptance"),
     Accepted("Accepted"),
     Sent("Sent"),
+    Declined("Declined"),
     Failed("Failed")
 }
 
@@ -131,6 +132,7 @@ data class WalletTransaction(
     val remoteId: String? = null,
     val webSessionId: String? = null,
     val webAcceptPath: String? = null,
+    val webDeclinePath: String? = null,
     val requiresPasskey: Boolean = false,
     val requiredAssurance: String? = null,
     val passkeyAcceptPath: String? = null,
@@ -153,6 +155,7 @@ data class WalletTransaction(
         .putOpt("remoteId", remoteId)
         .putOpt("webSessionId", webSessionId)
         .putOpt("webAcceptPath", webAcceptPath)
+        .putOpt("webDeclinePath", webDeclinePath)
         .put("requiresPasskey", requiresPasskey)
         .putOpt("requiredAssurance", requiredAssurance)
         .putOpt("passkeyAcceptPath", passkeyAcceptPath)
@@ -176,6 +179,7 @@ data class WalletTransaction(
             remoteId = json.optStringOrNull("remoteId"),
             webSessionId = json.optStringOrNull("webSessionId"),
             webAcceptPath = json.optStringOrNull("webAcceptPath"),
+            webDeclinePath = json.optStringOrNull("webDeclinePath"),
             requiresPasskey = json.optBoolean("requiresPasskey", false),
             requiredAssurance = json.optStringOrNull("requiredAssurance"),
             passkeyAcceptPath = json.optStringOrNull("passkeyAcceptPath"),
@@ -242,6 +246,7 @@ data class OidcWalletChallenge(
     val title: String?,
     val detail: String?,
     val acceptPath: String?,
+    val declinePath: String?,
     val passkeyAcceptPath: String?,
     val requiresPasskey: Boolean,
     val requiredAssurance: String?,
@@ -264,6 +269,7 @@ data class OidcWalletChallenge(
             title = json.optStringOrNull("title"),
             detail = json.optStringOrNull("detail"),
             acceptPath = json.optStringOrNull("acceptPath"),
+            declinePath = json.optStringOrNull("declinePath"),
             passkeyAcceptPath = json.optStringOrNull("passkeyAcceptPath"),
             requiresPasskey = json.optBoolean("requiresPasskey", false),
             requiredAssurance = json.optStringOrNull("requiredAssurance"),

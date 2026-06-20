@@ -93,6 +93,8 @@ private struct LedgerRow: View {
             return VanguardTheme.green
         case .pendingAcceptance, .received:
             return VanguardTheme.blue
+        case .declined:
+            return .red
         case .failed:
             return .red
         }
@@ -165,20 +167,32 @@ private struct LedgerDetailView: View {
         switch transaction.status {
         case .pendingAcceptance, .received, .failed:
             if let connection = store.connection(id: transaction.connectionId) {
-                Button {
-                    accept(transaction, connection: connection)
-                } label: {
-                    if isWorking {
-                        Label("Recording decision...", systemImage: "hourglass")
-                    } else if requiresPasskey {
-                        Label("Verify Passkey And \(actionButtonTitle(for: transaction))", systemImage: "person.badge.key")
-                    } else {
-                        Label(actionButtonTitle(for: transaction), systemImage: "checkmark.shield")
+                VStack(spacing: 10) {
+                    Button {
+                        accept(transaction, connection: connection)
+                    } label: {
+                        if isWorking {
+                            Label("Recording decision...", systemImage: "hourglass")
+                        } else if requiresPasskey {
+                            Label("Verify Passkey And \(actionButtonTitle(for: transaction))", systemImage: "person.badge.key")
+                        } else {
+                            Label(actionButtonTitle(for: transaction), systemImage: "checkmark.shield")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(VanguardTheme.green)
+                    .disabled(isWorking)
+
+                    if transaction.type == .challenge {
+                        Button(role: .destructive) {
+                            decline(transaction, connection: connection)
+                        } label: {
+                            Label("Decline challenge", systemImage: "xmark.shield")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isWorking)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(VanguardTheme.green)
-                .disabled(isWorking)
             } else {
                 Label("Connection unavailable", systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.red)
@@ -193,6 +207,9 @@ private struct LedgerDetailView: View {
         case .accepted, .sent:
             Label("Decision accepted", systemImage: "checkmark.seal.fill")
                 .foregroundStyle(VanguardTheme.green)
+        case .declined:
+            Label("Decision declined", systemImage: "xmark.shield.fill")
+                .foregroundStyle(.red)
         }
     }
 
@@ -204,6 +221,18 @@ private struct LedgerDetailView: View {
         isWorking = true
         Task {
             await store.acceptTransaction(transaction, for: connection)
+            isWorking = false
+        }
+    }
+
+    private func decline(_ transaction: WalletTransaction, connection: WalletConnection) {
+        guard !isWorking else {
+            return
+        }
+
+        isWorking = true
+        Task {
+            await store.declineTransaction(transaction, for: connection)
             isWorking = false
         }
     }

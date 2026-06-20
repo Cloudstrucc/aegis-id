@@ -192,6 +192,27 @@ async function confirmWalletChallenge(sessionId) {
   }));
 }
 
+async function declineWalletChallenge(sessionId, input = {}) {
+  const session = await getDemoSession(sessionId);
+
+  if (session.status !== 'wallet-challenge-sent') {
+    const error = new Error('Send the wallet challenge before declining it.');
+    error.status = 409;
+    throw error;
+  }
+
+  return updateSession(session.id, (record) => ({
+    ...record,
+    status: 'wallet-challenge-declined',
+    walletChallenge: {
+      ...record.walletChallenge,
+      status: 'declined',
+      declinedAt: nowIso(),
+      declineReason: normalizeText(input.reason, 240) || 'Declined in wallet'
+    }
+  }));
+}
+
 async function listPendingWalletChallenges(connectionId) {
   const records = await store.read();
   const oidcChallenges = records
@@ -224,6 +245,7 @@ async function listPendingWalletChallenges(connectionId) {
       title: 'OIDC Wallet Demo: Sign In',
       detail: `${record.oidc?.claims?.email || record.oidc?.claims?.sub || 'unknown-subject'} must accept a sign-in challenge.`,
       acceptPath: `/api/oidc-wallet/challenges/${record.id}/accept`,
+      declinePath: `/api/oidc-wallet/challenges/${record.id}/decline`,
       payloadFields: [
         { key: 'appName', value: 'OIDC Wallet Demo' },
         { key: 'action', value: 'sign-in' },
@@ -286,11 +308,15 @@ function buildMockClaims(session) {
   };
 }
 
+function normalizeText(value = '', max = 400) {
+  return String(value || '').trim().slice(0, max);
+}
+
 function buildFlowSteps(status) {
   return [
     {
       label: 'OIDC login',
-      state: ['oidc-authenticated', 'wallet-challenge-sent', 'authenticated'].includes(status) ? 'complete' : 'active'
+      state: ['oidc-authenticated', 'wallet-challenge-sent', 'wallet-challenge-declined', 'authenticated'].includes(status) ? 'complete' : 'active'
     },
     {
       label: 'Wallet challenge',
@@ -299,6 +325,8 @@ function buildFlowSteps(status) {
           ? 'complete'
           : status === 'wallet-challenge-sent'
             ? 'active'
+            : status === 'wallet-challenge-declined'
+              ? 'failed'
             : 'pending'
     },
     {
@@ -318,6 +346,7 @@ module.exports = {
   confirmWalletChallenge,
   createLoginRequest,
   createWalletChallenge,
+  declineWalletChallenge,
   completeOidcCallback,
   getDemoSession,
   isAuthenticated,

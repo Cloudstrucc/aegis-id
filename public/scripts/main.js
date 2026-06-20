@@ -96,6 +96,7 @@ document.addEventListener('click', async (event) => {
 
   const dismissBanner = event.target.closest('[data-dismiss-banner]');
   if (dismissBanner) {
+    event.preventDefault();
     dismissDashboardBanner(dismissBanner.closest('[data-dismissible-banner]'));
     return;
   }
@@ -371,16 +372,24 @@ function initOrgChart() {
   const state = {
     chart: null,
     nodes,
-    showPeople: true
+    showPeople: true,
+    renderAttempts: 0
   };
 
   const render = () => {
     const visibleNodes = state.showPeople ? state.nodes : state.nodes.filter((node) => node.type !== 'person');
     if (!window.d3?.OrgChart) {
+      if (state.renderAttempts < 12) {
+        state.renderAttempts += 1;
+        window.setTimeout(render, 150);
+        return;
+      }
       renderOrgChartFallback(container, visibleNodes);
       return;
     }
 
+    container.hidden = false;
+    state.renderAttempts = 0;
     const chart = state.chart || new window.d3.OrgChart();
     state.chart = chart;
     chart
@@ -506,12 +515,15 @@ function renderOrgChartFallback(container, nodes) {
 }
 
 function showOrgChartFallback(container, message) {
-  const fallback = document.querySelector('[data-org-chart-fallback]');
-  if (fallback) {
-    fallback.hidden = false;
-    fallback.querySelector('span').textContent = message;
-  }
-  container.hidden = true;
+  container.hidden = false;
+  container.innerHTML = `
+    <div class="org-chart-fallback-list">
+      <button type="button" disabled>
+        <strong>${escapeHtml(message)}</strong>
+        <span>Add a division or refresh after the chart data is available.</span>
+      </button>
+    </div>
+  `;
 }
 
 function cssEscape(value = '') {
@@ -1141,7 +1153,7 @@ function restoreDismissibleBanners() {
   document.querySelectorAll('[data-dismissible-banner]').forEach((banner) => {
     const key = `aegis.banner.${banner.dataset.dismissibleBanner}`;
     if (window.sessionStorage.getItem(key) === 'dismissed') {
-      banner.hidden = true;
+      banner.remove();
     }
   });
 }
@@ -1152,7 +1164,7 @@ function dismissDashboardBanner(banner) {
   }
   const key = `aegis.banner.${banner.dataset.dismissibleBanner}`;
   window.sessionStorage.setItem(key, 'dismissed');
-  banner.hidden = true;
+  banner.remove();
 }
 
 function openInviteModalFromHash() {

@@ -63,8 +63,27 @@ class LabAgentClient(
         postJson("/api/oidc-wallet/challenges/$encoded/accept", JSONObject(), sourceWebAppUrl)
     }
 
+    suspend fun declineOidcWalletChallenge(sessionId: String, sourceWebAppUrl: String? = null) {
+        val encoded = URLEncoder.encode(sessionId, Charsets.UTF_8.name())
+        postJson(
+            "/api/oidc-wallet/challenges/$encoded/decline",
+            JSONObject().put("reason", "Declined in Android wallet"),
+            sourceWebAppUrl
+        )
+    }
+
     suspend fun acceptWalletChallenge(acceptPath: String, sourceWebAppUrl: String? = null) {
         postJson(resolvePathOrUrl(acceptPath, sourceWebAppUrl), JSONObject().put("source", "android-wallet"), sourceWebAppUrl)
+    }
+
+    suspend fun declineWalletChallenge(declinePath: String, sourceWebAppUrl: String? = null) {
+        postJson(
+            resolvePathOrUrl(declinePath, sourceWebAppUrl),
+            JSONObject()
+                .put("source", "android-wallet")
+                .put("reason", "Declined in Android wallet"),
+            sourceWebAppUrl
+        )
     }
 
     suspend fun acceptWalletChallengeWithPasskey(

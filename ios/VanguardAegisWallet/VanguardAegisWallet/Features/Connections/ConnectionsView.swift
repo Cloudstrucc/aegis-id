@@ -239,6 +239,8 @@ private struct TransactionRow: View {
             return VanguardTheme.green
         case .pendingAcceptance, .received:
             return VanguardTheme.blue
+        case .declined:
+            return .red
         case .failed:
             return .red
         }
