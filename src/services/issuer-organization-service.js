@@ -26,7 +26,8 @@ async function createIssuerOrganizationInvitation(subscription, workspace) {
   const decoratedInvitationUrl = decorateInvitationUrl(invitation.invitationUrl, {
     vanguard_org_id: organizationId,
     vanguard_subscription_id: subscription.id,
-    vanguard_org_name: organizationName
+    vanguard_org_name: organizationName,
+    vanguard_web_app_url: config.app.publicBaseUrl.replace(/\/$/, '')
   });
   const iosDeepLinkUrl = createIosWalletDeepLink(decoratedInvitationUrl);
   const now = new Date().toISOString();

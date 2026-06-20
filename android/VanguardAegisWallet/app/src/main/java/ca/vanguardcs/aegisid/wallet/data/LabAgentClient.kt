@@ -16,67 +16,72 @@ import java.net.URLEncoder
 class LabAgentClient(
     private val baseUrl: String = BuildConfig.AEGIS_WEB_APP_BASE_URL.trimEnd('/')
 ) {
-    suspend fun acceptInvitation(rawUrl: String): LabAcceptance {
+    suspend fun acceptInvitation(rawUrl: String, sourceWebAppUrl: String? = null): LabAcceptance {
         val payload = JSONObject().put("rawInvitationUrl", rawUrl)
-        return LabAcceptance.fromJson(postJson("/api/wallet-lab/accept-invitation", payload))
+        return LabAcceptance.fromJson(postJson("/api/wallet-lab/accept-invitation", payload, sourceWebAppUrl))
     }
 
-    suspend fun issueMockCredential(issuerConnectionId: String, subjectEmail: String) {
+    suspend fun issueMockCredential(issuerConnectionId: String, subjectEmail: String, sourceWebAppUrl: String? = null) {
         postJson(
             "/api/wallet-lab/issuer-mock-credential",
             JSONObject()
                 .put("issuerConnectionId", issuerConnectionId)
-                .put("subjectEmail", subjectEmail)
+                .put("subjectEmail", subjectEmail),
+            sourceWebAppUrl
         )
     }
 
-    suspend fun sendChallenge(issuerConnectionId: String): String? {
+    suspend fun sendChallenge(issuerConnectionId: String, sourceWebAppUrl: String? = null): String? {
         return postJson(
             "/api/wallet-lab/issuer-challenge",
-            JSONObject().put("issuerConnectionId", issuerConnectionId)
+            JSONObject().put("issuerConnectionId", issuerConnectionId),
+            sourceWebAppUrl
         ).optString("threadId").takeIf { it.isNotBlank() }
     }
 
-    suspend fun sendHolderMessage(holderConnectionId: String, content: String) {
+    suspend fun sendHolderMessage(holderConnectionId: String, content: String, sourceWebAppUrl: String? = null) {
         postJson(
             "/api/wallet-lab/holder-message",
             JSONObject()
                 .put("holderConnectionId", holderConnectionId)
-                .put("content", content)
+                .put("content", content),
+            sourceWebAppUrl
         )
     }
 
-    suspend fun fetchOidcWalletChallenges(issuerConnectionId: String): List<OidcWalletChallenge> {
+    suspend fun fetchOidcWalletChallenges(issuerConnectionId: String, sourceWebAppUrl: String? = null): List<OidcWalletChallenge> {
         val encoded = URLEncoder.encode(issuerConnectionId, Charsets.UTF_8.name())
-        val response = getJson("/api/oidc-wallet/challenges?connectionId=$encoded")
+        val response = getJson("/api/oidc-wallet/challenges?connectionId=$encoded", sourceWebAppUrl)
         val challenges = response.optJSONArray("challenges") ?: return emptyList()
         return (0 until challenges.length()).mapNotNull { index ->
             challenges.optJSONObject(index)?.let(OidcWalletChallenge::fromJson)
         }
     }
 
-    suspend fun acceptOidcWalletChallenge(sessionId: String) {
+    suspend fun acceptOidcWalletChallenge(sessionId: String, sourceWebAppUrl: String? = null) {
         val encoded = URLEncoder.encode(sessionId, Charsets.UTF_8.name())
-        postJson("/api/oidc-wallet/challenges/$encoded/accept", JSONObject())
+        postJson("/api/oidc-wallet/challenges/$encoded/accept", JSONObject(), sourceWebAppUrl)
     }
 
-    suspend fun acceptWalletChallenge(acceptPath: String) {
-        postJson(resolvePathOrUrl(acceptPath), JSONObject().put("source", "android-wallet"))
+    suspend fun acceptWalletChallenge(acceptPath: String, sourceWebAppUrl: String? = null) {
+        postJson(resolvePathOrUrl(acceptPath, sourceWebAppUrl), JSONObject().put("source", "android-wallet"), sourceWebAppUrl)
     }
 
     suspend fun acceptWalletChallengeWithPasskey(
         acceptPath: String,
         subject: String,
         challengeId: String,
-        passkeyResponse: JSONObject
+        passkeyResponse: JSONObject,
+        sourceWebAppUrl: String? = null
     ) {
         postJson(
-            resolvePathOrUrl(acceptPath),
+            resolvePathOrUrl(acceptPath, sourceWebAppUrl),
             JSONObject()
                 .put("source", "android-wallet")
                 .put("subject", subject)
                 .put("challengeId", challengeId)
-                .put("passkeyResponse", passkeyResponse)
+                .put("passkeyResponse", passkeyResponse),
+            sourceWebAppUrl
         )
     }
 
@@ -105,22 +110,24 @@ class LabAgentClient(
         )
     }
 
-    suspend fun startWalletPasskeyAuthentication(subject: String, challengeId: String): JSONObject {
+    suspend fun startWalletPasskeyAuthentication(subject: String, challengeId: String, sourceWebAppUrl: String? = null): JSONObject {
         return postJson(
             "/api/wallet/passkeys/authenticate/options",
             JSONObject()
                 .put("subject", subject)
-                .put("challengeId", challengeId)
+                .put("challengeId", challengeId),
+            sourceWebAppUrl
         ).getJSONObject("options")
     }
 
-    suspend fun finishWalletPasskeyAuthentication(subject: String, challengeId: String, response: JSONObject): JSONObject {
+    suspend fun finishWalletPasskeyAuthentication(subject: String, challengeId: String, response: JSONObject, sourceWebAppUrl: String? = null): JSONObject {
         return postJson(
             "/api/wallet/passkeys/authenticate/verify",
             JSONObject()
                 .put("subject", subject)
                 .put("challengeId", challengeId)
-                .put("response", response)
+                .put("response", response),
+            sourceWebAppUrl
         )
     }
 
@@ -128,7 +135,8 @@ class LabAgentClient(
         organizationId: String,
         holderConnectionId: String,
         issuerConnectionId: String?,
-        invitationId: String?
+        invitationId: String?,
+        sourceWebAppUrl: String? = null
     ) {
         val encoded = URLEncoder.encode(organizationId, Charsets.UTF_8.name())
         postJson(
@@ -136,43 +144,46 @@ class LabAgentClient(
             JSONObject()
                 .put("holderConnectionId", holderConnectionId)
                 .put("issuerConnectionId", issuerConnectionId)
-                .put("invitationId", invitationId)
+                .put("invitationId", invitationId),
+            sourceWebAppUrl
         )
     }
 
-    suspend fun fetchOrganizationProfile(organizationId: String): OrganizationProfile {
+    suspend fun fetchOrganizationProfile(organizationId: String, sourceWebAppUrl: String? = null): OrganizationProfile {
         val encoded = URLEncoder.encode(organizationId, Charsets.UTF_8.name())
-        return OrganizationProfile.fromJson(getJson("/api/organizations/$encoded/profile"))
+        return OrganizationProfile.fromJson(getJson("/api/organizations/$encoded/profile", sourceWebAppUrl))
     }
 
-    suspend fun acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?) {
+    suspend fun acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?, sourceWebAppUrl: String? = null) {
         val encoded = URLEncoder.encode(credentialId, Charsets.UTF_8.name())
         postJson(
             "/api/wallet/credential-invitations/$encoded/accept",
             JSONObject()
                 .put("organizationId", organizationId)
                 .put("holderEmail", holderEmail)
-                .put("source", "android-wallet")
+                .put("source", "android-wallet"),
+            sourceWebAppUrl
         )
     }
 
-    private fun resolvePathOrUrl(value: String): String {
+    private fun resolvePathOrUrl(value: String, sourceWebAppUrl: String? = null): String {
         val trimmed = value.trim()
         return if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             trimmed
         } else {
-            "/${trimmed.trimStart('/')}"
+            "${effectiveBaseUrl(sourceWebAppUrl)}/${trimmed.trimStart('/')}"
         }
     }
 
-    private suspend fun getJson(pathOrUrl: String): JSONObject = requestJson("GET", pathOrUrl, null)
+    private suspend fun getJson(pathOrUrl: String, sourceWebAppUrl: String? = null): JSONObject =
+        requestJson("GET", pathOrUrl, null, sourceWebAppUrl)
 
-    private suspend fun postJson(pathOrUrl: String, payload: JSONObject): JSONObject =
-        requestJson("POST", pathOrUrl, payload)
+    private suspend fun postJson(pathOrUrl: String, payload: JSONObject, sourceWebAppUrl: String? = null): JSONObject =
+        requestJson("POST", pathOrUrl, payload, sourceWebAppUrl)
 
-    private suspend fun requestJson(method: String, pathOrUrl: String, payload: JSONObject?): JSONObject =
+    private suspend fun requestJson(method: String, pathOrUrl: String, payload: JSONObject?, sourceWebAppUrl: String? = null): JSONObject =
         withContext(Dispatchers.IO) {
-            val url = URL(if (pathOrUrl.startsWith("http")) pathOrUrl else "$baseUrl$pathOrUrl")
+            val url = URL(if (pathOrUrl.startsWith("http")) pathOrUrl else "${effectiveBaseUrl(sourceWebAppUrl)}$pathOrUrl")
             val connection = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = method
                 connectTimeout = 12_000
@@ -201,6 +212,15 @@ class LabAgentClient(
 
             if (body.isBlank()) JSONObject() else JSONObject(body)
         }
+
+    private fun effectiveBaseUrl(sourceWebAppUrl: String?): String {
+        val candidate = sourceWebAppUrl?.trim()?.trimEnd('/')
+        return if (candidate?.startsWith("http://") == true || candidate?.startsWith("https://") == true) {
+            candidate
+        } else {
+            baseUrl
+        }
+    }
 
     private fun parseErrorMessage(body: String, status: Int): String {
         if (body.isBlank()) return "Aegis ID returned HTTP $status."

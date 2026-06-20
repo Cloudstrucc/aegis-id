@@ -12,6 +12,7 @@ data class AegisCredentialInvite(
     val credentialId: String,
     val holderEmail: String,
     val expiresAt: String?,
+    val sourceWebAppUrl: String?,
     val rawUrl: String
 )
 
@@ -40,6 +41,7 @@ object AegisCredentialInviteParser {
             credentialId = credentialId,
             holderEmail = queryValue(uri, "holder_email", "holderEmail") ?: "",
             expiresAt = queryValue(uri, "expires_at", "expiresAt"),
+            sourceWebAppUrl = sourceWebAppUrl(uri),
             rawUrl = trimmed
         )
     }
@@ -83,6 +85,7 @@ object OobInvitationParser {
             organizationId = queryValue(uri, "vanguard_org_id", "cloudstrucc_org_id"),
             organizationName = queryValue(uri, "vanguard_org_name", "cloudstrucc_org_name"),
             subscriptionId = queryValue(uri, "vanguard_subscription_id", "cloudstrucc_subscription_id"),
+            sourceWebAppUrl = sourceWebAppUrl(uri),
             handshakeProtocols = payload.optJSONArray("handshake_protocols").stringList(),
             services = payload.optJSONArray("services").serviceList()
         )
@@ -134,6 +137,27 @@ object OobInvitationParser {
 }
 
 class InvitationParseException(message: String) : IllegalArgumentException(message)
+
+private fun sourceWebAppUrl(uri: Uri): String? {
+    queryValue(uri, "vanguard_web_app_url", "source_web_app_url", "sourceWebAppUrl", "cloudstrucc_web_app_url")
+        ?.let { return it }
+
+    val scheme = uri.scheme ?: return null
+    val host = uri.host ?: return null
+    if (scheme != "http" && scheme != "https") return null
+    val port = uri.port.takeIf { it != -1 }
+    return if (port == null) "$scheme://$host" else "$scheme://$host:$port"
+}
+
+private fun queryValue(uri: Uri, vararg names: String): String? {
+    for (name in names) {
+        val value = uri.getQueryParameter(name)
+        if (!value.isNullOrBlank()) {
+            return value
+        }
+    }
+    return null
+}
 
 private fun JSONArray?.stringList(): List<String> {
     if (this == null) return emptyList()

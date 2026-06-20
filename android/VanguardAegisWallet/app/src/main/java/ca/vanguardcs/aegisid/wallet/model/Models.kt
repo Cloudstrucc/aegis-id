@@ -12,6 +12,7 @@ data class AriesInvitation(
     val organizationId: String?,
     val organizationName: String?,
     val subscriptionId: String?,
+    val sourceWebAppUrl: String?,
     val handshakeProtocols: List<String>,
     val services: List<String>,
     val receivedAt: Long = System.currentTimeMillis()
@@ -24,6 +25,7 @@ data class AriesInvitation(
         .putOpt("organizationId", organizationId)
         .putOpt("organizationName", organizationName)
         .putOpt("subscriptionId", subscriptionId)
+        .putOpt("sourceWebAppUrl", sourceWebAppUrl)
         .put("handshakeProtocols", handshakeProtocols.toJsonArray())
         .put("services", services.toJsonArray())
         .put("receivedAt", receivedAt)
@@ -37,6 +39,7 @@ data class AriesInvitation(
             organizationId = json.optStringOrNull("organizationId"),
             organizationName = json.optStringOrNull("organizationName"),
             subscriptionId = json.optStringOrNull("subscriptionId"),
+            sourceWebAppUrl = json.optStringOrNull("sourceWebAppUrl"),
             handshakeProtocols = json.optJSONArray("handshakeProtocols").toStringList(),
             services = json.optJSONArray("services").toStringList(),
             receivedAt = json.optLong("receivedAt", System.currentTimeMillis())

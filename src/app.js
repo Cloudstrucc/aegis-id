@@ -67,16 +67,18 @@ function createApp() {
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use(express.json({ limit: '2mb' }));
   app.get('/.well-known/apple-app-site-association', (req, res) => {
-    const appId = `${config.mobileApps.iosTeamId}.${config.mobileApps.iosBundleId}`;
+    const appIds = config.mobileApps.iosBundleIds.map(
+      (bundleId) => `${config.mobileApps.iosTeamId}.${bundleId}`
+    );
     res.type('application/json').send({
       webcredentials: {
-        apps: [appId]
+        apps: appIds
       },
       applinks: {
         apps: [],
         details: [
           {
-            appIDs: [appId],
+            appIDs: appIds,
             components: [
               {
                 '/': '/wallet/*',

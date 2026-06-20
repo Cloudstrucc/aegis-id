@@ -44,25 +44,29 @@ The project has separate shared schemes and bundle identifiers so production, de
 | Environment | Xcode scheme | Bundle ID | Display name | Aegis web app |
 | --- | --- | --- | --- | --- |
 | Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `Aegis ID` | `https://vanguard-aegis-id-65067d.azurewebsites.net` |
-| Dev | `VanguardAegisWallet Dev` | `ca.vanguardcs.aegisid.wallet.dev` | `Aegis ID Dev` | `https://vanguard-aegis-id-dev-65067d.azurewebsites.net` |
-| QA | `VanguardAegisWallet QA` | `ca.vanguardcs.aegisid.wallet.qa` | `Aegis ID QA` | `https://vanguard-aegis-id-qa-65067d.azurewebsites.net` |
+| Dev | `VanguardAegisWallet Dev` | `ca.vanguardcs.aegisid.wallet.dev` | `Aegis ID Dev` | `https://vanguard-aegis-id-dev-0e75d1.azurewebsites.net` |
+| QA | `VanguardAegisWallet QA` | `ca.vanguardcs.aegisid.wallet.qa` | `Aegis ID QA` | `https://vanguard-aegis-id-qa-0e75d1.azurewebsites.net` |
 
-The matching associated-domain entitlements are:
-
-```text
-VanguardAegisWallet.entitlements       -> vanguard-aegis-id-65067d.azurewebsites.net
-VanguardAegisWallet-Dev.entitlements   -> vanguard-aegis-id-dev-65067d.azurewebsites.net
-VanguardAegisWallet-QA.entitlements    -> vanguard-aegis-id-qa-65067d.azurewebsites.net
-```
-
-Before testing wallet passkeys in dev or QA, deploy the matching Aegis ID web app so these endpoints return the matching bundle ID:
+Each wallet entitlement can list multiple associated domains. The project keeps the same domain set in the production, dev, and QA entitlement files so a TestFlight build can handle links and wallet passkeys while you move between tenants or environments:
 
 ```text
-https://vanguard-aegis-id-dev-65067d.azurewebsites.net/.well-known/apple-app-site-association
-https://vanguard-aegis-id-qa-65067d.azurewebsites.net/.well-known/apple-app-site-association
+vanguard-aegis-id-65067d.azurewebsites.net
+vanguard-aegis-id-dev-65067d.azurewebsites.net
+vanguard-aegis-id-qa-65067d.azurewebsites.net
+vanguard-aegis-id-0e75d1.azurewebsites.net
+vanguard-aegis-id-dev-0e75d1.azurewebsites.net
+vanguard-aegis-id-qa-0e75d1.azurewebsites.net
 ```
 
-The root `.env.dev` and `.env.qa` files set `IOS_APP_BUNDLE_ID` to the dev/QA bundle identifiers so the web app publishes the correct Apple association document.
+Before testing wallet passkeys or universal links, deploy the matching Aegis ID web apps so each domain returns an Apple association document:
+
+```text
+https://vanguard-aegis-id-65067d.azurewebsites.net/.well-known/apple-app-site-association
+https://vanguard-aegis-id-dev-0e75d1.azurewebsites.net/.well-known/apple-app-site-association
+https://vanguard-aegis-id-qa-0e75d1.azurewebsites.net/.well-known/apple-app-site-association
+```
+
+The web app publishes all default wallet bundle IDs in the Apple association document. To override the list for a tenant, set `IOS_APP_BUNDLE_IDS` as a comma-separated list, for example `ca.vanguardcs.aegisid.wallet,ca.vanguardcs.aegisid.wallet.dev,ca.vanguardcs.aegisid.wallet.qa`.
 
 Simulator builds:
 
@@ -207,7 +211,9 @@ Wallet passkeys are optional. Use them only when an organization requires extra 
 
 4. In the iOS wallet, open **Settings > Wallet passkey assurance**.
 5. Enter the wallet subject email and tap **Register passkey**.
-6. When a Ledger item shows **Passkey required**, tap **Verify Passkey And ...** to complete Face ID/Touch ID/device passcode and submit the signed wallet approval.
+6. Choose **YubiKey / security key** or **Apple Passwords** in the **Register using** control, then tap **Register Wallet Passkey**. A YubiKey must be registered as an Aegis ID passkey for this relying-party domain; using a YubiKey only as an Apple ID security key is not enough.
+7. Optional for demos: enable **Require passkey before wallet challenge approvals**. This forces a local passkey ceremony before accepting wallet challenges even when the server-side challenge is not marked as passkey-required.
+8. When a Ledger item shows **Passkey required**, tap **Verify Passkey And ...** to complete Face ID/Touch ID/device passcode or YubiKey security-key verification and submit the signed wallet approval.
 
 For local simulator testing, passkey behavior depends on the simulator and associated-domain state. Real-device testing is the better validation path once TestFlight is configured.
 

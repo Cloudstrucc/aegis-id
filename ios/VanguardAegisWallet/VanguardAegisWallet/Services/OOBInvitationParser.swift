@@ -6,6 +6,7 @@ struct AegisCredentialInvite: Equatable, Hashable {
     var credentialId: String
     var holderEmail: String
     var expiresAt: String?
+    var sourceWebAppURL: String?
     var rawURL: String
 }
 
@@ -42,6 +43,7 @@ enum AegisCredentialInviteParser {
             credentialId: credentialId,
             holderEmail: queryValue(["holder_email", "holderEmail"], in: queryItems) ?? "",
             expiresAt: queryValue(["expires_at", "expiresAt"], in: queryItems),
+            sourceWebAppURL: sourceWebAppURL(from: queryItems, fallbackComponents: components),
             rawURL: trimmed
         )
     }
@@ -112,6 +114,7 @@ enum OOBInvitationParser {
             organizationId: queryValue(["vanguard_org_id", "cloudstrucc_org_id"], in: queryItems),
             organizationName: queryValue(["vanguard_org_name", "cloudstrucc_org_name"], in: queryItems),
             subscriptionId: queryValue(["vanguard_subscription_id", "cloudstrucc_subscription_id"], in: queryItems),
+            sourceWebAppURL: sourceWebAppURL(from: queryItems, fallbackComponents: components),
             handshakeProtocols: payload.handshakeProtocols ?? [],
             services: payload.services?.map(\.value) ?? [],
             receivedAt: Date()
@@ -178,12 +181,43 @@ enum OOBInvitationParser {
 
     private static func queryValue(_ names: [String], in items: [URLQueryItem]) -> String? {
         for name in names {
-            if let value = items.first(where: { $0.name == name })?.value {
+            if let value = items.first(where: { $0.name == name })?.value, !value.isEmpty {
                 return value
             }
         }
         return nil
     }
+}
+
+private func sourceWebAppURL(from items: [URLQueryItem], fallbackComponents: URLComponents) -> String? {
+    if let explicit = queryValue(
+        ["vanguard_web_app_url", "source_web_app_url", "sourceWebAppURL", "cloudstrucc_web_app_url"],
+        in: items
+    ) {
+        return explicit
+    }
+
+    guard fallbackComponents.scheme == "http" || fallbackComponents.scheme == "https",
+          let scheme = fallbackComponents.scheme,
+          let host = fallbackComponents.host
+    else {
+        return nil
+    }
+
+    if let port = fallbackComponents.port {
+        return "\(scheme)://\(host):\(port)"
+    }
+
+    return "\(scheme)://\(host)"
+}
+
+private func queryValue(_ names: [String], in items: [URLQueryItem]) -> String? {
+    for name in names {
+        if let value = items.first(where: { $0.name == name })?.value, !value.isEmpty {
+            return value
+        }
+    }
+    return nil
 }
 
 extension OOBInvitationParser {

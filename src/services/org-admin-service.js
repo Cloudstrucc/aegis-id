@@ -1279,7 +1279,8 @@ async function buildCredentialInvitation(workspace, credential, options = {}) {
     organization_name: workspace.organization || credential.organizationName || 'Vanguard organization',
     credential_id: credential.id,
     holder_email: credential.holderEmail,
-    expires_at: credential.inviteExpiresAt || ''
+    expires_at: credential.inviteExpiresAt || '',
+    vanguard_web_app_url: publicBaseUrl
   });
   const inviteUrl = `aegisid://credential-invite?${walletParams.toString()}`;
   const webInviteUrl = `${publicBaseUrl}/wallet/credential-invitations/${encodeURIComponent(credential.id)}?organizationId=${encodeURIComponent(workspace.id)}`;

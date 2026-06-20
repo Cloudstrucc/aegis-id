@@ -4,8 +4,18 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
+		<string>webcredentials:vanguard-aegis-id-65067d.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-65067d.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-dev-65067d.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-dev-65067d.azurewebsites.net</string>
 		<string>webcredentials:vanguard-aegis-id-qa-65067d.azurewebsites.net</string>
 		<string>applinks:vanguard-aegis-id-qa-65067d.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-0e75d1.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-0e75d1.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-dev-0e75d1.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-dev-0e75d1.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-qa-0e75d1.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-qa-0e75d1.azurewebsites.net</string>
 	</array>
 </dict>
 </plist>

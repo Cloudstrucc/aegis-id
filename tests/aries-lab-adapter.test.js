@@ -132,7 +132,7 @@ test('createOutOfBandInvitation sends configured ACA-Py admin API key', async (t
 
 test('createIosWalletDeepLink keeps the OOB payload, source endpoint, and org metadata', () => {
   const deepLink = createIosWalletDeepLink(
-    'http://10.0.0.240:4010?oob=abc123&vanguard_org_id=org-1&vanguard_org_name=Vanguard'
+    'http://10.0.0.240:4010?oob=abc123&vanguard_org_id=org-1&vanguard_org_name=Vanguard&vanguard_web_app_url=https%3A%2F%2Fvanguard-aegis-id-dev-0e75d1.azurewebsites.net'
   );
   const url = new URL(deepLink);
 
@@ -142,6 +142,7 @@ test('createIosWalletDeepLink keeps the OOB payload, source endpoint, and org me
   assert.equal(url.searchParams.get('endpoint'), 'http://10.0.0.240:4010');
   assert.equal(url.searchParams.get('vanguard_org_id'), 'org-1');
   assert.equal(url.searchParams.get('vanguard_org_name'), 'Vanguard');
+  assert.equal(url.searchParams.get('vanguard_web_app_url'), 'https://vanguard-aegis-id-dev-0e75d1.azurewebsites.net');
 });
 
 test('acceptInvitationWithHolder posts OOB payload through holder and resolves issuer connection', async (t) => {

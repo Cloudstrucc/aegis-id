@@ -5,10 +5,10 @@ struct LabAgentClient {
     var issuerAdminURL = AegisWalletEnvironment.issuerAdminURL
     var webAppURL = AegisWalletEnvironment.webAppURL
 
-    func acceptInvitation(rawURL: String) async throws -> LabAcceptance {
+    func acceptInvitation(rawURL: String, sourceWebAppURL: String? = nil) async throws -> LabAcceptance {
         if usesHostedLabBridge {
             return try await post(
-                webAppURL.appending(path: "api/wallet-lab/accept-invitation"),
+                portalURL(sourceWebAppURL).appending(path: "api/wallet-lab/accept-invitation"),
                 body: try JSONEncoder().encode(HostedInvitationAcceptanceRequest(rawInvitationUrl: rawURL))
             )
         }
@@ -40,10 +40,10 @@ struct LabAgentClient {
         )
     }
 
-    func issueMockCredential(issuerConnectionId: String, subjectEmail: String) async throws {
+    func issueMockCredential(issuerConnectionId: String, subjectEmail: String, sourceWebAppURL: String? = nil) async throws {
         if usesHostedLabBridge {
             _ = try await post(
-                webAppURL.appending(path: "api/wallet-lab/issuer-mock-credential"),
+                portalURL(sourceWebAppURL).appending(path: "api/wallet-lab/issuer-mock-credential"),
                 body: try JSONEncoder().encode(
                     HostedIssueMockCredentialRequest(
                         issuerConnectionId: issuerConnectionId,
@@ -67,10 +67,10 @@ struct LabAgentClient {
         ) as EmptyResponse
     }
 
-    func sendChallenge(issuerConnectionId: String) async throws -> String? {
+    func sendChallenge(issuerConnectionId: String, sourceWebAppURL: String? = nil) async throws -> String? {
         if usesHostedLabBridge {
             let response: HostedIssuerChallengeResponse = try await post(
-                webAppURL.appending(path: "api/wallet-lab/issuer-challenge"),
+                portalURL(sourceWebAppURL).appending(path: "api/wallet-lab/issuer-challenge"),
                 body: try JSONEncoder().encode(HostedIssuerChallengeRequest(issuerConnectionId: issuerConnectionId))
             )
             return response.threadId
@@ -89,10 +89,10 @@ struct LabAgentClient {
         return ping.threadId
     }
 
-    func sendHolderMessage(holderConnectionId: String, content: String) async throws {
+    func sendHolderMessage(holderConnectionId: String, content: String, sourceWebAppURL: String? = nil) async throws {
         if usesHostedLabBridge {
             _ = try await post(
-                webAppURL.appending(path: "api/wallet-lab/holder-message"),
+                portalURL(sourceWebAppURL).appending(path: "api/wallet-lab/holder-message"),
                 body: try JSONEncoder().encode(
                     HostedHolderMessageRequest(
                         holderConnectionId: holderConnectionId,
@@ -109,9 +109,9 @@ struct LabAgentClient {
         ) as EmptyResponse
     }
 
-    func fetchOIDCWalletChallenges(issuerConnectionId: String) async throws -> [OIDCWalletChallenge] {
+    func fetchOIDCWalletChallenges(issuerConnectionId: String, sourceWebAppURL: String? = nil) async throws -> [OIDCWalletChallenge] {
         let response: OIDCWalletChallengeList = try await get(
-            webAppURL.appending(path: "api/oidc-wallet/challenges"),
+            portalURL(sourceWebAppURL).appending(path: "api/oidc-wallet/challenges"),
             queryItems: [
                 URLQueryItem(name: "connectionId", value: issuerConnectionId)
             ]
@@ -119,25 +119,25 @@ struct LabAgentClient {
         return response.challenges
     }
 
-    func acceptOIDCWalletChallenge(sessionId: String) async throws {
+    func acceptOIDCWalletChallenge(sessionId: String, sourceWebAppURL: String? = nil) async throws {
         _ = try await post(
-            webAppURL.appending(path: "api/oidc-wallet/challenges/\(sessionId)/accept"),
+            portalURL(sourceWebAppURL).appending(path: "api/oidc-wallet/challenges/\(sessionId)/accept"),
             body: Data("{}".utf8)
         ) as OIDCWalletChallengeAcceptance
     }
 
-    func acceptWalletChallenge(acceptPath: String) async throws {
-        try await acceptWalletChallenge(acceptPath: acceptPath, body: ["source": "ios-wallet"])
+    func acceptWalletChallenge(acceptPath: String, sourceWebAppURL: String? = nil) async throws {
+        try await acceptWalletChallenge(acceptPath: acceptPath, sourceWebAppURL: sourceWebAppURL, body: ["source": "ios-wallet"])
     }
 
-    func acceptWalletChallenge(acceptPath: String, subject: String, challengeId: String?, passkeyResponse: WalletPasskeyCeremonyResponse) async throws {
+    func acceptWalletChallenge(acceptPath: String, subject: String, challengeId: String?, passkeyResponse: WalletPasskeyCeremonyResponse, sourceWebAppURL: String? = nil) async throws {
         let body = WalletPasskeyChallengeAcceptanceRequest(
             subject: subject,
             source: "ios-wallet-passkey",
             challengeId: challengeId,
             response: passkeyResponse
         )
-        try await acceptWalletChallenge(acceptPath: acceptPath, body: body)
+        try await acceptWalletChallenge(acceptPath: acceptPath, sourceWebAppURL: sourceWebAppURL, body: body)
     }
 
     func fetchWalletPasskeyStatus(subject: String) async throws -> WalletPasskeyStatus {
@@ -161,21 +161,21 @@ struct LabAgentClient {
         )
     }
 
-    func startWalletPasskeyAuthentication(subject: String, challengeId: String?) async throws -> WalletPasskeyOptionsEnvelope {
+    func startWalletPasskeyAuthentication(subject: String, challengeId: String?, sourceWebAppURL: String? = nil) async throws -> WalletPasskeyOptionsEnvelope {
         try await post(
-            webAppURL.appending(path: "api/wallet/passkeys/authenticate/options"),
+            portalURL(sourceWebAppURL).appending(path: "api/wallet/passkeys/authenticate/options"),
             body: try JSONEncoder().encode(WalletPasskeySubjectRequest(subject: subject, displayName: nil, challengeId: challengeId))
         )
     }
 
-    func finishWalletPasskeyAuthentication(subject: String, challengeId: String?, response: WalletPasskeyCeremonyResponse) async throws -> WalletPasskeyVerificationEnvelope {
+    func finishWalletPasskeyAuthentication(subject: String, challengeId: String?, response: WalletPasskeyCeremonyResponse, sourceWebAppURL: String? = nil) async throws -> WalletPasskeyVerificationEnvelope {
         try await post(
-            webAppURL.appending(path: "api/wallet/passkeys/authenticate/verify"),
+            portalURL(sourceWebAppURL).appending(path: "api/wallet/passkeys/authenticate/verify"),
             body: try JSONEncoder().encode(WalletPasskeyVerificationRequest(subject: subject, source: "ios-wallet", challengeId: challengeId, response: response))
         )
     }
 
-    private func acceptWalletChallenge<Body: Encodable>(acceptPath: String, body: Body) async throws {
+    private func acceptWalletChallenge<Body: Encodable>(acceptPath: String, sourceWebAppURL: String? = nil, body: Body) async throws {
         let trimmed = acceptPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let url: URL
         if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
@@ -184,7 +184,7 @@ struct LabAgentClient {
             }
             url = absolute
         } else {
-            url = webAppURL.appending(path: trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
+            url = portalURL(sourceWebAppURL).appending(path: trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
         }
         _ = try await post(
             url,
@@ -196,10 +196,11 @@ struct LabAgentClient {
         organizationId: String,
         holderConnectionId: String,
         issuerConnectionId: String?,
-        invitationId: String?
+        invitationId: String?,
+        sourceWebAppURL: String? = nil
     ) async throws {
         _ = try await post(
-            webAppURL.appending(path: "api/issuer-organizations/\(organizationId)/connections"),
+            portalURL(sourceWebAppURL).appending(path: "api/issuer-organizations/\(organizationId)/connections"),
             body: try JSONEncoder().encode(
                 IssuerOrganizationConnectionRegistration(
                     holderConnectionId: holderConnectionId,
@@ -210,13 +211,13 @@ struct LabAgentClient {
         ) as IssuerOrganizationConnectionRegistrationResponse
     }
 
-    func fetchOrganizationProfile(organizationId: String) async throws -> OrganizationProfile {
-        try await get(webAppURL.appending(path: "api/organizations/\(organizationId)/profile"))
+    func fetchOrganizationProfile(organizationId: String, sourceWebAppURL: String? = nil) async throws -> OrganizationProfile {
+        try await get(portalURL(sourceWebAppURL).appending(path: "api/organizations/\(organizationId)/profile"))
     }
 
-    func acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?) async throws {
+    func acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?, sourceWebAppURL: String? = nil) async throws {
         _ = try await post(
-            webAppURL.appending(path: "api/wallet/credential-invitations/\(credentialId)/accept"),
+            portalURL(sourceWebAppURL).appending(path: "api/wallet/credential-invitations/\(credentialId)/accept"),
             body: try JSONEncoder().encode(
                 CredentialInvitationAcceptanceRequest(
                     organizationId: organizationId,
@@ -229,6 +230,16 @@ struct LabAgentClient {
 
     private var usesHostedLabBridge: Bool {
         AegisWalletEnvironment.usesHostedWebApp
+    }
+
+    private func portalURL(_ sourceWebAppURL: String?) -> URL {
+        guard let sourceWebAppURL,
+              let url = URL(string: sourceWebAppURL.trimmingCharacters(in: .whitespacesAndNewlines)),
+              url.scheme == "http" || url.scheme == "https"
+        else {
+            return webAppURL
+        }
+        return url
     }
 
     private func waitForIssuerConnection(invitationId: String?) async throws -> AgentConnectionRecord? {

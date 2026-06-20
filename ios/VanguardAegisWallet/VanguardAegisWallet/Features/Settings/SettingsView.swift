@@ -4,6 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject private var store: WalletStore
     @State private var passkeySubject = ""
     @State private var isRegisteringPasskey = false
+    @State private var passkeyPreference: WalletPasskeyCredentialPreference = .securityKey
 
     var body: some View {
         List {
@@ -46,13 +47,27 @@ struct SettingsView: View {
                     LabeledContent("Last verified", value: lastUsed)
                 }
 
+                Toggle("Require passkey before wallet challenge approvals", isOn: Binding(
+                    get: { store.requirePasskeyForAllWalletChallenges },
+                    set: { store.updateRequirePasskeyForAllWalletChallenges($0) }
+                ))
+
+                Picker("Register using", selection: $passkeyPreference) {
+                    ForEach(WalletPasskeyCredentialPreference.allCases) { preference in
+                        Text(preference.title).tag(preference)
+                    }
+                }
+                .pickerStyle(.segmented)
+
                 Button {
                     isRegisteringPasskey = true
                     Task {
+                        defer { isRegisteringPasskey = false }
                         store.updateWalletPasskeySubject(passkeySubject)
-                        await store.registerWalletPasskey()
-                        await store.refreshWalletPasskeyStatus()
-                        isRegisteringPasskey = false
+                        let registered = await store.registerWalletPasskey(preference: passkeyPreference)
+                        if registered {
+                            await store.refreshWalletPasskeyStatus()
+                        }
                     }
                 } label: {
                     Label(isRegisteringPasskey ? "Registering..." : "Register Wallet Passkey", systemImage: "person.badge.key")
@@ -66,9 +81,23 @@ struct SettingsView: View {
                     Label("Refresh Passkey Status", systemImage: "arrow.clockwise")
                 }
 
-                Text("When an organization requires passkey-backed wallet approvals, this wallet verifies the passkey before accepting the Aegis challenge.")
+                Text("Register Apple Passwords, a browser passkey, or a hardware security key such as YubiKey. The local toggle is useful for demos; organization policy can still require server-verified passkey evidence.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+
+                if let message = store.lastLabMessage {
+                    Text(message)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(VanguardTheme.green)
+                        .textSelection(.enabled)
+                }
+
+                if let error = store.lastLabError {
+                    Text(error)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.red)
+                        .textSelection(.enabled)
+                }
             }
 
             Section("Simulator lab mode") {

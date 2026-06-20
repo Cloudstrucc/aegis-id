@@ -80,11 +80,13 @@ In the `VanguardAegisWallet` target:
 
 Environment mapping:
 
-| Environment | Scheme | Bundle ID | Associated domain |
+| Environment | Scheme | Bundle ID | Default web app |
 | --- | --- | --- | --- |
-| Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `webcredentials:vanguard-aegis-id-65067d.azurewebsites.net` |
-| Dev | `VanguardAegisWallet Dev` | `ca.vanguardcs.aegisid.wallet.dev` | `webcredentials:vanguard-aegis-id-dev-65067d.azurewebsites.net` |
-| QA | `VanguardAegisWallet QA` | `ca.vanguardcs.aegisid.wallet.qa` | `webcredentials:vanguard-aegis-id-qa-65067d.azurewebsites.net` |
+| Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `vanguard-aegis-id-65067d.azurewebsites.net` |
+| Dev | `VanguardAegisWallet Dev` | `ca.vanguardcs.aegisid.wallet.dev` | `vanguard-aegis-id-dev-0e75d1.azurewebsites.net` |
+| QA | `VanguardAegisWallet QA` | `ca.vanguardcs.aegisid.wallet.qa` | `vanguard-aegis-id-qa-0e75d1.azurewebsites.net` |
+
+The wallet entitlements intentionally include multiple `webcredentials:` and `applinks:` domains for prod/dev/QA across the known tenant suffixes. Each listed Aegis web app must serve `/.well-known/apple-app-site-association` with the wallet bundle IDs before iOS will activate passkeys or universal links for that host.
 
 ## Local Validation Commands
 
@@ -203,7 +205,7 @@ Dev:
 ```bash
 az webapp config appsettings set \
   --resource-group rg-vanguard-aegis-id-dev \
-  --name vanguard-aegis-id-dev-65067d \
+  --name vanguard-aegis-id-dev-0e75d1 \
   --settings IOS_TESTFLIGHT_PUBLIC_URL="https://testflight.apple.com/join/REPLACE_DEV"
 ```
 
@@ -212,7 +214,7 @@ QA:
 ```bash
 az webapp config appsettings set \
   --resource-group rg-vanguard-aegis-id-qa \
-  --name vanguard-aegis-id-qa-65067d \
+  --name vanguard-aegis-id-qa-0e75d1 \
   --settings IOS_TESTFLIGHT_PUBLIC_URL="https://testflight.apple.com/join/REPLACE_QA"
 ```
 

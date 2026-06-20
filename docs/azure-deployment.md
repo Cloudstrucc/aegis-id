@@ -645,6 +645,7 @@ az webapp config appsettings set \
     PASSKEY_ORIGIN=https://vanguard-aegis-id-65067d.azurewebsites.net \
     IOS_APP_TEAM_ID=GL46AP73ZQ \
     IOS_APP_BUNDLE_ID=ca.vanguardcs.aegisid.wallet \
+    IOS_APP_BUNDLE_IDS=ca.vanguardcs.aegisid.wallet,ca.vanguardcs.aegisid.wallet.dev,ca.vanguardcs.aegisid.wallet.qa \
     ANDROID_APP_PACKAGE_NAME=ca.vanguardcs.aegisid.wallet \
     ANDROID_SHA256_CERT_FINGERPRINTS="<android-upload-or-app-signing-sha256>"
 ```
@@ -670,7 +671,7 @@ Do not store real `AZURE_CLIENT_SECRET` or `VID_CALLBACK_API_KEY` values in sour
 | `PASSKEY_RP_ID` | WebAuthn relying-party ID for dashboard and mobile wallet passkeys. Use the Azure host only. |
 | `PASSKEY_ORIGIN` | WebAuthn origin for verifying passkey ceremonies. Use the full HTTPS origin. |
 | `WALLET_PASSKEY_STORE_PATH` | JSON pilot store for mobile wallet passkey registrations. Use `/home/data/wallet-passkeys.json` for Azure persistence. |
-| `IOS_APP_TEAM_ID` / `IOS_APP_BUNDLE_ID` | Values published by `/.well-known/apple-app-site-association` so iOS can bind wallet passkeys to the Aegis ID domain. |
+| `IOS_APP_TEAM_ID` / `IOS_APP_BUNDLE_ID` / `IOS_APP_BUNDLE_IDS` | Values published by `/.well-known/apple-app-site-association` so iOS can bind wallet passkeys and universal links to the Aegis ID domain. Use comma-separated `IOS_APP_BUNDLE_IDS` when a domain should trust prod/dev/QA wallet builds. |
 | `ANDROID_APP_PACKAGE_NAME` / `ANDROID_SHA256_CERT_FINGERPRINTS` | Values published by `/.well-known/assetlinks.json` so Android can bind Credential Manager passkeys to the Aegis ID domain. |
 
 ## Mobile Passkey Association
@@ -682,7 +683,7 @@ https://<aegis-host>/.well-known/apple-app-site-association
 https://<aegis-host>/.well-known/assetlinks.json
 ```
 
-For iOS, keep `IOS_APP_TEAM_ID` and `IOS_APP_BUNDLE_ID` aligned with the Apple Developer team and bundle identifier used by the signed wallet app.
+For iOS, keep `IOS_APP_TEAM_ID` aligned with the Apple Developer team. `IOS_APP_BUNDLE_ID` is still supported for a single bundle ID; `IOS_APP_BUNDLE_IDS` is preferred when the same Aegis web app should publish associations for production, dev, and QA wallet builds.
 
 For Android, set `ANDROID_SHA256_CERT_FINGERPRINTS` to the SHA-256 certificate fingerprint for the upload key or app-signing certificate used by the build you distribute. Multiple values can be comma-separated during a transition.
 

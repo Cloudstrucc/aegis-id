@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict/>
+<dict>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:vanguard-aegis-id-65067d.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-65067d.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-dev-65067d.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-dev-65067d.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-qa-65067d.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-qa-65067d.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-0e75d1.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-0e75d1.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-dev-0e75d1.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-dev-0e75d1.azurewebsites.net</string>
+		<string>applinks:vanguard-aegis-id-qa-0e75d1.azurewebsites.net</string>
+		<string>webcredentials:vanguard-aegis-id-qa-0e75d1.azurewebsites.net</string>
+	</array>
+</dict>
 </plist>

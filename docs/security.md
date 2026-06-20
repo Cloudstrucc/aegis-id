@@ -33,3 +33,15 @@ Wallet passkey registrations are stored in `data/wallet-passkeys.json` by defaul
 - Add CSRF protection before accepting production form posts.
 - Restrict metadata test URLs before enabling customer-supplied Keycloak, Okta, OIDC, or SAML endpoints in production.
 - Store per-subscriber platform configuration in a tenant-isolated database for production SaaS use.
+
+## Production Certification And Legal Evidence
+
+Aegis ID is currently a pilot implementation and lab architecture. Do not represent it as a certified government digital-signature service, qualified trust service, or regulated identity proofing service until the target jurisdiction, assurance level, controls, audits, and certifications are formally assessed.
+
+For production legal-signature or government use, define the jurisdiction and signature tier first:
+
+- General electronic signature evidence: capture signer intent, consent, identity context, document hash, wallet challenge payload, time, IP/device context where appropriate, and immutable audit records.
+- High-assurance organizational approvals: require organization policy, wallet passkey evidence, role/claims state at signing time, revocation state, and tamper-evident retention.
+- Regulated or government-recognized digital signatures: use the required trust framework, certificate authority, qualified trust service provider, or government PKI for that jurisdiction, then let Aegis ID add wallet approval and workflow evidence around it.
+
+Before production launch for regulated customers, complete a control program covering at least ISO 27001/SOC 2 readiness, privacy impact assessment, threat modeling, secure SDLC, penetration testing, durable tenant-isolated storage, key and secret management, retention/legal hold, incident response, and documented NIST 800-63 IAL/AAL/FAL mapping.

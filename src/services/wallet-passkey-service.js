@@ -49,6 +49,8 @@ async function startWalletPasskeyRegistration(input = {}, requestInfo = {}) {
 
   return {
     subject,
+    rpId: rp.rpId,
+    origin: rp.origin,
     options
   };
 }
@@ -142,6 +144,8 @@ async function startWalletPasskeyAuthentication(input = {}, requestInfo = {}) {
   return {
     subject,
     challengeId: record.pending.challengeId,
+    rpId: rp.rpId,
+    origin: rp.origin,
     options
   };
 }

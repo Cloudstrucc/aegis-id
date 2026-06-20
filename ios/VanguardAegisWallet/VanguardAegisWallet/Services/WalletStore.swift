@@ -2,6 +2,22 @@ import AuthenticationServices
 import Foundation
 import UIKit
 
+enum WalletPasskeyCredentialPreference: String, CaseIterable, Identifiable {
+    case securityKey
+    case platform
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .securityKey:
+            return "YubiKey / security key"
+        case .platform:
+            return "Apple Passwords"
+        }
+    }
+}
+
 @MainActor
 final class WalletStore: ObservableObject {
     @Published private(set) var connections: [WalletConnection] = []
@@ -14,17 +30,20 @@ final class WalletStore: ObservableObject {
     @Published private(set) var organizationProfiles: [String: OrganizationProfile] = [:]
     @Published private(set) var walletPasskeyStatus: WalletPasskeyStatus?
     @Published var walletPasskeySubject: String = "identity@vanguardcs.ca"
+    @Published var requirePasskeyForAllWalletChallenges = false
 
     private let storageKey = "vanguard.aegis.wallet.connections"
     private let transactionsStorageKey = "vanguard.aegis.wallet.transactions"
     private let organizationProfilesStorageKey = "vanguard.aegis.wallet.organization-profiles"
     private let walletPasskeySubjectStorageKey = "vanguard.aegis.wallet.passkey-subject"
+    private let requirePasskeyForAllChallengesStorageKey = "vanguard.aegis.wallet.require-passkey-for-all-challenges"
     private let labClient = LabAgentClient()
     private let passkeyCoordinator = WalletPasskeyCoordinator()
     private var isAutoRefreshingChallenges = false
 
     init() {
         walletPasskeySubject = UserDefaults.standard.string(forKey: walletPasskeySubjectStorageKey) ?? walletPasskeySubject
+        requirePasskeyForAllWalletChallenges = UserDefaults.standard.bool(forKey: requirePasskeyForAllChallengesStorageKey)
         load()
         loadTransactions()
         loadOrganizationProfiles()
@@ -92,6 +111,7 @@ final class WalletStore: ObservableObject {
                     organizationId: invite.organizationId,
                     organizationName: invite.organizationName,
                     subscriptionId: nil,
+                    sourceWebAppURL: invite.sourceWebAppURL,
                     handshakeProtocols: [],
                     services: [],
                     receivedAt: Date()
@@ -204,7 +224,10 @@ final class WalletStore: ObservableObject {
         clearLabMessages()
 
         do {
-            let acceptance = try await labClient.acceptInvitation(rawURL: connection.invitation.rawURL)
+            let acceptance = try await labClient.acceptInvitation(
+                rawURL: connection.invitation.rawURL,
+                sourceWebAppURL: connection.invitation.sourceWebAppURL
+            )
             update(connection) { item in
                 item.holderConnectionId = acceptance.holderConnectionId
                 item.issuerConnectionId = acceptance.issuerConnectionId
@@ -242,7 +265,8 @@ final class WalletStore: ObservableObject {
         do {
             try await labClient.issueMockCredential(
                 issuerConnectionId: issuerConnectionId,
-                subjectEmail: "identity@vanguardcs.ca"
+                subjectEmail: "identity@vanguardcs.ca",
+                sourceWebAppURL: connection.invitation.sourceWebAppURL
             )
             update(connection) { item in
                 item.state = .credentialOffered
@@ -269,7 +293,10 @@ final class WalletStore: ObservableObject {
         }
 
         do {
-            let threadId = try await labClient.sendChallenge(issuerConnectionId: issuerConnectionId)
+            let threadId = try await labClient.sendChallenge(
+                issuerConnectionId: issuerConnectionId,
+                sourceWebAppURL: connection.invitation.sourceWebAppURL
+            )
             update(connection) { item in
                 item.state = .challengeReceived
             }
@@ -350,7 +377,10 @@ final class WalletStore: ObservableObject {
 
     func refreshOrganizationProfile(organizationId: String) async {
         do {
-            let profile = try await labClient.fetchOrganizationProfile(organizationId: organizationId)
+            let profile = try await labClient.fetchOrganizationProfile(
+                organizationId: organizationId,
+                sourceWebAppURL: sourceWebAppURL(forOrganizationId: organizationId)
+            )
             organizationProfiles[organizationId] = profile
             saveOrganizationProfiles()
         } catch {
@@ -363,6 +393,15 @@ final class WalletStore: ObservableObject {
         UserDefaults.standard.set(walletPasskeySubject, forKey: walletPasskeySubjectStorageKey)
     }
 
+    func updateRequirePasskeyForAllWalletChallenges(_ enabled: Bool) {
+        requirePasskeyForAllWalletChallenges = enabled
+        UserDefaults.standard.set(enabled, forKey: requirePasskeyForAllChallengesStorageKey)
+    }
+
+    func requiresPasskeyApproval(for transaction: WalletTransaction) -> Bool {
+        transaction.requiresPasskey == true || (transaction.type == .challenge && requirePasskeyForAllWalletChallenges)
+    }
+
     func refreshWalletPasskeyStatus() async {
         do {
             walletPasskeyStatus = try await labClient.fetchWalletPasskeyStatus(subject: walletPasskeySubject)
@@ -371,7 +410,8 @@ final class WalletStore: ObservableObject {
         }
     }
 
-    func registerWalletPasskey() async {
+    @discardableResult
+    func registerWalletPasskey(preference: WalletPasskeyCredentialPreference) async -> Bool {
         clearLabMessages()
 
         do {
@@ -379,15 +419,20 @@ final class WalletStore: ObservableObject {
                 subject: walletPasskeySubject,
                 displayName: walletPasskeySubject
             )
-            let response = try await passkeyCoordinator.register(options: registration.options)
+            let response = try await passkeyCoordinator.register(
+                options: registration.options,
+                preference: preference
+            )
             let verification = try await labClient.finishWalletPasskeyRegistration(
                 subject: walletPasskeySubject,
                 response: response
             )
             walletPasskeyStatus = verification.status
             lastLabMessage = "Wallet passkey registered for \(walletPasskeySubject)."
+            return true
         } catch {
             lastLabError = "Wallet passkey registration failed: \(error.localizedDescription)"
+            return false
         }
     }
 
@@ -396,19 +441,27 @@ final class WalletStore: ObservableObject {
 
         do {
             var passkeyResponse: WalletPasskeyCeremonyResponse?
-            if transaction.requiresPasskey == true {
+            let shouldVerifyPasskey = requiresPasskeyApproval(for: transaction)
+            if shouldVerifyPasskey {
                 let auth = try await labClient.startWalletPasskeyAuthentication(
                     subject: walletPasskeySubject,
-                    challengeId: transaction.webSessionId ?? transaction.remoteId
+                    challengeId: transaction.webSessionId ?? transaction.remoteId,
+                    sourceWebAppURL: connection.invitation.sourceWebAppURL
                 )
-                passkeyResponse = try await passkeyCoordinator.authenticate(options: auth.options)
+                passkeyResponse = try await passkeyCoordinator.authenticate(
+                    options: auth.options,
+                    relyingPartyId: auth.rpId ?? auth.options.rp?.id ?? passkeyRelyingPartyId(
+                        sourceWebAppURL: connection.invitation.sourceWebAppURL
+                    )
+                )
             }
 
             if transaction.type == .challenge,
                let holderConnectionId = current(connection)?.holderConnectionId {
                 try await labClient.sendHolderMessage(
                     holderConnectionId: holderConnectionId,
-                    content: "Vanguard Aegis ID Wallet simulator accepted challenge \(transaction.remoteId ?? transaction.id.uuidString)."
+                    content: "Vanguard Aegis ID Wallet simulator accepted challenge \(transaction.remoteId ?? transaction.id.uuidString).",
+                    sourceWebAppURL: connection.invitation.sourceWebAppURL
                 )
             }
             if transaction.type == .credential,
@@ -418,7 +471,8 @@ final class WalletStore: ObservableObject {
                 try await labClient.acceptCredentialInvitation(
                     credentialId: credentialId,
                     organizationId: organizationId,
-                    holderEmail: payloadValue("holderEmail", in: transaction)
+                    holderEmail: payloadValue("holderEmail", in: transaction),
+                    sourceWebAppURL: connection.invitation.sourceWebAppURL
                 )
             } else if let webAcceptPath = transaction.webAcceptPath {
                 if let passkeyResponse {
@@ -426,13 +480,20 @@ final class WalletStore: ObservableObject {
                         acceptPath: transaction.passkeyAcceptPath ?? webAcceptPath,
                         subject: walletPasskeySubject,
                         challengeId: transaction.webSessionId ?? transaction.remoteId,
-                        passkeyResponse: passkeyResponse
+                        passkeyResponse: passkeyResponse,
+                        sourceWebAppURL: connection.invitation.sourceWebAppURL
                     )
                 } else {
-                    try await labClient.acceptWalletChallenge(acceptPath: webAcceptPath)
+                    try await labClient.acceptWalletChallenge(
+                        acceptPath: webAcceptPath,
+                        sourceWebAppURL: connection.invitation.sourceWebAppURL
+                    )
                 }
             } else if let webSessionId = transaction.webSessionId {
-                try await labClient.acceptOIDCWalletChallenge(sessionId: webSessionId)
+                try await labClient.acceptOIDCWalletChallenge(
+                    sessionId: webSessionId,
+                    sourceWebAppURL: connection.invitation.sourceWebAppURL
+                )
             }
 
             updateTransaction(transaction) { item in
@@ -497,7 +558,10 @@ final class WalletStore: ObservableObject {
             return []
         }
 
-        let challenges = try await labClient.fetchOIDCWalletChallenges(issuerConnectionId: issuerConnectionId)
+        let challenges = try await labClient.fetchOIDCWalletChallenges(
+            issuerConnectionId: issuerConnectionId,
+            sourceWebAppURL: connection.invitation.sourceWebAppURL
+        )
         var addedTransactions: [WalletTransaction] = []
 
         for challenge in challenges where !transactions.contains(where: { $0.webSessionId == challenge.sessionId }) {
@@ -547,6 +611,20 @@ final class WalletStore: ObservableObject {
 
     private func organizationKey(for connection: WalletConnection) -> String {
         connection.invitation.organizationId ?? connection.invitation.organizationName ?? connection.invitation.label
+    }
+
+    private func sourceWebAppURL(forOrganizationId organizationId: String) -> String? {
+        connections.first(where: { organizationKey(for: $0) == organizationId })?.invitation.sourceWebAppURL
+    }
+
+    private func passkeyRelyingPartyId(sourceWebAppURL: String?) -> String? {
+        if let sourceWebAppURL,
+           let host = URL(string: sourceWebAppURL)?.host(),
+           !host.isEmpty {
+            return host
+        }
+
+        return AegisWalletEnvironment.webAppURL.host()
     }
 
     private func organizationName(for connection: WalletConnection?) -> String {
@@ -622,7 +700,8 @@ final class WalletStore: ObservableObject {
                 organizationId: organizationId,
                 holderConnectionId: acceptance.holderConnectionId,
                 issuerConnectionId: acceptance.issuerConnectionId,
-                invitationId: acceptance.invitationMessageId
+                invitationId: acceptance.invitationMessageId,
+                sourceWebAppURL: connection.invitation.sourceWebAppURL
             )
             return organizationName
         } catch {
@@ -732,7 +811,10 @@ extension JSONEncoder {
 private final class WalletPasskeyCoordinator: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     private var continuation: CheckedContinuation<WalletPasskeyCeremonyResponse, Error>?
 
-    func register(options: WalletPasskeyOptions) async throws -> WalletPasskeyCeremonyResponse {
+    func register(
+        options: WalletPasskeyOptions,
+        preference: WalletPasskeyCredentialPreference
+    ) async throws -> WalletPasskeyCeremonyResponse {
         guard let challenge = Data(base64URLEncoded: options.challenge),
               let userId = Data(base64URLEncoded: options.user?.id ?? ""),
               let relyingPartyId = options.rp?.id,
@@ -741,33 +823,51 @@ private final class WalletPasskeyCoordinator: NSObject, ASAuthorizationControlle
             throw WalletPasskeyError.invalidOptions
         }
 
-        let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: relyingPartyId)
-        let request = provider.createCredentialRegistrationRequest(
+        let name = options.user?.name ?? "identity@vanguardcs.ca"
+        let displayName = options.user?.displayName ?? name
+        let platformProvider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: relyingPartyId)
+        let platformRequest = platformProvider.createCredentialRegistrationRequest(
             challenge: challenge,
-            name: options.user?.name ?? "identity@vanguardcs.ca",
+            name: name,
             userID: userId
         )
-        request.displayName = options.user?.displayName ?? options.user?.name ?? "Vanguard Aegis ID Wallet"
-        return try await perform(request)
+        platformRequest.displayName = displayName
+
+        let securityKeyProvider = ASAuthorizationSecurityKeyPublicKeyCredentialProvider(relyingPartyIdentifier: relyingPartyId)
+        let securityKeyRequest = securityKeyProvider.createCredentialRegistrationRequest(
+            challenge: challenge,
+            displayName: displayName,
+            name: name,
+            userID: userId
+        )
+
+        switch preference {
+        case .securityKey:
+            return try await perform([securityKeyRequest])
+        case .platform:
+            return try await perform([platformRequest])
+        }
     }
 
-    func authenticate(options: WalletPasskeyOptions) async throws -> WalletPasskeyCeremonyResponse {
+    func authenticate(options: WalletPasskeyOptions, relyingPartyId: String?) async throws -> WalletPasskeyCeremonyResponse {
         guard let challenge = Data(base64URLEncoded: options.challenge),
-              let relyingPartyId = options.rp?.id,
+              let relyingPartyId,
               !relyingPartyId.isEmpty
         else {
             throw WalletPasskeyError.invalidOptions
         }
 
-        let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: relyingPartyId)
-        let request = provider.createCredentialAssertionRequest(challenge: challenge)
-        return try await perform(request)
+        let securityKeyProvider = ASAuthorizationSecurityKeyPublicKeyCredentialProvider(relyingPartyIdentifier: relyingPartyId)
+        let platformProvider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: relyingPartyId)
+        let securityKeyRequest = securityKeyProvider.createCredentialAssertionRequest(challenge: challenge)
+        let platformRequest = platformProvider.createCredentialAssertionRequest(challenge: challenge)
+        return try await perform([securityKeyRequest, platformRequest])
     }
 
-    private func perform(_ request: ASAuthorizationRequest) async throws -> WalletPasskeyCeremonyResponse {
+    private func perform(_ requests: [ASAuthorizationRequest]) async throws -> WalletPasskeyCeremonyResponse {
         try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
-            let controller = ASAuthorizationController(authorizationRequests: [request])
+            let controller = ASAuthorizationController(authorizationRequests: requests)
             controller.delegate = self
             controller.presentationContextProvider = self
             controller.performRequests()
@@ -797,6 +897,26 @@ private final class WalletPasskeyCoordinator: NSObject, ASAuthorizationControlle
             return
         }
 
+        if let credential = authorization.credential as? ASAuthorizationSecurityKeyPublicKeyCredentialRegistration {
+            continuation?.resume(
+                returning: WalletPasskeyCeremonyResponse(
+                    id: credential.credentialID.base64URLEncodedString(),
+                    rawId: credential.credentialID.base64URLEncodedString(),
+                    type: "public-key",
+                    authenticatorAttachment: "cross-platform",
+                    response: WalletPasskeyAuthenticatorResponse(
+                        clientDataJSON: credential.rawClientDataJSON.base64URLEncodedString(),
+                        attestationObject: credential.rawAttestationObject?.base64URLEncodedString(),
+                        authenticatorData: nil,
+                        signature: nil,
+                        userHandle: nil,
+                        transports: ["usb", "nfc", "ble"]
+                    )
+                )
+            )
+            return
+        }
+
         if let credential = authorization.credential as? ASAuthorizationPlatformPublicKeyCredentialAssertion {
             continuation?.resume(
                 returning: WalletPasskeyCeremonyResponse(
@@ -804,6 +924,26 @@ private final class WalletPasskeyCoordinator: NSObject, ASAuthorizationControlle
                     rawId: credential.credentialID.base64URLEncodedString(),
                     type: "public-key",
                     authenticatorAttachment: "platform",
+                    response: WalletPasskeyAuthenticatorResponse(
+                        clientDataJSON: credential.rawClientDataJSON.base64URLEncodedString(),
+                        attestationObject: nil,
+                        authenticatorData: credential.rawAuthenticatorData.base64URLEncodedString(),
+                        signature: credential.signature.base64URLEncodedString(),
+                        userHandle: credential.userID?.base64URLEncodedString(),
+                        transports: nil
+                    )
+                )
+            )
+            return
+        }
+
+        if let credential = authorization.credential as? ASAuthorizationSecurityKeyPublicKeyCredentialAssertion {
+            continuation?.resume(
+                returning: WalletPasskeyCeremonyResponse(
+                    id: credential.credentialID.base64URLEncodedString(),
+                    rawId: credential.credentialID.base64URLEncodedString(),
+                    type: "public-key",
+                    authenticatorAttachment: "cross-platform",
                     response: WalletPasskeyAuthenticatorResponse(
                         clientDataJSON: credential.rawClientDataJSON.base64URLEncodedString(),
                         attestationObject: nil,

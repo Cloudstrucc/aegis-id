@@ -28,6 +28,24 @@ function resolveEnvFile(baseDir) {
   return path.join(baseDir, fileNameByEnv[envName] || envName || '.env.local');
 }
 
+function csvList(value) {
+  return (value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+const defaultIosBundleIds = [
+  'ca.vanguardcs.aegisid.wallet',
+  'ca.vanguardcs.aegisid.wallet.dev',
+  'ca.vanguardcs.aegisid.wallet.qa'
+];
+const configuredIosBundleIds = csvList(process.env.IOS_APP_BUNDLE_IDS);
+const legacyIosBundleId = (process.env.IOS_APP_BUNDLE_ID || '').trim();
+const iosBundleIds = configuredIosBundleIds.length
+  ? configuredIosBundleIds
+  : [...new Set([legacyIosBundleId, ...defaultIosBundleIds].filter(Boolean))];
+
 const config = {
   app: {
     name: 'Vanguard Cloud Services - Aegis ID',
@@ -68,7 +86,8 @@ const config = {
   },
   mobileApps: {
     iosTeamId: process.env.IOS_APP_TEAM_ID || 'GL46AP73ZQ',
-    iosBundleId: process.env.IOS_APP_BUNDLE_ID || 'ca.vanguardcs.aegisid.wallet',
+    iosBundleId: legacyIosBundleId || iosBundleIds[0] || defaultIosBundleIds[0],
+    iosBundleIds,
     androidPackageName: process.env.ANDROID_APP_PACKAGE_NAME || 'ca.vanguardcs.aegisid.wallet',
     androidSha256CertFingerprints: (process.env.ANDROID_SHA256_CERT_FINGERPRINTS || '')
       .split(',')

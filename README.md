@@ -71,7 +71,7 @@ To enable it for an organization, open the workspace dashboard, choose **Set Up 
 | `preferred` | Wallets can register/use passkeys, but approvals are not blocked without one. |
 | `required` | Aegis ID rejects wallet challenge acceptance unless the mobile wallet completes a passkey assertion first. |
 
-In the mobile wallet, open **Settings > Wallet passkey assurance**, enter the wallet subject email, and tap **Register passkey**. When a challenge requires passkey assurance, the Ledger action changes to **Verify passkey and accept...** and the accepted ledger entry records passkey evidence.
+In the mobile wallet, open **Settings > Wallet passkey assurance**, enter the wallet subject email, and tap **Register passkey**. The iOS wallet supports Apple Passwords/platform passkeys and external security-key passkeys such as YubiKey when the Aegis domain association is valid. For demos, the wallet can also locally require a passkey ceremony before every wallet challenge approval; for production evidence, prefer organization policy set to `required` so Aegis rejects acceptance without server-verified passkey evidence.
 
 This is useful for expense approvals, contract approval, admin promotion, revocation, and other events where the organization wants a stronger, signed proof of user presence at the exact decision moment.
 
@@ -330,6 +330,7 @@ az webapp config appsettings set \
     PASSKEY_ORIGIN=https://vanguard-aegis-id-65067d.azurewebsites.net \
     IOS_APP_TEAM_ID=GL46AP73ZQ \
     IOS_APP_BUNDLE_ID=ca.vanguardcs.aegisid.wallet \
+    IOS_APP_BUNDLE_IDS=ca.vanguardcs.aegisid.wallet,ca.vanguardcs.aegisid.wallet.dev,ca.vanguardcs.aegisid.wallet.qa \
     ANDROID_APP_PACKAGE_NAME=ca.vanguardcs.aegisid.wallet \
     ANDROID_SHA256_CERT_FINGERPRINTS="<android-upload-or-app-signing-sha256>"
 ```
@@ -353,7 +354,7 @@ Do not commit real `AZURE_CLIENT_SECRET` or `VID_CALLBACK_API_KEY` values. Set t
 | `PASSKEY_RP_ID` | WebAuthn relying-party ID. In Azure, use the host only, for example `vanguard-aegis-id-65067d.azurewebsites.net`. |
 | `PASSKEY_ORIGIN` | WebAuthn origin. In Azure, use the full HTTPS origin, for example `https://vanguard-aegis-id-65067d.azurewebsites.net`. |
 | `WALLET_PASSKEY_STORE_PATH` | File-backed pilot store for mobile wallet passkey credential metadata. Use `/home/data/...` on Azure when you want persistence across deploys. |
-| `IOS_APP_TEAM_ID` / `IOS_APP_BUNDLE_ID` | Published in `/.well-known/apple-app-site-association` for iOS passkey and app-link association. |
+| `IOS_APP_TEAM_ID` / `IOS_APP_BUNDLE_ID` / `IOS_APP_BUNDLE_IDS` | Published in `/.well-known/apple-app-site-association` for iOS passkey and app-link association. Use `IOS_APP_BUNDLE_IDS` as a comma-separated list when one Aegis domain should trust prod/dev/QA wallet builds. |
 | `ANDROID_APP_PACKAGE_NAME` / `ANDROID_SHA256_CERT_FINGERPRINTS` | Published in `/.well-known/assetlinks.json` for Android passkey and app-link association. |
 
 ### Keycloak OIDC

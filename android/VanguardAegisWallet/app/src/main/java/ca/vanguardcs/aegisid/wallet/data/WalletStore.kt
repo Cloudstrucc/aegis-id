@@ -164,6 +164,7 @@ class WalletStore(
                 organizationId = invite.organizationId,
                 organizationName = invite.organizationName,
                 subscriptionId = null,
+                sourceWebAppUrl = invite.sourceWebAppUrl,
                 handshakeProtocols = emptyList(),
                 services = emptyList()
             ),
@@ -213,7 +214,10 @@ class WalletStore(
 
     fun acceptInLab(connection: WalletConnection) {
         runLabOperation {
-            val acceptance = labClient.acceptInvitation(connection.invitation.rawUrl)
+            val acceptance = labClient.acceptInvitation(
+                connection.invitation.rawUrl,
+                connection.invitation.sourceWebAppUrl
+            )
             updateConnection(connection.id) {
                 it.copy(
                     holderConnectionId = acceptance.holderConnectionId,
@@ -247,7 +251,11 @@ class WalletStore(
         }
 
         runLabOperation {
-            labClient.issueMockCredential(issuerConnectionId, "identity@vanguardcs.ca")
+            labClient.issueMockCredential(
+                issuerConnectionId,
+                "identity@vanguardcs.ca",
+                connection.invitation.sourceWebAppUrl
+            )
             updateConnection(connection.id) { it.copy(state = WalletConnectionState.CredentialOffered) }
             addTransaction(
                 connectionId = connection.id,
@@ -268,7 +276,7 @@ class WalletStore(
         }
 
         runLabOperation {
-            val threadId = labClient.sendChallenge(issuerConnectionId)
+            val threadId = labClient.sendChallenge(issuerConnectionId, connection.invitation.sourceWebAppUrl)
             updateConnection(connection.id) { it.copy(state = WalletConnectionState.ChallengeReceived) }
             addTransaction(
                 connectionId = connection.id,
@@ -328,7 +336,10 @@ class WalletStore(
     fun refreshOrganizationProfile(organizationId: String) {
         viewModelScope.launch {
             try {
-                val profile = labClient.fetchOrganizationProfile(organizationId)
+                val profile = labClient.fetchOrganizationProfile(
+                    organizationId,
+                    sourceWebAppUrlForOrganization(organizationId)
+                )
                 organizationProfiles = organizationProfiles + (organizationId to profile)
                 saveOrganizationProfiles()
             } catch (error: Exception) {
@@ -379,7 +390,8 @@ class WalletStore(
             if (transaction.type == WalletTransactionType.Challenge && currentConnection.holderConnectionId != null) {
                 labClient.sendHolderMessage(
                     currentConnection.holderConnectionId,
-                    "Vanguard Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id}."
+                    "Vanguard Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id}.",
+                    currentConnection.invitation.sourceWebAppUrl
                 )
             }
             if (transaction.type == WalletTransactionType.Credential &&
@@ -389,11 +401,18 @@ class WalletStore(
                 labClient.acceptCredentialInvitation(
                     credentialId = transaction.remoteId ?: transaction.resourceId.orEmpty(),
                     organizationId = currentConnection.invitation.organizationId ?: transaction.payloadValue("organizationId").orEmpty(),
-                    holderEmail = transaction.payloadValue("holderEmail")
+                    holderEmail = transaction.payloadValue("holderEmail"),
+                    sourceWebAppUrl = currentConnection.invitation.sourceWebAppUrl
                 )
             } else when {
-                transaction.webAcceptPath != null -> labClient.acceptWalletChallenge(transaction.webAcceptPath)
-                transaction.webSessionId != null -> labClient.acceptOidcWalletChallenge(transaction.webSessionId)
+                transaction.webAcceptPath != null -> labClient.acceptWalletChallenge(
+                    transaction.webAcceptPath,
+                    currentConnection.invitation.sourceWebAppUrl
+                )
+                transaction.webSessionId != null -> labClient.acceptOidcWalletChallenge(
+                    transaction.webSessionId,
+                    currentConnection.invitation.sourceWebAppUrl
+                )
             }
 
             updateTransaction(transaction.id) { it.copy(status = WalletTransactionStatus.Accepted) }
@@ -417,19 +436,29 @@ class WalletStore(
 
         runLabOperation {
             val challengeId = transaction.webSessionId ?: transaction.remoteId ?: transaction.id
-            val options = labClient.startWalletPasskeyAuthentication(walletPasskeySubject, challengeId)
-            val passkeyResponse = getPasskey(options.toString())
             val currentConnection = current(connection) ?: connection
+            val options = labClient.startWalletPasskeyAuthentication(
+                walletPasskeySubject,
+                challengeId,
+                currentConnection.invitation.sourceWebAppUrl
+            )
+            val passkeyResponse = getPasskey(options.toString())
             if (transaction.type == WalletTransactionType.Challenge && currentConnection.holderConnectionId != null) {
                 labClient.sendHolderMessage(
                     currentConnection.holderConnectionId,
-                    "Vanguard Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id} with passkey assurance."
+                    "Vanguard Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id} with passkey assurance.",
+                    currentConnection.invitation.sourceWebAppUrl
                 )
             }
             val evidence = if (transaction.webAcceptPath != null) {
                 null
             } else {
-                labClient.finishWalletPasskeyAuthentication(walletPasskeySubject, challengeId, passkeyResponse)
+                labClient.finishWalletPasskeyAuthentication(
+                    walletPasskeySubject,
+                    challengeId,
+                    passkeyResponse,
+                    currentConnection.invitation.sourceWebAppUrl
+                )
                     .optJSONObject("evidence")
             }
             when {
@@ -437,9 +466,13 @@ class WalletStore(
                     acceptPath = transaction.passkeyAcceptPath ?: transaction.webAcceptPath,
                     subject = walletPasskeySubject,
                     challengeId = challengeId,
-                    passkeyResponse = passkeyResponse
+                    passkeyResponse = passkeyResponse,
+                    sourceWebAppUrl = currentConnection.invitation.sourceWebAppUrl
                 )
-                transaction.webSessionId != null -> labClient.acceptOidcWalletChallenge(transaction.webSessionId)
+                transaction.webSessionId != null -> labClient.acceptOidcWalletChallenge(
+                    transaction.webSessionId,
+                    currentConnection.invitation.sourceWebAppUrl
+                )
             }
 
             updateTransaction(transaction.id) {
@@ -488,7 +521,10 @@ class WalletStore(
 
     private suspend fun importOidcWalletChallenges(connection: WalletConnection): List<WalletTransaction> {
         val issuerConnectionId = current(connection)?.issuerConnectionId ?: return emptyList()
-        val challenges = labClient.fetchOidcWalletChallenges(issuerConnectionId)
+        val challenges = labClient.fetchOidcWalletChallenges(
+            issuerConnectionId,
+            connection.invitation.sourceWebAppUrl
+        )
         val added = challenges
             .filterNot { challenge -> transactions.any { it.webSessionId == challenge.sessionId } }
             .map { challenge ->
@@ -523,7 +559,10 @@ class WalletStore(
     private suspend fun refreshOrganizationProfilesInternal() {
         for (organization in credentialOrganizations) {
             try {
-                val profile = labClient.fetchOrganizationProfile(organization.id)
+                val profile = labClient.fetchOrganizationProfile(
+                    organization.id,
+                    sourceWebAppUrlForOrganization(organization.id)
+                )
                 organizationProfiles = organizationProfiles + (organization.id to profile)
                 saveOrganizationProfiles()
             } catch (_: Exception) {
@@ -539,7 +578,8 @@ class WalletStore(
                 organizationId = organizationId,
                 holderConnectionId = acceptance.holderConnectionId,
                 issuerConnectionId = acceptance.issuerConnectionId,
-                invitationId = acceptance.invitationMessageId
+                invitationId = acceptance.invitationMessageId,
+                sourceWebAppUrl = invitation.sourceWebAppUrl
             )
             organizationName
         } catch (error: Exception) {
@@ -606,6 +646,9 @@ class WalletStore(
         connection.invitation.organizationId
             ?: connection.invitation.organizationName
             ?: connection.invitation.label
+
+    private fun sourceWebAppUrlForOrganization(organizationId: String): String? =
+        connections.firstOrNull { organizationKey(it) == organizationId }?.invitation?.sourceWebAppUrl
 
     private fun organizationName(connection: WalletConnection?): String =
         connection?.invitation?.organizationName ?: connection?.invitation?.label ?: "Unassigned organization"

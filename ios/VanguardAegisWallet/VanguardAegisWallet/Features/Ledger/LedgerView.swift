@@ -23,7 +23,10 @@ struct LedgerView: View {
                         NavigationLink {
                             LedgerDetailView(transactionId: transaction.id)
                         } label: {
-                            LedgerRow(transaction: transaction)
+                            LedgerRow(
+                                transaction: transaction,
+                                requiresPasskey: store.requiresPasskeyApproval(for: transaction)
+                            )
                         }
                     }
                 }
@@ -35,6 +38,7 @@ struct LedgerView: View {
 
 private struct LedgerRow: View {
     var transaction: WalletTransaction
+    var requiresPasskey: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -62,7 +66,7 @@ private struct LedgerRow: View {
                     .foregroundStyle(.secondary)
             }
 
-            if transaction.requiresPasskey == true {
+            if requiresPasskey {
                 Label("Passkey required", systemImage: "person.badge.key")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(VanguardTheme.blue)
@@ -105,6 +109,7 @@ private struct LedgerDetailView: View {
             if let transaction = store.transaction(id: transactionId) {
                 List {
                     Section(transaction.type == .credential ? "Credential" : "Challenge") {
+                        let requiresPasskey = store.requiresPasskeyApproval(for: transaction)
                         LabeledContent("Application", value: transaction.appName ?? "Aegis ID")
                         LabeledContent("Action", value: transaction.action ?? "challenge")
                         LabeledContent("Status", value: transaction.status.title)
@@ -117,7 +122,7 @@ private struct LedgerDetailView: View {
                         if let remoteId = transaction.remoteId {
                             LabeledContent("Nonce", value: remoteId)
                         }
-                        if transaction.requiresPasskey == true {
+                        if requiresPasskey {
                             LabeledContent("Required assurance", value: transaction.requiredAssurance ?? "passkey")
                         }
                         if let passkeyEvidenceLabel = transaction.passkeyEvidenceLabel {
@@ -155,6 +160,8 @@ private struct LedgerDetailView: View {
 
     @ViewBuilder
     private func decisionContent(for transaction: WalletTransaction) -> some View {
+        let requiresPasskey = store.requiresPasskeyApproval(for: transaction)
+
         switch transaction.status {
         case .pendingAcceptance, .received, .failed:
             if let connection = store.connection(id: transaction.connectionId) {
@@ -163,7 +170,7 @@ private struct LedgerDetailView: View {
                 } label: {
                     if isWorking {
                         Label("Recording decision...", systemImage: "hourglass")
-                    } else if transaction.requiresPasskey == true {
+                    } else if requiresPasskey {
                         Label("Verify Passkey And \(actionButtonTitle(for: transaction))", systemImage: "person.badge.key")
                     } else {
                         Label(actionButtonTitle(for: transaction), systemImage: "checkmark.shield")

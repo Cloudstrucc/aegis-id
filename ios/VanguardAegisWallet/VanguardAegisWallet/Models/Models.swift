@@ -8,6 +8,7 @@ struct AriesInvitation: Codable, Equatable, Hashable, Identifiable {
     var organizationId: String?
     var organizationName: String?
     var subscriptionId: String?
+    var sourceWebAppURL: String?
     var handshakeProtocols: [String]
     var services: [String]
     var receivedAt: Date
@@ -299,6 +300,8 @@ struct WalletPasskeyStatus: Codable, Equatable {
 struct WalletPasskeyOptionsEnvelope: Codable, Equatable {
     var subject: String
     var challengeId: String?
+    var rpId: String?
+    var origin: String?
     var options: WalletPasskeyOptions
 }
 
