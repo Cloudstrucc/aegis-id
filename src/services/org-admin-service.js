@@ -361,15 +361,19 @@ const PERSON_TYPES = [
 async function getOrgAdminView(workspace, subscription, query = {}, options = {}) {
   const state = await getOrCreateState(workspace);
   const events = await listEvents(workspace.id);
-  const credentials = await Promise.all(
+  const allCredentials = await Promise.all(
     state.credentials.map((credential) => decorateCredential(credential, state, events, workspace, options))
   );
+  const viewer = buildViewerAccess(workspace, subscription, state);
+  const credentials = viewer.canViewAllCredentials
+    ? allCredentials
+    : allCredentials.filter((credential) => normalizeEmail(credential.holderEmail) === viewer.email);
   const activeCount = credentials.filter((credential) => credential.status === 'active').length;
   const invitedCount = credentials.filter((credential) => credential.status === 'invited').length;
   const revokedCount = credentials.filter((credential) => credential.status === 'revoked').length;
   const coAdminCount = credentials.filter((credential) => credential.coAdminStatus === 'approved').length;
   const adminProfile = buildAdminProfile(workspace, subscription, state);
-  const peopleTable = buildPeopleTable(credentials, query, adminProfile);
+  const peopleTable = buildPeopleTable(credentials, query, viewer.canSeeAdminProfile ? adminProfile : null);
 
   return {
     ...state,
@@ -378,11 +382,16 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
       selected: state.branding.paletteId === palette.id
     })),
     customPaletteSelected: state.branding.paletteId === 'custom',
+    roles: state.roles.map((role) => decorateRole(role)),
+    privilegeGroups: buildPrivilegeGroups(),
+    roleTemplates: ROLE_TEMPLATES.map(decorateRoleTemplate),
     credentials,
+    allCredentialCount: allCredentials.length,
     peopleTable,
     personTypes: PERSON_TYPES,
     orgUnitOptions: buildOrgUnitOptions(state),
     orgChartNodes: buildOrgChartNodes(state),
+    orgChartLevels: buildOrgChartLevels(state),
     claimConsentOptions: state.claimDefinitions.map((claim) => ({
       ...claim,
       checked: Boolean(claim.required)
@@ -392,13 +401,39 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
     revokedCount,
     coAdminCount,
     adminProfile,
-    isAdmin: isWorkspaceAdmin(workspace, subscription),
-    events: events.slice(0, 25).map(decorateEvent)
+    isAdmin: viewer.canAdminister,
+    isWorkspaceAdmin: viewer.isWorkspaceAdmin,
+    viewer,
+    canViewPeople: viewer.canViewPeople,
+    canManagePeople: viewer.canManagePeople,
+    canManageCredentials: viewer.canManageCredentials,
+    canViewRoles: viewer.canViewRoles,
+    canManageRoles: viewer.canManageRoles,
+    canViewClaims: viewer.canViewClaims,
+    canManageClaims: viewer.canManageClaims,
+    canViewConfiguration: viewer.canViewRoles || viewer.canViewClaims,
+    canManageConfiguration: viewer.canManageRoles || viewer.canManageClaims,
+    canViewOrgChart: viewer.canViewOrgChart,
+    canManageOrgChart: viewer.canManageOrgChart,
+    canViewBranding: viewer.canViewBranding,
+    canManageBranding: viewer.canManageBranding,
+    canViewIntegrations: viewer.canViewIntegrations,
+    canManageIntegrations: viewer.canManageIntegrations,
+    canViewOrgLedger: viewer.canViewOrgLedger,
+    canManageAdminAssurance: viewer.canManageAdminAssurance,
+    events: viewer.canViewOrgLedger
+      ? events.slice(0, 25).map(decorateEvent)
+      : events
+        .filter((event) => normalizeEmail(event.data?.holderEmail || event.actorEmail) === viewer.email)
+        .slice(0, 25)
+        .map(decorateEvent),
+    bladeNavSections: buildBladeNavSections(viewer),
+    bladeNavItems: buildBladeNavItems(viewer)
   };
 }
 
 async function issueCredential(workspace, subscription, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'credentials.issue');
   const state = await getOrCreateState(workspace);
   const roleIds = normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
   const claims = buildClaims(state.claimDefinitions, input);
@@ -462,7 +497,7 @@ async function issueCredential(workspace, subscription, input = {}) {
 }
 
 async function markCredentialAccepted(workspace, subscription, credentialId) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'credentials.update');
   return mutateCredential(workspace, subscription, credentialId, 'credential.accepted', (credential) => {
     if (isInviteExpired(credential)) {
       throw validationError('This invitation has expired. Issue a new invite or update the invitation window.');
@@ -524,7 +559,7 @@ async function acceptCredentialInvitation(organizationId, credentialId, input = 
 }
 
 async function revokeCredential(workspace, subscription, credentialId, reason = '') {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'credentials.revoke');
   return mutateCredential(workspace, subscription, credentialId, 'credential.revoked', (credential) => {
     credential.status = 'revoked';
     credential.revokedAt = new Date().toISOString();
@@ -533,7 +568,7 @@ async function revokeCredential(workspace, subscription, credentialId, reason = 
 }
 
 async function updateCredentialProfile(workspace, subscription, credentialId, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'credentials.update');
   const state = await getOrCreateState(workspace);
   const credential = findCredential(state, credentialId);
   credential.roleIds = normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
@@ -570,7 +605,7 @@ async function updateCredentialProfile(workspace, subscription, credentialId, in
 }
 
 async function reissueCredentialInvitation(workspace, subscription, credentialId, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'credentials.issue');
   return mutateCredential(workspace, subscription, credentialId, 'credential.reinvited', (credential) => {
     const inviteTtlDays = normalizeInviteTtlDays(input.inviteTtlDays || credential.inviteTtlDays);
     credential.status = 'invited';
@@ -583,15 +618,17 @@ async function reissueCredentialInvitation(workspace, subscription, credentialId
 }
 
 async function createRole(workspace, subscription, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'roles.manage');
   const state = await getOrCreateState(workspace);
-  const role = {
+  const role = normalizeRoleDefinition({
     id: crypto.randomUUID(),
     name: normalizeText(input.name, 90),
     description: normalizeText(input.description, 300),
+    adminRole: normalizeBoolean(input.adminRole),
+    privilegeIds: normalizeRolePrivilegeInput(input),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  };
+  });
   if (!role.name) {
     throw validationError('Role name is required.');
   }
@@ -602,7 +639,7 @@ async function createRole(workspace, subscription, input = {}) {
 }
 
 async function updateRole(workspace, subscription, roleId, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'roles.manage');
   const state = await getOrCreateState(workspace);
   const role = state.roles.find((candidate) => candidate.id === roleId);
   if (!role) {
@@ -614,6 +651,8 @@ async function updateRole(workspace, subscription, roleId, input = {}) {
   }
   role.name = name;
   role.description = normalizeText(input.description || role.description, 300);
+  role.adminRole = normalizeBoolean(input.adminRole);
+  role.privilegeIds = normalizeRolePrivilegeInput(input, role);
   role.updatedAt = new Date().toISOString();
   await writeState(state);
   await appendWorkspaceEvent(workspace, subscription, 'role.updated', { roleId: role.id, name: role.name });
@@ -621,7 +660,7 @@ async function updateRole(workspace, subscription, roleId, input = {}) {
 }
 
 async function deleteRole(workspace, subscription, roleId) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'roles.manage');
   const state = await getOrCreateState(workspace);
   const role = state.roles.find((candidate) => candidate.id === roleId);
   if (!role) {
@@ -641,7 +680,7 @@ async function deleteRole(workspace, subscription, roleId) {
 }
 
 async function createClaimDefinition(workspace, subscription, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'claims.manage');
   const state = await getOrCreateState(workspace);
   const key = normalizeClaimKey(input.key || input.label);
   if (!key) {
@@ -668,7 +707,7 @@ async function createClaimDefinition(workspace, subscription, input = {}) {
 }
 
 async function updateClaimDefinition(workspace, subscription, claimId, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'claims.manage');
   const state = await getOrCreateState(workspace);
   const claim = state.claimDefinitions.find((candidate) => candidate.id === claimId);
   if (!claim) {
@@ -712,7 +751,7 @@ async function updateClaimDefinition(workspace, subscription, claimId, input = {
 }
 
 async function deleteClaimDefinition(workspace, subscription, claimId) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'claims.manage');
   const state = await getOrCreateState(workspace);
   const claim = state.claimDefinitions.find((candidate) => candidate.id === claimId);
   if (!claim) {
@@ -732,7 +771,7 @@ async function deleteClaimDefinition(workspace, subscription, claimId) {
 }
 
 async function createOrgUnit(workspace, subscription, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'orgchart.manage');
   const state = await getOrCreateState(workspace);
   const name = normalizeText(input.name, 120);
   if (!name) {
@@ -763,7 +802,7 @@ async function createOrgUnit(workspace, subscription, input = {}) {
 }
 
 async function deleteOrgUnit(workspace, subscription, unitId) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'orgchart.manage');
   if (unitId === 'unit-root') {
     throw validationError('The root organization node cannot be deleted.');
   }
@@ -792,7 +831,7 @@ async function deleteOrgUnit(workspace, subscription, unitId) {
 }
 
 async function requestCredentialConsent(workspace, subscription, credentialId, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'claims.request');
   const state = await getOrCreateState(workspace);
   const credential = findCredential(state, credentialId);
   credential.consent = normalizeConsent(credential, state);
@@ -812,7 +851,7 @@ async function requestCredentialConsent(workspace, subscription, credentialId, i
 }
 
 async function grantCredentialConsent(workspace, subscription, credentialId, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'claims.request');
   const state = await getOrCreateState(workspace);
   const credential = findCredential(state, credentialId);
   credential.consent = normalizeConsent(credential, state);
@@ -849,7 +888,7 @@ async function grantCredentialConsent(workspace, subscription, credentialId, inp
 }
 
 async function updateBranding(workspace, subscription, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'branding.manage');
   const state = await getOrCreateState(workspace);
   const selectedPalette = PALETTES.find((palette) => palette.id === input.paletteId) || PALETTES[0];
   const useCustom = input.paletteId === 'custom';
@@ -871,7 +910,7 @@ async function updateBranding(workspace, subscription, input = {}) {
 }
 
 async function submitAdminIdentityVerification(workspace, subscription, input = {}) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'admin.assurance.manage');
   const state = await getOrCreateState(workspace);
   const idImage = normalizeImageEvidence(input.idImageDataUrl);
   const faceImage = normalizeImageEvidence(input.faceImageDataUrl);
@@ -912,7 +951,7 @@ async function submitAdminIdentityVerification(workspace, subscription, input = 
 }
 
 async function requestCoAdmin(workspace, subscription, credentialId) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'admin.assurance.manage');
   const state = await getOrCreateState(workspace);
   const credential = findCredential(state, credentialId);
   if (credential.status !== 'active') {
@@ -961,7 +1000,7 @@ async function requestCoAdmin(workspace, subscription, credentialId) {
 }
 
 async function acceptCoAdminChallenge(workspace, subscription, requestId, side) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'admin.assurance.manage');
   const state = await getOrCreateState(workspace);
   const request = findCoAdminRequest(state, requestId);
   const credential = findCredential(state, request.credentialId);
@@ -997,7 +1036,7 @@ async function acceptCoAdminChallenge(workspace, subscription, requestId, side) 
 }
 
 async function revokeCoAdmin(workspace, subscription, credentialId) {
-  assertWorkspaceAdmin(workspace, subscription);
+  await assertOrgPrivilege(workspace, subscription, 'admin.assurance.manage');
   const state = await getOrCreateState(workspace);
   const credential = findCredential(state, credentialId);
   if (!credential.coAdminRequestId) {
@@ -1040,7 +1079,13 @@ async function getOrganizationProfile(organizationId) {
       roles: credential.roleIds
         .map((roleId) => state.roles.find((role) => role.id === roleId))
         .filter(Boolean)
-        .map((role) => ({ id: role.id, name: role.name, description: role.description })),
+        .map((role) => ({
+          id: role.id,
+          name: role.name,
+          description: role.description,
+          adminRole: Boolean(role.adminRole),
+          privilegeIds: role.privilegeIds || []
+        })),
       claims: credential.claims,
       consent: normalizeConsent(credential, state),
       coAdminStatus: credential.coAdminStatus || null,
@@ -1261,6 +1306,20 @@ function assertWorkspaceAdmin(workspace, subscription) {
   }
 }
 
+async function assertOrgPrivilege(workspace, subscription, privilegeId) {
+  if (isWorkspaceAdmin(workspace, subscription)) {
+    return;
+  }
+  const state = await getOrCreateState(workspace);
+  const viewer = buildViewerAccess(workspace, subscription, state);
+  if (viewer.privilegeIds.includes(privilegeId)) {
+    return;
+  }
+  const error = new Error('This organization role does not allow that action.');
+  error.status = 403;
+  throw error;
+}
+
 function isWorkspaceAdmin(workspace, subscription) {
   const email = normalizeEmail(subscription.email);
   if (normalizeEmail(workspace.ownerEmail) === email) {
@@ -1272,7 +1331,7 @@ function isWorkspaceAdmin(workspace, subscription) {
 }
 
 function defaultRoles() {
-  return DEFAULT_ROLES.map((role) => ({
+  return DEFAULT_ROLES.map((role) => normalizeRoleDefinition({
     ...role,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -1317,9 +1376,334 @@ function defaultOrgUnits(organizationName) {
 }
 
 function normalizeState(state) {
+  state.roles = normalizeRoleDefinitions(state.roles);
   state.orgUnits = normalizeOrgUnits(state);
   state.credentials = state.credentials.map((credential) => normalizeCredential(credential, state));
   state.adminIdentityVerifications = normalizeAdminIdentityVerifications(state.adminIdentityVerifications);
+}
+
+function normalizeRoleDefinitions(roles = []) {
+  const source = Array.isArray(roles) && roles.length > 0 ? roles : DEFAULT_ROLES;
+  return source.map((role) => normalizeRoleDefinition(role));
+}
+
+function normalizeRoleDefinition(role = {}) {
+  const adminRole = normalizeBoolean(role.adminRole || role.isAdminRole);
+  const privilegeIds = normalizePrivilegeIds(role.privilegeIds || defaultPrivilegesForRole(role), adminRole);
+  return {
+    id: normalizeText(role.id, 120) || crypto.randomUUID(),
+    name: normalizeText(role.name, 90) || 'Role',
+    description: normalizeText(role.description, 300),
+    adminRole,
+    privilegeIds,
+    createdAt: role.createdAt || new Date().toISOString(),
+    updatedAt: role.updatedAt || role.createdAt || new Date().toISOString()
+  };
+}
+
+function defaultPrivilegesForRole(role = {}) {
+  const normalizedName = normalizeText(role.name, 90).toLowerCase();
+  const matchingTemplate = ROLE_TEMPLATES.find((template) => normalizedName.includes(template.id) || normalizedName === template.name.toLowerCase());
+  if (matchingTemplate) {
+    return matchingTemplate.privilegeIds;
+  }
+  if (normalizedName.includes('auditor')) {
+    return ROLE_TEMPLATES.find((template) => template.id === 'auditor').privilegeIds;
+  }
+  if (normalizedName.includes('issuer') || normalizedName.includes('operator')) {
+    return ROLE_TEMPLATES.find((template) => template.id === 'issuer').privilegeIds;
+  }
+  return HOLDER_BASE_PRIVILEGES;
+}
+
+function normalizeRolePrivilegeInput(input = {}, existingRole = null) {
+  const adminRole = normalizeBoolean(input.adminRole);
+  const selected = normalizeArray(input.privilegeIds).filter((privilegeId) => ALL_PRIVILEGE_IDS.includes(privilegeId));
+  if (selected.length > 0) {
+    return normalizePrivilegeIds(selected, adminRole);
+  }
+
+  const template = ROLE_TEMPLATES.find((candidate) => candidate.id === input.privilegeTemplate);
+  if (template) {
+    return normalizePrivilegeIds(template.privilegeIds, adminRole || template.adminRole);
+  }
+
+  if (existingRole?.privilegeIds?.length) {
+    return normalizePrivilegeIds(existingRole.privilegeIds, adminRole);
+  }
+
+  return normalizePrivilegeIds(HOLDER_BASE_PRIVILEGES, adminRole);
+}
+
+function normalizePrivilegeIds(value = [], adminRole = false) {
+  const selected = normalizeArray(value).filter((privilegeId) => ALL_PRIVILEGE_IDS.includes(privilegeId));
+  const base = adminRole ? ADMIN_BASE_PRIVILEGES : HOLDER_BASE_PRIVILEGES;
+  return [...new Set([...base, ...selected])];
+}
+
+function decorateRole(role = {}) {
+  const normalized = normalizeRoleDefinition(role);
+  return {
+    ...normalized,
+    adminRoleLabel: normalized.adminRole ? 'Admin role' : 'Scoped role',
+    privilegeCount: normalized.privilegeIds.length,
+    privilegeSummary: summarizePrivileges(normalized.privilegeIds),
+    privilegeGroups: buildPrivilegeGroups(normalized.privilegeIds)
+  };
+}
+
+function decorateRoleTemplate(template = {}) {
+  return {
+    ...template,
+    adminRoleValue: template.adminRole ? 'true' : 'false',
+    privilegeCsv: normalizePrivilegeIds(template.privilegeIds, template.adminRole).join(',')
+  };
+}
+
+function buildPrivilegeGroups(selectedIds = []) {
+  const selected = new Set(selectedIds);
+  return PRIVILEGE_GROUPS.map((group) => ({
+    ...group,
+    privileges: group.privileges.map((privilege) => ({
+      ...privilege,
+      checked: selected.has(privilege.id)
+    }))
+  }));
+}
+
+function summarizePrivileges(privilegeIds = []) {
+  const selected = new Set(privilegeIds);
+  const groupNames = PRIVILEGE_GROUPS
+    .filter((group) => group.privileges.some((privilege) => selected.has(privilege.id)))
+    .map((group) => group.name);
+  if (groupNames.length === 0) {
+    return 'No privileges selected';
+  }
+  return groupNames.slice(0, 3).join(', ') + (groupNames.length > 3 ? ` +${groupNames.length - 3} more` : '');
+}
+
+function buildViewerAccess(workspace, subscription, state) {
+  const email = normalizeEmail(subscription.email);
+  const isOwner = normalizeEmail(workspace.ownerEmail) === email;
+  const isAdminMember = isWorkspaceAdmin(workspace, subscription);
+  const holderCredentials = state.credentials.filter(
+    (credential) => normalizeEmail(credential.holderEmail) === email && credential.status !== 'revoked'
+  );
+  const assignedRoles = holderCredentials
+    .flatMap((credential) => normalizeArray(credential.roleIds))
+    .map((roleId) => state.roles.find((role) => role.id === roleId))
+    .filter(Boolean)
+    .map((role) => normalizeRoleDefinition(role));
+
+  const privileges = new Set(HOLDER_BASE_PRIVILEGES);
+  if (isAdminMember) {
+    for (const privilegeId of ADMIN_BASE_PRIVILEGES) {
+      privileges.add(privilegeId);
+    }
+  }
+  for (const role of assignedRoles) {
+    const rolePrivileges = role.adminRole ? ADMIN_BASE_PRIVILEGES : role.privilegeIds;
+    for (const privilegeId of rolePrivileges) {
+      privileges.add(privilegeId);
+    }
+  }
+
+  const has = (privilegeId) => privileges.has(privilegeId);
+  const hasAny = (privilegeIds) => privilegeIds.some((privilegeId) => privileges.has(privilegeId));
+  const canAdminister = isAdminMember || assignedRoles.some((role) => role.adminRole);
+  const canManagePeople = hasAny(['credentials.issue', 'credentials.update', 'credentials.revoke', 'roles.assign']);
+  const canViewPeople = canManagePeople || hasAny(['people.view', 'credentials.view.all']);
+  const canViewAllCredentials = canViewPeople || canAdminister;
+  const canManageCredentials = hasAny(['credentials.issue', 'credentials.update', 'credentials.revoke']);
+  const canViewRoles = hasAny(['roles.view', 'roles.manage', 'roles.assign']);
+  const canManageRoles = has('roles.manage');
+  const canViewClaims = hasAny(['claims.view.all', 'claims.manage', 'claims.request']);
+  const canManageClaims = has('claims.manage');
+  const canViewOrgChart = hasAny(['orgchart.view', 'orgchart.manage']);
+  const canManageOrgChart = has('orgchart.manage');
+  const canViewBranding = hasAny(['branding.view', 'branding.manage']);
+  const canManageBranding = has('branding.manage');
+  const canViewIntegrations = hasAny(['integrations.view', 'integrations.manage']);
+  const canManageIntegrations = has('integrations.manage');
+  const canViewOrgLedger = has('ledger.view.org');
+  const canManageAdminAssurance = has('admin.assurance.manage');
+
+  return {
+    email,
+    isOwner,
+    isWorkspaceAdmin: isAdminMember,
+    canAdminister,
+    assignedRoles,
+    assignedRoleLabels: assignedRoles.map((role) => role.name),
+    holderCredentialCount: holderCredentials.length,
+    privilegeIds: [...privileges],
+    privilegeSummary: summarizePrivileges([...privileges]),
+    canSeeAdminProfile: canAdminister || canViewPeople,
+    canViewAllCredentials,
+    canViewPeople,
+    canManagePeople,
+    canManageCredentials,
+    canViewRoles,
+    canManageRoles,
+    canViewClaims,
+    canManageClaims,
+    canViewConfiguration: canViewRoles || canViewClaims,
+    canManageConfiguration: canManageRoles || canManageClaims,
+    canViewOrgChart,
+    canManageOrgChart,
+    canViewBranding,
+    canManageBranding,
+    canViewIntegrations,
+    canManageIntegrations,
+    canViewOrgLedger,
+    canManageAdminAssurance,
+    modeLabel: canAdminister ? 'Administrator workspace' : canViewPeople ? 'Privileged contributor workspace' : 'Credential holder workspace',
+    nextActionTitle: canAdminister
+      ? 'Review people, claims, roles, and integrations from the blade menu.'
+      : canManagePeople
+        ? 'Start with People to manage holder invitations assigned to your role.'
+        : 'Start with My Credential to review your claims, roles, and wallet activity.',
+    nextActionAdvice: canAdminister
+      ? 'Use roles for privileges, claims for data, and integrations for systems. Keep admin roles narrow and use wallet challenges for high-risk changes.'
+      : canViewPeople
+        ? 'You can see more than a standard holder, but some configuration actions remain hidden unless your role includes those privileges.'
+        : 'Your view is intentionally limited to your own credential, consented claims, and ledger evidence for this organization.'
+  };
+}
+
+function buildBladeNavSections(viewer) {
+  const sections = [
+    {
+      label: 'Overview',
+      items: [
+        {
+          key: 'dashboard',
+          href: '#dashboard-overview',
+          label: 'Dashboard',
+          description: 'Home',
+          icon: '01',
+          visible: true
+        },
+        {
+          key: 'people',
+          href: '#credential-admin',
+          label: viewer.canViewAllCredentials ? 'People' : 'My credential',
+          description: viewer.canViewAllCredentials ? 'Users' : 'Mine',
+          icon: '02',
+          visible: true
+        },
+        {
+          key: 'credentials',
+          href: '#credentials-issuance',
+          label: 'Credentials',
+          description: 'Issue',
+          icon: '03',
+          visible: viewer.canManageCredentials
+        }
+      ]
+    },
+    {
+      label: 'Configuration',
+      items: [
+        {
+          key: 'roles',
+          href: '#roles-management',
+          label: 'Roles',
+          description: 'RBAC',
+          icon: '04',
+          visible: viewer.canViewRoles
+        },
+        {
+          key: 'claims',
+          href: '#claims-management',
+          label: 'Claims',
+          description: 'Data',
+          icon: '05',
+          visible: viewer.canViewClaims
+        },
+        {
+          key: 'org-structure',
+          href: '#org-structure',
+          label: 'Org chart',
+          description: 'Units',
+          icon: '06',
+          visible: viewer.canViewOrgChart
+        },
+        {
+          key: 'branding',
+          href: '#org-branding',
+          label: 'Branding',
+          description: 'Theme',
+          icon: '07',
+          visible: viewer.canViewBranding
+        }
+      ]
+    },
+    {
+      label: 'Assurance',
+      items: [
+        {
+          key: 'platforms',
+          href: '#identity-platforms',
+          label: 'Integrations',
+          description: 'IdP',
+          icon: '08',
+          visible: viewer.canViewIntegrations
+        },
+        {
+          key: 'issuer-orgs',
+          href: '#issuer-orgs',
+          label: 'Issuer orgs',
+          description: 'Wallet',
+          icon: '09',
+          visible: viewer.canViewIntegrations
+        },
+        {
+          key: 'wallet-events',
+          href: '#wallet-challenge-events',
+          label: 'Wallet events',
+          description: 'Audit',
+          icon: '10',
+          visible: true
+        },
+        {
+          key: 'ledger',
+          href: '#external-wallet-ledger',
+          label: viewer.canViewOrgLedger ? 'App ledger' : 'My ledger',
+          description: 'Apps',
+          icon: '11',
+          visible: true
+        },
+        {
+          key: 'admin-verification',
+          href: '#admin-verification',
+          label: 'Admin verification',
+          description: 'IDV',
+          icon: '12',
+          visible: viewer.canManageAdminAssurance
+        },
+        {
+          key: 'settings',
+          href: '#workspace-settings',
+          label: 'Settings',
+          description: 'Policy',
+          icon: '13',
+          visible: viewer.canAdminister
+        }
+      ]
+    }
+  ];
+
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => item.visible)
+    }))
+    .filter((section) => section.items.length > 0);
+}
+
+function buildBladeNavItems(viewer) {
+  return buildBladeNavSections(viewer).flatMap((section) => section.items);
 }
 
 function normalizeOrgUnits(state) {
@@ -1642,11 +2026,29 @@ function buildOrgChartNodes(state) {
   return nodes;
 }
 
+function buildOrgChartLevels(state) {
+  const levels = [];
+  for (const node of buildOrgChartNodes(state)) {
+    if (!levels[node.depth]) {
+      levels[node.depth] = [];
+    }
+    levels[node.depth].push(node);
+  }
+  return levels.map((nodes, index) => ({
+    depth: index,
+    nodes
+  }));
+}
+
 function normalizeArray(value) {
   if (Array.isArray(value)) {
     return value;
   }
   return value ? [value] : [];
+}
+
+function normalizeBoolean(value) {
+  return value === true || value === 'true' || value === 'yes' || value === 'on' || value === '1';
 }
 
 function normalizeEmail(value = '') {
@@ -1804,6 +2206,7 @@ function notFound(message) {
 
 module.exports = {
   acceptCoAdminChallenge,
+  assertOrgPrivilege,
   createClaimDefinition,
   createOrgUnit,
   createRole,

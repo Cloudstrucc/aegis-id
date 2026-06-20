@@ -52,8 +52,12 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
 
   const role = await createRole(workspace, subscription, {
     name: 'Privileged Operator',
-    description: 'Can administer sensitive identity workflows.'
+    description: 'Can administer sensitive identity workflows.',
+    privilegeTemplate: 'issuer'
   });
+  assert.equal(role.adminRole, false);
+  assert.equal(role.privilegeIds.includes('credentials.issue'), true);
+  assert.equal(role.privilegeIds.includes('ledger.view.org'), true);
   await updateBranding(workspace, subscription, {
     paletteId: 'custom',
     primaryColor: '#123456',
@@ -124,6 +128,8 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
   assert.equal(adminView.peopleTable.rows[0].verification.status, 'verified');
   assert.equal(adminView.coAdminCount, 1);
   assert.equal(adminView.customPaletteSelected, true);
+  assert.equal(adminView.canManageRoles, true);
+  assert.equal(adminView.roles.some((item) => item.privilegeSummary.includes('People and credentials')), true);
 
   const profile = await getOrganizationProfile(workspace.id);
   assert.equal(profile.organizationName, 'Vanguard Cloud Services');
@@ -144,6 +150,84 @@ test('org admin service manages credential lifecycle, co-admin challenges, and p
   await revokeCredential(workspace, subscription, credential.id, 'Pilot complete');
   const revokedProfile = await getOrganizationProfile(workspace.id);
   assert.equal(revokedProfile.credentials[0].status, 'revoked');
+});
+
+test('org admin view scopes menus and credentials by assigned role privileges', async (t) => {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vanguard-org-admin-scope-'));
+  const previousWorkspacePath = process.env.SUBSCRIBER_WORKSPACE_STORE_PATH;
+  const previousOrgAdminPath = process.env.ORG_ADMIN_STORE_PATH;
+  const previousOrgEventsPath = process.env.ORG_ADMIN_EVENT_STORE_PATH;
+  process.env.SUBSCRIBER_WORKSPACE_STORE_PATH = path.join(tempDir, 'workspaces.json');
+  process.env.ORG_ADMIN_STORE_PATH = path.join(tempDir, 'org-admin.json');
+  process.env.ORG_ADMIN_EVENT_STORE_PATH = path.join(tempDir, 'org-admin-events.json');
+  resetModules();
+
+  t.after(() => {
+    restoreEnv('SUBSCRIBER_WORKSPACE_STORE_PATH', previousWorkspacePath);
+    restoreEnv('ORG_ADMIN_STORE_PATH', previousOrgAdminPath);
+    restoreEnv('ORG_ADMIN_EVENT_STORE_PATH', previousOrgEventsPath);
+    resetModules();
+  });
+
+  const workspace = {
+    id: 'org-scope',
+    subscriptionId: 'sub-scope',
+    organization: 'Scoped Org',
+    ownerEmail: 'admin@vanguardcs.ca',
+    members: [{ email: 'admin@vanguardcs.ca', role: 'administrator', addedAt: new Date().toISOString() }],
+    platforms: {},
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  const admin = { id: 'sub-scope', email: 'admin@vanguardcs.ca', organization: 'Scoped Org' };
+  await fs.writeFile(process.env.SUBSCRIBER_WORKSPACE_STORE_PATH, JSON.stringify([workspace], null, 2), 'utf8');
+
+  const {
+    createRole,
+    getOrgAdminView,
+    issueCredential,
+    markCredentialAccepted
+  } = require('../src/services/org-admin-service');
+
+  const auditorRole = await createRole(workspace, admin, {
+    name: 'Audit Reviewer',
+    description: 'Read-only ledger and credential review.',
+    privilegeTemplate: 'auditor'
+  });
+
+  const auditorCredential = await issueCredential(workspace, admin, {
+    holderEmail: 'auditor@vanguardcs.ca',
+    displayName: 'Audit Reviewer',
+    roleIds: [auditorRole.id],
+    claim_email: 'auditor@vanguardcs.ca',
+    claim_displayName: 'Audit Reviewer'
+  });
+  await markCredentialAccepted(workspace, admin, auditorCredential.id);
+
+  const employeeCredential = await issueCredential(workspace, admin, {
+    holderEmail: 'employee@vanguardcs.ca',
+    displayName: 'Employee Holder',
+    roleIds: ['role-employee'],
+    claim_email: 'employee@vanguardcs.ca',
+    claim_displayName: 'Employee Holder'
+  });
+  await markCredentialAccepted(workspace, admin, employeeCredential.id);
+
+  const auditorView = await getOrgAdminView(workspace, { id: 'auditor', email: 'auditor@vanguardcs.ca' });
+  assert.equal(auditorView.isAdmin, false);
+  assert.equal(auditorView.canViewPeople, true);
+  assert.equal(auditorView.canManagePeople, false);
+  assert.equal(auditorView.canViewOrgLedger, true);
+  assert.equal(auditorView.credentials.length, 2);
+
+  const employeeView = await getOrgAdminView(workspace, { id: 'employee', email: 'employee@vanguardcs.ca' });
+  assert.equal(employeeView.isAdmin, false);
+  assert.equal(employeeView.canViewPeople, false);
+  assert.equal(employeeView.canManagePeople, false);
+  assert.equal(employeeView.canViewOrgLedger, false);
+  assert.equal(employeeView.credentials.length, 1);
+  assert.equal(employeeView.credentials[0].holderEmail, 'employee@vanguardcs.ca');
+  assert.equal(employeeView.peopleTable.filteredCount, 1);
 });
 
 function resetModules() {

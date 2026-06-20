@@ -659,6 +659,7 @@ function buildDashboardView(subscription, workspace) {
   return {
     title: 'Subscriber Dashboard',
     description: 'Vanguard Cloud Services - Aegis ID subscriber dashboard.',
+    bodyClass: 'workspace-page',
     subscription,
     workspace,
     workspaceRole: workspace.roleLabel || roleLabel(workspace.role || 'administrator'),

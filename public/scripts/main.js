@@ -38,6 +38,12 @@ document.addEventListener('click', async (event) => {
     return;
   }
 
+  const bladeLink = event.target.closest('[data-blade-link]');
+  if (bladeLink) {
+    activateWorkspaceBladeFromLink(bladeLink, event);
+    return;
+  }
+
   const registerPasskeyButton = event.target.closest('[data-passkey-register]');
   if (registerPasskeyButton) {
     await handlePasskey(registerPasskeyButton, 'register');
@@ -183,10 +189,15 @@ document.querySelectorAll('[data-image-to-hidden]').forEach((input) => {
   input.addEventListener('change', () => handleImageEvidence(input));
 });
 
+document.querySelectorAll('[data-role-template-select]').forEach((select) => {
+  select.addEventListener('change', () => applyRoleTemplate(select));
+});
+
 restoreDismissibleBanners();
 // Workspace tour is disabled while the onboarding guide is being redesigned.
 // The setup/configuration wizards remain available from the portal.
 // initWorkspaceTour();
+initWorkspaceBlade();
 initAdminIdvWizard(document.querySelector('[data-idv-form]'));
 openInviteModalFromHash();
 
@@ -233,6 +244,122 @@ function closeAppModal(modal, restoreFocus = true) {
   }
   if (restoreFocus) {
     lastAppModalTrigger?.focus?.();
+  }
+}
+
+function initWorkspaceBlade() {
+  const shell = document.querySelector('[data-workspace-blade]');
+  if (!shell) {
+    return;
+  }
+
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+  window.addEventListener('hashchange', () => activateWorkspaceBladeFromHash(window.location.hash));
+  activateWorkspaceBladeFromHash(window.location.hash || '#dashboard-overview');
+  requestAnimationFrame(() => resetWorkspaceBladeScroll(shell, false));
+  window.setTimeout(() => resetWorkspaceBladeScroll(shell, false), 80);
+}
+
+function activateWorkspaceBladeFromLink(link, event) {
+  const shell = document.querySelector('[data-workspace-blade]');
+  if (!shell) {
+    return;
+  }
+
+  const href = link.getAttribute('href') || '';
+  if (!href.startsWith('#')) {
+    return;
+  }
+
+  event?.preventDefault();
+  activateWorkspaceBlade(link.dataset.bladeLink, href);
+  if (window.location.hash !== href) {
+    window.history.pushState({}, '', href);
+  }
+}
+
+function activateWorkspaceBladeFromHash(hash) {
+  const shell = document.querySelector('[data-workspace-blade]');
+  if (!shell) {
+    return;
+  }
+
+  const normalizedHash = hash || '#dashboard-overview';
+  const matchingLink = shell.querySelector(`[data-blade-link][href="${cssEscape(normalizedHash)}"]`);
+  activateWorkspaceBlade(matchingLink?.dataset.bladeLink, normalizedHash);
+}
+
+function activateWorkspaceBlade(key, hash) {
+  const shell = document.querySelector('[data-workspace-blade]');
+  const panels = [...shell.querySelectorAll('[data-blade-panel]')];
+  if (panels.length === 0) {
+    return;
+  }
+
+  const target = findBladePanel(shell, key, hash) || panels[0];
+  const targetKey = key || target.dataset.bladePanel;
+  for (const panel of panels) {
+    const active = panel === target;
+    panel.hidden = !active;
+    panel.classList.toggle('is-active', active);
+  }
+  for (const link of shell.querySelectorAll('[data-blade-link]')) {
+    link.classList.toggle('is-active', link.dataset.bladeLink === targetKey);
+  }
+  resetWorkspaceBladeScroll(shell, true);
+}
+
+function resetWorkspaceBladeScroll(shell, smooth = true) {
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  const content = shell.querySelector('.workspace-blade__content');
+  if (content) {
+    content.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+  }
+}
+
+function findBladePanel(shell, key, hash) {
+  if (key) {
+    const keyed = shell.querySelector(`[data-blade-panel="${cssEscape(key)}"]`);
+    if (keyed) {
+      return keyed;
+    }
+  }
+  if (hash?.startsWith('#')) {
+    const targetId = decodeURIComponent(hash.slice(1));
+    const targetElement = document.getElementById(targetId);
+    return targetElement?.closest('[data-blade-panel]');
+  }
+  return null;
+}
+
+function cssEscape(value = '') {
+  if (window.CSS?.escape) {
+    return window.CSS.escape(value);
+  }
+  return String(value).replace(/["\\]/g, '\\$&');
+}
+
+function applyRoleTemplate(select) {
+  const form = select.closest('form');
+  const option = select.selectedOptions?.[0];
+  if (!form || !option || !option.value) {
+    return;
+  }
+
+  const privileges = new Set(
+    String(option.dataset.privileges || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+  form.querySelectorAll('input[name="privilegeIds"]').forEach((checkbox) => {
+    checkbox.checked = privileges.has(checkbox.value);
+  });
+  const adminRole = form.querySelector('input[name="adminRole"]');
+  if (adminRole) {
+    adminRole.checked = option.dataset.adminRole === 'true';
   }
 }
 

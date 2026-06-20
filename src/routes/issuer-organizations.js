@@ -7,6 +7,7 @@ const {
   createIssuerOrganizationInvitation,
   registerIssuerOrganizationConnection
 } = require('../services/issuer-organization-service');
+const { assertOrgPrivilege } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
@@ -15,6 +16,7 @@ router.post('/dashboard/:subscriptionId/issuer-organizations/invitations', requi
   try {
     const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
+    await assertOrgPrivilege(workspace, subscription, 'integrations.manage');
     const issuerOrganization = await createIssuerOrganizationInvitation(subscription, workspace);
 
     await writeAuditEvent('issuer-organization.invitation.created', {
@@ -34,6 +36,7 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/issuer-organizations/i
   try {
     const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(subscription, req.params.workspaceId);
+    await assertOrgPrivilege(workspace, subscription, 'integrations.manage');
     const issuerOrganization = await createIssuerOrganizationInvitation(subscription, workspace);
 
     await writeAuditEvent('issuer-organization.invitation.created', {

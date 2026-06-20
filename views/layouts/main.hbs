@@ -7,7 +7,7 @@
     <title>{{#if (eq title appName)}}{{appName}}{{else}}{{title}} | {{appName}}{{/if}}</title>
     <link rel="stylesheet" href="/styles/main.css">
   </head>
-  <body>
+  <body{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>
     {{> site-header}}
     <main>
       {{{body}}}

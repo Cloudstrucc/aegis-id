@@ -1,38 +1,184 @@
-<section class="page-hero page-hero--compact">
-  <p class="eyebrow">{{workspaceRole}} Dashboard</p>
-  <h1>{{workspace.organization}} Aegis ID setup</h1>
-  <p>{{#if welcome}}Subscription captured. Start by connecting Microsoft Entra Verified ID or YubiKey-backed assurance, then add federation providers as needed.{{else}}Manage connected identity platforms, hardware-backed assurance, and setup progress for this Aegis ID workspace.{{/if}}</p>
-  <div class="hero__actions">
-    <a class="button button--primary" href="{{dashboardBasePath}}/platforms/microsoft-verified-id/setup">Set Up Verified ID</a>
-    <a class="button button--secondary" href="{{dashboardBasePath}}/platforms/yubikey-fido2/setup">Set Up YubiKey</a>
-    <a class="button button--secondary" href="{{organizationsPath}}">Organizations</a>
-    <a class="button button--secondary" href="/architecture">Architecture</a>
-  </div>
-</section>
+<section class="workspace-blade" data-workspace-blade>
+  <header class="workspace-blade__topbar">
+    <a class="workspace-blade__product" href="{{organizationsPath}}">
+      <span class="workspace-brand-mark">V</span>
+      <span>
+        <strong>Vanguard Aegis ID</strong>
+        <small>Organization workspace</small>
+      </span>
+    </a>
+    <nav aria-label="Workspace shortcuts">
+      <a href="#dashboard-overview" data-blade-link="dashboard">Portal</a>
+      {{#if orgAdmin.canViewIntegrations}}
+        <a href="#identity-platforms" data-blade-link="platforms">Integrations</a>
+      {{/if}}
+      <a href="#external-wallet-ledger" data-blade-link="ledger">Ledger</a>
+    </nav>
+    <span class="workspace-blade__avatar">{{#if user.initials}}{{user.initials}}{{else}}FP{{/if}}</span>
+  </header>
 
-<section class="band band--light">
-  <div class="dashboard-summary">
-    <article>
-      <span class="metric">{{connectedCount}}</span>
-      <p>Connected platforms</p>
-    </article>
-    <article>
-      <span class="metric">{{inProgressCount}}</span>
-      <p>Configured or in progress</p>
-    </article>
-    <article>
-      <span class="metric">{{verifiedIdMode}}</span>
-      <p>Server Verified ID mode</p>
-    </article>
-  </div>
-</section>
+  <aside class="workspace-blade__rail" aria-label="Global workspace navigation">
+    <a href="#dashboard-overview" data-blade-link="dashboard" aria-label="Dashboard">D</a>
+    <a href="#credential-admin" data-blade-link="people" aria-label="People">P</a>
+    {{#if orgAdmin.canViewIntegrations}}
+      <a href="#identity-platforms" data-blade-link="platforms" aria-label="Integrations">I</a>
+    {{/if}}
+    <a href="#external-wallet-ledger" data-blade-link="ledger" aria-label="Ledger">L</a>
+    {{#if orgAdmin.isAdmin}}
+      <a href="#workspace-settings" data-blade-link="settings" aria-label="Settings">S</a>
+    {{/if}}
+  </aside>
 
-<section id="credential-admin" class="band band--white">
+  <aside class="workspace-blade__nav" aria-label="{{workspace.organization}} workspace menu">
+    <div class="workspace-blade__head">
+      <p>Organization</p>
+      <h1>{{workspace.organization}}</h1>
+      <span>{{#if orgAdmin.viewer.canViewAllCredentials}}Manage people, credentials, roles, claims, integrations, branding, and audit evidence for this workspace.{{else}}Review your credential, consented claims, and wallet evidence for this organization.{{/if}}</span>
+      <div class="workspace-blade__org-chip">
+        <span>V</span>
+        <div>
+          <strong>Workspace active</strong>
+          <small>{{orgAdmin.viewer.modeLabel}}</small>
+        </div>
+      </div>
+    </div>
+    <nav class="workspace-blade__menu">
+      {{#each orgAdmin.bladeNavSections}}
+        <p class="workspace-blade__section-label">{{label}}</p>
+        {{#each items}}
+          <a href="{{href}}" data-blade-link="{{key}}">
+            <span>{{icon}}</span>
+            <strong>{{label}}</strong>
+            <small>{{description}}</small>
+          </a>
+        {{/each}}
+      {{/each}}
+    </nav>
+    <article class="workspace-blade__advice">
+      <strong>Next best action</strong>
+      <span>{{orgAdmin.viewer.nextActionAdvice}}</span>
+    </article>
+  </aside>
+
+  <div class="workspace-blade__content">
+    <section id="dashboard-overview" class="band band--white blade-panel blade-panel--overview" data-blade-panel="dashboard">
+      <div class="blade-overview">
+        <div>
+          <p class="eyebrow">Dashboard</p>
+          <h1>Choose a workspace blade.</h1>
+          <p>{{#if welcome}}Subscription captured. Start with a focused blade for people, credentials, integrations, and assurance policies.{{else}}This default view stays intentionally light. Use the menu blade or the tiles below to open focused management surfaces for people, credentials, claims, roles, integrations, branding, and audit evidence.{{/if}}</p>
+        </div>
+        <div class="toolbar">
+          {{#if orgAdmin.canManageAdminAssurance}}
+            <a class="button button--secondary button--dark-text" href="#admin-verification" data-blade-link="admin-verification">Verify admin</a>
+          {{/if}}
+          {{#if orgAdmin.canManagePeople}}
+            <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user">Add user</button>
+          {{/if}}
+        </div>
+      </div>
+
+      {{#if orgAdmin.canManageAdminAssurance}}
+        {{#if orgAdmin.adminProfile.showVerificationBanner}}
+          <aside class="identity-reminder" data-dismissible-banner="identity-reminder-{{workspace.id}}">
+            <span class="platform-icon">ID</span>
+            <div>
+              <strong>Administrator profile validation due in {{orgAdmin.adminProfile.verificationDaysRemaining}} days</strong>
+              <p>Admins can keep working during the grace period, but higher-trust deployments should validate the original subscriber and co-admins.</p>
+            </div>
+            <div class="identity-reminder__actions">
+              <a class="button button--secondary button--dark-text" href="#admin-verification" data-blade-link="admin-verification">Open IDV</a>
+              <button class="button button--secondary button--dark-text" type="button" data-dismiss-banner>Dismiss</button>
+            </div>
+          </aside>
+        {{/if}}
+      {{/if}}
+
+      <div class="dashboard-summary dashboard-summary--four">
+        <article>
+          <span class="metric">{{orgAdmin.activeCount}}</span>
+          <p>Active holders</p>
+        </article>
+        <article>
+          <span class="metric">{{orgAdmin.invitedCount}}</span>
+          <p>Pending invites</p>
+        </article>
+        <article>
+          <span class="metric">{{orgAdmin.roles.length}}</span>
+          <p>Credential roles</p>
+        </article>
+        <article>
+          <span class="metric">{{orgAdmin.events.length}}</span>
+          <p>Wallet challenges</p>
+        </article>
+      </div>
+
+      <div class="blade-action-grid">
+        <a class="blade-action-card" href="#credential-admin" data-blade-link="people">
+          <span>USR</span>
+          <strong>{{#if orgAdmin.viewer.canViewAllCredentials}}People{{else}}My credential{{/if}}</strong>
+          <small>{{#if orgAdmin.viewer.canViewAllCredentials}}Add, edit, revoke, and inspect credential holders only.{{else}}See your roles, claims, status, and wallet evidence.{{/if}}</small>
+        </a>
+        {{#if orgAdmin.canManageCredentials}}
+          <a class="blade-action-card" href="#credentials-issuance" data-blade-link="credentials">
+            <span>VID</span>
+            <strong>Credentials</strong>
+            <small>Create issuance invites, show QR codes, copy wallet links, and monitor acceptance status.</small>
+          </a>
+        {{/if}}
+        {{#if orgAdmin.canViewRoles}}
+          <a class="blade-action-card" href="#roles-management" data-blade-link="roles">
+            <span>RLS</span>
+            <strong>Roles</strong>
+            <small>Define admin, employee, contractor, approver, and custom privilege sets.</small>
+          </a>
+        {{/if}}
+        {{#if orgAdmin.canViewClaims}}
+          <a class="blade-action-card" href="#claims-management" data-blade-link="claims">
+            <span>CLM</span>
+            <strong>Claims</strong>
+            <small>Choose claim definitions, consent requirements, and delta fields.</small>
+          </a>
+        {{/if}}
+        {{#if orgAdmin.canViewOrgChart}}
+          <a class="blade-action-card" href="#org-structure" data-blade-link="org-structure">
+            <span>ORG</span>
+            <strong>Org chart</strong>
+            <small>Model divisions, departments, reporting nodes, and default policy assignments.</small>
+          </a>
+        {{/if}}
+        {{#if orgAdmin.canViewIntegrations}}
+          <a class="blade-action-card" href="#identity-platforms" data-blade-link="platforms">
+            <span>API</span>
+            <strong>Integrations</strong>
+            <small>Connect Verified ID, YubiKey, OIDC, SAML, Okta, and Keycloak.</small>
+          </a>
+        {{/if}}
+        {{#if orgAdmin.canViewBranding}}
+          <a class="blade-action-card" href="#org-branding" data-blade-link="branding">
+            <span>BRD</span>
+            <strong>Branding</strong>
+            <small>Set logo, palette, and wallet context shown to holders.</small>
+          </a>
+        {{/if}}
+        <a class="blade-action-card" href="#wallet-challenge-events" data-blade-link="wallet-events">
+          <span>LOG</span>
+          <strong>Wallet events</strong>
+          <small>Review immutable challenge evidence for sign-in, approvals, and revocations.</small>
+        </a>
+      </div>
+    </section>
+
+<section id="credential-admin" class="band band--white blade-panel" data-blade-panel="people">
   <div class="section-heading">
-    <p class="eyebrow">Credential Administration</p>
-    <h2>Issue, monitor, update, and revoke organization credentials.</h2>
-    <p>Admins can manage claims, roles, holder invitations, co-admin requests, branding, and immutable wallet challenge logs for this organization.</p>
+    <p class="eyebrow">People</p>
+    <h2>{{#if orgAdmin.viewer.canViewAllCredentials}}Manage credential holders.{{else}}Review your organization credential.{{/if}}</h2>
+    <p>{{#if orgAdmin.viewer.canViewAllCredentials}}A single pageable directory for invited, active, revoked, and disabled holders. Row clicks open details; row actions handle edit, re-invite, revoke, promote, and challenge.{{else}}Credential holders can see the roles, claims, invitation status, consent scope, and ledger events that apply to them in this organization.{{/if}}</p>
   </div>
+  <article class="blade-guidance">
+    <strong>What to do here</strong>
+    <span>{{#if orgAdmin.canManagePeople}}Add users when you need to issue credentials, re-invite holders when QR links expire, and revoke credentials when someone leaves or changes relationship to the org.{{else}}Use this page to understand what this organization knows about your credential and what claims you have consented to share.{{/if}}</span>
+  </article>
 
   <div class="dashboard-summary dashboard-summary--four">
     <article>
@@ -53,175 +199,12 @@
     </article>
   </div>
 
-  {{#if orgAdmin.isAdmin}}
-    {{#if orgAdmin.adminProfile.showVerificationBanner}}
-      <aside class="identity-reminder" data-dismissible-banner="identity-reminder-{{workspace.id}}">
-        <div>
-          <p class="eyebrow">Administrator assurance</p>
-          <h3>Verify your admin profile within {{orgAdmin.adminProfile.verificationDaysRemaining}} days.</h3>
-          <p>Admins can keep working during the grace period. Upload an ID image and capture a face photo when you are ready; this lab adapter records hashes and a mock match score for the pilot.</p>
-        </div>
-        <div class="identity-reminder__actions">
-          <button class="button button--primary button--blue" type="button" data-modal-target="#admin-identity-verification">Verify ID</button>
-          <button class="button button--secondary button--dark-text" type="button" data-dismiss-banner>Dismiss</button>
-        </div>
-      </aside>
-    {{/if}}
-
-    <div class="workspace-steps" data-workspace-tour="{{workspace.id}}">
-      <article data-tour-step="overview">
-        <span>1</span>
-        <strong>Review the directory</strong>
-        <p>The original subscriber appears first, followed by invited, active, and revoked credential holders.</p>
-      </article>
-      <article data-tour-step="add-user">
-        <span>2</span>
-        <strong>Invite people</strong>
-        <p>Add employees, contractors, or admins. Each invitation defaults to 7 days and produces a QR plus copyable link.</p>
-      </article>
-      <article data-tour-step="configure">
-        <span>3</span>
-        <strong>Configure claims and roles</strong>
-        <p>Use the configuration tiles to define what credentials can contain and what privileges they carry.</p>
-      </article>
-      <article data-tour-step="audit">
-        <span>4</span>
-        <strong>Audit wallet challenges</strong>
-        <p>Authentication, consent, promotion, approval, and revocation activity stays visible in immutable logs.</p>
-      </article>
-    </div>
-
-    <div class="admin-grid">
-      <article class="platform-card">
-        <div class="platform-card__head">
-          <span class="platform-icon">ID</span>
-          <div>
-            <span class="track-label">Next action</span>
-            <h3>Onboard or manage people</h3>
-          </div>
-        </div>
-        <p>Start with the people table below. Add a credential holder, open a row for details, or use row actions for edit, re-invite, promotion, and revocation.</p>
-        <div class="platform-card__actions">
-          <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user" data-tour-anchor="add-user">Add User</button>
-          <a class="button button--secondary button--dark-text" href="#roles-claims">Configure Claims and Roles</a>
-        </div>
-      </article>
-
-      <article class="platform-card" data-tour-anchor="audit">
-        <div class="platform-card__head">
-          <span class="platform-icon">LOG</span>
-          <div>
-            <span class="track-label">Immutable log</span>
-            <h3>Wallet challenge events</h3>
-          </div>
-        </div>
-        <div class="event-list">
-          {{#each orgAdmin.events}}
-            <details>
-              <summary>{{title}} <span>{{createdAt}}</span></summary>
-              <pre>{{details}}</pre>
-            </details>
-          {{/each}}
-        </div>
-      </article>
-    </div>
-  {{else}}
+  {{#unless orgAdmin.canViewPeople}}
     <article class="note-panel">
-      <strong>Contributor view</strong>
-      <span>You can view organization state, but credential issuance and administration require administrator access.</span>
+      <strong>{{orgAdmin.viewer.modeLabel}}</strong>
+      <span>{{orgAdmin.viewer.nextActionAdvice}}</span>
     </article>
-  {{/if}}
-
-  <div id="org-structure" class="structure-layout">
-    <article class="platform-card">
-      <div class="platform-card__head">
-        <span class="platform-icon">ORG</span>
-        <div>
-          <span class="track-label">Sub-organizations</span>
-          <h3>Organization structure</h3>
-        </div>
-      </div>
-      <div class="org-chart-canvas" aria-label="Organization structure tree">
-        {{#each orgAdmin.orgChartNodes}}
-          <div class="org-node" style="--depth: {{depth}};">
-            <strong>{{name}}</strong>
-            <span>{{path}}</span>
-            <small>{{credentialCount}} credential{{#unless (eq credentialCount 1)}}s{{/unless}}</small>
-            <div class="tag-row">
-              {{#each roleLabels}}
-                <span>{{this}}</span>
-              {{/each}}
-              {{#each claimLabels}}
-                <span>{{this}}</span>
-              {{/each}}
-            </div>
-            {{#if ../orgAdmin.isAdmin}}
-              {{#unless (eq id "unit-root")}}
-                <form action="{{../dashboardBasePath}}/admin/org-units/{{id}}/delete" method="post">
-                  <button class="button button--ghost" type="submit">Delete Node</button>
-                </form>
-              {{/unless}}
-            {{/if}}
-          </div>
-        {{/each}}
-      </div>
-    </article>
-
-    {{#if orgAdmin.isAdmin}}
-      <article class="platform-card">
-        <div class="platform-card__head">
-          <span class="platform-icon">DIV</span>
-          <div>
-            <span class="track-label">Org chart editor</span>
-            <h3>Add a division</h3>
-          </div>
-        </div>
-        <form class="wizard-form" action="{{dashboardBasePath}}/admin/org-units" method="post">
-          <div class="field-row">
-            <div class="field-group">
-              <label for="orgUnitName">Division name</label>
-              <input id="orgUnitName" name="name" type="text" placeholder="Finance, HR, Delivery">
-            </div>
-            <div class="field-group">
-              <label for="orgUnitParent">Parent node</label>
-              <select id="orgUnitParent" name="parentId">
-                {{#each orgAdmin.orgUnitOptions}}
-                  <option value="{{id}}">{{indentedName}}</option>
-                {{/each}}
-              </select>
-            </div>
-          </div>
-          <div class="field-group">
-            <label for="orgUnitDescription">Description</label>
-            <textarea id="orgUnitDescription" name="description" rows="3" placeholder="Optional privileges or business context."></textarea>
-          </div>
-          <div>
-            <p class="form-note">Default roles for this node</p>
-            <div class="checkbox-grid">
-              {{#each orgAdmin.roles}}
-                <label class="checkline">
-                  <input type="checkbox" name="roleIds" value="{{id}}">
-                  <span>{{name}}</span>
-                </label>
-              {{/each}}
-            </div>
-          </div>
-          <div>
-            <p class="form-note">Claims normally requested in this node</p>
-            <div class="checkbox-grid">
-              {{#each orgAdmin.claimDefinitions}}
-                <label class="checkline">
-                  <input type="checkbox" name="claimKeys" value="{{key}}">
-                  <span>{{label}}</span>
-                </label>
-              {{/each}}
-            </div>
-          </div>
-          <button class="button button--primary button--blue" type="submit">Add Division</button>
-        </form>
-      </article>
-    {{/if}}
-  </div>
+  {{/unless}}
 
   <div id="people-directory" class="people-directory">
     <div class="people-directory__head">
@@ -231,7 +214,7 @@
         <p>{{orgAdmin.peopleTable.pageSummary}} people shown. Invitations default to 7 days unless overridden.</p>
       </div>
       <div class="people-directory__tools">
-        {{#if orgAdmin.isAdmin}}
+        {{#if orgAdmin.canManagePeople}}
           <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user" data-tour-anchor="add-user">Add User</button>
         {{/if}}
         <form class="people-filters" action="{{dashboardBasePath}}" method="get">
@@ -298,7 +281,7 @@
               <td>
                 <div class="row-actions">
                   <button class="icon-button" type="button" title="View details" data-modal-target="#{{detailModalId}}">View</button>
-                  {{#if ../orgAdmin.isAdmin}}
+                  {{#if ../orgAdmin.canManagePeople}}
                     {{#if isAdminProfile}}
                       <button class="icon-button" type="button" title="Verify administrator identity" data-modal-target="#admin-identity-verification">Verify</button>
                     {{else}}
@@ -329,8 +312,10 @@
       {{/if}}
     </div>
   </div>
+</section>
 
-  {{#if orgAdmin.isAdmin}}
+<div class="workspace-modal-stack">
+  {{#if orgAdmin.canManagePeople}}
     <div class="app-modal" id="modal-add-user" hidden>
       <div class="app-modal__backdrop" data-modal-close></div>
       <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="modal-add-user-title">
@@ -591,7 +576,7 @@
             </details>
           {{/each}}
         </div>
-        {{#if ../orgAdmin.isAdmin}}
+        {{#if ../orgAdmin.canManagePeople}}
           <div class="modal-actions">
             <button class="button button--primary button--blue" type="button" data-modal-target="#{{editModalId}}">Edit</button>
             <button class="button button--secondary button--dark-text" type="button" data-modal-target="#{{inviteModalId}}">Invite QR</button>
@@ -625,7 +610,7 @@
       </section>
     </div>
 
-    {{#if ../orgAdmin.isAdmin}}
+    {{#if ../orgAdmin.canManagePeople}}
       <div class="app-modal" id="{{editModalId}}" hidden>
         <div class="app-modal__backdrop" data-modal-close></div>
         <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="edit-title-{{id}}">
@@ -765,14 +750,326 @@
       </div>
     {{/if}}
   {{/each}}
+</div>
+
+{{#if orgAdmin.canManageCredentials}}
+<section id="credentials-issuance" class="band band--white blade-panel" data-blade-panel="credentials">
+  <div class="section-heading">
+    <p class="eyebrow">Credentials</p>
+    <h2>Issue and track wallet credentials.</h2>
+    <p>Create invitation links, show QR codes, set expiry, assign roles, and monitor whether the wallet accepted the invite.</p>
+  </div>
+  <article class="blade-guidance">
+    <strong>Recommended next step</strong>
+    <span>Use this blade when you are ready to send a credential invite. People remains the directory; this page is only for issuance and invitation status.</span>
+  </article>
+  <div class="split-panel">
+    <article class="platform-card org-chart-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">QR</span>
+        <div>
+          <span class="track-label">Issuance</span>
+          <h3>New credential invitation</h3>
+        </div>
+      </div>
+      <p>Invitation defaults to 7 days. Admins can override expiry, requested claims, assigned roles, and target division before sending.</p>
+      <div class="platform-card__actions">
+        <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user">Create issuance invite</button>
+        <a class="button button--secondary button--dark-text" href="#credential-admin" data-blade-link="people">Review people</a>
+      </div>
+    </article>
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">STS</span>
+        <div>
+          <span class="track-label">Status</span>
+          <h3>Credential lifecycle</h3>
+        </div>
+      </div>
+      <div class="policy-row">
+        <div class="policy"><strong>{{orgAdmin.invitedCount}}</strong><span>Invitations waiting for wallet acceptance.</span></div>
+        <div class="policy"><strong>{{orgAdmin.activeCount}}</strong><span>Credentials accepted and active.</span></div>
+        <div class="policy"><strong>{{orgAdmin.revokedCount}}</strong><span>Credentials disabled but retained in audit history.</span></div>
+      </div>
+    </article>
+  </div>
+  <div class="people-table-wrap">
+    <table class="people-table">
+      <thead>
+        <tr>
+          <th>Holder</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Invite expiry</th>
+          <th>QR / link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each orgAdmin.credentials}}
+          <tr>
+            <td><strong>{{displayName}}</strong></td>
+            <td>{{holderEmail}}</td>
+            <td><span class="status-pill status-pill--{{status}}">{{statusLabel}}</span></td>
+            <td>{{inviteExpiresLabel}}</td>
+            <td><button class="icon-button" type="button" data-modal-target="#{{inviteModalId}}">Open invite</button></td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{/if}}
+
+{{#if orgAdmin.canViewOrgChart}}
+<section id="org-structure" class="band band--white blade-panel" data-blade-panel="org-structure">
+  <div class="section-heading">
+    <p class="eyebrow">Org chart</p>
+    <h2>Map divisions to policy.</h2>
+    <p>Use a draw.io-style surface to model departments and attach default roles, claim requirements, and approver groups.</p>
+  </div>
+  <article class="blade-guidance">
+    <strong>Why this matters</strong>
+    <span>Create a division when a department needs its own default roles, claim requests, or policy notes. The selected division is applied during credential issuance.</span>
+  </article>
+  <div class="structure-layout structure-layout--editor">
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">ORG</span>
+        <div>
+          <span class="track-label">Sub-organizations</span>
+          <h3>Organization structure</h3>
+        </div>
+      </div>
+      <div class="org-chart-canvas" aria-label="Organization structure tree">
+        <div class="org-chart-tree">
+          {{#each orgAdmin.orgChartLevels}}
+            <div class="org-chart-level" style="--level: {{depth}};">
+              {{#each nodes}}
+                <div class="org-node">
+                  <strong>{{name}}</strong>
+                  <span>{{path}}</span>
+                  <small>{{credentialCount}} credential{{#unless (eq credentialCount 1)}}s{{/unless}}</small>
+                  <div class="tag-row">
+                    {{#each roleLabels}}<span>{{this}}</span>{{/each}}
+                    {{#each claimLabels}}<span>{{this}}</span>{{/each}}
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </article>
+    <aside class="org-chart-side">
+      <article class="platform-card">
+        <div class="platform-card__head">
+          <span class="platform-icon">UNT</span>
+          <div>
+            <span class="track-label">Current nodes</span>
+            <h3>Divisions</h3>
+          </div>
+        </div>
+        <div class="definition-list definition-list--compact">
+          {{#each orgAdmin.orgChartNodes}}
+            <div>
+              <strong>{{name}}</strong>
+              <span>{{path}}<br><small>{{credentialCount}} credential{{#unless (eq credentialCount 1)}}s{{/unless}}</small></span>
+              {{#if ../orgAdmin.canManageOrgChart}}
+                {{#unless (eq id "unit-root")}}
+                  <form action="{{../dashboardBasePath}}/admin/org-units/{{id}}/delete" method="post">
+                    <button class="icon-button icon-button--danger" type="submit">Delete</button>
+                  </form>
+                {{/unless}}
+              {{/if}}
+            </div>
+          {{/each}}
+        </div>
+      </article>
+
+      {{#if orgAdmin.canManageOrgChart}}
+        <article class="platform-card">
+          <div class="platform-card__head">
+            <span class="platform-icon">DIV</span>
+            <div>
+              <span class="track-label">Org chart editor</span>
+              <h3>Add a division</h3>
+            </div>
+          </div>
+          <form class="wizard-form" action="{{dashboardBasePath}}/admin/org-units" method="post">
+            <div class="field-row">
+              <div class="field-group">
+                <label for="orgUnitName">Division name</label>
+                <input id="orgUnitName" name="name" type="text" placeholder="Finance, HR, Delivery">
+              </div>
+              <div class="field-group">
+                <label for="orgUnitParent">Parent node</label>
+                <select id="orgUnitParent" name="parentId">
+                  {{#each orgAdmin.orgUnitOptions}}
+                    <option value="{{id}}">{{indentedName}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="orgUnitDescription">Description</label>
+              <textarea id="orgUnitDescription" name="description" rows="3" placeholder="Optional privileges or business context."></textarea>
+            </div>
+            <div>
+              <p class="form-note">Default roles for this node</p>
+              <div class="checkbox-grid">
+                {{#each orgAdmin.roles}}
+                  <label class="checkline">
+                    <input type="checkbox" name="roleIds" value="{{id}}">
+                    <span>{{name}}</span>
+                  </label>
+                {{/each}}
+              </div>
+            </div>
+            <div>
+              <p class="form-note">Claims normally requested in this node</p>
+              <div class="checkbox-grid">
+                {{#each orgAdmin.claimDefinitions}}
+                  <label class="checkline">
+                    <input type="checkbox" name="claimKeys" value="{{key}}">
+                    <span>{{label}}</span>
+                  </label>
+                {{/each}}
+              </div>
+            </div>
+            <button class="button button--primary button--blue" type="submit">Add Division</button>
+          </form>
+        </article>
+      {{/if}}
+    </aside>
+  </div>
+</section>
+{{/if}}
+
+<section id="wallet-challenge-events" class="band band--light blade-panel" data-blade-panel="wallet-events">
+  <div class="section-heading">
+    <p class="eyebrow">Wallet events</p>
+    <h2>Review organization wallet challenge events.</h2>
+    <p>This page shows authentication, consent, promotion, approval, and revocation activity from the Aegis wallet flow.</p>
+  </div>
+  <article class="blade-guidance">
+    <strong>Audit advice</strong>
+    <span>Use wallet events for operational history. Use the app ledger when you need cross-application reporting for expenses, signatures, and other external systems.</span>
+  </article>
+  <div class="event-list">
+    {{#each orgAdmin.events}}
+      <details>
+        <summary>{{title}} <span>{{createdAt}}</span></summary>
+        <pre>{{details}}</pre>
+      </details>
+    {{/each}}
+  </div>
 </section>
 
-<section id="external-wallet-ledger" class="band band--light">
+{{#if orgAdmin.canManageAdminAssurance}}
+<section id="admin-verification" class="band band--white blade-panel" data-blade-panel="admin-verification">
+  <div class="section-heading">
+    <p class="eyebrow">Admin verification</p>
+    <h2>Validate administrator identity.</h2>
+    <p>A wizard-style flow validates government photo ID, live face capture readiness, and profile assurance before admin deadlines expire.</p>
+  </div>
+  <article class="identity-reminder">
+    <span class="platform-icon">IDV</span>
+    <div>
+      <strong>{{orgAdmin.adminProfile.verificationStatusLabel}}</strong>
+      <p>Deadline: {{orgAdmin.adminProfile.verificationDeadlineLabel}}. Admins can keep working during the grace period, but production deployments should validate the original subscriber and co-admins.</p>
+    </div>
+    <div class="identity-reminder__actions">
+      <button class="button button--primary button--blue" type="button" data-modal-target="#admin-identity-verification">Start verification</button>
+    </div>
+  </article>
+  <div class="policy-row">
+    <article class="policy"><strong>1. Upload ID</strong><span>Capture or upload the government ID image and confirm document type.</span></article>
+    <article class="policy"><strong>2. Live face capture</strong><span>Use webcam or front-facing camera until the face is centered and ready.</span></article>
+    <article class="policy"><strong>3. Analysis</strong><span>Run matching and readiness checks, then mark the admin profile as validated.</span></article>
+  </div>
+</section>
+{{/if}}
+
+{{#if orgAdmin.isAdmin}}
+<section id="workspace-settings" class="band band--white blade-panel" data-blade-panel="settings">
+  <div class="section-heading">
+    <p class="eyebrow">Settings</p>
+    <h2>Workspace policy and lifecycle.</h2>
+    <p>Manage organization-level defaults, evidence retention expectations, and lifecycle operations without mixing policy decisions into operational blades.</p>
+  </div>
+  <article class="blade-guidance">
+    <strong>Policy advice</strong>
+    <span>Keep invite expiry short by default, require wallet or passkey assurance for sensitive actions, and disable an organization before deleting it when audit history may still matter.</span>
+  </article>
+  <div class="configuration-grid">
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">TTL</span>
+        <div>
+          <span class="track-label">Invitations</span>
+          <h3>Default expiry</h3>
+        </div>
+      </div>
+      <p>Credential invitations default to 7 days unless an admin overrides the expiry during issuance.</p>
+    </article>
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">MFA</span>
+        <div>
+          <span class="track-label">Challenge policy</span>
+          <h3>High-value actions</h3>
+        </div>
+      </div>
+      <p>Use integrations to require wallet passkey assurance for approvals, co-admin changes, signatures, and revocations.</p>
+    </article>
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">RET</span>
+        <div>
+          <span class="track-label">Evidence</span>
+          <h3>Ledger retention</h3>
+        </div>
+      </div>
+      <p>Preserve immutable challenge logs while allowing holder profile updates and credential revocation.</p>
+    </article>
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">ORG</span>
+        <div>
+          <span class="track-label">Lifecycle</span>
+          <h3>Disable or delete</h3>
+        </div>
+      </div>
+      <p>Disable the workspace to stop use while retaining history. Delete only after explicit administrative review.</p>
+      <div class="platform-card__actions">
+        {{#if workspace.isDisabled}}
+          <form action="/organizations/{{subscription.id}}/{{workspace.id}}/enable" method="post">
+            <button class="button button--primary button--blue" type="submit">Enable Organization</button>
+          </form>
+        {{else}}
+          <form action="/organizations/{{subscription.id}}/{{workspace.id}}/disable" method="post">
+            <button class="button button--secondary button--dark-text" type="submit">Disable Organization</button>
+          </form>
+        {{/if}}
+        <form action="/organizations/{{subscription.id}}/{{workspace.id}}/delete" method="post">
+          <button class="button button--ghost" type="submit">Delete Organization</button>
+        </form>
+      </div>
+    </article>
+  </div>
+</section>
+{{/if}}
+
+<section id="external-wallet-ledger" class="band band--light blade-panel" data-blade-panel="ledger">
   <div class="section-heading">
     <p class="eyebrow">External app ledger</p>
     <h2>High-assurance wallet challenges from connected applications.</h2>
     <p>Authentication, approvals, rejections, and contract-style decisions are captured here with immutable wallet payloads for organization reporting.</p>
   </div>
+  <article class="blade-guidance">
+    <strong>Why this matters</strong>
+    <span>{{#if orgAdmin.canViewOrgLedger}}Use the ledger to prove who approved, rejected, authenticated, or consented to an action, with the original payload retained for reporting and audit.{{else}}Your ledger view is scoped to wallet challenges associated with your credential in this organization.{{/if}}</span>
+  </article>
 
   <div class="people-directory">
     <div class="people-directory__head">
@@ -834,71 +1131,134 @@
   </div>
 </section>
 
-<section id="roles-claims" class="band band--light">
+<section id="roles-management" class="band band--light blade-panel" data-blade-panel="roles">
   <div class="section-heading">
-    <p class="eyebrow">Configuration</p>
-    <h2>Define roles and claims for this workspace.</h2>
-    <p>These tiles control what appears on issued credentials and what the wallet can consent to share by organization context.</p>
+    <p class="eyebrow">Roles</p>
+    <h2>Define authorization roles.</h2>
+    <p>Roles control what a credential holder can do inside the organization and connected applications.</p>
   </div>
-  <div class="configuration-grid" data-tour-anchor="configure">
-    <article class="config-tile">
-      <div class="config-tile__head">
-        <span class="platform-icon">ROLE</span>
+  <article class="blade-guidance">
+    <strong>Role design advice</strong>
+    <span>Only mark a role as administrative when it should unlock management menus and high-risk actions. For non-admin roles, grant only the exact privileges required for the workflow.</span>
+  </article>
+  {{#if orgAdmin.canViewRoles}}
+    <div class="people-directory configuration-table-panel" data-tour-anchor="configure">
+      <div class="people-directory__head">
         <div>
           <p class="eyebrow">Access model</p>
-          <h3>Roles</h3>
+          <h3>Role definitions</h3>
           <p>{{orgAdmin.roles.length}} role definitions available for credential assignment.</p>
         </div>
-      </div>
-      {{#if orgAdmin.isAdmin}}
-        <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-role">Add Role</button>
-      {{/if}}
-      <div class="definition-list">
-        {{#each orgAdmin.roles}}
-          <div>
-            <strong>{{name}}</strong>
-            <span>{{description}}</span>
-            {{#if ../orgAdmin.isAdmin}}
-              <div class="row-actions">
-                <button class="icon-button" type="button" data-modal-target="#role-edit-{{id}}">Edit</button>
-                <button class="icon-button icon-button--danger" type="button" data-modal-target="#role-delete-{{id}}">Revoke</button>
-              </div>
-            {{/if}}
+        {{#if orgAdmin.canManageRoles}}
+          <div class="people-directory__tools">
+            <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-role">Add Role</button>
           </div>
-        {{/each}}
+        {{/if}}
       </div>
-    </article>
+      <div class="people-table-wrap">
+        <table class="people-table definition-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Purpose</th>
+              <th>Type</th>
+              <th>Privileges</th>
+              {{#if orgAdmin.canManageRoles}}<th>Actions</th>{{/if}}
+            </tr>
+          </thead>
+          <tbody>
+            {{#each orgAdmin.roles}}
+              <tr>
+                <td><strong>{{name}}</strong></td>
+                <td>{{description}}</td>
+                <td><span class="status-pill {{#if adminRole}}status-pill--active{{else}}status-pill--invited{{/if}}">{{adminRoleLabel}}</span></td>
+                <td><strong>{{privilegeCount}}</strong><br><span class="table-muted">{{privilegeSummary}}</span></td>
+                {{#if ../orgAdmin.canManageRoles}}
+                  <td>
+                    <div class="row-actions">
+                      <button class="icon-button" type="button" data-modal-target="#role-edit-{{id}}">Edit</button>
+                      <button class="icon-button icon-button--danger" type="button" data-modal-target="#role-delete-{{id}}">Revoke</button>
+                    </div>
+                  </td>
+                {{/if}}
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {{/if}}
+</section>
 
-    <article class="config-tile">
-      <div class="config-tile__head">
-        <span class="platform-icon">CLM</span>
+<section id="claims-management" class="band band--light blade-panel" data-blade-panel="claims">
+  <div class="section-heading">
+    <p class="eyebrow">Claims</p>
+    <h2>Control what credentials can carry.</h2>
+    <p>Claim definitions become reusable fields for issuance, presentation policies, consent prompts, and delta requests.</p>
+  </div>
+  <article class="blade-guidance">
+    <strong>Claim design advice</strong>
+    <span>Use claims for facts about a person, such as department, employee status, or assurance level. Only request sensitive data when the user has a clear consent reason.</span>
+  </article>
+  {{#if orgAdmin.canViewClaims}}
+    <div class="people-directory configuration-table-panel">
+      <div class="people-directory__head">
         <div>
           <p class="eyebrow">Consent data</p>
-          <h3>Claims</h3>
+          <h3>Claim definitions</h3>
           <p>{{orgAdmin.claimDefinitions.length}} claim definitions available for issue and wallet consent.</p>
         </div>
-      </div>
-      {{#if orgAdmin.isAdmin}}
-        <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-claim">Add Claim</button>
-      {{/if}}
-      <div class="definition-list">
-        {{#each orgAdmin.claimDefinitions}}
-          <div>
-            <strong>{{label}}</strong>
-            <span>{{key}} · {{type}}{{#if required}} · required{{/if}}</span>
-            {{#if ../orgAdmin.isAdmin}}
-              <div class="row-actions">
-                <button class="icon-button" type="button" data-modal-target="#claim-edit-{{id}}">Edit</button>
-                <button class="icon-button icon-button--danger" type="button" data-modal-target="#claim-delete-{{id}}">Revoke</button>
-              </div>
-            {{/if}}
+        {{#if orgAdmin.canManageClaims}}
+          <div class="people-directory__tools">
+            <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-claim">Add Claim</button>
           </div>
-        {{/each}}
+        {{/if}}
       </div>
-    </article>
-  </div>
+      <div class="people-table-wrap">
+        <table class="people-table definition-table">
+          <thead>
+            <tr>
+              <th>Claim</th>
+              <th>Key</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Default</th>
+              {{#if orgAdmin.canManageClaims}}<th>Actions</th>{{/if}}
+            </tr>
+          </thead>
+          <tbody>
+            {{#each orgAdmin.claimDefinitions}}
+              <tr>
+                <td><strong>{{label}}</strong></td>
+                <td><code>{{key}}</code></td>
+                <td>{{type}}</td>
+                <td>
+                  {{#if required}}
+                    <span class="status-pill status-pill--active">Required</span>
+                  {{else}}
+                    <span class="status-pill status-pill--invited">Optional</span>
+                  {{/if}}
+                </td>
+                <td>{{#if defaultValue}}{{defaultValue}}{{else}}<span class="table-muted">None</span>{{/if}}</td>
+                {{#if ../orgAdmin.canManageClaims}}
+                  <td>
+                    <div class="row-actions">
+                      <button class="icon-button" type="button" data-modal-target="#claim-edit-{{id}}">Edit</button>
+                      <button class="icon-button icon-button--danger" type="button" data-modal-target="#claim-delete-{{id}}">Revoke</button>
+                    </div>
+                  </td>
+                {{/if}}
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {{/if}}
+</section>
 
-  {{#if orgAdmin.isAdmin}}
+<div class="workspace-modal-stack">
+  {{#if orgAdmin.canManageConfiguration}}
     <div class="app-modal" id="modal-add-role" hidden>
       <div class="app-modal__backdrop" data-modal-close></div>
       <section class="app-modal__panel" role="dialog" aria-modal="true" aria-labelledby="add-role-title">
@@ -917,6 +1277,41 @@
           <div class="field-group">
             <label for="roleDescription">Description</label>
             <textarea id="roleDescription" name="description" rows="3"></textarea>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="roleTemplate">Privilege template <span class="field-tooltip" tabindex="0" data-tooltip="Start from a practical role pattern, then adjust individual privileges below.">?</span></label>
+              <select id="roleTemplate" name="privilegeTemplate" data-role-template-select>
+                <option value="">Choose exact privileges below</option>
+                {{#each orgAdmin.roleTemplates}}
+                  <option value="{{id}}" data-admin-role="{{adminRoleValue}}" data-privileges="{{privilegeCsv}}">{{name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <label class="checkline checkline--strong">
+              <input name="adminRole" type="checkbox" value="yes">
+              <span>Administrative role</span>
+            </label>
+          </div>
+          <article class="note-panel">
+            <strong>Role design advice</strong>
+            <span>Use administrative roles only for people who should manage the organization. For non-admin roles, grant only the exact privileges needed for the workflow, such as ledger review or credential issuance.</span>
+          </article>
+          <div class="privilege-groups">
+            {{#each orgAdmin.privilegeGroups}}
+              <fieldset>
+                <legend>{{name}}</legend>
+                <p>{{description}}</p>
+                <div class="checkbox-grid">
+                  {{#each privileges}}
+                    <label class="checkline">
+                      <input type="checkbox" name="privilegeIds" value="{{id}}" {{#if checked}}checked{{/if}}>
+                      <span><strong>{{name}}</strong><small>{{description}}</small></span>
+                    </label>
+                  {{/each}}
+                </div>
+              </fieldset>
+            {{/each}}
           </div>
           <div class="modal-actions">
             <button class="button button--primary button--blue" type="submit">Create Role</button>
@@ -993,6 +1388,41 @@
             <div class="field-group">
               <label for="role-description-{{id}}">Description</label>
               <textarea id="role-description-{{id}}" name="description" rows="3">{{description}}</textarea>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="role-template-{{id}}">Privilege template</label>
+                <select id="role-template-{{id}}" name="privilegeTemplate" data-role-template-select>
+                  <option value="">Keep current privileges</option>
+                  {{#each ../orgAdmin.roleTemplates}}
+                    <option value="{{id}}" data-admin-role="{{adminRoleValue}}" data-privileges="{{privilegeCsv}}">{{name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <label class="checkline checkline--strong">
+                <input name="adminRole" type="checkbox" value="yes" {{#if adminRole}}checked{{/if}}>
+                <span>Administrative role</span>
+              </label>
+            </div>
+            <article class="note-panel">
+              <strong>{{adminRoleLabel}}</strong>
+              <span>{{privilegeSummary}}. Administrative roles should be paired with wallet challenge approval for assignment and revocation.</span>
+            </article>
+            <div class="privilege-groups">
+              {{#each privilegeGroups}}
+                <fieldset>
+                  <legend>{{name}}</legend>
+                  <p>{{description}}</p>
+                  <div class="checkbox-grid">
+                    {{#each privileges}}
+                      <label class="checkline">
+                        <input type="checkbox" name="privilegeIds" value="{{id}}" {{#if checked}}checked{{/if}}>
+                        <span><strong>{{name}}</strong><small>{{description}}</small></span>
+                      </label>
+                    {{/each}}
+                  </div>
+                </fieldset>
+              {{/each}}
             </div>
             <div class="modal-actions">
               <button class="button button--primary button--blue" type="submit">Save Role</button>
@@ -1087,14 +1517,18 @@
       </div>
     {{/each}}
   {{/if}}
-</section>
+</div>
 
-<section id="org-branding" class="band band--white">
+<section id="org-branding" class="band band--white blade-panel" data-blade-panel="branding">
   <div class="section-heading">
     <p class="eyebrow">Organization branding</p>
     <h2>Control the wallet context for this org.</h2>
     <p>Choose a palette or upload a small logo. The org profile API exposes this branding to the iOS wallet when it is viewing this organization context.</p>
   </div>
+  <article class="blade-guidance">
+    <strong>Advice</strong>
+    <span>Branding helps holders recognize which organization is asking for consent or approval. Keep palettes high-contrast and consistent with the issuer’s public identity.</span>
+  </article>
   <div class="admin-grid">
     <article class="brand-preview-card" style="--brand-primary: {{orgAdmin.branding.primaryColor}}; --brand-accent: {{orgAdmin.branding.accentColor}}; --brand-bg: {{orgAdmin.branding.backgroundColor}}; --brand-text: {{orgAdmin.branding.textColor}};">
       {{#if orgAdmin.branding.logoDataUrl}}
@@ -1106,7 +1540,7 @@
       <p>Aegis ID wallet profile</p>
     </article>
 
-    {{#if orgAdmin.isAdmin}}
+    {{#if orgAdmin.canManageBranding}}
       <form class="platform-card wizard-form" action="{{dashboardBasePath}}/admin/branding" method="post">
         <div class="field-group">
           <label for="paletteId">Palette</label>
@@ -1148,12 +1582,16 @@
   </div>
 </section>
 
-<section id="issuer-orgs" class="band band--white">
+<section id="issuer-orgs" class="band band--white blade-panel" data-blade-panel="issuer-orgs">
   <div class="section-heading">
     <p class="eyebrow">Issuing organization</p>
     <h2>Create the org credential invitation used by the wallet challenge.</h2>
     <p>The OIDC wallet test can send a challenge from any org that has an accepted issuer connection.</p>
   </div>
+  <article class="blade-guidance">
+    <strong>Next step</strong>
+    <span>Create one issuer invitation per organization context, scan it from the Vanguard Aegis ID mobile app, then use that connected org as the challenge sender for OIDC and example app demos.</span>
+  </article>
 
   <div class="issuer-org-layout">
     <article class="platform-card">
@@ -1165,9 +1603,16 @@
         </div>
       </div>
       <p>Create an Aries issuer invitation branded to this organization. After the iOS wallet accepts it, the org appears as a selectable challenge sender in the OIDC wallet demo.</p>
-      <form action="{{dashboardBasePath}}/issuer-organizations/invitations" method="post">
-        <button class="button button--primary button--blue" type="submit">Create Org Issuer Invitation</button>
-      </form>
+      {{#if orgAdmin.canManageIntegrations}}
+        <form action="{{dashboardBasePath}}/issuer-organizations/invitations" method="post">
+          <button class="button button--primary button--blue" type="submit">Create Org Issuer Invitation</button>
+        </form>
+      {{else}}
+        <article class="note-panel">
+          <strong>Integration setup requires additional privileges.</strong>
+          <span>You can review issuer status, but creating new invitations is limited to integration administrators.</span>
+        </article>
+      {{/if}}
     </article>
 
     {{#if hasIssuerOrganizations}}
@@ -1205,10 +1650,11 @@
   </div>
 </section>
 
-<section class="band band--white">
+<section id="identity-platforms" class="band band--white blade-panel" data-blade-panel="platforms">
   <div class="section-heading">
     <p class="eyebrow">Identity platforms</p>
     <h2>Connect Aegis ID to the platforms and assurance methods this subscriber uses.</h2>
+    <p>Use these setup wizards to connect Microsoft Verified ID, YubiKey/passkeys, Keycloak, Okta, or generic OIDC/SAML systems. Start with the platform your pilot will demonstrate first.</p>
   </div>
 
   <div class="platform-grid">
@@ -1235,10 +1681,14 @@
           </p>
         {{/if}}
         <div class="platform-card__actions">
-          <a class="button button--primary" href="{{../dashboardBasePath}}/platforms/{{id}}/setup">Open Wizard</a>
+          {{#if ../orgAdmin.canManageIntegrations}}
+            <a class="button button--primary" href="{{../dashboardBasePath}}/platforms/{{id}}/setup">Open Wizard</a>
+          {{/if}}
           <a class="button button--ghost" href="{{docsUrl}}">Docs</a>
         </div>
       </article>
     {{/each}}
+  </div>
+</section>
   </div>
 </section>
