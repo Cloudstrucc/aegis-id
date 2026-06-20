@@ -15,7 +15,7 @@ struct ScanView: View {
                     .frame(width: 230, height: 230)
             }
             .overlay(alignment: .topLeading) {
-                StatusBadge(text: "OOB QR", systemImage: "qrcode.viewfinder", tint: VanguardTheme.cyan)
+                StatusBadge(text: "Wallet QR", systemImage: "qrcode.viewfinder", tint: VanguardTheme.cyan)
                     .padding()
             }
 
@@ -39,7 +39,7 @@ struct ScanView: View {
                 .foregroundStyle(.white)
                 .font(.headline)
         } else {
-            Label("Scan an Aries invitation", systemImage: "camera")
+            Label("Scan an Aegis credential or Aries lab invitation", systemImage: "camera")
                 .foregroundStyle(.white.opacity(0.86))
                 .font(.headline)
         }

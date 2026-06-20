@@ -16,7 +16,10 @@ const {
   evaluatePresentation,
   getPresentationPolicy
 } = require('../services/credential-policy-service');
-const { getOrganizationProfile } = require('../services/org-admin-service');
+const {
+  acceptCredentialInvitation,
+  getOrganizationProfile
+} = require('../services/org-admin-service');
 const {
   getTransaction,
   saveTransaction,
@@ -267,6 +270,35 @@ router.get('/transactions/:transactionId', async (req, res, next) => {
 router.get('/organizations/:organizationId/profile', async (req, res, next) => {
   try {
     res.json(await getOrganizationProfile(req.params.organizationId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/credential-invitations/:credentialId/accept', async (req, res, next) => {
+  try {
+    const organizationId = req.body.organizationId || req.query.organizationId;
+    if (!organizationId) {
+      const error = new Error('organizationId is required.');
+      error.status = 400;
+      throw error;
+    }
+
+    const credential = await acceptCredentialInvitation(organizationId, req.params.credentialId, {
+      holderEmail: req.body.holderEmail,
+      source: req.body.source || 'wallet-api'
+    });
+    await writeAuditEvent('wallet.credential.accepted', {
+      organizationId,
+      credentialId: credential.id,
+      holderEmail: credential.holderEmail,
+      source: req.body.source || 'wallet-api'
+    });
+    res.json({
+      ok: true,
+      status: credential.status,
+      credential
+    });
   } catch (error) {
     next(error);
   }

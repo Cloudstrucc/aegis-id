@@ -20,7 +20,7 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 - Redacted audit event storage.
 - Subscriber dashboard with setup wizards for Microsoft Verified ID, Keycloak, Okta, and generic OIDC/SAML.
 - OIDC + wallet challenge example relying-party app.
-- Standalone Business Expenses app showing Aegis ID OIDC plus wallet-signed approve/reject decisions.
+- Standalone example app showing Aegis ID OIDC, wallet-signed expense approvals, and PDF e-signature envelopes backed by wallet challenges.
 - ACA-Py Docker Compose lab and helper scripts.
 - Native SwiftUI iOS Aries wallet starter for Vanguard Cloud Services lab invitations.
 - Azure App Service Bicep baseline targeting the Free `F1` tier where available.
@@ -196,7 +196,7 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
 
    Complete mock OIDC login, send the wallet challenge, fetch it in the iOS wallet, accept it, and confirm the browser opens the protected app.
 
-8. Test the standalone Business Expenses app:
+8. Test the standalone example app:
 
    ```bash
    cd /Users/frederickpearson/repos/aegis-id/examples/business-expenses
@@ -205,7 +205,12 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
    npm run dev
    ```
 
-   Set `AEGIS_ORGANIZATION_ID` in `.env` to the org workspace whose issuer invitation was accepted by the iOS wallet. Open `http://localhost:4300`, sign in with Aegis ID, fetch and accept the wallet challenge in the iOS wallet, then approve or reject an expense. The resulting wallet signature appears in the Business Expenses ledger, the Aegis ID organization dashboard, and the iOS wallet Ledger tab.
+   Set `AEGIS_ORGANIZATION_ID` in `.env` to the org workspace whose issuer invitation was accepted by the iOS wallet. Open `http://localhost:4300`, sign in with Aegis ID, fetch and accept the wallet challenge in the iOS wallet, then:
+
+   - Open **Expense Approvals** and approve or reject an expense.
+   - Open **E-Signatures**, upload a PDF, place a signature field, save the template, select **Use**, and send the wallet signature challenge.
+
+   The resulting wallet evidence appears in the example app ledger, the Aegis ID organization dashboard, and the iOS/Android wallet Ledger tab.
 
 ## Main Routes
 
@@ -342,7 +347,9 @@ Do not commit real `AZURE_CLIENT_SECRET` or `VID_CALLBACK_API_KEY` values. Set t
 | `VID_CREDENTIAL_TYPE` | The exact credential type name in the Verified ID contract, for example `VerifiedEmployee`. |
 | `VID_CALLBACK_API_KEY` | Shared secret used to protect callbacks from the Verified ID Request Service. |
 | `PUBLIC_BASE_URL` / `APP_PUBLIC_BASE_URL` | Public HTTPS base URL used for callbacks, QR payloads, and deep links. |
-| `BUSINESS_EXPENSES_APP_URL` | URL shown on the signed-in home page for the standalone Business Expenses example app. |
+| `IOS_TESTFLIGHT_PUBLIC_URL` | Optional TestFlight public invitation link shown on the anonymous home page iOS download badge. Use environment-specific links for dev/QA if you publish separate TestFlight apps. |
+| `ANDROID_TESTING_URL` | Optional Google Play internal sharing, internal testing, or closed testing link shown on the Android download badge. |
+| `BUSINESS_EXPENSES_APP_URL` | URL shown on the signed-in home page for the standalone example app with Expense Approval and E-Signature workflows. |
 | `PASSKEY_RP_ID` | WebAuthn relying-party ID. In Azure, use the host only, for example `vanguard-aegis-id-65067d.azurewebsites.net`. |
 | `PASSKEY_ORIGIN` | WebAuthn origin. In Azure, use the full HTTPS origin, for example `https://vanguard-aegis-id-65067d.azurewebsites.net`. |
 | `WALLET_PASSKEY_STORE_PATH` | File-backed pilot store for mobile wallet passkey credential metadata. Use `/home/data/...` on Azure when you want persistence across deploys. |
@@ -586,6 +593,17 @@ cd /Users/frederickpearson/repos/aegis-id
 bash scripts/deploy-azure-webapp.sh --env prod
 ```
 
+Production standalone example app deploy:
+
+```bash
+bash scripts/deploy-azure-business-expenses.sh --env prod
+```
+
+The example app exposes two demo workflows from its landing page:
+
+- **Expense Approvals:** approve/reject rows with Aegis wallet challenge evidence.
+- **E-Signatures:** upload a PDF, place a signature field, send a wallet challenge, and stamp the signed envelope with signer, timestamp, and signature ID.
+
 The script also verifies:
 
 - `/api/health`
@@ -598,6 +616,8 @@ Future dev/QA refresh deploys:
 ```bash
 bash scripts/deploy-azure-webapp.sh --env dev
 bash scripts/deploy-azure-webapp.sh --env qa
+bash scripts/deploy-azure-business-expenses.sh --env dev
+bash scripts/deploy-azure-business-expenses.sh --env qa
 ```
 
 More detail: [docs/azure-deployment.md](docs/azure-deployment.md)

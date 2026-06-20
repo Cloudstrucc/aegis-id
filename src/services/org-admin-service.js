@@ -201,6 +201,57 @@ async function markCredentialAccepted(workspace, subscription, credentialId) {
   });
 }
 
+async function acceptCredentialInvitation(organizationId, credentialId, input = {}) {
+  const states = await stateStore.read();
+  const state = states.find((record) => record.workspaceId === organizationId);
+  if (!state) {
+    throw notFound('Credential invitation was not found.');
+  }
+  normalizeState(state);
+
+  const credential = findCredential(state, credentialId);
+  const holderEmail = normalizeEmail(input.holderEmail || '');
+  if (holderEmail && holderEmail !== credential.holderEmail) {
+    throw validationError('Credential invite holder did not match this wallet.');
+  }
+  if (credential.status === 'revoked') {
+    throw validationError('This credential was revoked and cannot be accepted.');
+  }
+  if (credential.status !== 'active' && isInviteExpired(credential)) {
+    throw validationError('This invitation has expired. Ask an administrator to re-issue it.');
+  }
+
+  const now = new Date().toISOString();
+  if (credential.status !== 'active') {
+    credential.status = 'active';
+    credential.acceptedAt = now;
+    credential.acceptedBy = holderEmail || credential.holderEmail;
+    credential.updatedAt = now;
+    await writeState(state);
+    await appendWorkspaceEvent(
+      { id: organizationId, organization: state.organizationName },
+      { email: holderEmail || credential.holderEmail },
+      'credential.accepted.wallet',
+      {
+        credentialId: credential.id,
+        holderEmail: credential.holderEmail,
+        source: normalizeText(input.source || 'mobile-wallet', 120)
+      }
+    );
+  }
+
+  return {
+    id: credential.id,
+    organizationId,
+    organizationName: state.organizationName,
+    holderEmail: credential.holderEmail,
+    displayName: credential.displayName,
+    status: credential.status,
+    acceptedAt: credential.acceptedAt || null,
+    updatedAt: credential.updatedAt
+  };
+}
+
 async function revokeCredential(workspace, subscription, credentialId, reason = '') {
   assertWorkspaceAdmin(workspace, subscription);
   return mutateCredential(workspace, subscription, credentialId, 'credential.revoked', (credential) => {
@@ -1491,6 +1542,7 @@ module.exports = {
   getCredentialInvitationView,
   getOrgAdminView,
   getOrganizationProfile,
+  acceptCredentialInvitation,
   issueCredential,
   markCredentialAccepted,
   reissueCredentialInvitation,

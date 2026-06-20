@@ -3,23 +3,23 @@ import SwiftUI
 struct LedgerView: View {
     @EnvironmentObject private var store: WalletStore
 
-    private var challengeTransactions: [WalletTransaction] {
+    private var ledgerTransactions: [WalletTransaction] {
         store.transactions
-            .filter { $0.type == .challenge }
+            .filter { $0.type == .challenge || $0.type == .credential }
             .sorted { $0.createdAt > $1.createdAt }
     }
 
     var body: some View {
         List {
-            if challengeTransactions.isEmpty {
+            if ledgerTransactions.isEmpty {
                 ContentUnavailableView(
                     "No wallet ledger entries",
                     systemImage: "list.bullet.rectangle.portrait",
-                    description: Text("Fetch connected app challenges after Verified ID or YubiKey web sign-in, then accept them to build a local high-assurance action ledger.")
+                    description: Text("Scan credential invitations or fetch connected app challenges, then accept them to build a local high-assurance action ledger.")
                 )
             } else {
-                Section("Wallet challenge ledger") {
-                    ForEach(challengeTransactions) { transaction in
+                Section("Wallet ledger") {
+                    ForEach(ledgerTransactions) { transaction in
                         NavigationLink {
                             LedgerDetailView(transactionId: transaction.id)
                         } label: {
@@ -104,7 +104,7 @@ private struct LedgerDetailView: View {
         Group {
             if let transaction = store.transaction(id: transactionId) {
                 List {
-                    Section("Challenge") {
+                    Section(transaction.type == .credential ? "Credential" : "Challenge") {
                         LabeledContent("Application", value: transaction.appName ?? "Aegis ID")
                         LabeledContent("Action", value: transaction.action ?? "challenge")
                         LabeledContent("Status", value: transaction.status.title)
@@ -203,6 +203,10 @@ private struct LedgerDetailView: View {
 
     private func actionButtonTitle(for transaction: WalletTransaction) -> String {
         let action = actionLabel(transaction.action)
+        if transaction.type == .credential {
+            return "Accept credential"
+        }
+
         guard let resourceType = transaction.resourceType?.trimmingCharacters(in: .whitespacesAndNewlines),
               !resourceType.isEmpty
         else {

@@ -123,7 +123,7 @@ After provisioning, deploy code:
 bash scripts/deploy-azure-webapp.sh --env dev
 ```
 
-Then create an organization workspace in the dev/QA Aegis ID web app, copy the organization ID into the matching `examples/business-expenses/.env.dev` or `.env.qa`, and deploy the example app:
+Then create an organization workspace in the dev/QA Aegis ID web app, copy the organization ID into the matching `examples/business-expenses/.env.dev` or `.env.qa`, and deploy the standalone example app:
 
 ```bash
 bash scripts/deploy-azure-business-expenses.sh --env dev
@@ -199,9 +199,9 @@ az deployment group create \
     azureTenantId="$AZURE_TENANT_ID"
 ```
 
-### 4. Create The Business Expenses App Service
+### 4. Create The Example App Service
 
-Use the same App Service Bicep baseline to create the second Node.js App Service. The Business Expenses deploy script replaces the Aegis-specific app settings with the example app settings later.
+Use the same App Service Bicep baseline to create the second Node.js App Service. The Business Expenses deploy script replaces the Aegis-specific app settings with the standalone example app settings later. The app currently hosts both **Expense Approvals** and **E-Signatures**.
 
 ```bash
 az deployment group create \
@@ -417,7 +417,7 @@ For QA:
 AEGIS_ORGANIZATION_ID=<qa-aegis-organization-workspace-id>
 ```
 
-### 13. Deploy Business Expenses
+### 13. Deploy The Standalone Example App
 
 ```bash
 bash scripts/deploy-azure-business-expenses.sh --env dev
@@ -428,6 +428,11 @@ For QA:
 ```bash
 bash scripts/deploy-azure-business-expenses.sh --env qa
 ```
+
+The deployed example app landing page contains:
+
+- **Expense Approvals:** table-driven approve/reject decisions signed with Aegis wallet challenges.
+- **E-Signatures:** PDF template upload, signature-field placement with PDF.js, wallet signature challenge, signed envelope stamp, and ledger evidence.
 
 ### 14. Refresh Later Deploys
 
@@ -494,6 +499,8 @@ az webapp config appsettings set \
     PUBLIC_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net \
     APP_PUBLIC_BASE_URL=https://vanguard-aegis-id-65067d.azurewebsites.net \
     BUSINESS_EXPENSES_APP_URL=https://vanguard-business-expenses-65067d.azurewebsites.net \
+    IOS_TESTFLIGHT_PUBLIC_URL="<testflight-public-link-if-enabled>" \
+    ANDROID_TESTING_URL="<google-play-testing-link-if-enabled>" \
     PASSKEY_RP_ID=vanguard-aegis-id-65067d.azurewebsites.net \
     PASSKEY_ORIGIN=https://vanguard-aegis-id-65067d.azurewebsites.net \
     IOS_APP_TEAM_ID=GL46AP73ZQ \
@@ -517,7 +524,9 @@ Do not store real `AZURE_CLIENT_SECRET` or `VID_CALLBACK_API_KEY` values in sour
 | `VID_CREDENTIAL_TYPE` | Credential type configured in the contract, such as `VerifiedEmployee`. |
 | `VID_CALLBACK_API_KEY` | Shared callback key checked by the app when Microsoft sends status callbacks. |
 | `PUBLIC_BASE_URL` / `APP_PUBLIC_BASE_URL` | Public app URL used for callbacks, QR links, and wallet handoffs. |
-| `BUSINESS_EXPENSES_APP_URL` | Signed-in home-page link to the standalone Business Expenses demo. |
+| `BUSINESS_EXPENSES_APP_URL` | Signed-in home-page link to the standalone example app with Expense Approval and E-Signature demos. |
+| `IOS_TESTFLIGHT_PUBLIC_URL` | Optional TestFlight public invitation link for the homepage iOS download badge. Use the dev or QA TestFlight link in `.env.dev` / `.env.qa` when publishing separate mobile builds. |
+| `ANDROID_TESTING_URL` | Optional Google Play internal sharing or testing link for the homepage Android download badge. |
 | `PASSKEY_RP_ID` | WebAuthn relying-party ID for dashboard and mobile wallet passkeys. Use the Azure host only. |
 | `PASSKEY_ORIGIN` | WebAuthn origin for verifying passkey ceremonies. Use the full HTTPS origin. |
 | `WALLET_PASSKEY_STORE_PATH` | JSON pilot store for mobile wallet passkey registrations. Use `/home/data/wallet-passkeys.json` for Azure persistence. |

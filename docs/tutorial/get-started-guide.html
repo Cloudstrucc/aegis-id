@@ -1,0 +1,1534 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vanguard Aegis ID Get Started Guide</title>
+  <style>
+    :root {
+      --ink: #061625;
+      --ink-2: #10263d;
+      --muted: #637287;
+      --blue: #1769e0;
+      --cyan: #00b7c7;
+      --green: #19b97a;
+      --amber: #f6b84d;
+      --red: #d9534f;
+      --paper: #ffffff;
+      --mist: #f4f8fc;
+      --line: #d9e6f2;
+      --line-2: #ebf2f8;
+      --shadow: 0 24px 90px rgba(6, 22, 37, 0.11);
+      --radius: 10px;
+      --max: 1180px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 44%, #ffffff 100%);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    img,
+    svg {
+      display: block;
+      max-width: 100%;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 820px;
+      margin-bottom: 26px;
+      font-size: clamp(4rem, 8vw, 7.8rem);
+      font-weight: 860;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+      font-size: clamp(2.35rem, 4.6vw, 5.1rem);
+      font-weight: 840;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 1.36rem;
+      font-weight: 820;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 1.04rem;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      border-bottom: 1px solid rgba(217, 230, 242, 0.72);
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar__inner {
+      width: min(var(--max), calc(100% - 44px));
+      min-height: 78px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .brand img {
+      width: 224px;
+      height: auto;
+      filter: saturate(1.18) contrast(1.24) brightness(0.78);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 14px;
+      color: var(--ink);
+      background: #ffffff;
+      font-size: 0.9rem;
+      font-weight: 760;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      border-color: var(--blue);
+    }
+
+    .hero {
+      min-height: calc(100vh - 78px);
+      display: grid;
+      align-items: center;
+      padding: 76px 0 92px;
+    }
+
+    .hero__grid {
+      width: min(var(--max), calc(100% - 44px));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.68fr);
+      gap: 56px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      color: var(--blue);
+      font-size: 0.82rem;
+      font-weight: 860;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+    }
+
+    .lead {
+      max-width: 780px;
+      margin-bottom: 32px;
+      color: #314357;
+      font-size: clamp(1.25rem, 2.25vw, 1.85rem);
+      line-height: 1.28;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 20px;
+      color: var(--ink);
+      background: var(--paper);
+      font-weight: 790;
+      text-decoration: none;
+    }
+
+    .button--primary {
+      border-color: var(--blue);
+      color: #ffffff;
+      background: var(--blue);
+      box-shadow: 0 14px 30px rgba(23, 105, 224, 0.18);
+    }
+
+    .button:hover {
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    .section {
+      width: min(var(--max), calc(100% - 44px));
+      margin: 0 auto;
+      padding: 86px 0;
+    }
+
+    .section--wide {
+      width: min(1320px, calc(100% - 44px));
+    }
+
+    .section__head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.78fr) minmax(280px, 0.38fr);
+      gap: 34px;
+      align-items: end;
+      margin-bottom: 34px;
+    }
+
+    .section__head p {
+      margin-bottom: 0;
+    }
+
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .toc a,
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 18px 60px rgba(6, 22, 37, 0.055);
+    }
+
+    .toc a {
+      min-height: 118px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18px;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .toc span,
+    .step-kicker {
+      color: var(--blue);
+      font-size: 0.78rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .toc strong {
+      margin-top: 14px;
+      font-size: 1.05rem;
+      line-height: 1.18;
+    }
+
+    .journey {
+      display: grid;
+      gap: 44px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.42fr) minmax(0, 0.58fr);
+      gap: 28px;
+      align-items: start;
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+    }
+
+    .step__copy {
+      position: sticky;
+      top: 104px;
+      align-self: start;
+    }
+
+    .step-number {
+      display: inline-grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      margin-bottom: 18px;
+      border-radius: 14px;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      font-weight: 880;
+      box-shadow: 0 16px 34px rgba(0, 183, 199, 0.22);
+    }
+
+    .checklist {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .checklist li {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 10px;
+      color: #2d3f55;
+      font-weight: 620;
+    }
+
+    .checklist li::before {
+      content: "";
+      width: 18px;
+      height: 18px;
+      margin-top: 3px;
+      border-radius: 999px;
+      background:
+        linear-gradient(135deg, var(--green), var(--cyan));
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.42);
+    }
+
+    .visual-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .browser {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+      box-shadow: 0 18px 50px rgba(6, 22, 37, 0.08);
+    }
+
+    .browser__bar {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid var(--line-2);
+      padding: 0 16px;
+      background: #fbfdff;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #d8e3ef;
+    }
+
+    .browser__body {
+      position: relative;
+      min-height: 360px;
+      padding: 28px;
+      background:
+        linear-gradient(90deg, rgba(244, 248, 252, 0.92), rgba(255, 255, 255, 0.86)),
+        radial-gradient(circle at 78% 8%, rgba(0, 183, 199, 0.12), transparent 30%);
+    }
+
+    .browser__title {
+      max-width: 560px;
+      margin-bottom: 14px;
+      color: var(--ink);
+      font-size: clamp(2.1rem, 5vw, 4.8rem);
+      line-height: 1;
+      font-weight: 860;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      max-width: 600px;
+      margin-top: 24px;
+    }
+
+    .field {
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #ffffff;
+    }
+
+    .field span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    .field strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--ink);
+      font-size: 0.98rem;
+    }
+
+    .ui-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border-radius: 8px;
+      padding: 0 15px;
+      color: #ffffff;
+      background: var(--blue);
+      font-weight: 820;
+      box-shadow: 0 12px 26px rgba(23, 105, 224, 0.18);
+    }
+
+    .callout {
+      position: absolute;
+      z-index: 2;
+      max-width: 236px;
+      border: 1px solid rgba(23, 105, 224, 0.22);
+      border-radius: 12px;
+      padding: 12px 13px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 16px 36px rgba(6, 22, 37, 0.12);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .callout::before {
+      content: attr(data-pin);
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--blue);
+      font-size: 0.76rem;
+      font-weight: 860;
+    }
+
+    .callout--top {
+      top: 24px;
+      right: 24px;
+    }
+
+    .callout--inline {
+      position: relative;
+      inset: auto;
+      max-width: none;
+      margin-top: 18px;
+    }
+
+    .callout--middle {
+      top: 44%;
+      right: 28px;
+    }
+
+    .callout--bottom {
+      left: 28px;
+      bottom: 28px;
+    }
+
+    .hotspot {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: rgba(25, 185, 122, 0.92);
+      box-shadow: 0 0 0 0 rgba(25, 185, 122, 0.35);
+      animation: pulse 2.1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(25, 185, 122, 0.42); }
+      70% { box-shadow: 0 0 0 18px rgba(25, 185, 122, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(25, 185, 122, 0); }
+    }
+
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .tile {
+      min-height: 116px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      background: #ffffff;
+    }
+
+    .tile strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 1.1rem;
+    }
+
+    .tile span {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 620;
+    }
+
+    .table {
+      overflow: hidden;
+      margin-top: 20px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 58px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line-2);
+    }
+
+    .row:last-child {
+      border-bottom: 0;
+    }
+
+    .row--head {
+      min-height: 44px;
+      color: var(--muted);
+      background: #f8fbff;
+      font-size: 0.78rem;
+      font-weight: 820;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 26px;
+      border-radius: 999px;
+      padding: 0 10px;
+      color: var(--green);
+      background: rgba(25, 185, 122, 0.12);
+      font-size: 0.78rem;
+      font-weight: 840;
+    }
+
+    .badge--blue {
+      color: var(--blue);
+      background: rgba(23, 105, 224, 0.12);
+    }
+
+    .qr-layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .qr-box {
+      display: grid;
+      place-items: center;
+      min-height: 260px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+    }
+
+    .qr-image {
+      width: min(220px, 78vw);
+      aspect-ratio: 1;
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #ffffff;
+      box-shadow: 0 16px 32px rgba(6, 22, 37, 0.08);
+    }
+
+    .phone-wrap {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .phone {
+      width: 312px;
+      max-width: 100%;
+      min-height: 520px;
+      border: 10px solid var(--ink);
+      border-radius: 42px;
+      padding: 20px 18px;
+      background: #ffffff;
+      box-shadow: 0 30px 80px rgba(6, 22, 37, 0.18);
+      overflow: hidden;
+    }
+
+    .phone__notch {
+      width: 86px;
+      height: 8px;
+      margin: 0 auto 18px;
+      border-radius: 999px;
+      background: var(--ink);
+    }
+
+    .phone-card {
+      border-radius: 16px;
+      padding: 18px 16px;
+      color: #ffffff;
+      background: linear-gradient(155deg, var(--ink), #0e3955);
+    }
+
+    .phone-card h3 {
+      color: #ffffff;
+      font-size: 1.18rem;
+      line-height: 1.08;
+    }
+
+    .phone-card p {
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .phone-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .phone-list div {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 760;
+      overflow-wrap: anywhere;
+    }
+
+    .phone-action {
+      width: 100%;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 12px;
+      padding: 13px;
+      color: #ffffff;
+      background: var(--green);
+      font-weight: 850;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .app-card {
+      min-height: 220px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 22px;
+      background: #ffffff;
+    }
+
+    .pdf {
+      min-height: 360px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 26px;
+      background:
+        linear-gradient(#ffffff, #ffffff) padding-box,
+        repeating-linear-gradient(0deg, #ffffff 0 28px, #f1f6fb 28px 29px);
+      box-shadow: 0 16px 48px rgba(6, 22, 37, 0.08);
+    }
+
+    .signature-field {
+      position: relative;
+      margin-top: 130px;
+      border: 2px dashed var(--blue);
+      border-radius: 10px;
+      padding: 18px;
+      color: var(--blue);
+      background: rgba(23, 105, 224, 0.06);
+      font-weight: 850;
+    }
+
+    .wizard-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .wizard-card {
+      min-height: 360px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px;
+      background: #ffffff;
+      box-shadow: 0 18px 60px rgba(6, 22, 37, 0.06);
+    }
+
+    .placeholder {
+      display: grid;
+      place-items: center;
+      min-height: 170px;
+      margin: 14px 0;
+      border: 1px dashed #9fb4cc;
+      border-radius: 12px;
+      color: #43546a;
+      background:
+        linear-gradient(135deg, rgba(23, 105, 224, 0.08), rgba(0, 183, 199, 0.08));
+      text-align: center;
+      padding: 16px;
+      font-weight: 760;
+    }
+
+    .mini-steps {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: mini;
+    }
+
+    .mini-steps li {
+      counter-increment: mini;
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 10px;
+      align-items: start;
+      color: #314357;
+      font-weight: 640;
+    }
+
+    .mini-steps li::before {
+      content: counter(mini);
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      color: #ffffff;
+      background: var(--blue);
+      font-size: 0.8rem;
+      font-weight: 860;
+    }
+
+    .reference-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .reference-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      border: 1px solid rgba(23, 105, 224, 0.2);
+      border-radius: 999px;
+      padding: 0 11px;
+      color: var(--blue);
+      background: rgba(23, 105, 224, 0.06);
+      font-size: 0.78rem;
+      font-weight: 820;
+    }
+
+    .reference-links a[target="_blank"]::after {
+      content: "open";
+      margin-left: 6px;
+      font-size: 0.72rem;
+    }
+
+    .yubikey-demo {
+      position: relative;
+      min-height: 330px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 24px;
+      background: linear-gradient(145deg, #f5f9fd, #ffffff);
+      overflow: hidden;
+    }
+
+    .hardware-stepup {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hardware-device-caption-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 22px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .device-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      margin-top: 0;
+      flex-wrap: wrap;
+      flex: 0 0 auto;
+    }
+
+    .device {
+      position: relative;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      font-size: 0.76rem;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .device--laptop {
+      width: 176px;
+      height: 112px;
+      border: 7px solid var(--ink);
+      border-bottom-width: 12px;
+      border-radius: 12px 12px 5px 5px;
+      background:
+        linear-gradient(155deg, rgba(23, 105, 224, 0.16), rgba(25, 185, 122, 0.16)),
+        #ffffff;
+    }
+
+    .device--laptop::after {
+      content: "";
+      position: absolute;
+      left: -18px;
+      right: -18px;
+      bottom: -24px;
+      height: 12px;
+      border-radius: 0 0 14px 14px;
+      background: var(--ink);
+    }
+
+    .device--phone {
+      width: 82px;
+      height: 138px;
+      border: 7px solid var(--ink);
+      border-radius: 24px;
+      background:
+        linear-gradient(155deg, rgba(0, 183, 199, 0.18), rgba(23, 105, 224, 0.12)),
+        #ffffff;
+    }
+
+    .device--phone::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      width: 28px;
+      height: 5px;
+      border-radius: 999px;
+      background: var(--ink);
+    }
+
+    .hardware-caption {
+      position: relative;
+      z-index: 2;
+      width: 260px;
+      max-width: 100%;
+      margin: 0 0 8px;
+      border: 1px solid rgba(23, 105, 224, 0.16);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 0.84rem;
+      line-height: 1.42;
+      font-weight: 720;
+      box-shadow: 0 14px 34px rgba(6, 22, 37, 0.08);
+    }
+
+    .hardware-caption strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+      font-size: 0.98rem;
+    }
+
+    .yubikey {
+      position: absolute;
+      left: 38px;
+      bottom: 28px;
+      width: 126px;
+      height: 58px;
+      border-radius: 18px;
+      background: #111b27;
+      box-shadow: 0 20px 40px rgba(6, 22, 37, 0.22);
+      animation: keyTap 3s infinite ease-in-out;
+    }
+
+    .yubikey::before {
+      content: "";
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      width: 26px;
+      height: 26px;
+      border: 3px solid #5cc8ff;
+      border-radius: 999px;
+    }
+
+    .nfc-rings {
+      position: absolute;
+      right: 48px;
+      bottom: 48px;
+      width: 130px;
+      height: 130px;
+      border-radius: 999px;
+      border: 2px solid rgba(0, 183, 199, 0.26);
+      animation: nfc 2.2s infinite;
+    }
+
+    .nfc-rings::before,
+    .nfc-rings::after {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border-radius: inherit;
+      border: 2px solid rgba(25, 185, 122, 0.22);
+    }
+
+    .nfc-rings::after {
+      inset: 38px;
+    }
+
+    @keyframes keyTap {
+      0%, 100% { transform: translate(0, 0) rotate(-5deg); }
+      45%, 60% { transform: translate(64px, -28px) rotate(4deg); }
+    }
+
+    @keyframes nfc {
+      0% { transform: scale(0.86); opacity: 0.4; }
+      60% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(0.86); opacity: 0.4; }
+    }
+
+    .footer {
+      border-top: 1px solid var(--line);
+      padding: 38px 0;
+      background: #ffffff;
+    }
+
+    .footer__inner {
+      width: min(var(--max), calc(100% - 44px));
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-weight: 660;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 680ms ease, transform 680ms ease;
+    }
+
+    .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 960px) {
+      .hero__grid,
+      .section__head,
+      .step,
+      .split,
+      .wizard-grid,
+      .qr-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .step__copy {
+        position: static;
+      }
+
+      .hardware-stepup {
+        display: block;
+      }
+
+      .yubikey-demo {
+        min-height: 410px;
+      }
+
+      .toc {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .brand img {
+        width: 176px;
+      }
+
+      .topbar__inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+
+      h1 {
+        font-size: 3.6rem;
+      }
+
+      .hero__grid,
+      .section,
+      .section--wide {
+        width: min(100% - 28px, var(--max));
+      }
+
+      .toc,
+      .tiles,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .browser__body {
+        padding: 18px;
+      }
+
+      .callout {
+        position: static;
+        margin-top: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="#cover" aria-label="Vanguard Aegis ID guide home">
+        <img src="assets/vanguard-cloud-services-logo.png" alt="Vanguard Cloud Services">
+      </a>
+      <nav class="nav" aria-label="Guide navigation">
+        <a href="#journey">Journey</a>
+        <a href="#examples">Example apps</a>
+        <a href="#wizards">Platform wizards</a>
+        <a href="https://github.com/Cloudstrucc/aegis-id" target="_blank" rel="noopener" aria-label="Open GitHub repository">
+          <svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true">
+            <path fill="currentColor" d="M8 0C3.58 0 0 3.67 0 8.2c0 3.62 2.29 6.69 5.47 7.78.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.24-.48-.96-.82-1.16-.28-.15-.68-.52-.01-.53.63-.01 1.08.59 1.23.84.72 1.24 1.87.89 2.33.68.07-.53.28-.89.51-1.09-1.78-.21-3.64-.91-3.64-4.03 0-.89.31-1.62.82-2.19-.08-.21-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.42 7.42 0 0 1 8 4.04c.68 0 1.36.09 2 .28 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.16.51.57.82 1.3.82 2.19 0 3.13-1.87 3.82-3.65 4.03.29.26.54.75.54 1.52 0 1.09-.01 1.97-.01 2.24 0 .21.15.47.55.39A8.12 8.12 0 0 0 16 8.2C16 3.67 12.42 0 8 0Z"/>
+          </svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="cover" class="hero">
+      <div class="hero__grid">
+        <div class="reveal">
+          <p class="eyebrow">Get started guide</p>
+          <h1>Launch the Aegis ID pilot with confidence.</h1>
+          <p class="lead">A visual walkthrough for registering an account, creating an organization, issuing a credential, accepting it in the mobile wallet, testing OIDC wallet challenges, and connecting common identity platforms.</p>
+          <div class="hero-actions">
+            <a class="button button--primary" href="#journey">Start the walkthrough</a>
+            <a class="button" href="#wizards">Review setup steps</a>
+          </div>
+        </div>
+        <div class="reveal">
+          <div class="browser">
+            <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="browser__body">
+              <p class="eyebrow">Pilot path</p>
+              <div class="browser__title">Account. Org. Credential. Challenge.</div>
+              <div class="tiles">
+                <div class="tile"><strong>Web</strong><span>Register and create workspace</span></div>
+                <div class="tile"><strong>Wallet</strong><span>Accept credential invite</span></div>
+                <div class="tile"><strong>Apps</strong><span>Approve expense and sign PDF</span></div>
+              </div>
+              <span class="hotspot" style="right: 34px; bottom: 34px;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="guide-map">
+      <div class="section__head reveal">
+        <div>
+          <p class="eyebrow">What this guide covers</p>
+          <h2>One scrollable path from first visit to signed business action.</h2>
+        </div>
+        <p>Use this visual guide as a practical onboarding path for administrators, wallet users, and relying-party application testers.</p>
+      </div>
+      <div class="toc reveal">
+        <a href="#account"><span>01</span><strong>Create account and MFA</strong></a>
+        <a href="#organization"><span>02</span><strong>Create organization workspace</strong></a>
+        <a href="#wallet"><span>03</span><strong>Install wallet and accept credential</strong></a>
+        <a href="#oidc"><span>04</span><strong>Test OIDC wallet challenge</strong></a>
+        <a href="#examples"><span>05</span><strong>Use example apps</strong></a>
+        <a href="#signature"><span>06</span><strong>Digitally sign a PDF</strong></a>
+        <a href="#wizards"><span>07</span><strong>Configure platform wizards</strong></a>
+        <a href="#azure"><span>08</span><strong>Azure app, Key Vault, secrets</strong></a>
+      </div>
+    </section>
+
+    <section class="section section--wide journey" id="journey">
+      <article id="account" class="step reveal">
+        <div class="step__copy">
+          <span class="step-number">01</span>
+          <p class="step-kicker">Account registration</p>
+          <h2>Create an Aegis ID account.</h2>
+          <p>The anonymous home page should lead the user to register, verify MFA, and then continue to organization setup.</p>
+          <ul class="checklist">
+            <li>Enter name, work email, phone, and password.</li>
+            <li>Complete email, SMS, or passkey second factor.</li>
+            <li>Land on the organization selection page.</li>
+          </ul>
+        </div>
+        <div class="visual-stack">
+          <div class="browser">
+            <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="browser__body">
+              <p class="eyebrow">Register</p>
+              <div class="browser__title">Create your Aegis ID account.</div>
+              <div class="form-grid">
+                <div class="field"><span>Name</span><strong>Frederick Pearson</strong></div>
+                <div class="field"><span>Work email</span><strong>fpearson@vanguardcs.ca</strong></div>
+                <div class="field"><span>Phone</span><strong>+1 555 0100</strong></div>
+                <div class="field"><span>MFA</span><strong>Email or SMS</strong></div>
+              </div>
+              <div style="margin-top: 18px;"><span class="ui-button">Create account</span></div>
+              <div class="callout callout--top" data-pin="1">Select Create account from the public home page.</div>
+              <div class="callout callout--middle" data-pin="2">Use work email so organization invitations match the wallet holder.</div>
+              <span class="hotspot" style="left: 174px; bottom: 72px;"></span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article id="organization" class="step reveal">
+        <div class="step__copy">
+          <span class="step-number">02</span>
+          <p class="step-kicker">Organization workspace</p>
+          <h2>Register the organization.</h2>
+          <p>The first organization subscriber becomes the administrator. If no organization exists, the user sees a clear create-workspace action.</p>
+          <ul class="checklist">
+            <li>Create the workspace and choose an initial plan.</li>
+            <li>Open the org dashboard from the organization tile.</li>
+            <li>Review people, claims, roles, platform setup, branding, and audit logs.</li>
+          </ul>
+        </div>
+        <div class="visual-stack">
+          <div class="browser">
+            <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="browser__body">
+              <p class="eyebrow">Organizations</p>
+              <div class="browser__title">Choose your workspace.</div>
+              <div class="tiles">
+                <div class="tile"><strong>Vanguardcs</strong><span>Administrator</span><br><br><span class="ui-button">Open dashboard</span></div>
+                <div class="tile"><strong>Add org</strong><span>Subscribe another organization</span></div>
+                <div class="tile"><strong>Identity due</strong><span>Admin profile validation in 30 days</span></div>
+              </div>
+              <div class="callout callout--bottom" data-pin="1">Click the organization tile to enter the workspace dashboard.</div>
+              <span class="hotspot" style="left: 184px; top: 246px;"></span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article id="wallet" class="step reveal">
+        <div class="step__copy">
+          <span class="step-number">03</span>
+          <p class="step-kicker">Mobile wallet setup</p>
+          <h2>Install the iOS wallet, then accept a credential invite.</h2>
+          <p>TestFlight handles the iOS install. The Aegis ID wallet accepts credential invites from the web dashboard and records the accepted credential locally.</p>
+          <ul class="checklist">
+            <li>Open the TestFlight link on the iPhone.</li>
+            <li>Install Vanguard Aegis ID Wallet.</li>
+            <li>Scan the credential invitation QR code.</li>
+            <li>Open Ledger and accept the credential.</li>
+          </ul>
+        </div>
+        <div class="visual-stack">
+          <div class="qr-layout">
+            <div class="browser">
+              <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <div class="browser__body">
+                <p class="eyebrow">People directory</p>
+                <h3>Invite employee credential</h3>
+                <div class="table">
+                  <div class="row row--head"><span>Name</span><span>Email</span><span>Status</span><span>Action</span></div>
+                  <div class="row"><strong>Frederick</strong><span>fpearson@cloudstrucc.com</span><span class="badge badge--blue">Invited</span><span class="ui-button">View QR</span></div>
+                </div>
+                <div class="callout callout--middle" data-pin="1">Open the invite modal to display the QR and deep link.</div>
+              </div>
+            </div>
+            <div class="qr-box">
+              <div>
+                <img class="qr-image" src="assets/credential-invite-qr.svg" alt="Example credential invite QR code">
+                <p style="margin: 16px 0 0; text-align: center; font-weight: 760;">aegisid://credential-invite?...</p>
+              </div>
+            </div>
+          </div>
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="phone__notch"></div>
+              <div class="phone-card">
+                <h3>Credential invite</h3>
+                <p style="color: rgba(255,255,255,.78);">Vanguardcs invited this wallet to accept an organization credential.</p>
+              </div>
+              <div class="phone-list">
+                <div>Organization: Vanguardcs</div>
+                <div>Holder: fpearson@cloudstrucc.com</div>
+                <div>Status: Pending acceptance</div>
+              </div>
+              <button class="phone-action">Accept credential</button>
+            </div>
+            <div class="card" style="max-width: 360px; padding: 22px;">
+              <p class="eyebrow">Mobile wallet</p>
+              <h3>Why this is not an Aries OOB link</h3>
+              <p>The credential invite uses an Aegis deep link. Aries lab invitations still use an OOB payload with an oob parameter.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article id="oidc" class="step reveal">
+        <div class="step__copy">
+          <span class="step-number">04</span>
+          <p class="step-kicker">OIDC wallet challenge</p>
+          <h2>Prove sign-in with a wallet challenge.</h2>
+          <p>After OIDC sign-in succeeds, Aegis ID sends a wallet challenge from the selected issuing organization.</p>
+          <ul class="checklist">
+            <li>Select the organization that issued the credential.</li>
+            <li>Start OIDC sign-in.</li>
+            <li>Open the wallet and approve the challenge.</li>
+            <li>Return to the protected app.</li>
+          </ul>
+        </div>
+        <div class="visual-stack split">
+          <div class="browser">
+            <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="browser__body">
+              <p class="eyebrow">OIDC challenge</p>
+              <h3>Authentication succeeded. Wallet approval required.</h3>
+              <div class="field"><span>Organization</span><strong>Vanguardcs</strong></div>
+              <div class="field" style="margin-top:12px;"><span>Subject</span><strong>fpearson@vanguardcs.ca</strong></div>
+              <div style="margin-top: 18px;"><span class="ui-button">Send wallet challenge</span></div>
+              <div class="callout callout--inline" data-pin="1">Choose the issuing org before sending the wallet challenge.</div>
+            </div>
+          </div>
+          <div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone-card">
+              <h3>Wallet challenge</h3>
+              <p style="color: rgba(255,255,255,.78);">Approve OIDC sign-in for Business Expenses.</p>
+            </div>
+            <div class="phone-list">
+              <div>Application: OIDC wallet challenge</div>
+              <div>Action: sign-in</div>
+              <div>Nonce: CH-2026-1048</div>
+            </div>
+            <button class="phone-action">Approve</button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section section--wide" id="examples">
+      <div class="section__head reveal">
+        <div>
+          <p class="eyebrow">Example applications</p>
+          <h2>Show wallet decisions inside real business workflows.</h2>
+        </div>
+        <p>The demo apps illustrate a relying-party pattern: the app handles its workflow, while Aegis ID supplies high-assurance proof, wallet approval, and ledger evidence.</p>
+      </div>
+
+      <div class="split reveal">
+        <article class="app-card">
+          <p class="step-kicker">Business Expenses</p>
+          <h3>Approve or reject an expense.</h3>
+          <p>After sign-in, the user opens an expense row and records a wallet-signed decision.</p>
+          <div class="table">
+            <div class="row row--head"><span>Expense</span><span>Amount</span><span>Status</span><span>Action</span></div>
+            <div class="row"><strong>EXP-2026-1048</strong><span>$1,284.00</span><span class="badge badge--blue">Pending</span><span class="ui-button">Approve</span></div>
+            <div class="row"><strong>EXP-2026-1051</strong><span>$642.18</span><span class="badge badge--blue">Pending</span><span class="ui-button">Reject</span></div>
+          </div>
+        </article>
+
+        <article class="app-card">
+          <p class="step-kicker">Wallet ledger</p>
+          <h3>Every decision becomes evidence.</h3>
+          <p>The web app and mobile app both show the challenge payload, action, timestamp, subject, and result.</p>
+          <div class="table">
+            <div class="row row--head"><span>Action</span><span>Resource</span><span>Status</span><span>Time</span></div>
+            <div class="row"><strong>approve</strong><span>EXP-2026-1048</span><span class="badge">Accepted</span><span>10:42</span></div>
+            <div class="row"><strong>sign-in</strong><span>OIDC</span><span class="badge">Accepted</span><span>10:40</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section--wide" id="signature">
+      <div class="section__head reveal">
+        <div>
+          <p class="eyebrow">Digital signature example</p>
+          <h2>Upload a PDF, place a signature field, then send a wallet challenge.</h2>
+        </div>
+        <p>The signature field can show the wallet-approved claim, timestamp, and ledger identifier after approval.</p>
+      </div>
+
+      <div class="split reveal">
+        <div class="browser">
+          <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="browser__body">
+            <p class="eyebrow">Template builder</p>
+            <h3>Upload PDF and add fields.</h3>
+            <div class="field"><span>Template</span><strong>Contract Approval</strong></div>
+            <div style="margin-top: 14px;"><span class="ui-button">Upload PDF</span> <span class="button" style="min-height:44px;">Add signature field</span></div>
+            <div class="callout callout--middle" data-pin="1">Click the PDF to place the signature field.</div>
+          </div>
+        </div>
+        <div class="pdf">
+          <h3>Service Agreement</h3>
+          <p>Agreement terms and approval routing details appear in the uploaded PDF.</p>
+          <div class="signature-field">Wallet signature field<br><span style="font-weight: 650;">Awaiting Aegis ID approval</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--wide" id="wizards">
+      <div class="section__head reveal">
+        <div>
+          <p class="eyebrow">Platform configuration wizards</p>
+          <h2>Configure each assurance and federation path with guided steps.</h2>
+        </div>
+        <p>Each platform path lists the values to collect, where to configure them, and which live test proves the connection is ready.</p>
+      </div>
+
+      <div class="wizard-grid reveal">
+        <article class="wizard-card">
+          <p class="step-kicker">Microsoft Entra Verified ID</p>
+          <h3>Production credential proof.</h3>
+          <div class="placeholder">Use Entra admin center to configure the Verified ID authority, credential contract, claims, rules, and card design.</div>
+          <div class="reference-links">
+            <a href="get-started-guide.html#azure" target="_blank" rel="noopener">Open Azure setup section</a>
+            <a href="https://learn.microsoft.com/en-us/entra/verified-id/verifiable-credentials-configure-tenant" target="_blank" rel="noopener">Microsoft Learn tenant setup</a>
+            <a href="https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api" target="_blank" rel="noopener">Request Service API</a>
+          </div>
+          <ol class="mini-steps">
+            <li>Sign in to entra.microsoft.com as a Global Administrator or an administrator allowed to configure Verified ID.</li>
+            <li>Open Verified ID and complete tenant setup if it has not been configured yet: domain, authority, and Key Vault-backed signing keys.</li>
+            <li>Create the credential contract, for example VerifiedEmployee, then define the claims, rules, and card style.</li>
+            <li>Copy the authority DID exactly as shown in the issuance sample payload.</li>
+            <li>Copy the manifest URL from the credential contract. Authenticator uses this URL to understand the credential display and issuance requirements.</li>
+            <li>Record the credential type, for example VerifiedEmployee.</li>
+            <li>Paste tenant ID, client ID, client secret, authority DID, manifest URL, credential type, and callback API key into the Aegis ID Verified ID wizard.</li>
+            <li>Run the live test and scan the issuance QR code with Microsoft Authenticator.</li>
+          </ol>
+        </article>
+
+        <article class="wizard-card">
+          <p class="step-kicker">YubiKey / FIDO2</p>
+          <h3>Hardware-backed step-up.</h3>
+          <div class="yubikey-demo" aria-label="Animated YubiKey NFC setup drawing">
+            <div class="hardware-stepup">
+              <p style="max-width: 430px; color: var(--ink); font-weight: 820;">Tap the YubiKey 5C NFC, use USB-C, or register a platform passkey for admin and approval step-up.</p>
+              <div class="hardware-device-caption-row">
+                <div class="device-row" aria-label="Laptop and phone hardware-backed step-up support">
+                  <div class="device device--laptop"><span>Laptop browser</span></div>
+                  <div class="device device--phone"><span>Mobile app</span></div>
+                </div>
+                <p class="hardware-caption"><strong>Desktop and mobile supported</strong>Hardware-backed step-up can protect desktop sign-in, mobile approval flows, admin actions, and high-value application decisions.</p>
+              </div>
+            </div>
+            <div class="yubikey"></div>
+            <div class="nfc-rings"></div>
+          </div>
+          <div class="reference-links">
+            <a href="get-started-guide.html#wizards" target="_blank" rel="noopener">Open wizard section</a>
+            <a href="https://www.yubico.com/setup/" target="_blank" rel="noopener">Yubico setup</a>
+            <a href="https://docs.yubico.com/software/yubikey/tools/authenticator/auth-guide/fido2.html" target="_blank" rel="noopener">Yubico FIDO2 guide</a>
+          </div>
+          <ol class="mini-steps">
+            <li>Install Yubico Authenticator on macOS, Windows, Android, or iOS as appropriate for the test device.</li>
+            <li>Insert the YubiKey over USB-C or use NFC where supported. Set a FIDO2 PIN if the key does not already have one.</li>
+            <li>In Aegis ID, open the YubiKey/FIDO2 setup wizard and choose whether the policy applies to sign-in, admin actions, expense approvals, PDF signatures, or all high-value actions.</li>
+            <li>Register the key as a security key or passkey when the browser prompts for WebAuthn.</li>
+            <li>Test a protected action and confirm the browser asks for the key touch or PIN/user verification.</li>
+            <li>If the key is reused from another pilot, do not factory reset unless you are intentionally removing all resident FIDO credentials from that key.</li>
+          </ol>
+        </article>
+
+        <article class="wizard-card">
+          <p class="step-kicker">Keycloak</p>
+          <h3>OIDC or SAML federation.</h3>
+          <div class="placeholder">Use the Keycloak realm client configuration to set redirect URIs, client authentication, scopes, and claim mappers.</div>
+          <div class="reference-links">
+            <a href="get-started-guide.html#wizards" target="_blank" rel="noopener">Open wizard section</a>
+            <a href="https://www.keycloak.org/docs/latest/server_admin/index.html" target="_blank" rel="noopener">Keycloak admin guide</a>
+            <a href="https://www.keycloak.org/securing-apps/oidc-layers" target="_blank" rel="noopener">Keycloak OIDC guide</a>
+          </div>
+          <ol class="mini-steps">
+            <li>Choose the Keycloak realm that owns the users and roles for this organization.</li>
+            <li>Create an OpenID Connect client for Aegis ID. Use confidential access when the server will store a client secret.</li>
+            <li>Add the Aegis ID redirect URI exactly as shown in the wizard and set web origins to the trusted Aegis ID origin.</li>
+            <li>Copy the client ID, client secret, realm issuer URL, and discovery URL.</li>
+            <li>Add protocol mappers for email, name, preferred username, groups, roles, department, and any custom claims the organization needs.</li>
+            <li>Paste those values into the Keycloak wizard, run the sign-in test, then send a wallet challenge from the accepted organization credential.</li>
+          </ol>
+        </article>
+
+        <article class="wizard-card">
+          <p class="step-kicker">Generic OIDC / SAML</p>
+          <h3>Any compatible identity provider.</h3>
+          <div class="placeholder">Use the provider metadata page to collect issuer, endpoints, certificates, client credentials, and claim mappings.</div>
+          <div class="reference-links">
+            <a href="get-started-guide.html#wizards" target="_blank" rel="noopener">Open wizard section</a>
+            <a href="https://learn.microsoft.com/en-us/entra/identity-platform/permissions-consent-overview" target="_blank" rel="noopener">OAuth permissions overview</a>
+          </div>
+          <ol class="mini-steps">
+            <li>For OIDC, collect issuer, discovery URL, authorization endpoint, token endpoint, userinfo endpoint, JWKS URL, client ID, client secret, audience, and scopes.</li>
+            <li>For SAML, collect entity ID, SSO URL, signing certificate, metadata XML URL or file, NameID format, and assertion attribute names.</li>
+            <li>Configure redirect URI or ACS URL exactly as shown by the Aegis ID wizard.</li>
+            <li>Map the provider claims to Aegis ID fields such as email, display name, object ID, groups, department, and assurance level.</li>
+            <li>Store secrets in Key Vault or secure App Service settings, never in client-facing documentation.</li>
+            <li>Run the wizard live test, then send a wallet challenge so the demo shows both federation and user-held credential assurance.</li>
+          </ol>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section--wide" id="azure">
+      <div class="section__head reveal">
+        <div>
+          <p class="eyebrow">Azure foundation</p>
+          <h2>Prepare the hosted environment before live Verified ID testing.</h2>
+        </div>
+        <p>Use this section for administrator setup: app registration, secrets, app settings, and Key Vault hardening.</p>
+      </div>
+
+      <div class="split reveal">
+        <article class="wizard-card">
+          <p class="step-kicker">App registration</p>
+          <h3>Microsoft identity platform app.</h3>
+          <div class="placeholder">Use the app registration overview to copy tenant ID and client ID, then configure secrets and API permissions.</div>
+          <div class="reference-links">
+            <a href="get-started-guide.html#wizards" target="_blank" rel="noopener">Open platform wizard section</a>
+            <a href="https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app" target="_blank" rel="noopener">Register an app</a>
+            <a href="https://learn.microsoft.com/en-us/entra/verified-id/admin-api" target="_blank" rel="noopener">Verified ID Admin API</a>
+            <a href="https://learn.microsoft.com/en-us/entra/verified-id/issuance-request-api" target="_blank" rel="noopener">Issuance API</a>
+            <a href="https://learn.microsoft.com/en-us/entra/verified-id/presentation-request-api" target="_blank" rel="noopener">Presentation API</a>
+          </div>
+          <ol class="mini-steps">
+            <li>Go to Microsoft Entra admin center, then Microsoft Entra ID, App registrations, New registration.</li>
+            <li>Name the app, keep it single tenant for the pilot, and create it. A redirect URI is not required for client credentials.</li>
+            <li>Copy Directory tenant ID and Application client ID from the app overview.</li>
+            <li>Open Certificates and secrets, create a client secret, and copy the secret value immediately.</li>
+            <li>Open API permissions, Add a permission, then search for the Verified ID Request Service or Verifiable Credentials service permission shown by the Microsoft Learn guide.</li>
+            <li>Add the application permissions required by issuance and presentation calls, then grant admin consent. If the token has no roles, this step is incomplete or consent did not apply.</li>
+            <li>Open Verified ID, create or select the credential contract, and copy the authority DID, manifest URL, and credential type from the issue credential sample.</li>
+            <li>Generate a callback API key in Aegis ID or set a strong value in configuration so Verified ID callbacks can be authenticated.</li>
+          </ol>
+        </article>
+        <article class="wizard-card">
+          <p class="step-kicker">Key Vault and App Service</p>
+          <h3>Secrets and runtime settings.</h3>
+          <div class="placeholder">Use Key Vault and App Service configuration to store production secrets and runtime environment values.</div>
+          <div class="reference-links">
+            <a href="get-started-guide.html#azure" target="_blank" rel="noopener">Open Azure setup section</a>
+            <a href="https://learn.microsoft.com/en-us/entra/verified-id/verifiable-credentials-configure-tenant" target="_blank" rel="noopener">Verified ID advanced setup</a>
+          </div>
+          <ol class="mini-steps">
+            <li>Create or reuse a Key Vault for production secrets such as AZURE_CLIENT_SECRET, SESSION_SECRET, VID_CALLBACK_API_KEY, and provider client secrets.</li>
+            <li>Enable managed identity on the App Service if you want to use Key Vault references instead of plain App Service settings.</li>
+            <li>Grant the App Service identity permission to read the required Key Vault secrets.</li>
+            <li>Set App Service settings for VID_MODE, AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET or Key Vault reference, VID_AUTHORITY_DID, VID_MANIFEST_URL, VID_CREDENTIAL_TYPE, VID_CALLBACK_API_KEY, and PUBLIC_BASE_URL.</li>
+            <li>Restart the App Service after configuration changes so the running Node process reads the new values.</li>
+            <li>Run the Verified ID live test. Issuance proves the credential can be created; presentation proves the credential can be requested and verified later.</li>
+          </ol>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <span>Vanguard Cloud Services - Aegis ID Get Started Guide</span>
+      <span>Administrator onboarding and assurance setup</span>
+    </div>
+  </footer>
+
+  <script src="assets/get-started-guide.js" defer></script>
+</body>
+</html>

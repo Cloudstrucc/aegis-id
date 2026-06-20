@@ -177,6 +177,49 @@ In App Store Connect:
 
 Internal builds are available to testers through the TestFlight app for 90 days.
 
+## Public TestFlight Links For The Homepage
+
+For non-technical business testers, App Store Connect can create a public TestFlight invitation link. Use separate links if you publish separate production, dev, and QA wallet apps.
+
+1. Open the app record in App Store Connect.
+2. Go to **TestFlight**.
+3. Open the testing group that contains the build.
+4. Enable **Public Link**.
+5. Optionally set a tester limit.
+6. Copy the public link.
+7. Store the link in the matching Aegis ID web app environment.
+
+Production:
+
+```bash
+az webapp config appsettings set \
+  --resource-group rg-vanguard-aegis-id \
+  --name vanguard-aegis-id-65067d \
+  --settings IOS_TESTFLIGHT_PUBLIC_URL="https://testflight.apple.com/join/REPLACE_ME"
+```
+
+Dev:
+
+```bash
+az webapp config appsettings set \
+  --resource-group rg-vanguard-aegis-id-dev \
+  --name vanguard-aegis-id-dev-65067d \
+  --settings IOS_TESTFLIGHT_PUBLIC_URL="https://testflight.apple.com/join/REPLACE_DEV"
+```
+
+QA:
+
+```bash
+az webapp config appsettings set \
+  --resource-group rg-vanguard-aegis-id-qa \
+  --name vanguard-aegis-id-qa-65067d \
+  --settings IOS_TESTFLIGHT_PUBLIC_URL="https://testflight.apple.com/join/REPLACE_QA"
+```
+
+The deploy script also reads `IOS_TESTFLIGHT_PUBLIC_URL` from `.env`, `.env.dev`, or `.env.qa`. If you set the value directly in Azure, keep the env file blank unless you intentionally want the next deploy to overwrite it.
+
+After the setting is applied, restart or redeploy the matching web app and open the anonymous homepage. The iOS download badge should link to TestFlight. Android remains controlled by `ANDROID_TESTING_URL`.
+
 ## Before External/Public Release
 
 Do not submit this wallet broadly until these items are closed:

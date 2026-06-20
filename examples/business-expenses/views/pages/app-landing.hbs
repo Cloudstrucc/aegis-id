@@ -1,0 +1,68 @@
+<section class="app-detail-hero">
+  <div class="container-fluid px-lg-5 py-5">
+    <div class="row g-4 align-items-center">
+      <div class="col-xl-7">
+        <p class="eyebrow">{{exampleApp.eyebrow}}</p>
+        <h1>{{exampleApp.title}}</h1>
+        <p class="hero-copy">{{exampleApp.summary}}</p>
+      </div>
+      <div class="col-xl-5">
+        <div class="surface-card app-access-card">
+          <span class="tile-icon"><i class="bi {{exampleApp.icon}}"></i></span>
+          <h2>Access this workflow</h2>
+          <p>{{exampleApp.detail}}</p>
+          {{#if isAuthenticated}}
+            <a class="btn btn-primary w-100" href="{{exampleApp.path}}">Open {{exampleApp.title}}</a>
+          {{else}}
+            <div class="dropdown w-100">
+              <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Authenticate to continue
+              </button>
+              <div class="dropdown-menu auth-menu w-100 shadow-sm">
+                <form action="/auth/start" method="post">
+                  <input type="hidden" name="intent" value="sign-in">
+                  <input type="hidden" name="authMethod" value="verified-id">
+                  <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
+                  <button class="dropdown-item" type="submit">Sign in with Verified ID</button>
+                </form>
+                <form action="/auth/start" method="post">
+                  <input type="hidden" name="intent" value="register">
+                  <input type="hidden" name="authMethod" value="verified-id">
+                  <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
+                  <button class="dropdown-item" type="submit">Register with Verified ID</button>
+                </form>
+                <form action="/auth/start" method="post">
+                  <input type="hidden" name="intent" value="sign-in">
+                  <input type="hidden" name="authMethod" value="yubikey">
+                  <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
+                  <button class="dropdown-item" type="submit">Sign in with YubiKey</button>
+                </form>
+                <form action="/auth/start" method="post">
+                  <input type="hidden" name="intent" value="sign-in">
+                  <input type="hidden" name="authMethod" value="wallet">
+                  <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
+                  <button class="dropdown-item" type="submit">Use wallet-only lab</button>
+                </form>
+              </div>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-fluid px-lg-5 py-5">
+  <div class="section-heading compact">
+    <p class="eyebrow">Workflow</p>
+    <h2>What this demonstrates.</h2>
+  </div>
+  <div class="workflow-grid">
+    {{#each exampleApp.steps}}
+      <article class="workflow-step">
+        <span>{{stepNumber @index}}</span>
+        <p>{{this}}</p>
+      </article>
+    {{/each}}
+  </div>
+</section>

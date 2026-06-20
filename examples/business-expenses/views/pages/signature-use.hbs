@@ -1,0 +1,61 @@
+<section class="container-fluid py-4 px-lg-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+      <p class="eyebrow">E-signature</p>
+      <h1 class="mb-1">{{template.name}}</h1>
+      <p class="text-muted mb-0">{{template.description}}</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/signatures">Back to templates</a>
+  </div>
+
+  <div class="row g-4 align-items-start">
+    <div class="col-xl-8">
+      <div class="surface-card">
+        <div class="pdf-workspace" data-pdf-sign-start>
+          <div class="pdf-toolbar">
+            <span>{{template.pdfFileName}}</span>
+            <span>Click the signature field to start the wallet signature.</span>
+          </div>
+          <div class="pdf-canvas-wrap" data-pdf-canvas-wrap>
+            <canvas data-pdf-canvas></canvas>
+            <button class="signature-field" type="button" data-signature-field data-open-signature-modal>
+              <span>Start signature</span>
+              <small>Send Aegis wallet challenge</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="surface-card">
+        <div class="card-kicker">Signature request</div>
+        <h2>Wallet-backed signature</h2>
+        <p class="text-muted">Aegis ID will send a challenge to the mobile wallet. Once accepted, the signed envelope records the signer, timestamp, signature ID, and ledger challenge.</p>
+        <button class="btn btn-primary w-100" type="button" data-open-signature-modal>Send Signature Challenge</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="modal fade" id="signatureConfirmModal" tabindex="-1" aria-labelledby="signatureConfirmTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="signatureConfirmTitle">Send wallet signature challenge?</h2>
+        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        This will create a new envelope and ask the signer to approve the document signature from the Vanguard Aegis ID mobile wallet.
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <form action="/signatures/templates/{{template.id}}/envelopes" method="post">
+          <button class="btn btn-primary" type="submit">Send to Wallet</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" data-pdf-document>{{json template}}</script>

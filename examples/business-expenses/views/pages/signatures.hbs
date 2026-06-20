@@ -1,0 +1,129 @@
+<section class="container-fluid py-4 px-lg-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+      <p class="eyebrow">Protected application</p>
+      <h1 class="mb-1">E-signature templates</h1>
+      <p class="text-muted mb-0">Create a PDF template, place one wallet-backed signature field, then launch signed envelopes.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary" href="/expenses">Expense approvals</a>
+      <a class="btn btn-outline-primary" href="/ledger">View ledger</a>
+    </div>
+  </div>
+
+  {{#if createdTemplateId}}
+    <div class="alert alert-success">Saved signature template <strong>{{createdTemplateId}}</strong>.</div>
+  {{/if}}
+  {{#if createdEnvelopeId}}
+    <div class="alert alert-success">Created signature envelope <strong>{{createdEnvelopeId}}</strong>.</div>
+  {{/if}}
+
+  <div class="row g-4 align-items-start">
+    <div class="col-xxl-7">
+      <div class="surface-card">
+        <div class="card-kicker">Template designer</div>
+        <h2>Create a PDF signature template</h2>
+        <p class="text-muted">Upload a PDF, click where the signer should confirm, then save the reusable template.</p>
+
+        <form action="/signatures/templates" method="post" data-pdf-designer>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="templateName">Template name</label>
+              <input id="templateName" class="form-control" name="name" placeholder="Contract approval, offer letter..." required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="pdfUpload">PDF upload</label>
+              <input id="pdfUpload" class="form-control" type="file" accept="application/pdf" data-pdf-upload required>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="templateDescription">Description</label>
+              <input id="templateDescription" class="form-control" name="description" placeholder="What this document signs or approves">
+            </div>
+          </div>
+
+          <input type="hidden" name="pdfFileName" data-pdf-file-name>
+          <input type="hidden" name="pdfDataUrl" data-pdf-data-url>
+          <input type="hidden" name="signaturePage" value="1" data-signature-page>
+          <input type="hidden" name="signatureX" value="0.08" data-signature-x>
+          <input type="hidden" name="signatureY" value="0.66" data-signature-y>
+          <input type="hidden" name="signatureWidth" value="0.34" data-signature-width>
+          <input type="hidden" name="signatureHeight" value="0.12" data-signature-height>
+
+          <div class="pdf-workspace mt-4">
+            <div class="pdf-toolbar">
+              <span data-pdf-status>Upload a PDF to begin.</span>
+              <span>Click the page to place the signature field.</span>
+            </div>
+            <div class="pdf-canvas-wrap" data-pdf-canvas-wrap>
+              <canvas data-pdf-canvas></canvas>
+              <button class="signature-field is-designer" type="button" data-signature-field>
+                <span>Signature field</span>
+                <small>Wallet challenge required</small>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-primary" type="submit" data-save-template disabled>Save Template</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-xxl-5">
+      <div class="surface-card mb-4">
+        <div class="card-kicker">Configured templates</div>
+        <h2>Use a template</h2>
+        <div class="table-responsive mt-3">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Created</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each templates}}
+                <tr>
+                  <td>
+                    <strong>{{name}}</strong>
+                    <div class="small text-muted">{{pdfFileName}}</div>
+                  </td>
+                  <td class="small">{{createdAt}}</td>
+                  <td class="text-end">
+                    <a class="btn btn-sm btn-primary" href="/signatures/templates/{{id}}/use">Use</a>
+                  </td>
+                </tr>
+              {{/each}}
+              {{#unless templates}}
+                <tr>
+                  <td colspan="3" class="text-muted">No templates yet. Upload a PDF to create one.</td>
+                </tr>
+              {{/unless}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="surface-card">
+        <div class="card-kicker">Envelopes</div>
+        <h2>Signature activity</h2>
+        <div class="list-group list-group-flush mt-3">
+          {{#each envelopes}}
+            <a class="list-group-item list-group-item-action" href="/signatures/envelopes/{{id}}">
+              <div class="d-flex justify-content-between gap-3">
+                <strong>{{templateName}}</strong>
+                <span class="badge status-{{status}}">{{status}}</span>
+              </div>
+              <div class="small text-muted">{{actorEmail}} · {{signatureId}}</div>
+            </a>
+          {{/each}}
+          {{#unless envelopes}}
+            <div class="list-group-item text-muted">No envelopes have been started.</div>
+          {{/unless}}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

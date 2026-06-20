@@ -24,6 +24,9 @@
                 <data
                     android:host="invite"
                     android:scheme="aegisid" />
+                <data
+                    android:host="credential-invite"
+                    android:scheme="aegisid" />
             </intent-filter>
 
             <intent-filter android:autoVerify="true">

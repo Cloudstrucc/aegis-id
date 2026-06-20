@@ -37,6 +37,12 @@ final class WalletStore: ObservableObject {
         lastLabError = nil
 
         do {
+            if AegisCredentialInviteParser.canParse(rawText) {
+                let credentialInvite = try AegisCredentialInviteParser.parse(rawText)
+                importCredentialInvite(credentialInvite)
+                return
+            }
+
             let invitation = try OOBInvitationParser.parse(rawText)
             if connections.contains(where: { $0.invitation.id == invitation.id }) {
                 lastImportMessage = "Invitation already saved."
@@ -62,6 +68,67 @@ final class WalletStore: ObservableObject {
         } catch {
             lastImportError = error.localizedDescription
         }
+    }
+
+    private func importCredentialInvite(_ invite: AegisCredentialInvite) {
+        if transactions.contains(where: { $0.type == .credential && $0.remoteId == invite.credentialId }) {
+            lastImportMessage = "Credential invite already saved."
+            return
+        }
+
+        let connectionId: UUID
+        if let existing = connections.first(where: { organizationKey(for: $0) == invite.organizationId }) {
+            connectionId = existing.id
+            update(existing) { item in
+                item.state = .credentialOffered
+            }
+        } else {
+            var connection = WalletConnection(
+                invitation: AriesInvitation(
+                    id: "credential-\(invite.credentialId)",
+                    label: invite.organizationName,
+                    rawURL: invite.rawURL,
+                    endpoint: AegisWalletEnvironment.webAppURL.absoluteString,
+                    organizationId: invite.organizationId,
+                    organizationName: invite.organizationName,
+                    subscriptionId: nil,
+                    handshakeProtocols: [],
+                    services: [],
+                    receivedAt: Date()
+                )
+            )
+            connection.state = .credentialOffered
+            connection.holderConnectionId = "aegis-credential-invite:\(invite.credentialId)"
+            connections.insert(connection, at: 0)
+            connectionId = connection.id
+            save()
+        }
+
+        transactions.insert(
+            WalletTransaction(
+                connectionId: connectionId,
+                type: .credential,
+                status: .pendingAcceptance,
+                title: "Credential invite received",
+                detail: "\(invite.organizationName) invited \(invite.holderEmail.isEmpty ? "this wallet" : invite.holderEmail) to accept an organization credential.",
+                remoteId: invite.credentialId,
+                appName: "Vanguard Aegis ID",
+                action: "accept-credential",
+                resourceType: "credential-invitation",
+                resourceId: invite.credentialId,
+                payloadFields: [
+                    WalletChallengePayloadField(key: "organizationId", value: invite.organizationId),
+                    WalletChallengePayloadField(key: "organizationName", value: invite.organizationName),
+                    WalletChallengePayloadField(key: "credentialId", value: invite.credentialId),
+                    WalletChallengePayloadField(key: "holderEmail", value: invite.holderEmail),
+                    WalletChallengePayloadField(key: "expiresAt", value: invite.expiresAt ?? "Not provided")
+                ]
+            ),
+            at: 0
+        )
+        saveTransactions()
+        Task { await refreshOrganizationProfile(organizationId: invite.organizationId) }
+        lastImportMessage = "Credential invite saved. Open Ledger to accept it."
     }
 
     func connection(id: UUID) -> WalletConnection? {
@@ -344,7 +411,16 @@ final class WalletStore: ObservableObject {
                     content: "Vanguard Aegis ID Wallet simulator accepted challenge \(transaction.remoteId ?? transaction.id.uuidString)."
                 )
             }
-            if let webAcceptPath = transaction.webAcceptPath {
+            if transaction.type == .credential,
+               transaction.resourceType == "credential-invitation",
+               let credentialId = transaction.remoteId ?? transaction.resourceId,
+               let organizationId = connection.invitation.organizationId ?? payloadValue("organizationId", in: transaction) {
+                try await labClient.acceptCredentialInvitation(
+                    credentialId: credentialId,
+                    organizationId: organizationId,
+                    holderEmail: payloadValue("holderEmail", in: transaction)
+                )
+            } else if let webAcceptPath = transaction.webAcceptPath {
                 if let passkeyResponse {
                     try await labClient.acceptWalletChallenge(
                         acceptPath: transaction.passkeyAcceptPath ?? webAcceptPath,
@@ -377,7 +453,7 @@ final class WalletStore: ObservableObject {
                 }
             }
 
-            lastLabMessage = transaction.type == .credential ? "Mock credential accepted." : "Challenge accepted and response sent."
+            lastLabMessage = transaction.type == .credential ? "Credential accepted." : "Challenge accepted and response sent."
         } catch {
             updateTransaction(transaction) { item in
                 item.status = .failed
@@ -475,6 +551,10 @@ final class WalletStore: ObservableObject {
 
     private func organizationName(for connection: WalletConnection?) -> String {
         connection?.invitation.organizationName ?? connection?.invitation.label ?? "Unassigned organization"
+    }
+
+    private func payloadValue(_ key: String, in transaction: WalletTransaction) -> String? {
+        transaction.payloadFields?.first(where: { $0.key == key })?.value
     }
 
     private func update(_ connection: WalletConnection, mutate: (inout WalletConnection) -> Void) {

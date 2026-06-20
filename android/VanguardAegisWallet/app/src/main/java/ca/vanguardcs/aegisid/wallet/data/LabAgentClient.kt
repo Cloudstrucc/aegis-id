@@ -145,6 +145,17 @@ class LabAgentClient(
         return OrganizationProfile.fromJson(getJson("/api/organizations/$encoded/profile"))
     }
 
+    suspend fun acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?) {
+        val encoded = URLEncoder.encode(credentialId, Charsets.UTF_8.name())
+        postJson(
+            "/api/wallet/credential-invitations/$encoded/accept",
+            JSONObject()
+                .put("organizationId", organizationId)
+                .put("holderEmail", holderEmail)
+                .put("source", "android-wallet")
+        )
+    }
+
     private fun resolvePathOrUrl(value: String): String {
         val trimmed = value.trim()
         return if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {

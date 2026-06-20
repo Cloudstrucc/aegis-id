@@ -107,6 +107,12 @@ function createApp() {
   });
   app.use(express.static(config.paths.public, { maxAge: config.app.env === 'production' ? '1d' : 0 }));
   app.use(
+    '/docs/tutorial',
+    express.static(path.join(config.paths.root, 'docs', 'tutorial'), {
+      maxAge: config.app.env === 'production' ? '1d' : 0
+    })
+  );
+  app.use(
     '/vendor/mediapipe/face_detection',
     express.static(path.join(config.paths.root, 'node_modules', '@mediapipe', 'face_detection'), {
       maxAge: config.app.env === 'production' ? '7d' : 0

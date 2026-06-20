@@ -69,14 +69,15 @@ app.use(
         imgSrc: ["'self'", 'data:'],
         scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-        fontSrc: ["'self'", 'https://cdn.jsdelivr.net']
+        fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        workerSrc: ["'self'", 'blob:', 'https://cdn.jsdelivr.net']
       }
     }
   })
 );
 app.use(morgan('dev'));
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: false, limit: '24mb' }));
+app.use(express.json({ limit: '24mb' }));
 app.use(express.static(path.join(rootDir, 'public')));
 app.use(
   session({
@@ -96,16 +97,31 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.isAuthenticated = Boolean(req.session.authenticated);
   res.locals.aegisBaseUrl = config.aegisBaseUrl;
+  res.locals.authReturnTo = normalizeReturnTo(req.originalUrl || '/');
   next();
 });
 
 app.get('/', (req, res) => {
   res.render('pages/index', {
-    title: 'Business Expenses',
+    title: 'Example Apps',
     configured: Boolean(config.organizationId || config.issuerConnectionId),
     verifiedIdEnabled: config.verifiedIdEnabled,
-    yubiKeyEnabled: config.yubiKeyEnabled
+    yubiKeyEnabled: config.yubiKeyEnabled,
+    isAuthenticated: Boolean(req.session.authenticated)
   });
+});
+
+app.get('/apps/:appId', (req, res, next) => {
+  try {
+    const exampleApp = getExampleApp(req.params.appId);
+    res.render('pages/app-landing', {
+      title: exampleApp.title,
+      exampleApp,
+      authReturnTo: exampleApp.path
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post('/auth/start', (req, res) => {
@@ -113,7 +129,8 @@ app.post('/auth/start', (req, res) => {
   const nonce = crypto.randomBytes(18).toString('base64url');
   const intent = req.body.intent === 'register' ? 'register' : 'sign-in';
   const authMethod = normalizeAuthMethod(req.body.authMethod);
-  req.session.oidc = { state, nonce, intent, authMethod };
+  const returnTo = normalizeReturnTo(req.body.returnTo || '/apps/expenses');
+  req.session.oidc = { state, nonce, intent, authMethod, returnTo };
 
   const authorizationUrl = new URL(config.authorizationEndpoint, config.aegisBaseUrl);
   authorizationUrl.searchParams.set('client_id', config.clientId);
@@ -146,20 +163,21 @@ app.get('/auth/callback', async (req, res, next) => {
     req.session.authenticated = false;
 
     const action = userExisted || req.session.oidc.intent === 'sign-in' ? 'sign-in' : 'register';
+    const returnTo = normalizeReturnTo(req.session.oidc.returnTo || '/expenses');
     await upsertUser(req.session.user);
 
     if (req.session.oidc.authMethod === 'verified-id' && config.verifiedIdEnabled) {
       const presentation = await createVerifiedIdPresentationRequest(req.session.user, action);
       req.session.pendingVerifiedIdTransactionId = presentation.id;
       req.session.verifiedIdRequest = presentation;
-      return res.redirect(303, `/verified-id/${presentation.id}?returnTo=/expenses`);
+      return res.redirect(303, `/verified-id/${presentation.id}?returnTo=${encodeURIComponent(returnTo)}`);
     }
 
     if (req.session.oidc.authMethod === 'yubikey' && config.yubiKeyEnabled) {
       const stepUp = await createYubiKeyStepUpRequest(req.session.user, action);
       req.session.pendingYubiKeyStepUpId = stepUp.id;
       req.session.yubiKeyStepUp = stepUp;
-      return res.redirect(303, `/yubikey/${stepUp.id}?returnTo=/expenses`);
+      return res.redirect(303, `/yubikey/${stepUp.id}?returnTo=${encodeURIComponent(returnTo)}`);
     }
 
     const challenge = await createAegisChallenge({
@@ -182,7 +200,7 @@ app.get('/auth/callback', async (req, res, next) => {
     });
 
     req.session.pendingAuthChallengeId = challenge.id;
-    res.redirect(303, `/challenge/${challenge.id}?returnTo=/expenses`);
+    res.redirect(303, `/challenge/${challenge.id}?returnTo=${encodeURIComponent(returnTo)}`);
   } catch (error) {
     next(error);
   }
@@ -371,15 +389,156 @@ app.post('/expenses/:expenseId/:action', requireAuthenticated, async (req, res, 
   }
 });
 
+app.get('/signatures', requireAuthenticated, async (req, res, next) => {
+  try {
+    await settlePendingEnvelopes();
+    res.render('pages/signatures', {
+      title: 'E-Signatures',
+      templates: await readSignatureTemplates(),
+      envelopes: await readSignatureEnvelopes(),
+      createdTemplateId: req.query.template || null,
+      createdEnvelopeId: req.query.envelope || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/signatures/templates', requireAuthenticated, async (req, res, next) => {
+  try {
+    const now = new Date().toISOString();
+    const template = {
+      id: crypto.randomUUID(),
+      name: normalizeText(req.body.name, 'Untitled signature template', 90),
+      description: normalizeText(req.body.description, 'Wallet-signed document template', 180),
+      pdfFileName: normalizeText(req.body.pdfFileName, 'uploaded-document.pdf', 140),
+      pdfDataUrl: validatePdfDataUrl(req.body.pdfDataUrl),
+      signatureField: normalizeSignatureField(req.body),
+      createdBy: req.session.user.email,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const templates = await readSignatureTemplates();
+    templates.unshift(template);
+    await writeJson('signature-templates.json', templates.slice(0, 50));
+    res.redirect(303, `/signatures?template=${encodeURIComponent(template.id)}`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/signatures/templates/:templateId/use', requireAuthenticated, async (req, res, next) => {
+  try {
+    const template = await findSignatureTemplate(req.params.templateId);
+    res.render('pages/signature-use', {
+      title: 'Start Signature',
+      template,
+      returnTo: '/signatures'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/signatures/templates/:templateId/envelopes', requireAuthenticated, async (req, res, next) => {
+  try {
+    const template = await findSignatureTemplate(req.params.templateId);
+    const now = new Date().toISOString();
+    const signatureId = `SIG-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+    const envelopeId = crypto.randomUUID();
+    const actorName = req.session.user.name || req.session.user.email;
+
+    const challenge = await createAegisChallenge({
+      appName: 'Vanguard E-Signatures',
+      challengeType: 'document-signature',
+      action: 'sign-document',
+      resourceType: 'pdf-envelope',
+      resourceId: envelopeId,
+      subject: req.session.user.email,
+      requiredAssurance: config.walletPasskeyApprovalsRequired ? 'passkey' : undefined,
+      payload: {
+        appName: 'Vanguard E-Signatures',
+        action: 'sign-document',
+        timestamp: now,
+        actor: {
+          name: actorName,
+          email: req.session.user.email
+        },
+        document: {
+          templateId: template.id,
+          templateName: template.name,
+          fileName: template.pdfFileName
+        },
+        signature: {
+          id: signatureId,
+          field: template.signatureField
+        }
+      }
+    });
+
+    const envelopes = await readSignatureEnvelopes();
+    envelopes.unshift({
+      id: envelopeId,
+      templateId: template.id,
+      templateName: template.name,
+      pdfFileName: template.pdfFileName,
+      pdfDataUrl: template.pdfDataUrl,
+      signatureField: template.signatureField,
+      signatureId,
+      challengeId: challenge.id,
+      actorName,
+      actorEmail: req.session.user.email,
+      status: 'pending-wallet',
+      createdAt: now
+    });
+    await writeJson('signature-envelopes.json', envelopes.slice(0, 100));
+
+    res.redirect(303, `/signatures/envelopes/${encodeURIComponent(envelopeId)}?created=1`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/signatures/envelopes/:envelopeId', requireAuthenticated, async (req, res, next) => {
+  try {
+    const envelope = await settleAndFindEnvelope(req.params.envelopeId);
+    res.render('pages/signature-envelope', {
+      title: 'Signature Envelope',
+      envelope,
+      created: req.query.created === '1'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/signatures/envelopes/:envelopeId/status', requireAuthenticated, async (req, res, next) => {
+  try {
+    const envelope = await settleAndFindEnvelope(req.params.envelopeId);
+    res.json({
+      id: envelope.id,
+      status: envelope.status,
+      signedAt: envelope.signedAt || null,
+      signedBy: envelope.signedBy || null,
+      signatureId: envelope.signatureId
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/ledger', requireAuthenticated, async (req, res, next) => {
   try {
     await settlePendingDecisions(req);
+    await settlePendingEnvelopes();
     const remoteLedger = await fetchAegisJson(
       `/api/wallet-challenges/ledger?appInstanceId=${encodeURIComponent(config.appInstanceId)}&limit=100`
     );
     res.render('pages/ledger', {
       title: 'Wallet Ledger',
       decisions: await readDecisions(),
+      envelopes: await readSignatureEnvelopes(),
       challenges: remoteLedger.challenges || [],
       assuranceEvents: await readAssuranceEvents()
     });
@@ -406,6 +565,7 @@ app.listen(config.port, () => {
 function registerHandlebars() {
   hbs.registerHelper('eq', (left, right) => left === right);
   hbs.registerHelper('money', (amount, currency) => `${currency || 'CAD'} ${Number(amount || 0).toFixed(2)}`);
+  hbs.registerHelper('stepNumber', (index) => String(Number(index || 0) + 1).padStart(2, '0'));
   hbs.registerHelper('json', (value) => {
     const json = JSON.stringify(value, null, 2)
       .replace(/</g, '\\u003c')
@@ -448,7 +608,7 @@ async function createAegisChallenge(input) {
     method: 'POST',
     body: {
       ...input,
-      appName: config.appName,
+      appName: input.appName || config.appName,
       appInstanceId: config.appInstanceId,
       organizationId: config.organizationId,
       connectionId: config.issuerConnectionId,
@@ -568,6 +728,7 @@ async function loadAndSettleChallenge(req) {
       delete req.session.pendingAuthChallengeId;
     }
     await settleDecision(challenge);
+    await settleEnvelope(challenge);
   }
   return challenge;
 }
@@ -576,9 +737,34 @@ async function settlePendingDecisions(req) {
   const decisions = await readDecisions();
   const pending = decisions.filter((decision) => decision.status === 'pending-wallet');
   for (const decision of pending) {
-    const challenge = await fetchAegisJson(`/api/wallet-challenges/${decision.challengeId}`);
-    if (challenge.status === 'accepted') {
-      await settleDecision(challenge);
+    try {
+      const challenge = await fetchAegisJson(`/api/wallet-challenges/${decision.challengeId}`);
+      if (challenge.status === 'accepted') {
+        await settleDecision(challenge);
+      }
+    } catch (error) {
+      if (!isMissingWalletChallengeError(error)) {
+        throw error;
+      }
+      await markDecisionChallengeUnavailable(decision, error);
+    }
+  }
+}
+
+async function settlePendingEnvelopes() {
+  const envelopes = await readSignatureEnvelopes();
+  const pending = envelopes.filter((envelope) => envelope.status === 'pending-wallet');
+  for (const envelope of pending) {
+    try {
+      const challenge = await fetchAegisJson(`/api/wallet-challenges/${envelope.challengeId}`);
+      if (challenge.status === 'accepted') {
+        await settleEnvelope(challenge);
+      }
+    } catch (error) {
+      if (!isMissingWalletChallengeError(error)) {
+        throw error;
+      }
+      await markEnvelopeChallengeUnavailable(envelope, error);
     }
   }
 }
@@ -610,6 +796,60 @@ async function settleDecision(challenge) {
     };
     await writeJson('decisions.json', decisions);
   }
+}
+
+async function settleEnvelope(challenge) {
+  if (challenge.resourceType !== 'pdf-envelope' || challenge.action !== 'sign-document') {
+    return;
+  }
+
+  const envelopes = await readSignatureEnvelopes();
+  const envelopeIndex = envelopes.findIndex((envelope) => envelope.challengeId === challenge.id);
+  if (envelopeIndex === -1 || envelopes[envelopeIndex].status !== 'pending-wallet') {
+    return;
+  }
+
+  envelopes[envelopeIndex] = {
+    ...envelopes[envelopeIndex],
+    status: 'signed',
+    signedBy: challenge.subject,
+    signedAt: challenge.acceptedAt || new Date().toISOString(),
+    ledgerChallengeId: challenge.challengeId || challenge.id,
+    walletChallengeId: challenge.id
+  };
+  await writeJson('signature-envelopes.json', envelopes);
+}
+
+async function markDecisionChallengeUnavailable(decision, error) {
+  const decisions = await readDecisions();
+  const decisionIndex = decisions.findIndex((candidate) => candidate.challengeId === decision.challengeId);
+  if (decisionIndex === -1 || decisions[decisionIndex].status !== 'pending-wallet') {
+    return;
+  }
+
+  decisions[decisionIndex] = {
+    ...decisions[decisionIndex],
+    status: 'challenge-unavailable',
+    unavailableAt: new Date().toISOString(),
+    unavailableReason: error.message
+  };
+  await writeJson('decisions.json', decisions);
+}
+
+async function markEnvelopeChallengeUnavailable(envelope, error) {
+  const envelopes = await readSignatureEnvelopes();
+  const envelopeIndex = envelopes.findIndex((candidate) => candidate.challengeId === envelope.challengeId);
+  if (envelopeIndex === -1 || envelopes[envelopeIndex].status !== 'pending-wallet') {
+    return;
+  }
+
+  envelopes[envelopeIndex] = {
+    ...envelopes[envelopeIndex],
+    status: 'challenge-unavailable',
+    unavailableAt: new Date().toISOString(),
+    unavailableReason: error.message
+  };
+  await writeJson('signature-envelopes.json', envelopes);
 }
 
 async function upsertUser(user) {
@@ -650,6 +890,37 @@ async function readExpenses() {
 
 async function readDecisions() {
   return readJson('decisions.json', []);
+}
+
+async function readSignatureTemplates() {
+  return readJson('signature-templates.json', []);
+}
+
+async function readSignatureEnvelopes() {
+  return readJson('signature-envelopes.json', []);
+}
+
+async function findSignatureTemplate(templateId) {
+  const templates = await readSignatureTemplates();
+  const template = templates.find((candidate) => candidate.id === templateId);
+  if (!template) {
+    const error = new Error('Signature template not found.');
+    error.status = 404;
+    throw error;
+  }
+  return template;
+}
+
+async function settleAndFindEnvelope(envelopeId) {
+  await settlePendingEnvelopes();
+  const envelopes = await readSignatureEnvelopes();
+  const envelope = envelopes.find((candidate) => candidate.id === envelopeId);
+  if (!envelope) {
+    const error = new Error('Signature envelope not found.');
+    error.status = 404;
+    throw error;
+  }
+  return envelope;
 }
 
 async function readAssuranceEvents() {
@@ -738,11 +1009,49 @@ async function writeJson(fileName, value) {
   await fs.writeFile(path.join(dataDir, fileName), JSON.stringify(value, null, 2), 'utf8');
 }
 
+function normalizeText(value, fallback, maxLength) {
+  const normalized = String(value || '').trim();
+  return (normalized || fallback).slice(0, maxLength);
+}
+
+function validatePdfDataUrl(value) {
+  const dataUrl = String(value || '');
+  if (!dataUrl.startsWith('data:application/pdf;base64,')) {
+    const error = new Error('Upload a PDF before saving the signature template.');
+    error.status = 400;
+    throw error;
+  }
+  if (dataUrl.length > 18_000_000) {
+    const error = new Error('PDF is too large for this demo. Use a file under roughly 12 MB.');
+    error.status = 400;
+    throw error;
+  }
+  return dataUrl;
+}
+
+function normalizeSignatureField(body = {}) {
+  return {
+    page: clampNumber(body.signaturePage, 1, 50, 1),
+    x: clampNumber(body.signatureX, 0, 0.9, 0.08),
+    y: clampNumber(body.signatureY, 0, 0.9, 0.66),
+    width: clampNumber(body.signatureWidth, 0.14, 0.8, 0.34),
+    height: clampNumber(body.signatureHeight, 0.06, 0.28, 0.12)
+  };
+}
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, parsed));
+}
+
 function requireAuthenticated(req, res, next) {
   if (req.session.authenticated && req.session.user) {
     return next();
   }
-  return res.redirect(303, '/');
+  return res.redirect(303, loginLandingForPath(req.originalUrl || '/'));
 }
 
 function requireKnownChallenge(req, res, next) {
@@ -781,4 +1090,84 @@ function summarizeYubiKeyEvidence(body = {}) {
     authenticatorAttachment: String(body.authenticatorAttachment || 'cross-platform').slice(0, 80),
     simulated: Boolean(body.simulated)
   };
+}
+
+function isMissingWalletChallengeError(error) {
+  return error?.status === 404 && /wallet challenge not found/i.test(error.message || '');
+}
+
+function getExampleApp(appId) {
+  const apps = {
+    expenses: {
+      id: 'expenses',
+      title: 'Business Expenses',
+      eyebrow: 'Expense approvals',
+      icon: 'bi-receipt-cutoff',
+      path: '/expenses',
+      summary: 'Approve or reject expense records with per-decision Aegis wallet challenge evidence.',
+      detail: 'This workflow demonstrates OIDC sign-in, Verified ID or YubiKey assurance, and a wallet-signed decision for each high-value approval or rejection.',
+      steps: [
+        'Authenticate with Verified ID, YubiKey, or wallet-only lab.',
+        'Review the expense table and choose approve or reject.',
+        'Approve the wallet challenge and review the ledger evidence.'
+      ]
+    },
+    signatures: {
+      id: 'signatures',
+      title: 'E-Signatures',
+      eyebrow: 'Document signing',
+      icon: 'bi-file-earmark-check',
+      path: '/signatures',
+      summary: 'Upload a PDF, place a signature field, and sign the envelope with a mobile wallet challenge.',
+      detail: 'This workflow demonstrates a DocuSign-style journey where the signing ceremony is backed by Aegis wallet evidence and a ledger payload.',
+      steps: [
+        'Authenticate before opening the template designer.',
+        'Upload a PDF and place a reusable signature field.',
+        'Send a wallet signature challenge and stamp the signed envelope.'
+      ]
+    },
+    ledger: {
+      id: 'ledger',
+      title: 'Ledger',
+      eyebrow: 'Audit evidence',
+      icon: 'bi-journal-check',
+      path: '/ledger',
+      summary: 'Review wallet challenge payloads, YubiKey step-up events, expense decisions, and document envelopes.',
+      detail: 'This view is the assurance evidence layer shared by the example applications.',
+      steps: [
+        'Authenticate to the example app.',
+        'Open the ledger view.',
+        'Inspect signed challenge payloads and local decision indexes.'
+      ]
+    }
+  };
+
+  const appInfo = apps[appId];
+  if (!appInfo) {
+    const error = new Error('Example app not found.');
+    error.status = 404;
+    throw error;
+  }
+  return appInfo;
+}
+
+function normalizeReturnTo(value) {
+  const candidate = String(value || '/').trim();
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) {
+    return '/';
+  }
+  return candidate;
+}
+
+function loginLandingForPath(pathname) {
+  if (pathname.startsWith('/expenses')) {
+    return '/apps/expenses';
+  }
+  if (pathname.startsWith('/signatures')) {
+    return '/apps/signatures';
+  }
+  if (pathname.startsWith('/ledger')) {
+    return '/apps/ledger';
+  }
+  return '/';
 }

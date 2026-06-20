@@ -7,11 +7,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import ca.vanguardcs.aegisid.wallet.BuildConfig
 import ca.vanguardcs.aegisid.wallet.model.AriesInvitation
 import ca.vanguardcs.aegisid.wallet.model.CredentialOrganization
 import ca.vanguardcs.aegisid.wallet.model.LabAcceptance
 import ca.vanguardcs.aegisid.wallet.model.OrganizationProfile
 import ca.vanguardcs.aegisid.wallet.model.WalletChallengeBanner
+import ca.vanguardcs.aegisid.wallet.model.WalletChallengePayloadField
 import ca.vanguardcs.aegisid.wallet.model.WalletConnection
 import ca.vanguardcs.aegisid.wallet.model.WalletConnectionState
 import ca.vanguardcs.aegisid.wallet.model.WalletPasskeyStatus
@@ -116,6 +118,11 @@ class WalletStore(
         lastLabError = null
 
         try {
+            if (AegisCredentialInviteParser.canParse(rawText)) {
+                importCredentialInvite(AegisCredentialInviteParser.parse(rawText))
+                return
+            }
+
             val invitation = OobInvitationParser.parse(rawText)
             if (connections.any { it.invitation.id == invitation.id }) {
                 lastImportMessage = "Invitation already saved."
@@ -139,6 +146,62 @@ class WalletStore(
         } catch (error: Exception) {
             lastImportError = error.message ?: "Invitation could not be imported."
         }
+    }
+
+    private fun importCredentialInvite(invite: AegisCredentialInvite) {
+        if (transactions.any { it.type == WalletTransactionType.Credential && it.remoteId == invite.credentialId }) {
+            lastImportMessage = "Credential invite already saved."
+            return
+        }
+
+        val existing = connections.firstOrNull { organizationKey(it) == invite.organizationId }
+        val connection = existing ?: WalletConnection(
+            invitation = AriesInvitation(
+                id = "credential-${invite.credentialId}",
+                label = invite.organizationName,
+                rawUrl = invite.rawUrl,
+                endpoint = BuildConfig.AEGIS_WEB_APP_BASE_URL,
+                organizationId = invite.organizationId,
+                organizationName = invite.organizationName,
+                subscriptionId = null,
+                handshakeProtocols = emptyList(),
+                services = emptyList()
+            ),
+            state = WalletConnectionState.CredentialOffered,
+            holderConnectionId = "aegis-credential-invite:${invite.credentialId}"
+        )
+
+        if (existing == null) {
+            connections = listOf(connection) + connections
+            saveConnections()
+        } else {
+            updateConnection(existing.id) { it.copy(state = WalletConnectionState.CredentialOffered) }
+        }
+
+        transactions = listOf(
+            WalletTransaction(
+                connectionId = connection.id,
+                type = WalletTransactionType.Credential,
+                status = WalletTransactionStatus.PendingAcceptance,
+                title = "Credential invite received",
+                detail = "${invite.organizationName} invited ${invite.holderEmail.ifBlank { "this wallet" }} to accept an organization credential.",
+                remoteId = invite.credentialId,
+                appName = "Vanguard Aegis ID",
+                action = "accept-credential",
+                resourceType = "credential-invitation",
+                resourceId = invite.credentialId,
+                payloadFields = listOf(
+                    WalletChallengePayloadField(key = "organizationId", value = invite.organizationId),
+                    WalletChallengePayloadField(key = "organizationName", value = invite.organizationName),
+                    WalletChallengePayloadField(key = "credentialId", value = invite.credentialId),
+                    WalletChallengePayloadField(key = "holderEmail", value = invite.holderEmail),
+                    WalletChallengePayloadField(key = "expiresAt", value = invite.expiresAt ?: "Not provided")
+                )
+            )
+        ) + transactions
+        saveTransactions()
+        refreshOrganizationProfile(invite.organizationId)
+        lastImportMessage = "Credential invite saved. Open Ledger to accept it."
     }
 
     fun acceptLatestInvitationInLab() {
@@ -319,7 +382,16 @@ class WalletStore(
                     "Vanguard Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id}."
                 )
             }
-            when {
+            if (transaction.type == WalletTransactionType.Credential &&
+                transaction.resourceType == "credential-invitation" &&
+                (transaction.remoteId != null || transaction.resourceId != null)
+            ) {
+                labClient.acceptCredentialInvitation(
+                    credentialId = transaction.remoteId ?: transaction.resourceId.orEmpty(),
+                    organizationId = currentConnection.invitation.organizationId ?: transaction.payloadValue("organizationId").orEmpty(),
+                    holderEmail = transaction.payloadValue("holderEmail")
+                )
+            } else when {
                 transaction.webAcceptPath != null -> labClient.acceptWalletChallenge(transaction.webAcceptPath)
                 transaction.webSessionId != null -> labClient.acceptOidcWalletChallenge(transaction.webSessionId)
             }
@@ -329,7 +401,7 @@ class WalletStore(
                 updateConnection(connection.id) { it.copy(state = WalletConnectionState.Connected) }
             }
             lastLabMessage = if (transaction.type == WalletTransactionType.Credential) {
-                "Mock credential accepted."
+                "Credential accepted."
             } else {
                 "Challenge accepted and response sent."
             }
@@ -592,3 +664,6 @@ class WalletStore(
         }
     }
 }
+
+private fun WalletTransaction.payloadValue(key: String): String? =
+    payloadFields.firstOrNull { it.key == key }?.value

@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RCMP Aegis ID Portal Concept</title>
+  <style>
+    :root {
+      --gc-black: #111111;
+      --gc-red: #d3080c;
+      --gc-blue: #284162;
+      --gc-link: #295376;
+      --ink: #102033;
+      --muted: #536579;
+      --line: #d6e0ea;
+      --soft: #f3f6f9;
+      --success: #278400;
+      --warning: #f2d40d;
+      --max: 1180px;
+      font-family: "Noto Sans", "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: var(--ink);
+    }
+
+    a {
+      color: var(--gc-link);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .skip {
+      position: absolute;
+      left: -999px;
+      top: 8px;
+      z-index: 10;
+      background: #ffffff;
+      padding: 10px;
+    }
+
+    .skip:focus {
+      left: 8px;
+    }
+
+    .gc-top {
+      background: var(--gc-black);
+      color: #ffffff;
+    }
+
+    .gc-top__inner,
+    .brand-bar__inner,
+    .nav__inner,
+    .hero,
+    .section,
+    .footer__inner {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .gc-top__inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 44px;
+      align-items: center;
+      font-size: 0.92rem;
+    }
+
+    .gc-wordmark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+
+    .flag {
+      width: 38px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #e31b23 0 25%, #ffffff 25% 75%, #e31b23 75% 100%);
+      color: #e31b23;
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .language {
+      color: #ffffff;
+    }
+
+    .red-rule {
+      height: 4px;
+      background: var(--gc-red);
+    }
+
+    .brand-bar {
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .brand-bar__inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      min-height: 92px;
+    }
+
+    .department {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .crest {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--gc-red);
+      border-radius: 50%;
+      color: var(--gc-red);
+      font-weight: 900;
+    }
+
+    .department strong {
+      display: block;
+      color: var(--ink);
+      font-size: 1.1rem;
+    }
+
+    .department span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .search {
+      display: flex;
+      gap: 0;
+      min-width: min(360px, 100%);
+    }
+
+    .search input {
+      width: 100%;
+      border: 1px solid #7b8794;
+      padding: 11px 12px;
+      font: inherit;
+    }
+
+    .search button {
+      border: 0;
+      padding: 0 18px;
+      background: var(--gc-blue);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .nav {
+      border-bottom: 1px solid var(--line);
+      background: #f7f7f7;
+    }
+
+    .nav__inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      min-height: 54px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      color: var(--ink);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .auth-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 42px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--gc-blue);
+      border-radius: 3px;
+      padding: 0 16px;
+      background: #ffffff;
+      color: var(--gc-blue);
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .button--primary {
+      background: var(--gc-blue);
+      color: #ffffff;
+    }
+
+    .breadcrumb {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 22px auto 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: 44px;
+      padding: 48px 0 42px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      color: var(--gc-red);
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      font-size: 0.84rem;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 820px;
+      margin-bottom: 18px;
+      color: #111111;
+      font-size: clamp(2.4rem, 7vw, 5.2rem);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 760px;
+      color: #304154;
+      font-size: 1.22rem;
+      line-height: 1.55;
+    }
+
+    .notice {
+      border-left: 6px solid var(--warning);
+      padding: 16px 18px;
+      background: #fff8d6;
+      color: #282300;
+      font-weight: 650;
+    }
+
+    .portal-card {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #ffffff;
+      box-shadow: 0 20px 70px rgba(16, 32, 51, 0.12);
+      overflow: hidden;
+    }
+
+    .portal-card__head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      background: #f7f9fb;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border-radius: 999px;
+      padding: 0 10px;
+      color: #ffffff;
+      background: var(--success);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .portal-card__body {
+      padding: 22px;
+    }
+
+    .portal-card__body .field {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 14px;
+      margin-top: 12px;
+      background: #ffffff;
+    }
+
+    .field span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .field strong {
+      display: block;
+      margin-top: 6px;
+      color: var(--ink);
+      font-size: 1.05rem;
+    }
+
+    .section {
+      padding: 46px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section__head {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 36px;
+      align-items: start;
+      margin-bottom: 28px;
+    }
+
+    .section h2 {
+      margin-bottom: 12px;
+      color: #111111;
+      font-size: clamp(1.8rem, 3.4vw, 3rem);
+      line-height: 1.04;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 22px;
+      background: #ffffff;
+    }
+
+    .card h3 {
+      color: #111111;
+      font-size: 1.35rem;
+    }
+
+    .signed-in {
+      display: none;
+    }
+
+    body.is-authenticated .signed-out {
+      display: none;
+    }
+
+    body.is-authenticated .signed-in {
+      display: block;
+    }
+
+    body.is-authenticated .auth-actions.signed-in {
+      display: flex;
+    }
+
+    body.is-authenticated .signed-in.grid {
+      display: grid;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 24px;
+    }
+
+    .side {
+      border: 1px solid var(--line);
+      background: #f7f9fb;
+      padding: 18px;
+    }
+
+    .side a {
+      display: block;
+      padding: 10px 0;
+      color: var(--ink);
+      font-weight: 750;
+      text-decoration: none;
+    }
+
+    .table {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr auto;
+      gap: 14px;
+      align-items: center;
+      min-height: 58px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .row:last-child {
+      border-bottom: 0;
+    }
+
+    .row--head {
+      min-height: 42px;
+      background: #f7f9fb;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .footer {
+      margin-top: 48px;
+      border-top: 4px solid var(--gc-red);
+      background: #26374a;
+      color: #ffffff;
+    }
+
+    .footer__inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 28px 0;
+    }
+
+    .footer a {
+      color: #ffffff;
+    }
+
+    @media (max-width: 900px) {
+      .brand-bar__inner,
+      .hero,
+      .section__head,
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .brand-bar__inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 18px 0;
+      }
+
+      .cards,
+      .signed-in.grid {
+        grid-template-columns: 1fr;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to main content</a>
+  <header>
+    <div class="gc-top">
+      <div class="gc-top__inner">
+        <div class="gc-wordmark"><span class="flag">CA</span><span>Government of Canada</span></div>
+        <a class="language" href="#">Francais</a>
+      </div>
+    </div>
+    <div class="red-rule"></div>
+    <div class="brand-bar">
+      <div class="brand-bar__inner">
+        <div class="department" aria-label="Royal Canadian Mounted Police concept lockup">
+          <div class="crest">R</div>
+          <div>
+            <strong>Royal Canadian Mounted Police</strong>
+            <span>Gendarmerie royale du Canada</span>
+          </div>
+        </div>
+        <form class="search" role="search">
+          <label class="skip" for="search">Search</label>
+          <input id="search" type="search" placeholder="Search RCMP services">
+          <button type="submit">Search</button>
+        </form>
+      </div>
+    </div>
+    <nav class="nav" aria-label="Main navigation">
+      <div class="nav__inner">
+        <div class="nav-links">
+          <a href="#services">Services</a>
+          <a href="#portal">Secure portal</a>
+          <a href="#evidence">Evidence</a>
+          <a href="#references">References</a>
+        </div>
+        <div class="auth-actions signed-out">
+          <button class="button button--primary" type="button" data-sign-in>Sign in</button>
+          <a class="button" href="#register">Register</a>
+        </div>
+        <div class="auth-actions signed-in">
+          <button class="button" type="button" data-sign-out>Sign out</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="breadcrumb">RCMP.ca / Secure digital service concept / Aegis ID assurance</div>
+
+    <section class="hero" id="portal">
+      <div>
+        <p class="eyebrow">Concept landing page</p>
+        <h1>Secure access for high-assurance citizen and partner services.</h1>
+        <p class="lead">This standalone mockup shows how an RCMP-styled portal could use Aegis ID to request stronger proof before sensitive actions such as application submission, evidence acknowledgement, or partner access.</p>
+        <p class="notice">Design review only. This is not an official RCMP service and does not use official RCMP imagery.</p>
+        <div class="auth-actions" style="margin-top: 22px;">
+          <button class="button button--primary" type="button" data-sign-in>Sign in to secure portal</button>
+          <a class="button" id="register" href="#register">Create an account</a>
+        </div>
+      </div>
+      <div class="portal-card">
+        <div class="portal-card__head">
+          <strong>Aegis ID assurance check</strong>
+          <span class="status">Ready</span>
+        </div>
+        <div class="portal-card__body">
+          <p class="eyebrow">Before protected access</p>
+          <h2 style="font-size: 2rem;">Wallet challenge required</h2>
+          <p>Applicants and partners can be asked to approve a wallet challenge before entering a protected workflow.</p>
+          <div class="field"><span>Application</span><strong>Partner services portal</strong></div>
+          <div class="field"><span>Proof method</span><strong>Aegis ID mobile app or Verified ID</strong></div>
+          <div class="field"><span>Audit</span><strong>Ledger event created after approval</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section signed-out" id="services">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Public services</p>
+          <h2>Public entry points stay simple.</h2>
+        </div>
+        <p>The page can keep the familiar government-service model: find information publicly, then require stronger proof only when the user enters a sensitive workflow.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <h3>Register for a secure account</h3>
+          <p>Create a portal profile and enroll an assurance method before submitting protected forms.</p>
+          <a class="button button--primary" href="#register">Register</a>
+        </article>
+        <article class="card">
+          <h3>Sign in with Aegis ID</h3>
+          <p>Return to an active request, approve a wallet challenge, and continue the workflow.</p>
+          <button class="button" type="button" data-sign-in>Sign in</button>
+        </article>
+        <article class="card">
+          <h3>Check service status</h3>
+          <p>View service notices, processing guidance, and contact options without signing in.</p>
+          <a class="button" href="#references">View links</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="section signed-in" id="authenticated">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Authenticated home</p>
+          <h2>Welcome back, secure user.</h2>
+        </div>
+        <p>The authenticated view uses the same public-service tone, but the actions require wallet approval, Verified ID proof, or YubiKey/passkey step-up depending on policy.</p>
+      </div>
+      <div class="dashboard">
+        <aside class="side" aria-label="Portal menu">
+          <a href="#authenticated">My requests</a>
+          <a href="#evidence">Wallet evidence</a>
+          <a href="#services">Submit a new request</a>
+          <a href="#references">Help and references</a>
+        </aside>
+        <div>
+          <div class="table">
+            <div class="row row--head"><span>Request</span><span>Status</span><span>Assurance</span><span>Action</span></div>
+            <div class="row"><strong>Background check consent</strong><span>Ready to submit</span><span>Aegis wallet</span><button class="button button--primary" type="button">Approve</button></div>
+            <div class="row"><strong>Partner portal access</strong><span>Pending review</span><span>Verified ID</span><button class="button" type="button">View</button></div>
+            <div class="row"><strong>Evidence acknowledgement</strong><span>Requires signature</span><span>YubiKey/passkey</span><button class="button" type="button">Sign</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="evidence">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Why Aegis ID fits</p>
+          <h2>Every sensitive action can create evidence.</h2>
+        </div>
+        <p>Aegis ID can sit beside a Power Pages or portal experience as the assurance layer: who signed in, what credential they presented, what challenge they approved, and when the event happened.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <h3>Identity proof</h3>
+          <p>Request Microsoft Verified ID or another wallet credential before disclosing restricted services.</p>
+        </article>
+        <article class="card">
+          <h3>Action proof</h3>
+          <p>Send an Aegis wallet challenge for consent, submission, approval, or acknowledgement.</p>
+        </article>
+        <article class="card">
+          <h3>Hardware proof</h3>
+          <p>Require YubiKey or platform passkey step-up for higher-risk administrative or signing actions.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="references">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">Reference sources</p>
+          <h2>Official design and content references.</h2>
+        </div>
+        <p>Use these links while turning the design concept into a real Power Pages implementation.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <h3>GCWeb</h3>
+          <p>Canada.ca theme and WET-BOEW implementation guidance.</p>
+          <a href="https://wet-boew.github.io/GCWeb/index-en.html" target="_blank" rel="noopener">Open GCWeb</a>
+        </article>
+        <article class="card">
+          <h3>RCMP.ca</h3>
+          <p>Public RCMP services, categories, and content tone for future validation.</p>
+          <a href="https://rcmp.ca/en" target="_blank" rel="noopener">Open RCMP.ca</a>
+        </article>
+        <article class="card">
+          <h3>Aegis ID</h3>
+          <p>Replace this concept with real Power Pages routes and Aegis ID challenge endpoints.</p>
+          <a href="get-started-guide.html" target="_blank" rel="noopener">Open Aegis guide</a>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <strong>RCMP Aegis ID portal concept</strong>
+      <span>Standalone design review page for Vanguard Aegis ID integration planning.</span>
+    </div>
+  </footer>
+
+  <script>
+    const setAuth = (authenticated) => {
+      document.body.classList.toggle('is-authenticated', authenticated);
+      if (authenticated) {
+        document.querySelector('#authenticated')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+
+    document.querySelectorAll('[data-sign-in]').forEach((button) => {
+      button.addEventListener('click', () => setAuth(true));
+    });
+
+    document.querySelectorAll('[data-sign-out]').forEach((button) => {
+      button.addEventListener('click', () => setAuth(false));
+    });
+  </script>
+</body>
+</html>

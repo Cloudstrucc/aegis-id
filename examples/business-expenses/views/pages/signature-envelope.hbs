@@ -1,0 +1,89 @@
+<section class="container-fluid py-4 px-lg-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+      <p class="eyebrow">Signature envelope</p>
+      <h1 class="mb-1">{{envelope.templateName}}</h1>
+      <p class="text-muted mb-0">{{envelope.pdfFileName}} · <code>{{envelope.signatureId}}</code></p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary" href="/signatures">Back to signatures</a>
+      <a class="btn btn-primary" href="/challenge/{{envelope.challengeId}}?returnTo=/signatures/envelopes/{{envelope.id}}">Watch wallet challenge</a>
+    </div>
+  </div>
+
+  {{#if created}}
+    <div class="alert alert-info">
+      Signature challenge sent. Open the Vanguard Aegis ID wallet, approve the challenge, and this envelope will update automatically.
+    </div>
+  {{/if}}
+
+  <div class="row g-4 align-items-start">
+    <div class="col-xl-8">
+      <div class="surface-card">
+        <div class="pdf-workspace" data-envelope-id="{{envelope.id}}">
+          <div class="pdf-toolbar">
+            <span>Status: <strong data-envelope-status>{{envelope.status}}</strong></span>
+            <span>{{envelope.signatureId}}</span>
+          </div>
+          <div class="pdf-canvas-wrap" data-pdf-canvas-wrap>
+            <canvas data-pdf-canvas></canvas>
+            <div class="signature-field is-envelope status-{{envelope.status}}" data-signature-field>
+              <span data-signature-label>
+                {{#if (eq envelope.status "signed")}}
+                  Digitally signed
+                {{else}}
+                  Awaiting wallet signature
+                {{/if}}
+              </span>
+              <small data-signature-meta>
+                {{#if (eq envelope.status "signed")}}
+                  {{envelope.signedBy}} · {{envelope.signedAt}}
+                {{else}}
+                  {{envelope.actorEmail}} · {{envelope.signatureId}}
+                {{/if}}
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="surface-card mb-4">
+        <div class="card-kicker">Envelope details</div>
+        <dl class="detail-list">
+          <div>
+            <dt>Status</dt>
+            <dd><span class="badge status-{{envelope.status}}">{{envelope.status}}</span></dd>
+          </div>
+          <div>
+            <dt>Signer</dt>
+            <dd>{{envelope.actorName}}<br><span>{{envelope.actorEmail}}</span></dd>
+          </div>
+          <div>
+            <dt>Signature ID</dt>
+            <dd><code>{{envelope.signatureId}}</code></dd>
+          </div>
+          <div>
+            <dt>Wallet challenge</dt>
+            <dd><code>{{envelope.challengeId}}</code></dd>
+          </div>
+          {{#if envelope.signedAt}}
+            <div>
+              <dt>Signed at</dt>
+              <dd>{{envelope.signedAt}}</dd>
+            </div>
+          {{/if}}
+        </dl>
+      </div>
+
+      <div class="surface-card">
+        <div class="card-kicker">Ledger evidence</div>
+        <p class="mb-0 text-muted">The signature stamp is backed by the Aegis wallet challenge payload and the ledger challenge ID. Use the ledger page to inspect the full immutable event.</p>
+        <a class="btn btn-outline-primary w-100 mt-3" href="/ledger">Open Ledger</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script type="application/json" data-pdf-document>{{json envelope}}</script>

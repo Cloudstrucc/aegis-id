@@ -1,56 +1,63 @@
-<section class="hero">
-  <div class="container py-5">
-    <div class="row align-items-center g-4">
-      <div class="col-lg-7">
-        <span class="badge text-bg-success mb-3">Verified ID + YubiKey + wallet signature</span>
-        <h1 class="display-5 fw-bold">Business expense approvals with the right assurance path.</h1>
-        <p class="lead">
-          Sign in with Aegis ID, prove eligibility with Microsoft Verified ID or hardware-backed presence with YubiKey/FIDO2, then sign each approve/reject decision with the Aegis wallet ledger.
+<section class="example-hero">
+  <div class="container-fluid px-lg-5 py-5">
+    <div class="row align-items-center g-5">
+      <div class="col-xl-7">
+        <p class="eyebrow">Vanguard Aegis ID App Integration Examples</p>
+        <h1>High-assurance actions in real business apps.</h1>
+        <p class="hero-copy">
+          Use Microsoft Verified ID, YubiKey/FIDO2, and Aegis wallet challenges to prove identity, step up assurance, and sign high-value decisions.
         </p>
         {{#unless configured}}
           <div class="alert alert-warning">
             Set <code>AEGIS_ORGANIZATION_ID</code> or <code>AEGIS_ISSUER_CONNECTION_ID</code> before creating wallet challenges.
           </div>
         {{/unless}}
-        <div class="d-flex flex-wrap gap-2">
-          <form action="/auth/start" method="post">
-            <input type="hidden" name="intent" value="sign-in">
-            <input type="hidden" name="authMethod" value="verified-id">
-            <button class="btn btn-light btn-lg" type="submit">Sign in with Verified ID</button>
-          </form>
-          <form action="/auth/start" method="post">
-            <input type="hidden" name="intent" value="register">
-            <input type="hidden" name="authMethod" value="verified-id">
-            <button class="btn btn-outline-light btn-lg" type="submit">Register with Verified ID</button>
-          </form>
-          <form action="/auth/start" method="post">
-            <input type="hidden" name="intent" value="sign-in">
-            <input type="hidden" name="authMethod" value="yubikey">
-            <button class="btn btn-outline-light btn-lg" type="submit">Sign in with YubiKey</button>
-          </form>
-          <form action="/auth/start" method="post">
-            <input type="hidden" name="intent" value="sign-in">
-            <input type="hidden" name="authMethod" value="wallet">
-            <button class="btn btn-outline-light btn-lg" type="submit">Use wallet-only lab</button>
-          </form>
-        </div>
       </div>
-      <div class="col-lg-5">
-        <div class="card shadow-lg border-0">
-          <div class="card-body p-4">
-            <h2 class="h4">Assurance flow</h2>
-            <ol class="list-group list-group-numbered mt-3">
-              <li class="list-group-item">OIDC authorization through Aegis ID</li>
-              <li class="list-group-item">Verified ID presentation or YubiKey FIDO2 step-up</li>
-              <li class="list-group-item">Expense decision challenge per approval/rejection</li>
-              <li class="list-group-item">Ledger record in app dashboard and wallet</li>
-            </ol>
-            <div class="alert alert-info mt-3 mb-0">
-              Verified ID proves portable eligibility. YubiKey proves hardware-backed presence. The Aegis wallet challenge records the high-value approval action.
-            </div>
+      <div class="col-xl-5">
+        <div class="assurance-panel">
+          <div>
+            <span class="panel-dot"></span>
+            <strong>Verified ID</strong>
+            <span>Portable credential proof</span>
+          </div>
+          <div>
+            <span class="panel-dot"></span>
+            <strong>YubiKey / FIDO2</strong>
+            <span>Hardware-backed user presence</span>
+          </div>
+          <div>
+            <span class="panel-dot"></span>
+            <strong>Aegis wallet challenge</strong>
+            <span>Ledgered consent and signature evidence</span>
           </div>
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<section class="container-fluid px-lg-5 py-5">
+  <div class="section-heading">
+    <p class="eyebrow">Example apps</p>
+    <h2>Choose a demo workflow.</h2>
+    <p>Authenticate once, then try expense approvals or PDF e-signatures with the same Aegis ID wallet evidence layer.</p>
+  </div>
+
+  <div class="app-tile-grid">
+    <article class="app-tile">
+      <span class="tile-icon"><i class="bi bi-receipt-cutoff"></i></span>
+      <p class="eyebrow">Expense approvals</p>
+      <h3>Business Expenses</h3>
+      <p>Approve or reject expense records with a per-decision wallet challenge and immutable ledger payload.</p>
+      <a class="btn btn-primary" href="/apps/expenses">Open Expenses</a>
+    </article>
+
+    <article class="app-tile">
+      <span class="tile-icon"><i class="bi bi-file-earmark-check"></i></span>
+      <p class="eyebrow">Document signing</p>
+      <h3>E-Signatures</h3>
+      <p>Upload a PDF, place a signature field, send a wallet signing challenge, and stamp the signed envelope.</p>
+      <a class="btn btn-primary" href="/apps/signatures">Open E-Signatures</a>
+    </article>
   </div>
 </section>

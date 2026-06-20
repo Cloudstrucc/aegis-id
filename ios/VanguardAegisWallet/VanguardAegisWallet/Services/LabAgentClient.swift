@@ -214,6 +214,19 @@ struct LabAgentClient {
         try await get(webAppURL.appending(path: "api/organizations/\(organizationId)/profile"))
     }
 
+    func acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?) async throws {
+        _ = try await post(
+            webAppURL.appending(path: "api/wallet/credential-invitations/\(credentialId)/accept"),
+            body: try JSONEncoder().encode(
+                CredentialInvitationAcceptanceRequest(
+                    organizationId: organizationId,
+                    holderEmail: holderEmail,
+                    source: "ios-wallet"
+                )
+            )
+        ) as CredentialInvitationAcceptanceResponse
+    }
+
     private var usesHostedLabBridge: Bool {
         AegisWalletEnvironment.usesHostedWebApp
     }
@@ -475,6 +488,17 @@ struct IssuerOrganizationConnectionRegistration: Encodable {
 
 struct IssuerOrganizationConnectionRegistrationResponse: Decodable {
     var ok: Bool
+}
+
+struct CredentialInvitationAcceptanceRequest: Encodable {
+    var organizationId: String
+    var holderEmail: String?
+    var source: String
+}
+
+struct CredentialInvitationAcceptanceResponse: Decodable {
+    var ok: Bool
+    var status: String
 }
 
 struct EmptyResponse: Decodable {}

@@ -90,6 +90,22 @@ az webapp config appsettings set \
 
 7. Restart the Aegis ID web app if Azure does not apply the setting automatically.
 
+For dev or QA web apps, set the same variable on the matching environment instead:
+
+```bash
+az webapp config appsettings set \
+  --resource-group rg-vanguard-aegis-id-dev \
+  --name vanguard-aegis-id-dev-65067d \
+  --settings ANDROID_TESTING_URL="PASTE_DEV_TESTING_LINK_HERE"
+
+az webapp config appsettings set \
+  --resource-group rg-vanguard-aegis-id-qa \
+  --name vanguard-aegis-id-qa-65067d \
+  --settings ANDROID_TESTING_URL="PASTE_QA_TESTING_LINK_HERE"
+```
+
+The web deploy script also reads `ANDROID_TESTING_URL` from `.env`, `.env.dev`, or `.env.qa`. Keep the env value blank if you prefer managing the testing link only in Azure App Service settings.
+
 ## 6. Use a Proper QA Track
 
 Use this when testing with a stable group of Android users.

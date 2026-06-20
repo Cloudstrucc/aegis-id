@@ -211,9 +211,9 @@ private fun HomeScreen(store: WalletStore) {
             } else {
                 AegisCard {
                     StatusBadge("Ready for QR import", VanguardColors.Green)
-                    Text("Start with an issuer invitation", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Start with a wallet invitation", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(
-                        "Scan a QR deep link or paste an Aegis ID issuer invitation from the web dashboard. Accepted organizations appear in the Organizations tab.",
+                        "Scan a QR deep link or paste an Aegis ID credential invitation or Aries lab issuer invitation from the web dashboard. Organizations appear in the Organizations tab.",
                         color = Color.Gray
                     )
                 }
@@ -227,7 +227,7 @@ private fun HomeScreen(store: WalletStore) {
                     value = pastedInvitation,
                     onValueChange = { pastedInvitation = it },
                     minLines = 4,
-                    placeholder = { Text("aegisid://invite?oob=...") },
+                    placeholder = { Text("aegisid://credential-invite?... or aegisid://invite?oob=...") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Button(
@@ -312,7 +312,7 @@ private fun OrganizationsScreen(store: WalletStore) {
             item {
                 EmptyState(
                     "No credential organizations",
-                    "Accept a Vanguard Aegis ID issuer invitation to see the organizations you hold credentials or wallet challenge history for."
+                    "Accept a Vanguard Aegis ID credential invitation or issuer invitation to see organizations you hold credentials or wallet challenge history for."
                 )
             }
         } else {
@@ -329,8 +329,8 @@ private fun OrganizationsScreen(store: WalletStore) {
 
 @Composable
 private fun LedgerScreen(store: WalletStore, onGetPasskey: suspend (String) -> JSONObject) {
-    val challengeTransactions = store.transactions
-        .filter { it.type == WalletTransactionType.Challenge }
+    val ledgerTransactions = store.transactions
+        .filter { it.type == WalletTransactionType.Challenge || it.type == WalletTransactionType.Credential }
         .sortedByDescending { it.createdAt }
 
     LazyColumn(
@@ -338,15 +338,15 @@ private fun LedgerScreen(store: WalletStore, onGetPasskey: suspend (String) -> J
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        if (challengeTransactions.isEmpty()) {
+        if (ledgerTransactions.isEmpty()) {
             item {
                 EmptyState(
                     "No wallet ledger entries",
-                    "Fetch connected app challenges after Verified ID or YubiKey web sign-in, then accept them to build a local high-assurance action ledger."
+                    "Scan credential invitations or fetch connected app challenges, then accept them to build a local high-assurance action ledger."
                 )
             }
         } else {
-            items(challengeTransactions, key = { it.id }) { transaction ->
+            items(ledgerTransactions, key = { it.id }) { transaction ->
                 TransactionCard(
                     transaction = transaction,
                     onAccept = { store.acceptTransaction(transaction) },
@@ -366,7 +366,7 @@ private fun ConnectionsScreen(store: WalletStore) {
     ) {
         if (store.connections.isEmpty()) {
             item {
-                EmptyState("No connections", "Import an Aries out-of-band invitation from the web dashboard.")
+                EmptyState("No connections", "Import an Aegis credential invitation or Aries lab out-of-band invitation from the web dashboard.")
             }
         } else {
             items(store.connections, key = { it.id }) { connection ->
@@ -690,10 +690,14 @@ private fun transactionStatusTint(status: WalletTransactionStatus): Color = when
 }
 
 private fun actionButtonTitle(transaction: WalletTransaction): String {
+    if (transaction.type == WalletTransactionType.Credential) {
+        return "Accept credential"
+    }
+
     val action = transaction.action
         ?.replace("-", " ")
         ?.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-        ?: if (transaction.type == WalletTransactionType.Credential) "Accept credential" else "Accept challenge"
+        ?: "Accept challenge"
     val resourceType = transaction.resourceType?.takeIf { it.isNotBlank() }
     return if (resourceType == null) action else "$action ${resourceType.lowercase()}"
 }

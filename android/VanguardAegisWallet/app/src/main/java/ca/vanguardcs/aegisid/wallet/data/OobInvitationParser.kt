@@ -6,6 +6,66 @@ import ca.vanguardcs.aegisid.wallet.model.AriesInvitation
 import org.json.JSONArray
 import org.json.JSONObject
 
+data class AegisCredentialInvite(
+    val organizationId: String,
+    val organizationName: String,
+    val credentialId: String,
+    val holderEmail: String,
+    val expiresAt: String?,
+    val rawUrl: String
+)
+
+object AegisCredentialInviteParser {
+    fun canParse(rawText: String): Boolean {
+        val uri = Uri.parse(rawText.trim())
+        return isCredentialInvite(uri)
+    }
+
+    fun parse(rawText: String): AegisCredentialInvite {
+        val trimmed = rawText.trim()
+        val uri = Uri.parse(trimmed)
+        if (!isCredentialInvite(uri)) {
+            throw InvitationParseException("Paste an Aegis ID credential invitation URL.")
+        }
+
+        val organizationId = queryValue(uri, "organization_id", "organizationId")
+        val credentialId = queryValue(uri, "credential_id", "credentialId") ?: credentialIdFromPath(uri.path)
+        if (organizationId.isNullOrBlank() || credentialId.isNullOrBlank()) {
+            throw InvitationParseException("The credential invitation is missing organization or credential details.")
+        }
+
+        return AegisCredentialInvite(
+            organizationId = organizationId,
+            organizationName = queryValue(uri, "organization_name", "organizationName") ?: "Vanguard organization",
+            credentialId = credentialId,
+            holderEmail = queryValue(uri, "holder_email", "holderEmail") ?: "",
+            expiresAt = queryValue(uri, "expires_at", "expiresAt"),
+            rawUrl = trimmed
+        )
+    }
+
+    private fun isCredentialInvite(uri: Uri): Boolean {
+        return (uri.scheme == "aegisid" && uri.host == "credential-invite") ||
+            uri.path.orEmpty().contains("/wallet/credential-invitations/")
+    }
+
+    private fun credentialIdFromPath(path: String?): String? {
+        val value = path.orEmpty()
+        if (!value.contains("/wallet/credential-invitations/")) return null
+        return value.substringAfterLast('/').takeIf { it.isNotBlank() }
+    }
+
+    private fun queryValue(uri: Uri, vararg names: String): String? {
+        for (name in names) {
+            val value = uri.getQueryParameter(name)
+            if (!value.isNullOrBlank()) {
+                return value
+            }
+        }
+        return null
+    }
+}
+
 object OobInvitationParser {
     fun parse(rawText: String): AriesInvitation {
         val normalized = normalizeInvitationUrl(rawText.trim())

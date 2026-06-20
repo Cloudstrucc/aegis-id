@@ -1,5 +1,92 @@
 import Foundation
 
+struct AegisCredentialInvite: Equatable, Hashable {
+    var organizationId: String
+    var organizationName: String
+    var credentialId: String
+    var holderEmail: String
+    var expiresAt: String?
+    var rawURL: String
+}
+
+enum AegisCredentialInviteParser {
+    static func canParse(_ rawText: String) -> Bool {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = URLComponents(string: trimmed) else {
+            return false
+        }
+
+        return isCredentialInvite(components)
+    }
+
+    static func parse(_ rawText: String) throws -> AegisCredentialInvite {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = URLComponents(string: trimmed), isCredentialInvite(components) else {
+            throw ParserError.invalidInviteURL
+        }
+
+        let queryItems = components.queryItems ?? []
+        let credentialId = queryValue(["credential_id", "credentialId"], in: queryItems)
+            ?? credentialIdFromPath(components.path)
+        guard let organizationId = queryValue(["organization_id", "organizationId"], in: queryItems),
+              let credentialId,
+              !organizationId.isEmpty,
+              !credentialId.isEmpty
+        else {
+            throw ParserError.missingRequiredFields
+        }
+
+        return AegisCredentialInvite(
+            organizationId: organizationId,
+            organizationName: queryValue(["organization_name", "organizationName"], in: queryItems) ?? "Vanguard organization",
+            credentialId: credentialId,
+            holderEmail: queryValue(["holder_email", "holderEmail"], in: queryItems) ?? "",
+            expiresAt: queryValue(["expires_at", "expiresAt"], in: queryItems),
+            rawURL: trimmed
+        )
+    }
+
+    private static func isCredentialInvite(_ components: URLComponents) -> Bool {
+        if components.scheme == "aegisid", components.host == "credential-invite" {
+            return true
+        }
+
+        return components.path.contains("/wallet/credential-invitations/")
+    }
+
+    private static func credentialIdFromPath(_ path: String) -> String? {
+        guard path.contains("/wallet/credential-invitations/") else {
+            return nil
+        }
+        return path.split(separator: "/").last.map(String.init)
+    }
+
+    private static func queryValue(_ names: [String], in items: [URLQueryItem]) -> String? {
+        for name in names {
+            if let value = items.first(where: { $0.name == name })?.value, !value.isEmpty {
+                return value
+            }
+        }
+        return nil
+    }
+}
+
+extension AegisCredentialInviteParser {
+    enum ParserError: LocalizedError {
+        case invalidInviteURL
+        case missingRequiredFields
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidInviteURL:
+                return "Paste an Aegis ID credential invitation URL."
+            case .missingRequiredFields:
+                return "The credential invitation is missing organization or credential details."
+            }
+        }
+    }
+}
+
 enum OOBInvitationParser {
     static func parse(_ rawText: String) throws -> AriesInvitation {
         let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)

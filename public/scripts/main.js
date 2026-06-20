@@ -184,7 +184,9 @@ document.querySelectorAll('[data-image-to-hidden]').forEach((input) => {
 });
 
 restoreDismissibleBanners();
-initWorkspaceTour();
+// Workspace tour is disabled while the onboarding guide is being redesigned.
+// The setup/configuration wizards remain available from the portal.
+// initWorkspaceTour();
 initAdminIdvWizard(document.querySelector('[data-idv-form]'));
 openInviteModalFromHash();
 

@@ -291,6 +291,7 @@ if [[ "$VERIFY_ONLY" != "1" ]]; then
     -x "ios/*" \
     -x "android/*" \
     -x "business-expenses/*" \
+    -x "docs/tutorial/rcmp-aegis-portal-concept.html" \
     -x "*.DS_Store" \
     -x "*.zip" \
     >/dev/null
