@@ -8,6 +8,7 @@ const {
   listWorkspacesForSubscription,
   registerWorkspaceForSubscription
 } = require('../services/platform-service');
+const { getOrganizationBranding } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
@@ -16,7 +17,7 @@ router.use('/organizations', requireAuthenticated);
 router.get('/organizations/:subscriptionId', async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
-    const organizations = await listWorkspacesForSubscription(subscription);
+    const organizations = await decorateOrganizations(await listWorkspacesForSubscription(subscription));
 
     res.render('pages/organizations', {
       title: 'Organizations',
@@ -100,6 +101,19 @@ router.post('/organizations/:subscriptionId/:workspaceId/delete', async (req, re
     next(error);
   }
 });
+
+async function decorateOrganizations(organizations) {
+  return Promise.all(organizations.map(async (organization) => {
+    const branding = await getOrganizationBranding(organization.id);
+    return {
+      ...organization,
+      brandInitial: organization.organization?.trim()?.charAt(0)?.toUpperCase() || 'V',
+      brandPrimaryColor: branding?.primaryColor || '#1769e0',
+      brandAccentColor: branding?.accentColor || '#00b7c7',
+      brandLogoDataUrl: branding?.logoDataUrl || ''
+    };
+  }));
+}
 
 async function loadSubscription(req) {
   const subscription = await getSubscriptionForUser(req.params.subscriptionId, req.user);

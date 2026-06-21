@@ -63,19 +63,25 @@ function renderDocumentPage(filePath, options = {}) {
 
 function buildDocumentPage(filePath, options = {}) {
   const html = fs.readFileSync(filePath, 'utf8');
-  const style = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)]
+  let style = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)]
     .map((match) => match[1].trim())
     .join('\n\n');
   const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] || '';
   let content = '';
 
   if (options.extract === 'main') {
-    content = body.match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1] || body;
+    const topbar = options.removeTopbar
+      ? ''
+      : body.match(/<header\s+class="topbar"[\s\S]*?<\/header>/i)?.[0] || '';
+    content = `${topbar}${body.match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1] || body}`;
   } else {
     content = body;
   }
 
   content = stripDocumentChrome(content, options);
+  if (options.scopeDocument !== false) {
+    ({ content, style } = scopeEmbeddedDocument(content, style));
+  }
 
   return {
     documentStyle: style,
@@ -100,6 +106,196 @@ function stripDocumentChrome(content, options = {}) {
   output = output.replace(/\s+target="_blank"\s+rel="noopener"(?=>)/g, '');
 
   return output;
+}
+
+function scopeEmbeddedDocument(content, style) {
+  const prefixedContent = prefixHtmlClasses(content);
+  const prefixedStyle = prefixCssClasses(style);
+  return {
+    content: prefixedContent,
+    style: scopeCssSelectors(prefixedStyle, '.embedded-document')
+  };
+}
+
+function prefixHtmlClasses(html) {
+  return html.replace(/\bclass=(["'])([\s\S]*?)\1/g, (match, quote, classValue) => {
+    const classes = classValue
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(prefixDocumentClass)
+      .join(' ');
+    return `class=${quote}${classes}${quote}`;
+  });
+}
+
+function prefixCssClasses(css) {
+  return css.replace(/\.(-?[_a-zA-Z]+[_a-zA-Z0-9-]*)/g, (match, className, offset, source) => {
+    const previous = source[offset - 1];
+    if (previous && /[a-zA-Z0-9_-]/.test(previous)) {
+      return match;
+    }
+    return `.${prefixDocumentClass(className)}`;
+  });
+}
+
+function prefixDocumentClass(className) {
+  if (className.startsWith('doc-')) {
+    return className;
+  }
+  return `doc-${className}`;
+}
+
+function scopeCssSelectors(css, scope) {
+  let output = '';
+  let cursor = 0;
+
+  while (cursor < css.length) {
+    const openIndex = css.indexOf('{', cursor);
+    if (openIndex === -1) {
+      output += css.slice(cursor);
+      break;
+    }
+
+    const selector = css.slice(cursor, openIndex).trim();
+    const closeIndex = findMatchingBrace(css, openIndex);
+    if (closeIndex === -1) {
+      output += css.slice(cursor);
+      break;
+    }
+
+    const body = css.slice(openIndex + 1, closeIndex);
+    if (isNestedAtRule(selector)) {
+      output += `${selector} {\n${scopeCssSelectors(body, scope)}\n}\n`;
+    } else if (isRawAtRule(selector)) {
+      output += `${selector} {${body}}\n`;
+    } else {
+      output += `${scopeSelectorList(selector, scope)} {${body}}\n`;
+    }
+    cursor = closeIndex + 1;
+  }
+
+  return output;
+}
+
+function findMatchingBrace(css, openIndex) {
+  let depth = 0;
+  let quote = null;
+  let inComment = false;
+
+  for (let index = openIndex; index < css.length; index += 1) {
+    const char = css[index];
+    const next = css[index + 1];
+
+    if (inComment) {
+      if (char === '*' && next === '/') {
+        inComment = false;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (quote) {
+      if (char === '\\') {
+        index += 1;
+      } else if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      inComment = true;
+      index += 1;
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+
+    if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+}
+
+function isNestedAtRule(selector) {
+  return /^@(media|supports|container|layer)\b/i.test(selector);
+}
+
+function isRawAtRule(selector) {
+  return /^@(keyframes|font-face|page|property)\b/i.test(selector);
+}
+
+function scopeSelectorList(selectorList, scope) {
+  return splitSelectorList(selectorList)
+    .map((selector) => scopeSingleSelector(selector.trim(), scope))
+    .join(',\n');
+}
+
+function splitSelectorList(selectorList) {
+  const selectors = [];
+  let current = '';
+  let depth = 0;
+  let quote = null;
+
+  for (let index = 0; index < selectorList.length; index += 1) {
+    const char = selectorList[index];
+    if (quote) {
+      current += char;
+      if (char === '\\') {
+        index += 1;
+        current += selectorList[index] || '';
+      } else if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      current += char;
+      continue;
+    }
+    if (char === '(' || char === '[') {
+      depth += 1;
+      current += char;
+      continue;
+    }
+    if (char === ')' || char === ']') {
+      depth -= 1;
+      current += char;
+      continue;
+    }
+    if (char === ',' && depth === 0) {
+      selectors.push(current);
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+
+  if (current.trim()) {
+    selectors.push(current);
+  }
+  return selectors;
+}
+
+function scopeSingleSelector(selector, scope) {
+  if (!selector || selector.startsWith('@') || selector.startsWith(scope)) {
+    return selector;
+  }
+  if (/^(:root|html|body)(?=$|[\s.#:[>+~])/.test(selector)) {
+    return selector.replace(/^(:root|html|body)/, scope);
+  }
+  return `${scope} ${selector}`;
 }
 
 function createApp() {
@@ -214,7 +410,7 @@ function createApp() {
       title: 'Get Started Guide',
       description: 'Vanguard Aegis ID onboarding and assurance setup guide.',
       extract: 'main',
-      removeTopbar: true,
+      removeTopbar: false,
       scripts: [{ src: '/docs/tutorial/assets/get-started-guide.js' }]
     })
   );

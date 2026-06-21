@@ -15,7 +15,13 @@
     <div class="organization-grid">
       {{#each organizations}}
         <article class="organization-tile {{#if isDisabled}}organization-tile--disabled{{/if}}">
-          <div class="organization-tile__mark" aria-hidden="true">V</div>
+          <div class="organization-tile__mark" style="--org-primary: {{brandPrimaryColor}}; --org-accent: {{brandAccentColor}};" aria-hidden="true">
+            {{#if brandLogoDataUrl}}
+              <img src="{{brandLogoDataUrl}}" alt="">
+            {{else}}
+              {{brandInitial}}
+            {{/if}}
+          </div>
           <div class="organization-tile__body">
             <span class="track-label">{{roleLabel}} / {{statusLabel}}</span>
             <h3>{{organization}}</h3>

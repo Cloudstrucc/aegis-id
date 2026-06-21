@@ -1211,6 +1211,16 @@ async function getOrganizationProfile(organizationId) {
   };
 }
 
+async function getOrganizationBranding(organizationId) {
+  const states = await stateStore.read();
+  const state = states.find((record) => record.workspaceId === organizationId);
+  if (!state) {
+    return null;
+  }
+  normalizeState(state);
+  return state.branding;
+}
+
 async function getCredentialInvitationView(organizationId, credentialId, options = {}) {
   const states = await stateStore.read();
   const state = states.find((record) => record.workspaceId === organizationId);
@@ -2582,6 +2592,7 @@ module.exports = {
   grantCredentialConsent,
   getCredentialInvitationView,
   getOrgAdminView,
+  getOrganizationBranding,
   getOrganizationProfile,
   acceptCredentialInvitation,
   issueCredential,
