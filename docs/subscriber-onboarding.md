@@ -1,8 +1,11 @@
 # Subscriber Onboarding Wizard
 
-The anonymous landing page only creates a subscriber account. The user must sign in with Passport.js and complete email, SMS, or passkey second-factor verification before subscribing an organization.
+The anonymous landing page creates an Aegis ID account. The user must sign in with Passport.js and complete email, SMS, or passkey second-factor verification before accessing organization workspaces, accepting portal-side invitations, or subscribing a new organization.
 
-After verification, the user subscribes an organization at:
+There are two first-run paths:
+
+1. **Invited credential holder** - if the account email matches an invited or active credential, the user lands on the Organizations page and sees the organization where they are an employee, contractor, contributor, or other credential holder. The user can open that workspace with credential-holder privileges and still subscribe their own organization later.
+2. **New organization administrator** - if the user is creating an organization workspace, they subscribe an organization at:
 
 ```text
 /subscribe
@@ -15,6 +18,8 @@ The verified subscriber becomes the first organization administrator. After the 
 ```
 
 The organization selector at `/organizations/<subscription-id>` now includes lifecycle controls. Administrators can open an organization workspace, disable it temporarily, re-enable it, or delete it from the active selector. Disabled organizations remain visible with a disabled status so operators can pause onboarding without losing context. Deleted workspaces are removed from the active selector and should be treated as pilot cleanup unless a production retention workflow is added.
+
+Credential holders see only organizations tied to their credential invitations. Their access record does not mutate the organization administrator member list, and destructive organization lifecycle controls remain hidden unless they are an administrator.
 
 The dashboard shows each platform Aegis ID can connect to:
 
@@ -110,6 +115,14 @@ The challenge sender is an issuing organization, not just a raw connection. To m
 4. Accept that invitation in the Vanguard Cloud Services iOS simulator wallet.
 5. The wallet registers the completed issuer connection back to the org.
 6. The OIDC wallet demo can then select that org as the challenge sender.
+
+When an administrator invites a person to the organization, the credential invitation page includes:
+
+- A wallet QR / deep link for the Vanguard Aegis ID mobile app.
+- A portal **Create account** link prefilled for the invited email.
+- A portal **Sign in** link for existing users.
+
+The invited user should register or sign in with the same email address used in the credential invite. On successful MFA, Aegis ID opens the Organizations page and shows that organization as a credential-holder workspace.
 
 ## Security Notes
 

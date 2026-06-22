@@ -141,7 +141,7 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
    npm run dev
    ```
 
-2. Open the landing page and create a subscriber account:
+2. Open the landing page and create an Aegis ID account:
 
    ```text
    http://localhost:3000
@@ -149,7 +149,9 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
 
    Register with a work email and password, then complete the second-factor step. In local development, email/SMS codes are displayed on the verification page so you can test without a mail or SMS provider.
 
-3. Subscribe an organization after MFA:
+   If that email already has a credential invitation from an organization, Aegis ID sends the user directly to the Organizations page and shows the orgs where they are a credential holder. They can still subscribe their own organization later from the account page.
+
+3. Subscribe an organization after MFA when the user is creating an admin workspace:
 
    ```text
    /subscribe
@@ -186,7 +188,7 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
    - Scan the generated Vanguard Aegis ID Wallet QR, or copy the deep link into the simulator.
    - In the iOS simulator wallet, open **Connections**, open the org issuer connection, then tap **Accept invitation in lab**.
 
-   After acceptance, the iOS wallet registers the completed issuer connection back to the subscriber org. That org is then available as a challenge sender in the OIDC wallet demo.
+   The invitation page also includes portal registration and sign-in links for the invited email. After the invited person creates or signs in to an Aegis ID account with that same email, the Organizations page shows the org as a credential-holder workspace. After wallet acceptance, the credential becomes active and that org is available as a challenge sender in the OIDC wallet demo.
 
 7. Test the OIDC + wallet challenge relying-party app:
 
@@ -218,16 +220,17 @@ Use this checklist to exercise the full Vanguard Cloud Services - Aegis ID lab f
 - `/auth/register` Passport.js local registration.
 - `/auth/login` Passport.js local login.
 - `/auth/verify` email/SMS/passkey second-factor verification.
-- `/account` authenticated subscriber account home.
-- `/subscribe` authenticated organization subscription.
-- `/organizations/:subscriptionId` authenticated organization selector/registration.
+- `/account` authenticated account home for subscribed organizations and credential-holder memberships.
+- `/subscribe` authenticated organization subscription for users creating an admin workspace.
+- `/organizations/:subscriptionId` authenticated organization selector for admin, contributor, or credential-holder access.
 - `/architecture` authenticated architecture view and local demo API controls.
 - `/demo/oidc-wallet` authenticated example OIDC app that requires a wallet challenge before access.
 - `/demo/metadata/keycloak/realms/vanguard/.well-known/openid-configuration` local Keycloak-shaped OIDC discovery document.
 - `/demo/metadata/okta/oauth2/default/.well-known/openid-configuration` local Okta-shaped OIDC discovery document.
 - `/demo/metadata/generic/oidc` local generic OIDC discovery document.
 - `/demo/metadata/generic/saml` local generic SAML metadata document.
-- `/dashboard/:subscriptionId` authenticated subscriber dashboard after organization subscription.
+- `/wallet/credential-invitations/:credentialId` credential invite landing page with wallet QR plus portal registration/sign-in links.
+- `/dashboard/:subscriptionId` authenticated workspace dashboard after organization subscription or credential-holder membership.
 - `/dashboard/:subscriptionId/platforms/:platformId/setup` interactive platform setup wizard.
 - `/api/health` service health.
 - `/api/issuer/create-offer` creates a mock or live issuance request.

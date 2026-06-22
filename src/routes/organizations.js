@@ -8,7 +8,10 @@ const {
   listWorkspacesForSubscription,
   registerWorkspaceForSubscription
 } = require('../services/platform-service');
-const { getOrganizationBranding } = require('../services/org-admin-service');
+const {
+  getOrganizationBranding,
+  listCredentialMembershipsForEmail
+} = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
@@ -17,7 +20,8 @@ router.use('/organizations', requireAuthenticated);
 router.get('/organizations/:subscriptionId', async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
-    const organizations = await decorateOrganizations(await listWorkspacesForSubscription(subscription));
+    const membershipWorkspaceIds = await getCredentialMembershipWorkspaceIds(req);
+    const organizations = await decorateOrganizations(await listWorkspacesForSubscription(subscription, { membershipWorkspaceIds }));
 
     res.render('pages/organizations', {
       title: 'Organizations',
@@ -113,6 +117,11 @@ async function decorateOrganizations(organizations) {
       brandLogoDataUrl: branding?.logoDataUrl || ''
     };
   }));
+}
+
+async function getCredentialMembershipWorkspaceIds(req) {
+  const memberships = await listCredentialMembershipsForEmail(req.user.email);
+  return [...new Set(memberships.map((membership) => membership.workspaceId).filter(Boolean))];
 }
 
 async function loadSubscription(req) {

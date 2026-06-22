@@ -1,7 +1,7 @@
 <section class="page-hero page-hero--compact">
   <p class="eyebrow">Subscriber access</p>
   <h1>Create your Aegis ID account.</h1>
-  <p>Register first, complete second-factor verification, then subscribe one or more organizations.</p>
+  <p>Register first, complete second-factor verification, then open organizations you belong to or subscribe your own organization.</p>
 </section>
 
 <section class="band band--white">
@@ -9,7 +9,7 @@
     <div class="section-heading">
       <p class="eyebrow">Secure signup</p>
       <h2>Start with a verified user account.</h2>
-      <p>Vanguard Cloud Services uses Passport.js sessions with a second factor before organization subscription and administration are available.</p>
+      <p>Vanguard Cloud Services uses Passport.js sessions with a second factor before organization access, subscription, and administration are available.</p>
     </div>
 
     <form class="subscribe-form" action="/auth/register" method="post" novalidate>
@@ -59,7 +59,7 @@
 
       <div class="field-row">
         <div class="field-group">
-          <label for="organization">Organization to subscribe</label>
+          <label for="organization">Organization to subscribe (optional)</label>
           <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization">
         </div>
         <div class="field-group">

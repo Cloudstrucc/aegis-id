@@ -40,8 +40,15 @@ async function writeAuditEvent(type, data = {}) {
   return event;
 }
 
+async function listAuditEvents() {
+  const events = await store.read();
+  return events
+    .slice()
+    .sort((left, right) => Date.parse(right.createdAt || 0) - Date.parse(left.createdAt || 0));
+}
+
 function cryptoRandomId() {
   return require('node:crypto').randomUUID();
 }
 
-module.exports = { writeAuditEvent, redact };
+module.exports = { writeAuditEvent, listAuditEvents, redact };

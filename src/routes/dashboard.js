@@ -13,7 +13,10 @@ const {
   savePlatformStep
 } = require('../services/platform-service');
 const { listIssuerOrganizations } = require('../services/issuer-organization-service');
-const { getOrgAdminView } = require('../services/org-admin-service');
+const {
+  getOrgAdminView,
+  listCredentialMembershipsForEmail
+} = require('../services/org-admin-service');
 const { listWalletChallengeLedger } = require('../services/wallet-challenge-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
@@ -23,7 +26,8 @@ router.use('/dashboard', requireAuthenticated);
 router.get('/dashboard/:subscriptionId', async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
-    const workspaces = await listWorkspacesForSubscription(subscription);
+    const membershipWorkspaceIds = await getCredentialMembershipWorkspaceIds(req);
+    const workspaces = await listWorkspacesForSubscription(subscription, { membershipWorkspaceIds });
     if (workspaces.length === 0) {
       return res.redirect(303, `/organizations/${subscription.id}`);
     }
@@ -39,7 +43,7 @@ router.get('/dashboard/:subscriptionId', async (req, res, next) => {
 router.get('/dashboard/:subscriptionId/orgs/:workspaceId', async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
-    const workspace = await loadWorkspace(subscription, req.params.workspaceId);
+    const workspace = await loadWorkspace(req, subscription, req.params.workspaceId);
     const issuerOrganizations = await listIssuerOrganizations(subscription.id, workspace.id);
     const orgAdmin = await getOrgAdminView(workspace, subscription, req.query, {
       publicBaseUrl: getRequestBaseUrl(req)
@@ -72,7 +76,7 @@ router.get('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req,
 router.get('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/setup', async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
-    const workspace = await loadWorkspace(subscription, req.params.workspaceId);
+    const workspace = await loadWorkspace(req, subscription, req.params.workspaceId);
     getPlatformDefinition(req.params.platformId);
 
     res.render(
@@ -198,8 +202,9 @@ async function loadSubscription(req) {
   return subscription;
 }
 
-async function loadWorkspace(subscription, workspaceId) {
-  const workspace = await getWorkspaceForSubscription(subscription, workspaceId);
+async function loadWorkspace(req, subscription, workspaceId) {
+  const membershipWorkspaceIds = await getCredentialMembershipWorkspaceIds(req);
+  const workspace = await getWorkspaceForSubscription(subscription, workspaceId, { membershipWorkspaceIds });
   if (!workspace) {
     const error = new Error('Organization workspace not found for this subscriber.');
     error.status = 404;
@@ -209,6 +214,11 @@ async function loadWorkspace(subscription, workspaceId) {
 }
 
 module.exports = router;
+
+async function getCredentialMembershipWorkspaceIds(req) {
+  const memberships = await listCredentialMembershipsForEmail(req.user.email);
+  return [...new Set(memberships.map((membership) => membership.workspaceId).filter(Boolean))];
+}
 
 function getRequestBaseUrl(req) {
   return `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');

@@ -15,6 +15,10 @@ const {
 } = require('../services/auth-service');
 const { writeAuditEvent } = require('../services/audit-service');
 const {
+  ensureAccountAccessSubscription
+} = require('../services/subscription-service');
+const { hasCredentialMembershipForEmail } = require('../services/org-admin-service');
+const {
   completeLogin,
   requireAnonymous,
   requirePendingSecondFactor
@@ -23,6 +27,7 @@ const {
 const router = express.Router();
 
 router.get('/auth/register', requireAnonymous, (req, res) => {
+  captureReturnTo(req);
   res.render('pages/auth-register', buildRegisterView(req));
 });
 
@@ -31,7 +36,11 @@ router.post('/auth/register', requireAnonymous, async (req, res, next) => {
     const user = await registerUser(req.body);
     req.session.pendingSecondFactorUserId = user.id;
     req.session.pendingSecondFactorMethod = user.preferredMfa;
-    req.session.subscriptionDraft = buildSubscriptionDraft(req.body, user);
+    if (shouldCreateSubscriptionDraft(req.body)) {
+      req.session.subscriptionDraft = buildSubscriptionDraft(req.body, user);
+    } else {
+      delete req.session.subscriptionDraft;
+    }
 
     if (user.preferredMfa === 'email' || user.preferredMfa === 'sms') {
       req.session.secondFactorDelivery = await createOtpChallenge(user.id, user.preferredMfa);
@@ -57,10 +66,11 @@ router.post('/auth/register', requireAnonymous, async (req, res, next) => {
 });
 
 router.get('/auth/login', requireAnonymous, (req, res) => {
+  captureReturnTo(req);
   res.render('pages/auth-login', {
     title: 'Sign in',
     description: 'Sign in to Vanguard Cloud Services - Aegis ID.',
-    formValues: { email: '' },
+    formValues: { email: normalizeEmail(req.query.email || '') },
     errorMessage: req.session.authError || null
   });
   req.session.authError = null;
@@ -185,7 +195,7 @@ router.post('/auth/logout', (req, res, next) => {
 });
 
 async function finishInteractiveLogin(req, res, user, method, json = false) {
-  const postAuthState = getPostAuthState(req);
+  const postAuthState = await getPostAuthState(req, user);
   await completeLogin(req, user);
   restorePostAuthState(req, postAuthState);
   await writeAuditEvent('auth.second_factor.accepted', {
@@ -199,8 +209,17 @@ async function finishInteractiveLogin(req, res, user, method, json = false) {
   return res.redirect(303, postAuthState.redirectUrl);
 }
 
-function getPostAuthState(req) {
-  const redirectUrl = req.session.subscriptionDraft ? '/subscribe' : req.session.returnTo || '/account';
+async function getPostAuthState(req, user) {
+  const hasCredentialMembership = await hasCredentialMembershipForEmail(user.email);
+  if (hasCredentialMembership) {
+    const accountAccessSubscription = await ensureAccountAccessSubscription(user);
+    return {
+      redirectUrl: `/organizations/${accountAccessSubscription.id}`,
+      subscriptionDraft: null
+    };
+  }
+
+  const redirectUrl = req.session.returnTo || (req.session.subscriptionDraft ? '/subscribe' : '/account');
   return {
     redirectUrl,
     subscriptionDraft: req.session.subscriptionDraft || null
@@ -210,6 +229,8 @@ function getPostAuthState(req) {
 function restorePostAuthState(req, postAuthState) {
   if (postAuthState.subscriptionDraft) {
     req.session.subscriptionDraft = postAuthState.subscriptionDraft;
+  } else {
+    delete req.session.subscriptionDraft;
   }
   delete req.session.pendingSecondFactorUserId;
   delete req.session.pendingSecondFactorMethod;
@@ -220,7 +241,7 @@ function restorePostAuthState(req, postAuthState) {
 function buildRegisterView(req, overrides = {}) {
   const formValues = {
     displayName: '',
-    email: '',
+    email: normalizeEmail(req.query.email || ''),
     phone: '',
     organization: '',
     plan: 'pilot',
@@ -234,11 +255,34 @@ function buildRegisterView(req, overrides = {}) {
 
   return {
     title: 'Create account',
-    description: 'Create a Vanguard Cloud Services - Aegis ID subscriber account.',
+    description: 'Create a Vanguard Cloud Services - Aegis ID account.',
     formValues,
     formErrors: overrides.formErrors || {},
     errorMessage: overrides.errorMessage || null
   };
+}
+
+function shouldCreateSubscriptionDraft(input = {}) {
+  return Boolean(String(input.organization || '').trim());
+}
+
+function captureReturnTo(req) {
+  const returnTo = normalizeReturnTo(req.query.returnTo);
+  if (returnTo) {
+    req.session.returnTo = returnTo;
+  }
+}
+
+function normalizeReturnTo(value = '') {
+  const candidate = String(value || '').trim();
+  if (!candidate || !candidate.startsWith('/') || candidate.startsWith('//')) {
+    return '';
+  }
+  return candidate;
+}
+
+function normalizeEmail(value = '') {
+  return String(value || '').trim().toLowerCase();
 }
 
 function buildVerifyView(req, user, method, overrides = {}) {

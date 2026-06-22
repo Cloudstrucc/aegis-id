@@ -439,11 +439,17 @@ async function registerWorkspaceForSubscription(subscription, input = {}) {
   return decorateWorkspaceForSubscription(workspace, subscription);
 }
 
-async function listWorkspacesForSubscription(subscription) {
+async function listWorkspacesForSubscription(subscription, options = {}) {
   const workspaces = await store.read();
+  const credentialWorkspaceIds = normalizeCredentialWorkspaceIds(options);
   return workspaces
-    .filter((workspace) => workspaceBelongsToSubscription(workspace, subscription) && workspace.status !== 'deleted')
-    .map((workspace) => decorateWorkspaceForSubscription(ensureMembership(workspace, subscription), subscription))
+    .filter((workspace) => {
+      if (workspace.status === 'deleted') {
+        return false;
+      }
+      return workspaceBelongsToSubscription(workspace, subscription) || credentialWorkspaceIds.has(workspace.id);
+    })
+    .map((workspace) => decorateWorkspaceForAccess(workspace, subscription, credentialWorkspaceIds))
     .sort((left, right) => new Date(right.updatedAt || right.createdAt).getTime() - new Date(left.updatedAt || left.createdAt).getTime());
 }
 
@@ -455,8 +461,8 @@ async function getWorkspace(subscriptionId, workspaceId) {
   return workspaces.find((workspace) => workspace.subscriptionId === subscriptionId) || null;
 }
 
-async function getWorkspaceForSubscription(subscription, workspaceId) {
-  const workspaces = await listWorkspacesForSubscription(subscription);
+async function getWorkspaceForSubscription(subscription, workspaceId, options = {}) {
+  const workspaces = await listWorkspacesForSubscription(subscription, options);
   if (!workspaceId) {
     return workspaces[0] || null;
   }
@@ -989,16 +995,46 @@ function ensureMembership(workspace, subscription, defaultRole = 'administrator'
   return workspace;
 }
 
-function decorateWorkspaceForSubscription(workspace, subscription) {
+function decorateWorkspaceForAccess(workspace, subscription, credentialWorkspaceIds = new Set()) {
+  if (workspaceBelongsToSubscription(workspace, subscription)) {
+    return decorateWorkspaceForSubscription(ensureMembership(workspace, subscription), subscription);
+  }
+
+  if (credentialWorkspaceIds.has(workspace.id)) {
+    return decorateWorkspaceForSubscription(
+      {
+        ...workspace,
+        role: 'credential-holder',
+        roleLabel: roleLabel('credential-holder')
+      },
+      subscription,
+      { credentialAccess: true }
+    );
+  }
+
+  return decorateWorkspaceForSubscription(workspace, subscription);
+}
+
+function decorateWorkspaceForSubscription(workspace, subscription, options = {}) {
+  const role = normalizeRole(workspace.role);
   return {
     ...workspace,
     status: workspace.status || 'active',
     statusLabel: workspaceStatusLabel(workspace.status),
     isDisabled: workspace.status === 'disabled',
-    role: normalizeRole(workspace.role),
-    roleLabel: roleLabel(workspace.role),
-    dashboardPath: dashboardPath(subscription.id, workspace.id)
+    role,
+    roleLabel: roleLabel(role),
+    dashboardPath: dashboardPath(subscription.id, workspace.id),
+    isCredentialMember: Boolean(options.credentialAccess),
+    canManageWorkspace: !options.credentialAccess && role === 'administrator'
   };
+}
+
+function normalizeCredentialWorkspaceIds(options = {}) {
+  return new Set([
+    ...(Array.isArray(options.membershipWorkspaceIds) ? options.membershipWorkspaceIds : []),
+    ...(Array.isArray(options.credentialWorkspaceIds) ? options.credentialWorkspaceIds : [])
+  ].filter(Boolean));
 }
 
 function dashboardPath(subscriptionId, workspaceId) {
@@ -1007,11 +1043,18 @@ function dashboardPath(subscriptionId, workspaceId) {
 
 function normalizeRole(value = '') {
   const normalized = String(value || '').trim().toLowerCase();
-  return ['administrator', 'contributor'].includes(normalized) ? normalized : 'administrator';
+  return ['administrator', 'contributor', 'credential-holder'].includes(normalized) ? normalized : 'administrator';
 }
 
 function roleLabel(role = '') {
-  return normalizeRole(role) === 'contributor' ? 'Contributor' : 'Administrator';
+  const normalized = normalizeRole(role);
+  if (normalized === 'contributor') {
+    return 'Contributor';
+  }
+  if (normalized === 'credential-holder') {
+    return 'Credential holder';
+  }
+  return 'Administrator';
 }
 
 function workspaceStatusLabel(status = '') {

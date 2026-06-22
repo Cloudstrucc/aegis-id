@@ -65,6 +65,41 @@ async function createSubscription(input, user = null) {
   return store.append(record);
 }
 
+async function ensureAccountAccessSubscription(user) {
+  if (!user) {
+    const error = new Error('Authenticated user is required.');
+    error.status = 401;
+    throw error;
+  }
+
+  const subscriptions = await listSubscriptions();
+  const email = normalizeEmail(user.email);
+  const existing = subscriptions.find((subscription) => isAccountAccessSubscription(subscription) && ownsSubscription(subscription, user));
+  if (existing) {
+    return existing;
+  }
+
+  const now = new Date().toISOString();
+  const record = {
+    id: crypto.randomUUID(),
+    email,
+    organization: 'Credential memberships',
+    role: 'credential-holder',
+    plan: 'pilot',
+    interest: 'both',
+    notes: 'Portal access record for credential-holder organization memberships.',
+    userId: user.id,
+    status: 'active',
+    source: 'portal-account',
+    createdAt: now,
+    updatedAt: now
+  };
+
+  subscriptions.push(record);
+  await store.write(subscriptions);
+  return record;
+}
+
 async function listSubscriptions() {
   return store.read();
 }
@@ -95,10 +130,16 @@ function ownsSubscription(subscription, user) {
   return subscription.userId === user.id || normalizeEmail(subscription.email) === normalizeEmail(user.email);
 }
 
+function isAccountAccessSubscription(subscription = {}) {
+  return subscription.source === 'portal-account';
+}
+
 module.exports = {
   createSubscription,
+  ensureAccountAccessSubscription,
   getSubscription,
   getSubscriptionForUser,
+  isAccountAccessSubscription,
   listSubscriptionsForUser,
   listSubscriptions,
   validateSubscription

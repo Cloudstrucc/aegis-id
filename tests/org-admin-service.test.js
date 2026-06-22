@@ -240,11 +240,92 @@ test('org admin view scopes menus and credentials by assigned role privileges', 
   assert.equal(employeeView.peopleTable.filteredCount, 1);
 });
 
+test('credential-holder memberships appear in organization access without admin mutation', async (t) => {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vanguard-org-membership-'));
+  const previousWorkspacePath = process.env.SUBSCRIBER_WORKSPACE_STORE_PATH;
+  const previousOrgAdminPath = process.env.ORG_ADMIN_STORE_PATH;
+  const previousOrgEventsPath = process.env.ORG_ADMIN_EVENT_STORE_PATH;
+  const previousSubscriptionPath = process.env.SUBSCRIPTION_STORE_PATH;
+  process.env.SUBSCRIBER_WORKSPACE_STORE_PATH = path.join(tempDir, 'workspaces.json');
+  process.env.ORG_ADMIN_STORE_PATH = path.join(tempDir, 'org-admin.json');
+  process.env.ORG_ADMIN_EVENT_STORE_PATH = path.join(tempDir, 'org-admin-events.json');
+  process.env.SUBSCRIPTION_STORE_PATH = path.join(tempDir, 'subscriptions.json');
+  resetModules();
+
+  t.after(() => {
+    restoreEnv('SUBSCRIBER_WORKSPACE_STORE_PATH', previousWorkspacePath);
+    restoreEnv('ORG_ADMIN_STORE_PATH', previousOrgAdminPath);
+    restoreEnv('ORG_ADMIN_EVENT_STORE_PATH', previousOrgEventsPath);
+    restoreEnv('SUBSCRIPTION_STORE_PATH', previousSubscriptionPath);
+    resetModules();
+  });
+
+  const workspace = {
+    id: 'org-membership',
+    subscriptionId: 'sub-admin',
+    organization: 'Vanguard Membership Org',
+    ownerEmail: 'admin@vanguardcs.ca',
+    members: [{ email: 'admin@vanguardcs.ca', role: 'administrator', addedAt: new Date().toISOString() }],
+    platforms: {},
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  const admin = { id: 'sub-admin', email: 'admin@vanguardcs.ca', organization: 'Vanguard Membership Org' };
+  await fs.writeFile(process.env.SUBSCRIBER_WORKSPACE_STORE_PATH, JSON.stringify([workspace], null, 2), 'utf8');
+
+  const {
+    issueCredential,
+    listCredentialMembershipsForEmail
+  } = require('../src/services/org-admin-service');
+  const {
+    ensureAccountAccessSubscription
+  } = require('../src/services/subscription-service');
+  const {
+    listWorkspacesForSubscription
+  } = require('../src/services/platform-service');
+
+  await issueCredential(workspace, admin, {
+    holderEmail: 'employee@vanguardcs.ca',
+    displayName: 'Employee Holder',
+    roleIds: ['role-employee'],
+    claim_email: 'employee@vanguardcs.ca',
+    claim_displayName: 'Employee Holder'
+  });
+
+  const memberships = await listCredentialMembershipsForEmail('employee@vanguardcs.ca');
+  assert.equal(memberships.length, 1);
+  assert.equal(memberships[0].workspaceId, workspace.id);
+  assert.equal(memberships[0].status, 'invited');
+
+  const accountAccess = await ensureAccountAccessSubscription({
+    id: 'user-employee',
+    email: 'employee@vanguardcs.ca',
+    displayName: 'Employee Holder'
+  });
+  const workspaces = await listWorkspacesForSubscription(accountAccess, {
+    membershipWorkspaceIds: memberships.map((membership) => membership.workspaceId)
+  });
+
+  assert.equal(workspaces.length, 1);
+  assert.equal(workspaces[0].id, workspace.id);
+  assert.equal(workspaces[0].role, 'credential-holder');
+  assert.equal(workspaces[0].roleLabel, 'Credential holder');
+  assert.equal(workspaces[0].canManageWorkspace, false);
+  assert.equal(workspaces[0].dashboardPath, `/dashboard/${accountAccess.id}/orgs/${workspace.id}`);
+
+  const persistedWorkspaces = JSON.parse(await fs.readFile(process.env.SUBSCRIBER_WORKSPACE_STORE_PATH, 'utf8'));
+  assert.equal(
+    persistedWorkspaces[0].members.some((member) => member.email === 'employee@vanguardcs.ca'),
+    false
+  );
+});
+
 function resetModules() {
   for (const modulePath of [
     '../src/config',
     '../src/services/platform-service',
-    '../src/services/org-admin-service'
+    '../src/services/org-admin-service',
+    '../src/services/subscription-service'
   ]) {
     delete require.cache[require.resolve(modulePath)];
   }

@@ -29,18 +29,20 @@
           </div>
           <div class="organization-tile__actions">
             <a class="button button--blue" href="{{dashboardPath}}">Open</a>
-            {{#if isDisabled}}
-              <form action="/organizations/{{subscriptionId}}/{{id}}/enable" method="post">
-                <button class="button button--ghost" type="submit">Enable</button>
-              </form>
-            {{else}}
-              <form action="/organizations/{{subscriptionId}}/{{id}}/disable" method="post">
-                <button class="button button--ghost" type="submit">Disable</button>
+            {{#if canManageWorkspace}}
+              {{#if isDisabled}}
+                <form action="/organizations/{{subscriptionId}}/{{id}}/enable" method="post">
+                  <button class="button button--ghost" type="submit">Enable</button>
+                </form>
+              {{else}}
+                <form action="/organizations/{{subscriptionId}}/{{id}}/disable" method="post">
+                  <button class="button button--ghost" type="submit">Disable</button>
+                </form>
+              {{/if}}
+              <form action="/organizations/{{subscriptionId}}/{{id}}/delete" method="post" data-confirm-message="Delete this organization workspace from your list? Audit history is retained.">
+                <button class="button button--ghost" type="submit">Delete</button>
               </form>
             {{/if}}
-            <form action="/organizations/{{subscriptionId}}/{{id}}/delete" method="post" data-confirm-message="Delete this organization workspace from your list? Audit history is retained.">
-              <button class="button button--ghost" type="submit">Delete</button>
-            </form>
           </div>
         </article>
       {{/each}}

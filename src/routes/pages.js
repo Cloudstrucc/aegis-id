@@ -4,6 +4,7 @@ const QRCode = require('qrcode');
 const config = require('../config');
 const { requireAuthenticated } = require('../middleware/auth');
 const { getPresentationPolicy } = require('../services/credential-policy-service');
+const { getHealthDashboard } = require('../services/health-service');
 const { getHomeContent } = require('../services/home-content');
 const { getCredentialInvitationView } = require('../services/org-admin-service');
 
@@ -20,6 +21,19 @@ router.get('/architecture', requireAuthenticated, (req, res) => {
     policy: getPresentationPolicy(),
     microsoftMode: config.verifiedId.mode
   });
+});
+
+router.get('/health', async (req, res, next) => {
+  try {
+    const health = await getHealthDashboard();
+    res.render('pages/health', {
+      title: 'Health',
+      description: 'Vanguard Aegis ID service health and recent operational logs.',
+      health
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get('/lab/mock-wallet/:kind/:state', requireAuthenticated, async (req, res, next) => {

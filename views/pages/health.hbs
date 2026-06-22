@@ -1,0 +1,76 @@
+<section class="health-page">
+  <div class="health-hero">
+    <p class="eyebrow">Service health</p>
+    <h1>Vanguard Aegis ID status.</h1>
+    <p>Live status for the Microsoft-native path and Aries interoperability lab services, plus recent audit events from the last 24 hours.</p>
+    <div class="health-summary" aria-label="Health summary">
+      <article>
+        <strong>{{health.summary.healthy}} / {{health.summary.total}}</strong>
+        <span>Services healthy</span>
+      </article>
+      <article>
+        <strong>{{health.verifiedIdMode}}</strong>
+        <span>Verified ID mode</span>
+      </article>
+      <article>
+        <strong>{{health.summary.logs}}</strong>
+        <span>24-hour log entries</span>
+      </article>
+    </div>
+  </div>
+
+  <div class="health-card-grid">
+    {{#each health.serviceChecks}}
+      <article class="health-card health-card--{{badgeClass}}">
+        <div class="health-card__head">
+          <div>
+            <p class="eyebrow">{{category}}</p>
+            <h2>{{label}}</h2>
+          </div>
+          <span class="health-badge health-badge--{{badgeClass}}">{{statusLabel}}</span>
+        </div>
+        <p>{{message}}</p>
+        <code>{{endpoint}}</code>
+      </article>
+    {{/each}}
+  </div>
+
+  <section class="health-log-panel">
+    <div class="health-log-panel__head">
+      <div>
+        <p class="eyebrow">Last 24 hours</p>
+        <h2>Operational logs</h2>
+      </div>
+      <span>Checked {{health.checkedAtLabel}}</span>
+    </div>
+
+    {{#if health.hasRecentEvents}}
+      <div class="health-log-table-wrap">
+        <table class="health-log-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Event</th>
+              <th>Summary</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each health.recentEvents}}
+              <tr>
+                <td>{{createdAtLabel}}</td>
+                <td>{{type}}</td>
+                <td>{{summary}}</td>
+                <td><pre>{{details}}</pre></td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    {{else}}
+      <article class="empty-table-note health-empty">
+        No audit events were recorded in the last 24 hours.
+      </article>
+    {{/if}}
+  </section>
+</section>

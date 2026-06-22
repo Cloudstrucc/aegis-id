@@ -1148,11 +1148,12 @@
           <span class="step-number">01</span>
           <p class="step-kicker">Account registration</p>
           <h2>Create an Aegis ID account.</h2>
-          <p>The anonymous home page should lead the user to register, verify MFA, and then continue to organization setup.</p>
+          <p>The anonymous home page should lead the user to register, verify MFA, and then open invited organizations or subscribe a new organization workspace.</p>
           <ul class="checklist">
             <li>Enter name, work email, phone, and password.</li>
             <li>Complete email, SMS, or passkey second factor.</li>
-            <li>Land on the organization selection page.</li>
+            <li>Land on the organization selection page if the email matches a credential invite.</li>
+            <li>Subscribe a new organization only when the user is creating an admin workspace.</li>
           </ul>
         </div>
         <div class="visual-stack">
@@ -1180,11 +1181,11 @@
         <div class="step__copy">
           <span class="step-number">02</span>
           <p class="step-kicker">Organization workspace</p>
-          <h2>Register the organization.</h2>
-          <p>The first organization subscriber becomes the administrator. If no organization exists, the user sees a clear create-workspace action.</p>
+          <h2>Open or register the organization.</h2>
+          <p>Invited users see the organizations tied to their credential invitation. New organization subscribers can register a workspace and become the first administrator.</p>
           <ul class="checklist">
-            <li>Create the workspace and choose an initial plan.</li>
-            <li>Open the org dashboard from the organization tile.</li>
+            <li>Open an invited organization tile as a credential holder.</li>
+            <li>Or create a workspace and choose an initial plan.</li>
             <li>Review people, claims, roles, platform setup, branding, and audit logs.</li>
           </ul>
         </div>
@@ -1196,10 +1197,11 @@
               <div class="browser__title">Choose your workspace.</div>
               <div class="tiles">
                 <div class="tile"><strong>Vanguardcs</strong><span>Administrator</span><br><br><span class="ui-button">Open dashboard</span></div>
+                <div class="tile"><strong>Cloudstrucc</strong><span>Credential holder</span><br><br><span class="ui-button">Open org</span></div>
                 <div class="tile"><strong>Add org</strong><span>Subscribe another organization</span></div>
                 <div class="tile"><strong>Identity due</strong><span>Admin profile validation in 30 days</span></div>
               </div>
-              <div class="callout callout--bottom" data-pin="1">Click the organization tile to enter the workspace dashboard.</div>
+              <div class="callout callout--bottom" data-pin="1">Click an organization tile to enter with the role attached to your account or credential.</div>
               <span class="hotspot" style="left: 184px; top: 246px;"></span>
             </div>
           </div>
@@ -1211,11 +1213,12 @@
           <span class="step-number">03</span>
           <p class="step-kicker">Mobile wallet setup</p>
           <h2>Install the iOS wallet, then accept a credential invite.</h2>
-          <p>TestFlight handles the iOS install. The Aegis ID wallet accepts credential invites from the web dashboard and records the accepted credential locally.</p>
+          <p>TestFlight handles the iOS install. The invite page also includes portal registration and sign-in links for the invited email, so the same person can see the organization in the web app.</p>
           <ul class="checklist">
             <li>Open the TestFlight link on the iPhone.</li>
             <li>Install Vanguard Aegis ID Wallet.</li>
             <li>Scan the credential invitation QR code.</li>
+            <li>Create or sign in to the portal with the invited email.</li>
             <li>Open Ledger and accept the credential.</li>
           </ul>
         </div>
@@ -1237,6 +1240,7 @@
               <div>
                 <img class="qr-image" src="assets/credential-invite-qr.svg" alt="Example credential invite QR code">
                 <p style="margin: 16px 0 0; text-align: center; font-weight: 760;">aegisid://credential-invite?...</p>
+                <p style="margin: 10px 0 0; text-align: center; font-weight: 760;">Create portal account | Sign in</p>
               </div>
             </div>
           </div>

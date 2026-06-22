@@ -567,6 +567,56 @@ async function acceptCredentialInvitation(organizationId, credentialId, input = 
   };
 }
 
+async function listCredentialMembershipsForEmail(email) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    return [];
+  }
+
+  const states = await stateStore.read();
+  const memberships = [];
+
+  for (const state of states) {
+    normalizeState(state);
+    for (const credential of state.credentials) {
+      if (normalizeEmail(credential.holderEmail) !== normalizedEmail || credential.status === 'revoked') {
+        continue;
+      }
+
+      const roleLabels = normalizeArray(credential.roleIds)
+        .map((roleId) => state.roles.find((role) => role.id === roleId)?.name)
+        .filter(Boolean);
+      memberships.push({
+        workspaceId: state.workspaceId,
+        organizationName: state.organizationName,
+        credentialId: credential.id,
+        holderEmail: credential.holderEmail,
+        displayName: credential.displayName,
+        personType: normalizePersonType(credential.personType),
+        personTypeLabel: personTypeLabel(credential.personType),
+        status: credential.status || 'invited',
+        statusLabel: statusLabel(credential.status || 'invited'),
+        roleIds: normalizeArray(credential.roleIds),
+        roleLabels,
+        inviteExpiresAt: credential.inviteExpiresAt || null,
+        acceptedAt: credential.acceptedAt || null,
+        updatedAt: credential.updatedAt || credential.createdAt || null
+      });
+    }
+  }
+
+  return memberships.sort((left, right) => {
+    const leftTime = new Date(left.updatedAt || left.acceptedAt || left.inviteExpiresAt || 0).getTime();
+    const rightTime = new Date(right.updatedAt || right.acceptedAt || right.inviteExpiresAt || 0).getTime();
+    return rightTime - leftTime;
+  });
+}
+
+async function hasCredentialMembershipForEmail(email) {
+  const memberships = await listCredentialMembershipsForEmail(email);
+  return memberships.length > 0;
+}
+
 async function revokeCredential(workspace, subscription, credentialId, reason = '') {
   await assertOrgPrivilege(workspace, subscription, 'credentials.revoke');
   return mutateCredential(workspace, subscription, credentialId, 'credential.revoked', (credential) => {
@@ -1223,16 +1273,22 @@ async function getOrganizationBranding(organizationId) {
 
 async function getCredentialInvitationView(organizationId, credentialId, options = {}) {
   const states = await stateStore.read();
+  const publicBaseUrl = (options.publicBaseUrl || config.app.publicBaseUrl).replace(/\/$/, '');
   const state = states.find((record) => record.workspaceId === organizationId);
   if (!state) {
     throw notFound('Credential invitation was not found.');
   }
   normalizeState(state);
   const credential = findCredential(state, credentialId);
+  const invitePath = `/wallet/credential-invitations/${encodeURIComponent(credential.id)}?organizationId=${encodeURIComponent(organizationId)}`;
+  const portalParams = new URLSearchParams({
+    email: credential.holderEmail,
+    returnTo: invitePath
+  });
   const invitation = await buildCredentialInvitation(
     { id: organizationId, organization: state.organizationName },
     credential,
-    options
+    { ...options, publicBaseUrl }
   );
   return {
     organizationId,
@@ -1243,6 +1299,8 @@ async function getCredentialInvitationView(organizationId, credentialId, options
     inviteExpiresLabel: formatDate(credential.inviteExpiresAt),
     inviteExpired: isInviteExpired(credential),
     status: credential.status,
+    portalRegisterUrl: `${publicBaseUrl}/auth/register?${portalParams.toString()}`,
+    portalLoginUrl: `${publicBaseUrl}/auth/login?${portalParams.toString()}`,
     ...invitation
   };
 }
@@ -2591,6 +2649,8 @@ module.exports = {
   deleteRole,
   grantCredentialConsent,
   getCredentialInvitationView,
+  hasCredentialMembershipForEmail,
+  listCredentialMembershipsForEmail,
   getOrgAdminView,
   getOrganizationBranding,
   getOrganizationProfile,
