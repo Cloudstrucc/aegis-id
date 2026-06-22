@@ -363,13 +363,22 @@
           <div class="field-row">
             <div class="field-group">
               <label for="new-connected-app-grants">Grant types</label>
-              <input id="new-connected-app-grants" name="grantTypes" type="text" value="authorization_code client_credentials">
+              <input id="new-connected-app-grants" name="grantTypes" type="text" value="authorization_code client_credentials urn:openid:params:grant-type:ciba">
             </div>
             <div class="field-group">
               <label for="new-connected-app-onboarding">Registration mode</label>
               <select id="new-connected-app-onboarding" name="onboardingMode">
                 <option value="invite-only">Invite only</option>
                 <option value="open">Open registration</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="new-connected-app-signin-policy">Sign-in challenge policy</label>
+              <select id="new-connected-app-signin-policy" name="signInChallengePolicy">
+                <option value="disabled">No sign-in wallet challenge</option>
+                <option value="wallet">Wallet approval at sign-in</option>
+                <option value="passkey">Wallet plus passkey at sign-in</option>
+                <option value="verified-id">Verified credential at sign-in</option>
               </select>
             </div>
           </div>
@@ -2246,6 +2255,15 @@
                   <option value="wallet" {{#if (eq walletChallengePolicy "wallet")}}selected{{/if}}>Wallet approval</option>
                   <option value="passkey" {{#if (eq walletChallengePolicy "passkey")}}selected{{/if}}>Wallet plus passkey</option>
                   <option value="verified-id" {{#if (eq walletChallengePolicy "verified-id")}}selected{{/if}}>Verified credential</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="connected-app-signin-policy-{{id}}">Sign-in challenge policy</label>
+                <select id="connected-app-signin-policy-{{id}}" name="signInChallengePolicy">
+                  <option value="disabled" {{#if (eq signInChallengePolicy "disabled")}}selected{{/if}}>No sign-in wallet challenge</option>
+                  <option value="wallet" {{#if (eq signInChallengePolicy "wallet")}}selected{{/if}}>Wallet approval at sign-in</option>
+                  <option value="passkey" {{#if (eq signInChallengePolicy "passkey")}}selected{{/if}}>Wallet plus passkey at sign-in</option>
+                  <option value="verified-id" {{#if (eq signInChallengePolicy "verified-id")}}selected{{/if}}>Verified credential at sign-in</option>
                 </select>
               </div>
               <div class="field-group">

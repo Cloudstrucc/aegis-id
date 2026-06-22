@@ -9,7 +9,7 @@ struct ConnectionsView: View {
                 ContentUnavailableView(
                     "No connections",
                     systemImage: "link.badge.plus",
-                    description: Text("Import an Aegis credential invitation or Aries lab out-of-band invitation.")
+                    description: Text("Import an Aegis credential invitation, OpenID VC request, or Aries lab out-of-band invitation.")
                 )
             } else {
                 ForEach(store.connections) { connection in

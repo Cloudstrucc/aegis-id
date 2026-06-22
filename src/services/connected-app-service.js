@@ -2,7 +2,7 @@ const crypto = require('node:crypto');
 
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
-const { assertOrgPrivilege } = require('./org-admin-service');
+const { assertOrgPrivilege, listCredentialMembershipsForEmail } = require('./org-admin-service');
 const { createExternalWalletChallenge, getWalletChallenge, listWalletChallengeLedger } = require('./wallet-challenge-service');
 
 const appStore = new FileJsonStore(config.paths.connectedApps, []);
@@ -11,8 +11,26 @@ const codeStore = new FileJsonStore(config.paths.connectedAppOAuthCodes, []);
 const keyStore = new FileJsonStore(config.paths.connectedAppSigningKeys, { keys: [] });
 
 const DEFAULT_SCOPES = ['openid', 'profile', 'email', 'aegis.wallet_challenge'];
-const DEFAULT_CLAIMS = ['sub', 'email', 'name', 'organization_id', 'roles', 'acr', 'auth_time'];
-const SUPPORTED_GRANTS = ['authorization_code', 'client_credentials'];
+const DEFAULT_CLAIMS = [
+  'sub',
+  'email',
+  'name',
+  'organization_id',
+  'roles',
+  'acr',
+  'wallet_challenge_id',
+  'auth_time',
+  'credential_id',
+  'credential_status',
+  'person_type',
+  'division_id',
+  'identity_provider',
+  'upstream_subject',
+  'upstream_tenant_id'
+];
+const CIBA_GRANT_TYPE = 'urn:openid:params:grant-type:ciba';
+const SUPPORTED_GRANTS = ['authorization_code', 'client_credentials', CIBA_GRANT_TYPE];
+const SIGN_IN_CHALLENGE_POLICIES = ['disabled', 'wallet', 'passkey', 'verified-id'];
 const SECRET_TTL_DAYS = 180;
 const PAGE_SIZE_DEFAULT = 10;
 const PAGE_SIZE_MAX = 50;
@@ -123,6 +141,7 @@ async function createConnectedApp(workspace, subscription, input = {}) {
     claimKeys: normalizeSelection(input.claimKeys, DEFAULT_CLAIMS, DEFAULT_CLAIMS),
     onboardingMode: ['open', 'invite-only'].includes(input.onboardingMode) ? input.onboardingMode : 'invite-only',
     walletChallengePolicy: normalizeWalletPolicy(input.walletChallengePolicy),
+    signInChallengePolicy: normalizeSignInChallengePolicy(input.signInChallengePolicy),
     tokenEndpointAuthMethod: normalizeTokenAuthMethod(input.tokenEndpointAuthMethod),
     branding: normalizeBranding(input),
     emailTemplates: normalizeTemplates(input),
@@ -165,6 +184,7 @@ async function updateConnectedApp(workspace, subscription, appId, input = {}) {
     claimKeys: normalizeSelection(input.claimKeys, DEFAULT_CLAIMS, app.claimKeys),
     onboardingMode: ['open', 'invite-only'].includes(input.onboardingMode) ? input.onboardingMode : app.onboardingMode,
     walletChallengePolicy: normalizeWalletPolicy(input.walletChallengePolicy),
+    signInChallengePolicy: normalizeSignInChallengePolicy(input.signInChallengePolicy ?? app.signInChallengePolicy),
     tokenEndpointAuthMethod: normalizeTokenAuthMethod(input.tokenEndpointAuthMethod),
     branding: normalizeBranding(input, app.branding),
     emailTemplates: normalizeTemplates(input, app.emailTemplates),
@@ -444,12 +464,15 @@ async function getDiscovery(baseUrl) {
     issuer,
     authorization_endpoint: `${issuer}/authorize`,
     token_endpoint: `${issuer}/token`,
+    backchannel_authentication_endpoint: `${issuer}/backchannel-authentication`,
     jwks_uri: `${issuer}/jwks`,
     userinfo_endpoint: `${issuer}/userinfo`,
     introspection_endpoint: `${issuer}/introspect`,
     revocation_endpoint: `${issuer}/revoke`,
     response_types_supported: ['code'],
     grant_types_supported: SUPPORTED_GRANTS,
+    backchannel_token_delivery_modes_supported: ['poll'],
+    backchannel_user_code_parameter_supported: false,
     token_endpoint_auth_methods_supported: ['client_secret_post', 'client_secret_basic', 'private_key_jwt'],
     subject_types_supported: ['public'],
     id_token_signing_alg_values_supported: ['RS256'],
@@ -472,7 +495,16 @@ async function createConnectedAuthorizationCode(input = {}) {
   }
 
   const code = `aegis_code_${createToken(24)}`;
-  const claims = buildUserClaims(input, app);
+  const claims = await buildUserClaims(input, app);
+  const signInChallenge = await maybeCreateSignInChallenge(app, {
+    ...input,
+    claims,
+    scope: normalizeText(input.scope, 500) || app.scopes.join(' '),
+    redirectUri: input.redirectUri
+  });
+  const tokenClaims = signInChallenge
+    ? applyChallengeClaims(claims, signInChallenge)
+    : claims;
   const record = {
     id: createId('code'),
     code,
@@ -483,8 +515,9 @@ async function createConnectedAuthorizationCode(input = {}) {
     scope: normalizeText(input.scope, 500) || app.scopes.join(' '),
     nonce: normalizeText(input.nonce, 200),
     state: normalizeText(input.state, 500),
-    claims,
-    status: 'issued',
+    claims: tokenClaims,
+    challengeId: signInChallenge?.id || '',
+    status: signInChallenge ? 'pending_challenge' : 'issued',
     createdAt: nowIso(),
     expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
   };
@@ -494,11 +527,16 @@ async function createConnectedAuthorizationCode(input = {}) {
     appId: app.id,
     clientId: app.clientId,
     category: 'auth',
-    eventType: 'oauth.authorization_code.issued',
+    eventType: signInChallenge ? 'oauth.authorization_code.pending_challenge' : 'oauth.authorization_code.issued',
     actorEmail: claims.email,
     subject: claims.sub,
     statusCode: 302,
-    payload: { redirectUri: record.redirectUri, scope: record.scope }
+    walletChallengeId: signInChallenge?.id,
+    payload: {
+      redirectUri: record.redirectUri,
+      scope: record.scope,
+      signInChallengePolicy: app.signInChallengePolicy
+    }
   });
   return { app: decorateApp(app), code: record };
 }
@@ -517,27 +555,157 @@ async function exchangeConnectedAuthorizationCode(input = {}, baseUrl) {
   if (record.clientId !== app.clientId || record.redirectUri !== input.redirectUri) {
     throw oauthError('invalid_grant', 'Authorization request did not match token request.', 400);
   }
-  if (record.status !== 'issued') {
+  if (!['issued', 'pending_challenge'].includes(record.status)) {
     throw oauthError('invalid_grant', 'Authorization code has already been used.', 400);
   }
   if (Date.parse(record.expiresAt) < Date.now()) {
     throw oauthError('invalid_grant', 'Authorization code has expired.', 400);
   }
 
-  records[index] = { ...record, status: 'redeemed', redeemedAt: nowIso() };
+  let tokenClaims = record.claims;
+  if (record.status === 'pending_challenge') {
+    const challenge = await assertChallengeAccepted(record.challengeId);
+    tokenClaims = applyChallengeClaims(record.claims, challenge);
+  }
+
+  records[index] = { ...record, claims: tokenClaims, status: 'redeemed', redeemedAt: nowIso() };
   await codeStore.write(records);
   const issuer = `${baseUrl.replace(/\/$/, '')}/oauth2`;
-  const token = await signTokenSet(app, record.claims, issuer, record.nonce);
+  const token = await signTokenSet(app, tokenClaims, issuer, record.nonce);
   await logConnectedAppEvent({
     workspaceId: app.workspaceId,
     appId: app.id,
     clientId: app.clientId,
     category: 'auth',
     eventType: 'oauth.token.issued',
-    actorEmail: record.claims.email,
-    subject: record.claims.sub,
+    actorEmail: tokenClaims.email,
+    subject: tokenClaims.sub,
     statusCode: 200,
+    walletChallengeId: record.challengeId || undefined,
     payload: { grantType: 'authorization_code', scope: record.scope }
+  });
+  return token;
+}
+
+async function createBackchannelAuthenticationRequest(input = {}) {
+  const app = await findAppByClientId(input.clientId);
+  ensureAppEnabled(app);
+  ensureGrant(app, CIBA_GRANT_TYPE);
+  validateConnectedCredential(app, input);
+
+  const loginHint = normalizeEmail(input.loginHint || input.login_hint || input.subject);
+  if (!loginHint) {
+    throw oauthError('invalid_request', 'login_hint or subject is required for backchannel authentication.', 400);
+  }
+
+  const ttlSeconds = Math.min(Math.max(Number.parseInt(input.expiresIn || input.expires_in || '300', 10) || 300, 60), 900);
+  const interval = Math.min(Math.max(Number.parseInt(input.interval || '5', 10) || 5, 2), 15);
+  const claims = await buildUserClaims({
+    ...input,
+    email: loginHint,
+    name: normalizeText(input.name, 180) || loginHint
+  }, app);
+  const challenge = await createConnectedAppWalletChallenge(app, {
+    subject: loginHint,
+    action: normalizeText(input.action, 80) || 'sign-in',
+    resourceType: normalizeText(input.resourceType, 80) || 'session',
+    resourceId: normalizeText(input.resourceId, 120) || createId('session'),
+    requiredAssurance: normalizeSignInChallengePolicy(input.requiredAssurance || app.signInChallengePolicy) === 'disabled'
+      ? app.walletChallengePolicy
+      : normalizeSignInChallengePolicy(input.requiredAssurance || app.signInChallengePolicy),
+    challengeType: 'ciba-backchannel',
+    ttlSeconds,
+    payload: normalizeObject({
+      bindingMessage: normalizeText(input.bindingMessage || input.binding_message, 240),
+      clientId: app.clientId,
+      scope: normalizeText(input.scope, 500) || app.scopes.join(' '),
+      requestedClaims: normalizeObject(input.requestedClaims || input.claims),
+      payload: normalizeObject(input.payload)
+    })
+  });
+
+  const record = {
+    id: createId('ciba'),
+    kind: 'backchannel',
+    authReqId: `aegis_authreq_${createToken(24)}`,
+    appId: app.id,
+    workspaceId: app.workspaceId,
+    clientId: app.clientId,
+    scope: normalizeText(input.scope, 500) || app.scopes.join(' '),
+    claims: applyChallengeClaims(claims, challenge),
+    challengeId: challenge.id,
+    status: 'pending_challenge',
+    createdAt: nowIso(),
+    expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
+    interval
+  };
+  await codeStore.append(record);
+  await logConnectedAppEvent({
+    workspaceId: app.workspaceId,
+    appId: app.id,
+    clientId: app.clientId,
+    category: 'auth',
+    eventType: 'oauth.ciba.requested',
+    actorEmail: loginHint,
+    subject: claims.sub,
+    statusCode: 201,
+    walletChallengeId: challenge.id,
+    payload: {
+      grantType: CIBA_GRANT_TYPE,
+      scope: record.scope,
+      interval,
+      expiresIn: ttlSeconds
+    }
+  });
+
+  return {
+    auth_req_id: record.authReqId,
+    expires_in: ttlSeconds,
+    interval,
+    aegis_challenge_id: challenge.id
+  };
+}
+
+async function exchangeBackchannelAuthenticationToken(input = {}, baseUrl) {
+  const app = await findAppByClientId(input.clientId);
+  ensureAppEnabled(app);
+  ensureGrant(app, CIBA_GRANT_TYPE);
+  validateConnectedCredential(app, input);
+  const records = await codeStore.read();
+  const index = records.findIndex((record) => record.kind === 'backchannel' && record.authReqId === input.authReqId);
+  if (index === -1) {
+    throw oauthError('invalid_grant', 'Backchannel authentication request was not found.', 400);
+  }
+  const record = records[index];
+  if (record.clientId !== app.clientId) {
+    throw oauthError('invalid_grant', 'Backchannel request did not match token request.', 400);
+  }
+  if (record.status === 'redeemed') {
+    throw oauthError('invalid_grant', 'Backchannel authentication request has already been redeemed.', 400);
+  }
+  if (Date.parse(record.expiresAt) < Date.now()) {
+    records[index] = { ...record, status: 'expired', expiredAt: nowIso() };
+    await codeStore.write(records);
+    throw oauthError('expired_token', 'Backchannel authentication request has expired.', 400);
+  }
+
+  const challenge = await assertChallengeAccepted(record.challengeId);
+  const tokenClaims = applyChallengeClaims(record.claims, challenge);
+  records[index] = { ...record, claims: tokenClaims, status: 'redeemed', redeemedAt: nowIso() };
+  await codeStore.write(records);
+  const issuer = `${baseUrl.replace(/\/$/, '')}/oauth2`;
+  const token = await signTokenSet(app, tokenClaims, issuer, '');
+  await logConnectedAppEvent({
+    workspaceId: app.workspaceId,
+    appId: app.id,
+    clientId: app.clientId,
+    category: 'auth',
+    eventType: 'oauth.ciba.token.issued',
+    actorEmail: tokenClaims.email,
+    subject: tokenClaims.sub,
+    statusCode: 200,
+    walletChallengeId: record.challengeId,
+    payload: { grantType: CIBA_GRANT_TYPE, scope: record.scope }
   });
   return token;
 }
@@ -937,16 +1105,110 @@ function validateConnectedCredential(app, input = {}) {
   throw oauthError('invalid_client', 'client_secret or x-aegis-certificate-sha256 is required.', 401);
 }
 
-function buildUserClaims(input, app) {
+async function buildUserClaims(input, app) {
   const email = normalizeEmail(input.email || input.user?.email);
   const name = normalizeText(input.name || input.user?.displayName || input.user?.email || email, 160);
+  const subject = normalizeText(input.subject, 300);
+  const membership = await evaluateConnectedAppSubjectPolicy(app, {
+    ...input,
+    email
+  });
+  const membershipRoles = membership
+    ? normalizeArray([...membership.roleLabels, ...membership.roleIds])
+    : [];
+  const roles = normalizeArray(input.roles || membershipRoles);
   return {
-    sub: normalizeSubject(email || input.subject || app.clientId),
+    sub: normalizeSubject(subject || membership?.credentialId || email || app.clientId),
     email,
-    name,
+    name: name || membership?.displayName || email,
     organization_id: app.workspaceId,
-    roles: normalizeArray(input.roles || ['connected_app_user']),
+    roles: roles.length > 0 ? roles : ['connected_app_user'],
     acr: normalizeText(input.acr, 160) || 'urn:vanguard:aegis-id:auth:wallet-or-passkey',
+    auth_time: Math.floor(Date.now() / 1000),
+    credential_id: membership?.credentialId || '',
+    credential_status: membership?.status || '',
+    person_type: membership?.personType || '',
+    division_id: membership?.divisionId || '',
+    identity_provider: normalizeText(input.identityProvider, 80),
+    upstream_subject: normalizeText(input.upstreamSubject, 300),
+    upstream_tenant_id: normalizeText(input.upstreamTenantId, 160)
+  };
+}
+
+async function evaluateConnectedAppSubjectPolicy(app, input = {}) {
+  if (app.onboardingMode !== 'invite-only') {
+    return null;
+  }
+
+  const email = normalizeEmail(input.email || input.user?.email || input.subject);
+  if (!email) {
+    throw oauthError('access_denied', 'Invite-only connected apps require a subject email.', 403);
+  }
+
+  const memberships = await listCredentialMembershipsForEmail(email);
+  const membership = memberships.find((record) => record.workspaceId === app.workspaceId && isActiveCredentialMembership(record));
+  if (!membership) {
+    throw oauthError(
+      'access_denied',
+      'Subject is not an active credential holder for this connected app organization.',
+      403
+    );
+  }
+
+  return membership;
+}
+
+function isActiveCredentialMembership(membership = {}) {
+  return normalizeText(membership.status, 80).toLowerCase() === 'active';
+}
+
+async function maybeCreateSignInChallenge(app, input = {}) {
+  if (app.signInChallengePolicy === 'disabled') {
+    return null;
+  }
+  const subject = normalizeEmail(input.claims?.email || input.email || input.user?.email);
+  if (!subject) {
+    throw oauthError('invalid_request', 'A sign-in challenge policy requires a subject email.', 400);
+  }
+  return createConnectedAppWalletChallenge(app, {
+    subject,
+    action: 'sign-in',
+    resourceType: 'oidc-session',
+    resourceId: createId('session'),
+    requiredAssurance: app.signInChallengePolicy,
+    challengeType: 'oidc-sign-in',
+    ttlSeconds: 300,
+    payload: {
+      clientId: app.clientId,
+      redirectUri: input.redirectUri,
+      scope: input.scope,
+      state: input.state,
+      nonce: input.nonce,
+      policy: app.signInChallengePolicy
+    }
+  });
+}
+
+async function assertChallengeAccepted(challengeId) {
+  const challenge = await getWalletChallenge(challengeId);
+  if (challenge.status === 'declined') {
+    throw oauthError('access_denied', 'Wallet challenge was declined.', 400);
+  }
+  if (challenge.status !== 'accepted') {
+    if (challenge.expiresAt && Date.parse(challenge.expiresAt) < Date.now()) {
+      throw oauthError('expired_token', 'Wallet challenge has expired.', 400);
+    }
+    throw oauthError('authorization_pending', 'Wallet challenge approval is pending.', 400);
+  }
+  return challenge;
+}
+
+function applyChallengeClaims(claims = {}, challenge = {}) {
+  const assurance = normalizeText(challenge.requiredAssurance || challenge.assurance?.requiredAssurance, 80) || 'wallet';
+  return {
+    ...claims,
+    acr: `urn:vanguard:aegis-id:auth:${assurance}`,
+    wallet_challenge_id: challenge.id || challenge.challengeId,
     auth_time: Math.floor(Date.now() / 1000)
   };
 }
@@ -999,10 +1261,12 @@ function decorateApp(app, options = {}) {
     discoveryUrl: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth2/.well-known/openid-configuration`,
     authorizationEndpoint: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth2/authorize`,
     tokenEndpoint: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth2/token`,
+    backchannelAuthenticationEndpoint: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth2/backchannel-authentication`,
     walletChallengeEndpoint: `${options.publicBaseUrl || config.app.publicBaseUrl}/api/connected-apps/wallet-challenges`,
     scopesText: safeApp.scopes.join(' '),
     grantTypesRawText: safeApp.grantTypes.join(' '),
     grantTypesText: safeApp.grantTypes.map(grantLabel).join(', '),
+    signInChallengePolicyText: signInChallengeLabel(safeApp.signInChallengePolicy),
     redirectUrisText: safeApp.redirectUris.join('\n'),
     postLogoutRedirectUrisText: safeApp.postLogoutRedirectUris.join('\n'),
     allowedOriginsText: safeApp.allowedOrigins.join('\n'),
@@ -1034,6 +1298,7 @@ function normalizeApp(app = {}) {
     claimKeys: normalizeSelection(app.claimKeys, DEFAULT_CLAIMS, DEFAULT_CLAIMS),
     onboardingMode: app.onboardingMode === 'open' ? 'open' : 'invite-only',
     walletChallengePolicy: normalizeWalletPolicy(app.walletChallengePolicy),
+    signInChallengePolicy: normalizeSignInChallengePolicy(app.signInChallengePolicy),
     tokenEndpointAuthMethod: normalizeTokenAuthMethod(app.tokenEndpointAuthMethod),
     branding: normalizeBranding(app.branding || {}),
     emailTemplates: normalizeTemplates(app.emailTemplates || {}),
@@ -1086,6 +1351,10 @@ function normalizeWalletPolicy(value = '') {
   return ['wallet', 'passkey', 'verified-id'].includes(value) ? value : 'wallet';
 }
 
+function normalizeSignInChallengePolicy(value = '') {
+  return SIGN_IN_CHALLENGE_POLICIES.includes(value) ? value : 'disabled';
+}
+
 function normalizeTokenAuthMethod(value = '') {
   return ['client_secret_post', 'client_secret_basic', 'private_key_jwt'].includes(value) ? value : 'client_secret_post';
 }
@@ -1131,6 +1400,13 @@ function normalizeEmail(value = '') {
 
 function normalizeText(value = '', max = 400) {
   return String(value || '').trim().slice(0, max);
+}
+
+function normalizeObject(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+  return JSON.parse(JSON.stringify(value));
 }
 
 function hashSecret(secret) {
@@ -1207,8 +1483,18 @@ function csvEscape(value) {
 function grantLabel(value) {
   return {
     authorization_code: 'Authorization code',
-    client_credentials: 'Client credentials'
+    client_credentials: 'Client credentials',
+    [CIBA_GRANT_TYPE]: 'Backchannel wallet challenge'
   }[value] || value;
+}
+
+function signInChallengeLabel(value) {
+  return {
+    disabled: 'No sign-in wallet challenge',
+    wallet: 'Wallet approval at sign-in',
+    passkey: 'Wallet plus passkey at sign-in',
+    'verified-id': 'Verified credential at sign-in'
+  }[value] || 'No sign-in wallet challenge';
 }
 
 function emptyPage() {
@@ -1277,13 +1563,16 @@ function oauthError(code, message, status = 400) {
 
 module.exports = {
   authenticateConnectedClient,
+  CIBA_GRANT_TYPE,
   createClientCredentialsToken,
+  createBackchannelAuthenticationRequest,
   createConnectedApp,
   createConnectedAppSecret,
   createConnectedAppWalletChallenge,
   createConnectedAuthorizationCode,
   deleteConnectedApp,
   exchangeConnectedAuthorizationCode,
+  exchangeBackchannelAuthenticationToken,
   exportConnectedAppLogsCsv,
   getConnectedApp,
   getConnectedAppByClientId,

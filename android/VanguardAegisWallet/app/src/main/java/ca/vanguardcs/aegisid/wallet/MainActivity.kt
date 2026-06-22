@@ -42,7 +42,9 @@ class MainActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent?) {
         val data = intent?.data ?: return
-        if (data.scheme == "aegisid" && (data.host == "invite" || data.host == "credential-invite")) {
+        if ((data.scheme == "aegisid" && (data.host == "invite" || data.host == "credential-invite")) ||
+            data.scheme == "openid-vc"
+        ) {
             store.importInvitation(data.toString())
         }
     }

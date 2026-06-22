@@ -46,6 +46,16 @@ For Connected Apps, OIDC/OAuth relying-party setup, client credentials, certific
 
 [docs/connected-apps.md](docs/connected-apps.md)
 
+For the target broker architecture covering Aegis as the OIDC authority, upstream Entra federation, final Aegis policy enforcement, wallet challenge, passkey/YubiKey step-up, CIBA-style flows, and Verified ID ledger callbacks, see:
+
+[docs/aegis-oidc-broker-architecture.md](docs/aegis-oidc-broker-architecture.md)
+
+For implementation runbooks that configure Entra ID as an upstream workforce identity provider and connect Power Pages to Aegis ID as the OIDC authority, see:
+
+[docs/build-books/entra-upstream-oidc-broker.md](docs/build-books/entra-upstream-oidc-broker.md)
+
+[docs/build-books/power-pages-aegis-oidc.md](docs/build-books/power-pages-aegis-oidc.md)
+
 ## When A Wallet Makes Sense
 
 Use a wallet only when the credential needs to become a portable asset, not just a login event. Wallets make the most sense when Vanguard Cloud Services needs credentials to move between departments, contractors, allies, auditors, partners, facilities, or external systems outside the issuer's direct control.
@@ -320,6 +330,15 @@ VID_CREDENTIAL_TYPE=VanguardEmployeeCredential
 VID_CALLBACK_API_KEY=<shared-callback-key>
 PUBLIC_BASE_URL=https://<your-app>.azurewebsites.net
 ```
+
+For custom issuer development with a public App Service hostname, Aegis ID can also publish its own DID:web issuer metadata:
+
+```text
+https://<your-app>.azurewebsites.net/.well-known/did.json
+https://<your-app>.azurewebsites.net/.well-known/did-configuration.json
+```
+
+The DID:web signing key is an Azure Key Vault EC P-256 key and does not replace the Aries lab `did:peer` path. See [docs/azure-deployment.md](docs/azure-deployment.md) for Cloudstrucc and VanguardCS setup commands.
 
 For the hosted Vanguard Azure pilot, configure App Service settings after deployment:
 

@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const express = require('express');
 
 const config = require('../config');
@@ -144,26 +145,59 @@ router.post('/verifier/create-request', authorize('api.verifiedId.present'), asy
 router.post('/verifier/callback', authorize('api.verifiedId.callback'), async (req, res, next) => {
   try {
     validateCallbackApiKey(req);
+    const state = req.body?.state || req.body?.requestId || crypto.randomUUID();
     const claims = req.body?.verifiedCredentialsData?.[0]?.claims || req.body?.claims || {};
     const decision = evaluatePresentation(claims);
     const callbackStatus = req.body?.requestStatus || null;
+    const status = callbackStatus === 'presentation_verified' ? 'verified' : callbackStatus || 'callback';
 
-    await updateTransactionByState(req.body?.state, {
-      status: callbackStatus === 'presentation_verified' ? 'verified' : callbackStatus || 'callback',
+    let transaction = await updateTransactionByState(state, {
+      status,
       callbackStatus,
       subject: req.body?.subject || null,
       claims,
       decision,
       callbackPayload: req.body
     });
+    const external = !transaction;
+
+    if (external) {
+      transaction = await saveTransaction({
+        id: req.body?.requestId || crypto.randomUUID(),
+        kind: 'presentation',
+        source: 'external-verified-id-callback',
+        state,
+        status,
+        mode: config.verifiedId.mode,
+        requestUrl: null,
+        appName:
+          req.body?.registration?.clientName ||
+          req.body?.clientName ||
+          req.body?.requester ||
+          'External Verified ID request',
+        subject: req.body?.subject || null,
+        purpose: req.body?.purpose || null,
+        callbackStatus,
+        claims,
+        decision,
+        callbackPayload: req.body
+      });
+    }
 
     await writeAuditEvent('verified-id.presentation.callback', {
-      state: req.body?.state,
+      transactionId: transaction.id,
+      state,
+      external,
       decision,
       payload: req.body
     });
 
-    res.status(202).json({ accepted: true, decision });
+    res.status(202).json({
+      accepted: true,
+      decision,
+      transactionId: transaction.id,
+      external
+    });
   } catch (error) {
     next(error);
   }

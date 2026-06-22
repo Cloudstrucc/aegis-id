@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vanguard Aegis ID Docs Workspace Concept</title>
+  <style>
+    :root {
+      --ink: #071827;
+      --muted: #65758a;
+      --line: #d8e4f0;
+      --panel: #ffffff;
+      --wash: #edf7fc;
+      --blue: #266be8;
+      --cyan: #00a9bd;
+      --green: #20bf78;
+      --nav: #071827;
+      --shadow: 0 28px 70px rgba(22, 48, 68, .16);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(0, 169, 189, .12), transparent 30%),
+        linear-gradient(135deg, #f8fbfe, #e9f6fb);
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .topbar {
+      min-height: 86px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 6%;
+      background: rgba(7, 24, 39, .82);
+      color: #fff;
+      border-bottom: 1px solid rgba(255, 255, 255, .22);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 260px;
+    }
+
+    .brand-mark {
+      width: 64px;
+      height: 50px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #2d72e8, #00adb8);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .32);
+    }
+
+    .brand strong { display: block; font-size: 18px; }
+    .brand span { color: rgba(255, 255, 255, .72); font-weight: 800; font-size: 13px; }
+
+    .topbar nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .topbar nav a {
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: rgba(255, 255, 255, .86);
+      font-weight: 850;
+    }
+
+    .topbar nav a.active {
+      background: rgba(255, 255, 255, .12);
+      color: #fff;
+    }
+
+    .docs-shell {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      min-height: calc(100vh - 86px);
+    }
+
+    .docs-sidebar {
+      background: rgba(255, 255, 255, .82);
+      border-right: 1px solid var(--line);
+      padding: 28px 22px;
+      position: sticky;
+      top: 86px;
+      height: calc(100vh - 86px);
+      overflow: auto;
+    }
+
+    .eyebrow {
+      color: var(--cyan);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .docs-sidebar h1 {
+      margin: 8px 0 8px;
+      font-size: 34px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .docs-sidebar p {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .search-box {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .search-box input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 750;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .search-results {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .search-result {
+      border: 1px solid #cfe1f2;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+      cursor: pointer;
+      text-align: left;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 850;
+    }
+
+    .search-result small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    details {
+      border-top: 1px solid var(--line);
+      padding: 12px 0;
+    }
+
+    details[open] summary {
+      color: var(--blue);
+    }
+
+    summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 950;
+      color: var(--ink);
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--muted); font-weight: 950; }
+    details[open] summary::after { content: "-"; }
+
+    .doc-list {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .doc-link {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+    }
+
+    .doc-link.active {
+      background: #eaf2ff;
+      color: var(--blue);
+    }
+
+    .docs-main {
+      padding: 42px min(6vw, 72px);
+      overflow: hidden;
+    }
+
+    .reader-card {
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      min-height: calc(100vh - 170px);
+      overflow: hidden;
+    }
+
+    .reader-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: start;
+      padding: 34px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, #fff, #effaff);
+    }
+
+    .reader-head h2 {
+      margin: 8px 0 10px;
+      font-size: clamp(38px, 5vw, 74px);
+      line-height: .95;
+      letter-spacing: 0;
+    }
+
+    .reader-head p {
+      margin: 0;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1.45;
+      font-weight: 760;
+    }
+
+    .reader-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border: 1px solid #cae0f6;
+      border-radius: 999px;
+      background: #fff;
+      padding: 10px 14px;
+      color: var(--muted);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 30px;
+      padding: 34px;
+      align-items: start;
+    }
+
+    .markdown-body {
+      min-width: 0;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.65;
+    }
+
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3 {
+      letter-spacing: 0;
+      line-height: 1.05;
+    }
+
+    .markdown-body h1 { font-size: 46px; margin: 0 0 18px; }
+    .markdown-body h2 { font-size: 34px; margin: 38px 0 12px; }
+    .markdown-body h3 { font-size: 24px; margin: 28px 0 10px; }
+    .markdown-body p { color: #34465c; font-weight: 650; }
+    .markdown-body li { margin-bottom: 8px; color: #34465c; font-weight: 650; }
+
+    .markdown-body code {
+      background: #eef5fb;
+      color: #0a2340;
+      border-radius: 7px;
+      padding: 2px 6px;
+      font-size: .92em;
+    }
+
+    .markdown-body pre {
+      background: #071827;
+      color: #d8f4ff;
+      border-radius: 14px;
+      padding: 18px;
+      overflow: auto;
+      border: 1px solid #17314a;
+    }
+
+    .markdown-body pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .markdown-body blockquote {
+      border-left: 5px solid var(--blue);
+      margin: 24px 0;
+      padding: 18px 22px;
+      background: #f5f9fe;
+      border-radius: 0 14px 14px 0;
+    }
+
+    .markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      display: block;
+    }
+
+    .markdown-body th,
+    .markdown-body td {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .doc-aside {
+      display: grid;
+      gap: 14px;
+      position: sticky;
+      top: 116px;
+    }
+
+    .aside-card {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .aside-card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .aside-card p {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 720;
+      line-height: 1.45;
+    }
+
+    .diagram {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .diagram-step {
+      border: 1px solid #cfe1f2;
+      border-radius: 16px;
+      padding: 16px;
+      background: #fff;
+      min-height: 130px;
+    }
+
+    .diagram-step span {
+      display: inline-grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      color: #fff;
+      font-weight: 950;
+      margin-bottom: 14px;
+    }
+
+    .diagram-step strong { display: block; font-size: 17px; }
+    .diagram-step small { color: var(--muted); font-weight: 750; }
+
+    @media (max-width: 1100px) {
+      .docs-shell { grid-template-columns: 1fr; }
+      .docs-sidebar { position: relative; top: 0; height: auto; }
+      .content-grid { grid-template-columns: 1fr; }
+      .doc-aside { position: relative; top: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .reader-head { grid-template-columns: 1fr; }
+      .reader-actions { justify-content: flex-start; }
+      .diagram { grid-template-columns: 1fr; }
+      .doc-aside { grid-template-columns: 1fr; }
+      .docs-main { padding: 18px; }
+      .reader-head,
+      .content-grid { padding: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">
+      <span class="brand-mark">V</span>
+      <span>
+        <strong>Vanguard Aegis ID</strong>
+        <span>Documentation workspace concept</span>
+      </span>
+    </a>
+    <nav aria-label="Concept navigation">
+      <a class="active" href="#">Docs</a>
+      <a href="#">Dashboard</a>
+      <a href="#">Connected apps</a>
+      <a href="#">Health</a>
+    </nav>
+  </header>
+
+  <main class="docs-shell">
+    <aside class="docs-sidebar">
+      <div class="eyebrow">Knowledge Base</div>
+      <h1>Docs</h1>
+      <p>Markdown-authored guidance with category navigation, fuzzy search, and security-reviewed rendering.</p>
+
+      <label class="search-box">
+        <span class="eyebrow">Search</span>
+        <input id="doc-search" type="search" placeholder="Search RBAC, Entra, passkeys..." autocomplete="off">
+      </label>
+      <div id="search-results" class="search-results" aria-live="polite"></div>
+
+      <div id="category-list"></div>
+    </aside>
+
+    <section class="docs-main">
+      <article class="reader-card">
+        <div class="reader-head">
+          <div>
+            <div id="reader-category" class="eyebrow">Integrations</div>
+            <h2 id="reader-title">Loading...</h2>
+            <p id="reader-summary"></p>
+          </div>
+          <div class="reader-actions">
+            <span class="pill">Markdown source</span>
+            <span class="pill">Reviewed</span>
+            <span class="pill">Versioned</span>
+          </div>
+        </div>
+        <div class="content-grid">
+          <div id="markdown-body" class="markdown-body"></div>
+          <aside class="doc-aside" aria-label="Document metadata">
+            <div class="aside-card">
+              <strong>How this ships</strong>
+              <p>Docs live in the repository as Markdown and are rendered by the Node app.</p>
+            </div>
+            <div class="aside-card">
+              <strong>Security posture</strong>
+              <p>HTML inside Markdown remains disabled. External links open in a new tab.</p>
+            </div>
+            <div class="aside-card">
+              <strong>Search model</strong>
+              <p>A generated index supports title, category, summary, and body search.</p>
+            </div>
+          </aside>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.2.0/dist/markdown-it.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.2/dist/umd/index.min.js"></script>
+  <script>
+    const docs = [
+      {
+        id: 'entra-verified-id',
+        category: 'Integrations',
+        title: 'Microsoft Entra Verified ID integration',
+        summary: 'Configure Verified ID as a portable credential issuer and route callbacks into the Aegis ledger.',
+        source: `# Microsoft Entra Verified ID integration
+
+Use this guide when an enterprise wants Microsoft Verified ID credentials to work beside Aegis ID wallet challenges and ledger evidence.
+
+## What this solves
+
+- Portable credentials for employees, contractors, and partners.
+- A callback path where Verified ID events become Aegis ledger records.
+- A controlled bridge between Entra identity, verified credentials, and Aegis policy.
+
+## Configuration flow
+
+<div class="diagram">
+  <div class="diagram-step"><span>1</span><strong>Create app registration</strong><small>Add the Verified ID API permissions and grant admin consent.</small></div>
+  <div class="diagram-step"><span>2</span><strong>Configure credential contract</strong><small>Capture authority DID, manifest URL, and credential type.</small></div>
+  <div class="diagram-step"><span>3</span><strong>Set Aegis environment</strong><small>Store tenant ID, client ID, secret, callback API key, and authority DID.</small></div>
+  <div class="diagram-step"><span>4</span><strong>Test issuance and presentation</strong><small>Scan with a compatible wallet and review callback events.</small></div>
+</div>
+
+## Required values
+
+| Value | Source |
+| --- | --- |
+| \`AZURE_TENANT_ID\` | Entra tenant overview |
+| \`AZURE_CLIENT_ID\` | App registration overview |
+| \`AZURE_CLIENT_SECRET\` | App registration certificate and secrets |
+| \`VID_AUTHORITY_DID\` | Verified ID organization settings |
+| \`VID_MANIFEST_URL\` | Verified ID credential contract |
+
+> Reference links should point to Microsoft Learn in the production doc so assessors can verify every step against the vendor source.`
+      },
+      {
+        id: 'connected-apps-api',
+        category: 'api docs',
+        title: 'Connected apps and wallet challenge API',
+        summary: 'Register relying-party apps, issue client credentials, and send high-integrity wallet challenges.',
+        source: `# Connected apps and wallet challenge API
+
+Aegis ID can act as an OIDC/OAuth provider for relying-party web apps, mobile apps, and backend APIs.
+
+## Feature intent
+
+Connected apps let an administrator define which applications can rely on Aegis ID for:
+
+- Sign-in through OIDC.
+- API access through OAuth client credentials.
+- High-integrity wallet challenges for approvals, signatures, and registration flows.
+
+## Endpoint overview
+
+| Endpoint | Purpose |
+| --- | --- |
+| \`GET /oauth2/.well-known/openid-configuration\` | Discovery metadata |
+| \`GET /oauth2/authorize\` | Browser authorization-code flow |
+| \`POST /oauth2/token\` | Token exchange and client credentials |
+| \`POST /oauth2/backchannel-authentication\` | CIBA-style decoupled wallet challenge |
+| \`POST /api/connected-apps/wallet-challenges\` | App-authenticated wallet challenge |
+
+## Example wallet challenge
+
+\`\`\`bash
+curl -X POST https://aegis.example.com/api/connected-apps/wallet-challenges \\
+  -H "Content-Type: application/json" \\
+  -H "x-aegis-client-id: aegis_client_id" \\
+  -H "x-aegis-client-secret: one_time_secret" \\
+  -d '{
+    "subject": "person@example.com",
+    "action": "approve-expense",
+    "resourceType": "expense",
+    "resourceId": "EXP-2026-1048"
+  }'
+\`\`\`
+
+## Guardrails
+
+- Secrets are masked by default.
+- Revealing secrets requires a wallet challenge.
+- Invite-only apps require active credential membership before tokens are issued.`
+      },
+      {
+        id: 'policy-enforcement',
+        category: 'Policy configuration and enforcement',
+        title: 'Policy registry and deny-by-default enforcement',
+        summary: 'Understand route guards, permissions, workspace roles, and evidence tests.',
+        source: `# Policy registry and deny-by-default enforcement
+
+Aegis ID centralizes authorization decisions in a policy registry so new routes and sensitive actions are deliberately granted.
+
+## What this solves
+
+Ad hoc authorization logic becomes hard to audit. The policy service makes access decisions repeatable and testable.
+
+## Enforcement layers
+
+1. Route middleware verifies the user is authenticated.
+2. Workspace resolution finds the org context.
+3. The authorization service checks the required privilege.
+4. Views receive capability flags and hide unavailable actions.
+5. Service methods repeat sensitive checks server-side.
+
+## Evidence goal
+
+Every protected artifact should have a policy declaration and a test that fails when the artifact is not governed.`
+      },
+      {
+        id: 'workspace-dashboard',
+        category: 'Workspace dashboard',
+        title: 'Workspace dashboard operating model',
+        summary: 'Navigate people, credentials, roles, claims, integrations, org chart, branding, settings, and audit.',
+        source: `# Workspace dashboard operating model
+
+The workspace dashboard is the administrator command center for an organization.
+
+## Menu model
+
+- Dashboard: quick orientation and next best actions.
+- People: credential holders and invitations.
+- Credentials: issuance status and QR links.
+- Roles and claims: policy inputs.
+- Connected apps: relying-party registrations.
+- Wallet events: challenge evidence.
+- Settings: retention, invitation expiry, and assurance policy.
+
+## Admin workflow
+
+1. Register the workspace.
+2. Configure claims and roles.
+3. Invite people.
+4. Register connected apps.
+5. Review wallet events and app ledger records.`
+      },
+      {
+        id: 'rbac-model',
+        category: 'RBAC',
+        title: 'RBAC personas and permissions',
+        summary: 'Map administrator, co-admin, employee, contractor, auditor, and app privileges.',
+        source: `# RBAC personas and permissions
+
+Aegis ID separates platform permissions from portable credential roles.
+
+## Core personas
+
+| Persona | Purpose |
+| --- | --- |
+| Organization administrator | Full workspace administration |
+| Co-admin | Delegated administration after wallet challenge approval |
+| Employee | Standard credential holder |
+| Contractor | External credential holder |
+| Auditor | Read-only assurance review |
+
+## Design rule
+
+Core platform permissions stay source-controlled. Organization-specific business roles and claims remain configurable in the workspace.`
+      },
+      {
+        id: 'wallet-passkeys',
+        category: 'Wallet & Passkeys',
+        title: 'Wallet, passkeys, and YubiKey assurance',
+        summary: 'Use wallet challenges and hardware-backed passkeys for sign-in and high-value actions.',
+        source: `# Wallet, passkeys, and YubiKey assurance
+
+Aegis ID wallet challenges ask a holder to approve or decline an action, and passkeys can be required before approval.
+
+## Supported journeys
+
+- Wallet-only decision challenge.
+- Wallet challenge with platform passkey.
+- Wallet challenge with YubiKey or other FIDO2 security key.
+- CIBA-style decoupled sign-in challenge.
+
+## Why this matters
+
+The user’s decision becomes a ledger event with payload, timestamp, subject, app context, and decision status.`
+      },
+      {
+        id: 'architecture',
+        category: 'Architecture and design',
+        title: 'Aegis OIDC broker architecture',
+        summary: 'Aegis can broker upstream identity and remain the final authorization and wallet challenge authority.',
+        source: `# Aegis OIDC broker architecture
+
+Aegis ID can sit between relying-party apps and upstream identity providers such as Entra ID.
+
+## Broker pattern
+
+1. Enterprise app redirects to Aegis OIDC.
+2. Aegis redirects to the upstream IdP when configured.
+3. The user signs in using enterprise credentials.
+4. Aegis evaluates workspace RBAC, claims, and connected-app policy.
+5. Aegis optionally sends a wallet or passkey challenge.
+6. Aegis issues the final token to the relying-party app.
+
+## Design principle
+
+Upstream identity proves who the user is. Aegis decides whether that identity is allowed to act in this workspace and records high-integrity decisions.`
+      }
+    ];
+
+    const categories = [
+      'Integrations',
+      'api docs',
+      'Policy configuration and enforcement',
+      'Workspace dashboard',
+      'RBAC',
+      'Wallet & Passkeys',
+      'Architecture and design'
+    ];
+
+    const md = window.markdownit({
+      html: true,
+      linkify: true,
+      typographer: true
+    });
+
+    const search = new MiniSearch({
+      fields: ['title', 'summary', 'category', 'source'],
+      storeFields: ['title', 'summary', 'category']
+    });
+    search.addAll(docs);
+
+    const categoryList = document.querySelector('#category-list');
+    const results = document.querySelector('#search-results');
+    const searchInput = document.querySelector('#doc-search');
+    const title = document.querySelector('#reader-title');
+    const summary = document.querySelector('#reader-summary');
+    const category = document.querySelector('#reader-category');
+    const body = document.querySelector('#markdown-body');
+
+    function renderNav(activeId) {
+      categoryList.innerHTML = categories.map((name) => {
+        const items = docs.filter((doc) => doc.category === name);
+        const open = items.some((doc) => doc.id === activeId) ? ' open' : '';
+        return `
+          <details${open}>
+            <summary>${name}</summary>
+            <div class="doc-list">
+              ${items.map((doc) => `
+                <button class="doc-link ${doc.id === activeId ? 'active' : ''}" data-doc-id="${doc.id}">
+                  ${doc.title}
+                </button>
+              `).join('')}
+            </div>
+          </details>
+        `;
+      }).join('');
+    }
+
+    function renderDoc(id) {
+      const doc = docs.find((candidate) => candidate.id === id) || docs[0];
+      title.textContent = doc.title;
+      summary.textContent = doc.summary;
+      category.textContent = doc.category;
+      body.innerHTML = md.render(doc.source);
+      renderNav(doc.id);
+    }
+
+    function renderSearch(query) {
+      const trimmed = query.trim();
+      if (!trimmed) {
+        results.innerHTML = '';
+        return;
+      }
+      const matches = search.search(trimmed, { prefix: true, fuzzy: .2 }).slice(0, 5);
+      results.innerHTML = matches.length
+        ? matches.map((match) => `
+          <button class="search-result" data-doc-id="${match.id}">
+            ${match.title}
+            <small>${match.category}</small>
+          </button>
+        `).join('')
+        : '<div class="aside-card"><p>No matching docs yet.</p></div>';
+    }
+
+    document.addEventListener('click', (event) => {
+      const trigger = event.target.closest('[data-doc-id]');
+      if (!trigger) return;
+      renderDoc(trigger.dataset.docId);
+      results.innerHTML = '';
+      searchInput.value = '';
+    });
+
+    searchInput.addEventListener('input', (event) => renderSearch(event.target.value));
+    renderDoc('connected-apps-api');
+  </script>
+</body>
+</html>

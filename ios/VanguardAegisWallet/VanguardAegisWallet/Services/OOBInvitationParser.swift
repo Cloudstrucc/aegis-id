@@ -89,6 +89,63 @@ extension AegisCredentialInviteParser {
     }
 }
 
+struct OpenIDVCPresentationRequest: Equatable, Hashable {
+    var rawURL: String
+    var requestURI: String
+    var state: String?
+    var clientId: String?
+    var nonce: String?
+}
+
+enum OpenIDVCPresentationRequestParser {
+    static func canParse(_ rawText: String) -> Bool {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = URLComponents(string: trimmed) else {
+            return false
+        }
+
+        return components.scheme == "openid-vc"
+    }
+
+    static func parse(_ rawText: String) throws -> OpenIDVCPresentationRequest {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = URLComponents(string: trimmed),
+              components.scheme == "openid-vc"
+        else {
+            throw ParserError.invalidOpenIDVCURL
+        }
+
+        let queryItems = components.queryItems ?? []
+        guard let requestURI = queryValue(["request_uri", "requestUri"], in: queryItems),
+              !requestURI.isEmpty
+        else {
+            throw ParserError.missingRequestURI
+        }
+
+        return OpenIDVCPresentationRequest(
+            rawURL: trimmed,
+            requestURI: requestURI,
+            state: queryValue(["state"], in: queryItems),
+            clientId: queryValue(["client_id", "clientId"], in: queryItems),
+            nonce: queryValue(["nonce"], in: queryItems)
+        )
+    }
+
+    enum ParserError: LocalizedError {
+        case invalidOpenIDVCURL
+        case missingRequestURI
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidOpenIDVCURL:
+                return "Paste an OpenID VC presentation request URL."
+            case .missingRequestURI:
+                return "The OpenID VC presentation request is missing a request_uri parameter."
+            }
+        }
+    }
+}
+
 enum OOBInvitationParser {
     static func parse(_ rawText: String) throws -> AriesInvitation {
         let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)

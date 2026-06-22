@@ -3,9 +3,12 @@ const express = require('express');
 const { authorize } = require('../middleware/authorization');
 const {
   authenticateConnectedClient,
+  CIBA_GRANT_TYPE,
+  createBackchannelAuthenticationRequest,
   createClientCredentialsToken,
   createConnectedAppWalletChallenge,
   createConnectedAuthorizationCode,
+  exchangeBackchannelAuthenticationToken,
   exchangeConnectedAuthorizationCode,
   getConnectedAppByClientId,
   getDiscovery,
@@ -13,6 +16,12 @@ const {
   logConnectedAppEvent,
   verifyAccessToken
 } = require('../services/connected-app-service');
+const {
+  completeUpstreamAuthorization,
+  failUpstreamAuthorization,
+  isUpstreamFederationEnabled,
+  startUpstreamAuthorization
+} = require('../services/upstream-idp-service');
 
 const router = express.Router();
 
@@ -34,10 +43,6 @@ router.get('/oauth2/jwks', authorize('api.connectedApps.oauth'), async (req, res
 
 router.get('/oauth2/authorize', authorize('api.connectedApps.oauth'), async (req, res, next) => {
   try {
-    if (!req.isAuthenticated?.() || !req.user) {
-      req.session.returnTo = req.originalUrl;
-      return res.redirect(303, `/auth/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
-    }
     const request = normalizeAuthorizeRequest(req.query);
     if (request.responseType !== 'code') {
       return redirectOAuthError(res, request.redirectUri, 'unsupported_response_type', request.state);
@@ -45,6 +50,33 @@ router.get('/oauth2/authorize', authorize('api.connectedApps.oauth'), async (req
     const app = await getConnectedAppByClientId(request.clientId);
     if (!app.redirectUris.includes(request.redirectUri)) {
       return redirectOAuthError(res, request.redirectUri, 'invalid_request', request.state);
+    }
+    if (isUpstreamFederationEnabled()) {
+      const upstream = await startUpstreamAuthorization({
+        app,
+        request,
+        baseUrl: getRequestBaseUrl(req)
+      });
+      await logConnectedAppEvent({
+        workspaceId: app.workspaceId,
+        appId: app.id,
+        clientId: app.clientId,
+        category: 'auth',
+        eventType: 'oauth.upstream.redirected',
+        method: req.method,
+        path: req.path,
+        statusCode: 303,
+        payload: {
+          provider: upstream.provider.id,
+          redirectUri: request.redirectUri,
+          scope: request.scope
+        }
+      });
+      return res.redirect(303, upstream.redirectUrl);
+    }
+    if (!req.isAuthenticated?.() || !req.user) {
+      req.session.returnTo = req.originalUrl;
+      return res.redirect(303, `/auth/login?returnTo=${encodeURIComponent(req.originalUrl)}`);
     }
     res.render('pages/connected-app-authorize', {
       title: `Authorize ${app.name}`,
@@ -54,6 +86,64 @@ router.get('/oauth2/authorize', authorize('api.connectedApps.oauth'), async (req
       scopes: request.scope.split(/\s+/).filter(Boolean),
       registerUrl: `/auth/register?returnTo=${encodeURIComponent(req.originalUrl)}`
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/oauth2/upstream/entra/callback', authorize('api.connectedApps.oauth'), async (req, res, next) => {
+  try {
+    if (req.query.error) {
+      const failed = await failUpstreamAuthorization({
+        state: req.query.state,
+        error: req.query.error,
+        errorDescription: req.query.error_description
+      });
+      return redirectOAuthError(
+        res,
+        failed.request.redirectUri,
+        normalizeText(req.query.error, 120) || 'access_denied',
+        failed.request.state
+      );
+    }
+
+    const upstream = await completeUpstreamAuthorization({
+      state: req.query.state,
+      code: req.query.code,
+      baseUrl: getRequestBaseUrl(req)
+    });
+    const request = upstream.record.request;
+    const authorization = await createConnectedAuthorizationCode({
+      clientId: request.clientId,
+      redirectUri: request.redirectUri,
+      scope: request.scope,
+      state: request.state,
+      nonce: request.nonce,
+      ...upstream.claims
+    });
+    await logConnectedAppEvent({
+      workspaceId: authorization.app.workspaceId,
+      appId: authorization.app.id,
+      clientId: authorization.app.clientId,
+      category: 'auth',
+      eventType: 'oauth.upstream.completed',
+      actorEmail: upstream.claims.email,
+      subject: upstream.claims.subject,
+      method: req.method,
+      path: req.path,
+      statusCode: 303,
+      payload: {
+        provider: upstream.provider.id,
+        upstreamTenantId: upstream.claims.upstreamTenantId,
+        upstreamSubject: upstream.claims.upstreamSubject
+      }
+    });
+    const redirect = new URL(authorization.code.redirectUri);
+    redirect.searchParams.set('code', authorization.code.code);
+    if (authorization.code.state) {
+      redirect.searchParams.set('state', authorization.code.state);
+    }
+    return res.redirect(303, redirect.toString());
   } catch (error) {
     next(error);
   }
@@ -106,9 +196,39 @@ router.post('/oauth2/token', authorize('api.connectedApps.oauth'), async (req, r
       }, baseUrl);
       return res.json(token);
     }
+    if (req.body.grant_type === CIBA_GRANT_TYPE) {
+      const token = await exchangeBackchannelAuthenticationToken({
+        ...clientCredentials,
+        authReqId: req.body.auth_req_id || req.body.authReqId
+      }, baseUrl);
+      return res.json(token);
+    }
     return sendOAuthError(res, { status: 400, oauthError: 'unsupported_grant_type', message: 'Unsupported grant_type.' });
   } catch (error) {
     return sendOAuthError(res, error);
+  }
+});
+
+router.post('/oauth2/backchannel-authentication', authorize('api.connectedApps.oauth'), async (req, res) => {
+  try {
+    const result = await createBackchannelAuthenticationRequest({
+      ...getClientCredentials(req),
+      loginHint: req.body.login_hint || req.body.loginHint,
+      subject: req.body.subject,
+      scope: req.body.scope,
+      action: req.body.action,
+      resourceType: req.body.resource_type || req.body.resourceType,
+      resourceId: req.body.resource_id || req.body.resourceId,
+      requiredAssurance: req.body.required_assurance || req.body.requiredAssurance,
+      bindingMessage: req.body.binding_message || req.body.bindingMessage,
+      requestedClaims: req.body.claims || req.body.requestedClaims,
+      payload: req.body.payload,
+      expiresIn: req.body.expires_in || req.body.expiresIn,
+      interval: req.body.interval
+    });
+    res.status(201).json(result);
+  } catch (error) {
+    sendOAuthError(res, error);
   }
 });
 
@@ -185,7 +305,8 @@ function normalizeAuthorizeRequest(input = {}) {
     responseType: normalizeText(input.response_type || input.responseType, 40),
     scope: normalizeText(input.scope, 500) || 'openid profile email',
     state: normalizeText(input.state, 500),
-    nonce: normalizeText(input.nonce, 500)
+    nonce: normalizeText(input.nonce, 500),
+    loginHint: normalizeText(input.login_hint || input.loginHint, 320)
   };
 }
 

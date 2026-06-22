@@ -123,6 +123,11 @@ class WalletStore(
                 return
             }
 
+            if (OpenIdVcPresentationRequestParser.canParse(rawText)) {
+                importOpenIdVcPresentationRequest(OpenIdVcPresentationRequestParser.parse(rawText))
+                return
+            }
+
             val invitation = OobInvitationParser.parse(rawText)
             if (connections.any { it.invitation.id == invitation.id }) {
                 lastImportMessage = "Invitation already saved."
@@ -203,6 +208,65 @@ class WalletStore(
         saveTransactions()
         refreshOrganizationProfile(invite.organizationId)
         lastImportMessage = "Credential invite saved. Open Ledger to accept it."
+    }
+
+    private fun importOpenIdVcPresentationRequest(request: OpenIdVcPresentationRequest) {
+        val remoteId = request.state ?: request.nonce ?: request.requestUri
+        if (transactions.any { it.resourceType == "openid-vc-presentation-request" && it.remoteId == remoteId }) {
+            lastImportMessage = "OpenID VC presentation request already saved."
+            return
+        }
+
+        val existing = connections.firstOrNull { it.invitation.organizationId == "openid-vc-external" }
+        val connection = existing ?: WalletConnection(
+            invitation = AriesInvitation(
+                id = "openid-vc-external",
+                label = "OpenID VC presentation",
+                rawUrl = request.rawUrl,
+                endpoint = android.net.Uri.parse(request.requestUri).host ?: request.requestUri,
+                organizationId = "openid-vc-external",
+                organizationName = "External Verified ID request",
+                subscriptionId = null,
+                sourceWebAppUrl = null,
+                handshakeProtocols = listOf("openid4vp"),
+                services = listOf(request.requestUri)
+            ),
+            state = WalletConnectionState.ChallengeReceived
+        )
+
+        if (existing == null) {
+            connections = listOf(connection) + connections
+            saveConnections()
+        } else {
+            updateConnection(existing.id) { it.copy(state = WalletConnectionState.ChallengeReceived) }
+        }
+
+        transactions = listOf(
+            WalletTransaction(
+                connectionId = connection.id,
+                type = WalletTransactionType.Challenge,
+                status = WalletTransactionStatus.PendingAcceptance,
+                title = "OpenID VC presentation request",
+                detail = "A verifier requested a verifiable presentation. Full OpenID4VP signing requires verifiable credential key storage in this wallet.",
+                remoteId = remoteId,
+                appName = "OpenID4VP verifier",
+                action = "present-verifiable-credential",
+                resourceType = "openid-vc-presentation-request",
+                resourceId = request.requestUri,
+                payloadFields = listOf(
+                    WalletChallengePayloadField(key = "request_uri", value = request.requestUri),
+                    WalletChallengePayloadField(key = "state", value = request.state ?: "Not provided"),
+                    WalletChallengePayloadField(key = "client_id", value = request.clientId ?: "Not provided"),
+                    WalletChallengePayloadField(key = "nonce", value = request.nonce ?: "Not provided"),
+                    WalletChallengePayloadField(
+                        key = "implementationStatus",
+                        value = "Imported for tracking; cryptographic VP signing is not enabled yet."
+                    )
+                )
+            )
+        ) + transactions
+        saveTransactions()
+        lastImportMessage = "OpenID VC presentation request saved. Open Ledger to review it."
     }
 
     fun acceptLatestInvitationInLab() {

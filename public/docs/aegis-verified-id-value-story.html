@@ -511,6 +511,24 @@
       grid-template-columns: 1.12fr 0.88fr;
     }
 
+    .split--proof-stack {
+      grid-template-columns: 1fr;
+      gap: 34px;
+      align-items: stretch;
+    }
+
+    .proof-copy {
+      max-width: 1040px;
+    }
+
+    .proof-copy h2 {
+      max-width: 980px;
+    }
+
+    .proof-copy .section-kicker {
+      max-width: 920px;
+    }
+
     .quiet-list {
       display: grid;
       gap: 20px;
@@ -533,6 +551,21 @@
 
     .quiet-list span {
       color: var(--muted);
+    }
+
+    .quiet-list--proof {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--line);
+    }
+
+    .quiet-list--proof li {
+      border-top: 0;
+      padding: 22px;
+      background: #ffffff;
     }
 
     .diagram {
@@ -1066,6 +1099,7 @@
       }
 
       .toc,
+      .quiet-list--proof,
       .proof-grid,
       .problem-grid,
       .value-grid,
@@ -1390,8 +1424,8 @@
 
     <div class="band band--soft" id="architecture">
       <div class="page page--wide">
-        <div class="split">
-          <div>
+        <div class="split split--proof-stack">
+          <div class="proof-copy">
             <p class="eyebrow">Assurance architecture</p>
             <h2>One policy layer for many kinds of proof.</h2>
             <p class="section-kicker">
@@ -1399,20 +1433,6 @@
               verified credentials for portable proof, FIDO2/passkeys for hardware-backed assurance,
               and OIDC/OAuth or SAML for standard application integration.
             </p>
-            <ul class="quiet-list">
-              <li>
-                <strong>Portable credential proof</strong>
-                <span>Use a verified credential integration when a credential needs to be presented across departments, portals, or external organizations.</span>
-              </li>
-              <li>
-                <strong>Hardware-backed step-up</strong>
-                <span>Use YubiKey 5C NFC and FIDO2/WebAuthn when the moment requires phishing-resistant local proof.</span>
-              </li>
-              <li>
-                <strong>Application and badge decisions</strong>
-                <span>Use Aegis wallet challenges and policy to record approvals, revocations, access changes, and ID checks.</span>
-              </li>
-            </ul>
           </div>
 
           <div class="diagram" aria-label="Verified ID and Aegis architecture diagram">
@@ -1456,6 +1476,21 @@
               </div>
             </div>
           </div>
+
+          <ul class="quiet-list quiet-list--proof">
+            <li>
+              <strong>Portable credential proof</strong>
+              <span>Use a verified credential integration when a credential needs to be presented across departments, portals, or external organizations.</span>
+            </li>
+            <li>
+              <strong>Hardware-backed step-up</strong>
+              <span>Use YubiKey 5C NFC and FIDO2/WebAuthn when the moment requires phishing-resistant local proof.</span>
+            </li>
+            <li>
+              <strong>Application and badge decisions</strong>
+              <span>Use Aegis wallet challenges and policy to record approvals, revocations, access changes, and ID checks.</span>
+            </li>
+          </ul>
         </div>
 
         <div class="proof-grid" style="margin-top: 56px;">

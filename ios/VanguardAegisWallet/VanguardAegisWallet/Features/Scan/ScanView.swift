@@ -39,7 +39,7 @@ struct ScanView: View {
                 .foregroundStyle(.white)
                 .font(.headline)
         } else {
-            Label("Scan an Aegis credential or Aries lab invitation", systemImage: "camera")
+            Label("Scan an Aegis credential, OpenID VC request, or Aries lab invitation", systemImage: "camera")
                 .foregroundStyle(.white.opacity(0.86))
                 .font(.headline)
         }

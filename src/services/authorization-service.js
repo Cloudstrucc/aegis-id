@@ -60,6 +60,7 @@ const POLICIES = Object.freeze({
       'claimKeys',
       'onboardingMode',
       'walletChallengePolicy',
+      'signInChallengePolicy',
       'tokenEndpointAuthMethod'
     ]
   }),

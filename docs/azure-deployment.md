@@ -689,6 +689,70 @@ For Android, set `ANDROID_SHA256_CERT_FINGERPRINTS` to the SHA-256 certificate f
 
 For a subscriber-driven Vanguard Cloud Services pilot, the wizard can also accept tenant/app/DID/claims details in the dashboard. A live test still needs a client secret supplied one time in the wizard or configured in App Service settings. The wizard does not persist secrets.
 
+## DID:web Custom Issuer Endpoints
+
+Aegis ID can publish a DID:web document and domain linkage credential from the same public App Service host. This supports development and pilot validation for Verified ID custom issuer/domain binding while keeping the Aries lab `did:peer` flow separate.
+
+The public endpoints are:
+
+```text
+https://<aegis-host>/.well-known/did.json
+https://<aegis-host>/.well-known/did-configuration.json
+```
+
+The private signing key stays in Azure Key Vault as an EC P-256 key for ES256. The App Service only receives Key Vault RBAC rights to read key metadata and request signatures; the private key material is not exported into the app.
+
+Cloudstrucc root profile:
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+
+bash scripts/create-did-web-keyvault-key.sh --env dev
+bash scripts/create-did-web-keyvault-key.sh --env qa
+bash scripts/create-did-web-keyvault-key.sh --env prod
+
+bash scripts/deploy-azure-webapp.sh --env dev
+bash scripts/deploy-azure-webapp.sh --env qa
+bash scripts/deploy-azure-webapp.sh --env prod
+```
+
+VanguardCS tenant profile:
+
+```bash
+cd /Users/frederickpearson/repos/aegis-id
+
+bash scripts/create-did-web-keyvault-key.sh --env dev --tenant vanguardcs
+bash scripts/create-did-web-keyvault-key.sh --env qa --tenant vanguardcs
+bash scripts/create-did-web-keyvault-key.sh --env prod --tenant vanguardcs
+
+bash scripts/deploy-azure-webapp.sh --env dev --tenant vanguardcs
+bash scripts/deploy-azure-webapp.sh --env qa --tenant vanguardcs
+bash scripts/deploy-azure-webapp.sh --env prod --tenant vanguardcs
+```
+
+Validate after deployment:
+
+```bash
+curl -s https://vanguard-aegis-id-dev-65067d.azurewebsites.net/.well-known/did.json | jq
+curl -s https://vanguard-aegis-id-dev-65067d.azurewebsites.net/.well-known/did-configuration.json | jq
+
+curl -s https://vanguard-aegis-id-dev-0e75d1.azurewebsites.net/.well-known/did.json | jq
+curl -s https://vanguard-aegis-id-dev-0e75d1.azurewebsites.net/.well-known/did-configuration.json | jq
+```
+
+Key settings:
+
+| Variable | Purpose |
+| --- | --- |
+| `AEGIS_DID_WEB_ENABLED` | Enables the public DID:web endpoints for a deployed HTTPS environment. Keep commented out locally. |
+| `AEGIS_DID_WEB_DOMAIN` | Hostname used by the DID, such as `vanguard-aegis-id-dev-65067d.azurewebsites.net`. |
+| `AEGIS_DID_WEB_ORIGIN` | HTTPS origin included in the LinkedDomains service and domain linkage credential. |
+| `AEGIS_DID_WEB_ID` | DID identifier, usually `did:web:<host>`. |
+| `AEGIS_DID_WEB_KEYVAULT_URL` | Key Vault containing the ES256 signing key. |
+| `AEGIS_DID_WEB_KEYVAULT_KEY_ID` | Versionless Key Vault key ID used by the app for signing. |
+| `AEGIS_DID_WEB_CACHE_TTL_SECONDS` | Cache lifetime for the generated DID document and domain linkage credential. |
+| `AEGIS_DID_WEB_CREDENTIAL_TTL_DAYS` | Expiration horizon for the DomainLinkageCredential JWT. |
+
 ## Microsoft Setup Checklist
 
 - Register a single-tenant Entra application.

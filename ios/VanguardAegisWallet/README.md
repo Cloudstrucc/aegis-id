@@ -14,11 +14,14 @@ It currently provides:
 - Wallet challenge send/accept transactions over the local ACA-Py connection.
 - OIDC web-app challenge fetch and accept flow for `/demo/oidc-wallet`.
 - Optional wallet passkey registration and challenge approval using `AuthenticationServices`.
-- URL scheme hooks for `aegisid://` and `aegisid://`.
+- URL scheme hooks for `aegisid://` and `openid-vc://`.
+- OpenID VC presentation request import/tracking for Microsoft Verified ID or other OpenID4VP request URLs.
 
 Verified ID and YubiKey are web-app assurance methods in this demo. Microsoft Authenticator presents Verified ID credentials, and the browser performs YubiKey/FIDO2 WebAuthn step-up. The iOS wallet receives the downstream Aegis wallet challenge, signs the high-value action, and records the ledger event.
 
 It does not yet implement the full Aries wallet engine. The Lab Bridge calls local ACA-Py admin APIs from the simulator. A production Aries wallet still needs DIDComm transport, DIDExchange state machines, key management, secure storage, credential exchange, proof presentation, revocation handling, and protocol test coverage.
+
+OpenID4VP support is intentionally limited to parsing, storing, and ledger-tracking `openid-vc://` presentation requests at this stage. Full OpenID4VP response support still requires a W3C verifiable credential store, DID/key management, verifiable presentation signing, verifier response submission, and response validation.
 
 ## Open And Build
 
@@ -221,7 +224,7 @@ For local simulator testing, passkey behavior depends on the simulator and assoc
 
 | Platform | What the web app tests | What the iOS wallet participates in |
 | --- | --- | --- |
-| Microsoft Entra Verified ID | Mock or live issuance/presentation request creation | Mock QR handoff only today; live Microsoft wallet testing should use Microsoft Authenticator |
+| Microsoft Entra Verified ID | Mock or live issuance/presentation request creation | Imports `openid-vc://` presentation requests for ledger review; full signed presentation response still requires W3C VC/key storage |
 | Keycloak OIDC | Metadata discovery and claim mapping in the setup wizard | OIDC + wallet challenge demo can represent the step-up pattern after Keycloak login |
 | Keycloak SAML | SAML metadata reachability and claim mapping | Same step-up pattern after SAML login; wallet challenge is separate from SAML assertion validation |
 | Okta OIDC | Metadata discovery and group/claim mapping | Same OIDC + wallet challenge pattern after Okta login |

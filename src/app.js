@@ -23,6 +23,7 @@ const issuerOrganizationRoutes = require('./routes/issuer-organizations');
 const connectedAppRoutes = require('./routes/connected-apps');
 const connectedOAuthRoutes = require('./routes/connected-oauth');
 const developerDocsRoutes = require('./routes/developer-docs');
+const didWebRoutes = require('./routes/did-web');
 const { attachAuthLocals } = require('./middleware/auth');
 const { configurePassport } = require('./services/passport-service');
 
@@ -332,6 +333,7 @@ function createApp() {
   app.use(morgan(config.app.env === 'production' ? 'combined' : 'dev'));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use(express.json({ limit: '2mb' }));
+  app.use('/', didWebRoutes);
   app.get('/.well-known/apple-app-site-association', (req, res) => {
     const appIds = config.mobileApps.iosBundleIds.map(
       (bundleId) => `${config.mobileApps.iosTeamId}.${bundleId}`

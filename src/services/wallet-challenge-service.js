@@ -134,7 +134,19 @@ async function acceptExternalWalletChallenge(challengeId, input = {}) {
     throw notFound('Wallet challenge not found.');
   }
   if (records[index].status === 'accepted') {
-    return decorateChallenge(records[index]);
+    const error = validationError('This wallet challenge has already been accepted.');
+    error.status = 409;
+    throw error;
+  }
+  if (records[index].status === 'declined') {
+    const error = validationError('This wallet challenge has already been declined.');
+    error.status = 409;
+    throw error;
+  }
+  if (isExpired(records[index])) {
+    const error = validationError('This wallet challenge has expired.');
+    error.status = 410;
+    throw error;
   }
   if (records[index].assurance?.requiresPasskey && !input.passkeyEvidence) {
     const error = validationError('This wallet challenge requires passkey assurance before it can be accepted.');
@@ -171,6 +183,11 @@ async function declineExternalWalletChallenge(challengeId, input = {}) {
   if (records[index].status === 'accepted') {
     const error = validationError('This wallet challenge has already been accepted.');
     error.status = 409;
+    throw error;
+  }
+  if (isExpired(records[index])) {
+    const error = validationError('This wallet challenge has expired.');
+    error.status = 410;
     throw error;
   }
 
@@ -238,6 +255,10 @@ function decorateChallenge(record) {
     requiredAssurance: record.assurance?.requiredAssurance || 'wallet',
     payloadFields: record.payloadFields || payloadToFields(record.payload)
   };
+}
+
+function isExpired(record = {}) {
+  return record.expiresAt && Date.parse(record.expiresAt) < Date.now();
 }
 
 async function resolveChallengeAssurance(input = {}) {

@@ -306,6 +306,10 @@ for env_name in $(envs_to_update); do
   if [[ "$env_name" == "prod" ]]; then
     oidc_issuer="https://mock-idp.${PROFILE_LOWER}.local"
   fi
+  keyvault_name="kv-aegis-${RESOURCE_SUFFIX}"
+  if [[ "$env_name" != "prod" ]]; then
+    keyvault_name="kv-aegis-${env_name}-${RESOURCE_SUFFIX}"
+  fi
 
   holder_name="vanguard-aegis-holder${segment}-${RESOURCE_SUFFIX}"
   issuer_name="vanguard-aegis-issuer${segment}-${RESOURCE_SUFFIX}"
@@ -333,6 +337,19 @@ for env_name in $(envs_to_update); do
   set_profile_value "$root_file" VID_MANIFEST_URL "$VID_MANIFEST_URL_VALUE"
   set_profile_value "$root_file" VID_CREDENTIAL_TYPE "$VID_CREDENTIAL_TYPE_VALUE"
   set_profile_secret_if_missing "$root_file" VID_CALLBACK_API_KEY
+  set_profile_value "$root_file" AEGIS_DID_WEB_ENABLED "true"
+  set_profile_value "$root_file" AEGIS_DID_WEB_DOMAIN "${aegis_app_name}.azurewebsites.net"
+  set_profile_value "$root_file" AEGIS_DID_WEB_ORIGIN "$aegis_base_url"
+  set_profile_value "$root_file" AEGIS_DID_WEB_ID "did:web:${aegis_app_name}.azurewebsites.net"
+  set_profile_value "$root_file" AEGIS_DID_WEB_DID_DOCUMENT_URL "${aegis_base_url}/.well-known/did.json"
+  set_profile_value "$root_file" AEGIS_DID_WEB_CONFIGURATION_URL "${aegis_base_url}/.well-known/did-configuration.json"
+  set_profile_value "$root_file" AEGIS_DID_WEB_KEY_NAME "aegis-did-web-signing"
+  set_profile_value "$root_file" AEGIS_DID_WEB_KEY_ALG "ES256"
+  set_profile_value "$root_file" AEGIS_DID_WEB_KEY_CURVE "P-256"
+  set_profile_value "$root_file" AEGIS_DID_WEB_KEYVAULT_URL "https://${keyvault_name}.vault.azure.net/"
+  set_profile_value "$root_file" AEGIS_DID_WEB_KEYVAULT_KEY_ID "https://${keyvault_name}.vault.azure.net/keys/aegis-did-web-signing"
+  set_profile_value "$root_file" AEGIS_DID_WEB_CACHE_TTL_SECONDS "300"
+  set_profile_value "$root_file" AEGIS_DID_WEB_CREDENTIAL_TTL_DAYS "365"
   set_profile_secret_if_missing "$root_file" SESSION_SECRET
   set_profile_value "$root_file" PASSKEY_RP_NAME "Vanguard Cloud Services - Aegis ID"
   set_profile_value "$root_file" PASSKEY_RP_ID "${aegis_app_name}.azurewebsites.net"

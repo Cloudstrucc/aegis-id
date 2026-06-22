@@ -16,6 +16,14 @@ data class AegisCredentialInvite(
     val rawUrl: String
 )
 
+data class OpenIdVcPresentationRequest(
+    val rawUrl: String,
+    val requestUri: String,
+    val state: String?,
+    val clientId: String?,
+    val nonce: String?
+)
+
 object AegisCredentialInviteParser {
     fun canParse(rawText: String): Boolean {
         val uri = Uri.parse(rawText.trim())
@@ -65,6 +73,32 @@ object AegisCredentialInviteParser {
             }
         }
         return null
+    }
+}
+
+object OpenIdVcPresentationRequestParser {
+    fun canParse(rawText: String): Boolean {
+        val uri = Uri.parse(rawText.trim())
+        return uri.scheme == "openid-vc"
+    }
+
+    fun parse(rawText: String): OpenIdVcPresentationRequest {
+        val trimmed = rawText.trim()
+        val uri = Uri.parse(trimmed)
+        if (uri.scheme != "openid-vc") {
+            throw InvitationParseException("Paste an OpenID VC presentation request URL.")
+        }
+
+        val requestUri = queryValue(uri, "request_uri", "requestUri")
+            ?: throw InvitationParseException("The OpenID VC presentation request is missing a request_uri parameter.")
+
+        return OpenIdVcPresentationRequest(
+            rawUrl = trimmed,
+            requestUri = requestUri,
+            state = queryValue(uri, "state"),
+            clientId = queryValue(uri, "client_id", "clientId"),
+            nonce = queryValue(uri, "nonce")
+        )
     }
 }
 

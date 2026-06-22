@@ -35,6 +35,45 @@ function csvList(value) {
     .filter(Boolean);
 }
 
+function tokenList(value, fallback = []) {
+  const source = value === undefined || value === null || value === '' ? fallback.join(' ') : value;
+  return String(source || '')
+    .split(/[\s,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function booleanFlag(value, fallback = false) {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
+}
+
+function integerValue(value, fallback) {
+  const parsed = Number.parseInt(value || '', 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizedOrigin(value, fallback = '') {
+  const candidate = (value || fallback || '').trim();
+  if (!candidate) {
+    return '';
+  }
+
+  try {
+    return new URL(candidate).origin;
+  } catch (error) {
+    return candidate.replace(/\/+$/, '');
+  }
+}
+
+function didWebIdForDomain(domain) {
+  const normalized = (domain || '').trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  return normalized ? `did:web:${normalized.replace(/:/g, '%3A')}` : '';
+}
+
 const defaultIosBundleIds = [
   'ca.vanguardcs.aegisid.wallet',
   'ca.vanguardcs.aegisid.wallet.dev',
@@ -45,6 +84,8 @@ const legacyIosBundleId = (process.env.IOS_APP_BUNDLE_ID || '').trim();
 const iosBundleIds = configuredIosBundleIds.length
   ? configuredIosBundleIds
   : [...new Set([legacyIosBundleId, ...defaultIosBundleIds].filter(Boolean))];
+const didWebDomain = (process.env.AEGIS_DID_WEB_DOMAIN || '').trim();
+const didWebOrigin = normalizedOrigin(process.env.AEGIS_DID_WEB_ORIGIN, didWebDomain ? `https://${didWebDomain}` : '');
 
 const config = {
   app: {
@@ -75,6 +116,7 @@ const config = {
     connectedAppLogs: resolveFromRoot(process.env.CONNECTED_APP_LOG_STORE_PATH, 'data/connected-app-logs.json'),
     connectedAppOAuthCodes: resolveFromRoot(process.env.CONNECTED_APP_OAUTH_CODE_STORE_PATH, 'data/connected-app-oauth-codes.json'),
     connectedAppSigningKeys: resolveFromRoot(process.env.CONNECTED_APP_SIGNING_KEY_STORE_PATH, 'data/connected-app-signing-keys.json'),
+    connectedAppUpstreamStates: resolveFromRoot(process.env.CONNECTED_APP_UPSTREAM_STATE_STORE_PATH, 'data/connected-app-upstream-states.json'),
     oidcWalletSessions: resolveFromRoot(process.env.OIDC_WALLET_SESSION_STORE_PATH, 'data/oidc-wallet-sessions.json'),
     oidcCodes: resolveFromRoot(process.env.OIDC_CODE_STORE_PATH, 'data/oidc-codes.json'),
     walletChallenges: resolveFromRoot(process.env.WALLET_CHALLENGE_STORE_PATH, 'data/wallet-challenges.json'),
@@ -110,6 +152,41 @@ const config = {
     manifestUrl: process.env.VID_MANIFEST_URL || '',
     credentialType: process.env.VID_CREDENTIAL_TYPE || 'VanguardEmployeeCredential',
     callbackApiKey: process.env.VID_CALLBACK_API_KEY || ''
+  },
+  didWeb: {
+    enabled: booleanFlag(process.env.AEGIS_DID_WEB_ENABLED, false),
+    domain: didWebDomain,
+    origin: didWebOrigin,
+    did: process.env.AEGIS_DID_WEB_ID || didWebIdForDomain(didWebDomain),
+    didDocumentUrl:
+      process.env.AEGIS_DID_WEB_DID_DOCUMENT_URL ||
+      (didWebOrigin ? `${didWebOrigin}/.well-known/did.json` : ''),
+    configurationUrl:
+      process.env.AEGIS_DID_WEB_CONFIGURATION_URL ||
+      (didWebOrigin ? `${didWebOrigin}/.well-known/did-configuration.json` : ''),
+    keyName: process.env.AEGIS_DID_WEB_KEY_NAME || 'aegis-did-web-signing',
+    keyAlgorithm: process.env.AEGIS_DID_WEB_KEY_ALG || 'ES256',
+    keyCurve: process.env.AEGIS_DID_WEB_KEY_CURVE || 'P-256',
+    keyVaultUrl: process.env.AEGIS_DID_WEB_KEYVAULT_URL || '',
+    keyVaultKeyId: process.env.AEGIS_DID_WEB_KEYVAULT_KEY_ID || '',
+    cacheTtlSeconds: integerValue(process.env.AEGIS_DID_WEB_CACHE_TTL_SECONDS, 300),
+    credentialTtlDays: integerValue(process.env.AEGIS_DID_WEB_CREDENTIAL_TTL_DAYS, 365)
+  },
+  connectedApps: {
+    upstreamIdp: {
+      mode: process.env.CONNECTED_APP_UPSTREAM_IDP_MODE || 'local',
+      entra: {
+        tenantId: process.env.CONNECTED_APP_UPSTREAM_ENTRA_TENANT_ID || '',
+        clientId: process.env.CONNECTED_APP_UPSTREAM_ENTRA_CLIENT_ID || '',
+        clientSecret: process.env.CONNECTED_APP_UPSTREAM_ENTRA_CLIENT_SECRET || '',
+        redirectUri: process.env.CONNECTED_APP_UPSTREAM_ENTRA_REDIRECT_URI || '',
+        scopes: tokenList(process.env.CONNECTED_APP_UPSTREAM_ENTRA_SCOPES, ['openid', 'profile', 'email']),
+        issuer: process.env.CONNECTED_APP_UPSTREAM_ENTRA_ISSUER || '',
+        authorizationEndpoint: process.env.CONNECTED_APP_UPSTREAM_ENTRA_AUTHORIZATION_ENDPOINT || '',
+        tokenEndpoint: process.env.CONNECTED_APP_UPSTREAM_ENTRA_TOKEN_ENDPOINT || '',
+        jwksUri: process.env.CONNECTED_APP_UPSTREAM_ENTRA_JWKS_URI || ''
+      }
+    }
   },
   aries: {
     holderAdminUrl: process.env.ARIES_HOLDER_ADMIN_URL || 'http://localhost:6011',

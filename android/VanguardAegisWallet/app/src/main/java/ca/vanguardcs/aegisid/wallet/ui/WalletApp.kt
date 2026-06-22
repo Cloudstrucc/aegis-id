@@ -213,7 +213,7 @@ private fun HomeScreen(store: WalletStore) {
                     StatusBadge("Ready for QR import", VanguardColors.Green)
                     Text("Start with a wallet invitation", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(
-                        "Scan a QR deep link or paste an Aegis ID credential invitation or Aries lab issuer invitation from the web dashboard. Organizations appear in the Organizations tab.",
+                        "Scan a QR deep link or paste an Aegis ID credential invitation, OpenID VC presentation request, or Aries lab issuer invitation from the web dashboard. Organizations appear in the Organizations tab.",
                         color = Color.Gray
                     )
                 }
@@ -227,7 +227,7 @@ private fun HomeScreen(store: WalletStore) {
                     value = pastedInvitation,
                     onValueChange = { pastedInvitation = it },
                     minLines = 4,
-                    placeholder = { Text("aegisid://credential-invite?... or aegisid://invite?oob=...") },
+                    placeholder = { Text("aegisid://credential-invite?... openid-vc://?... or aegisid://invite?oob=...") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Button(
@@ -257,14 +257,14 @@ private fun ScanScreen(store: WalletStore) {
                 StatusBadge("Android pilot", VanguardColors.Cyan)
                 Text("Scan or paste invitation", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(
-                    "For this Android pilot, use the phone camera to open the QR deep link, or paste the invitation URL below. Native camera scanning can be added with ML Kit once the testing flow is settled.",
+                    "For this Android pilot, use the phone camera to open the QR deep link, or paste the credential, OpenID VC, or Aries invitation URL below. Native camera scanning can be added with ML Kit once the testing flow is settled.",
                     color = Color.Gray
                 )
                 OutlinedTextField(
                     value = value,
                     onValueChange = { value = it },
                     minLines = 5,
-                    placeholder = { Text("Paste raw or aegisid:// invitation") },
+                    placeholder = { Text("Paste raw, aegisid://, or openid-vc:// invitation") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Button(
@@ -367,7 +367,7 @@ private fun ConnectionsScreen(store: WalletStore) {
     ) {
         if (store.connections.isEmpty()) {
             item {
-                EmptyState("No connections", "Import an Aegis credential invitation or Aries lab out-of-band invitation from the web dashboard.")
+                EmptyState("No connections", "Import an Aegis credential invitation, OpenID VC presentation request, or Aries lab out-of-band invitation from the web dashboard.")
             }
         } else {
             items(store.connections, key = { it.id }) { connection ->

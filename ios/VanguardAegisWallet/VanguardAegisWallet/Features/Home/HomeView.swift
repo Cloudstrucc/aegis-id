@@ -108,7 +108,7 @@ struct HomeView: View {
                     StatusBadge(text: "Ready for QR import", systemImage: "qrcode.viewfinder", tint: VanguardTheme.green)
                     Text("Start with a wallet invitation")
                         .font(.title3.bold())
-                    Text("Scan or paste an Aegis ID credential invitation or Aries lab issuer invitation from the web dashboard. Organizations appear in the Organizations tab.")
+                    Text("Scan or paste an Aegis ID credential invitation, OpenID VC presentation request, or Aries lab issuer invitation from the web dashboard. Organizations appear in the Organizations tab.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

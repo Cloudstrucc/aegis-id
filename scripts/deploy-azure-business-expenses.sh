@@ -172,7 +172,7 @@ else
   log "Azure CLI is already authenticated"
 fi
 
-log "Selecting Azure subscription"
+log "Selecting Azure subscription: $AZURE_SUBSCRIPTION_ID"
 az account set --subscription "$AZURE_SUBSCRIPTION_ID"
 
 if [[ -z "$BUSINESS_SESSION_SECRET" ]]; then

@@ -8,6 +8,7 @@ For the simple QA and partner distribution runbook, see
 ## What It Supports
 
 - Imports `aegisid://invite?...` and raw Aries Out-of-Band invitation URLs.
+- Imports `openid-vc://` OpenID VC presentation request URLs for local ledger review.
 - Accepts issuer invitations through the hosted Aegis ID lab bridge.
 - Issues mock credentials for lab testing.
 - Sends and accepts wallet challenges.
@@ -17,6 +18,8 @@ For the simple QA and partner distribution runbook, see
 - Shows credential organizations, roles, claims, revocation state, and organization branding when available.
 
 Verified ID and YubiKey are web-app assurance methods in this demo. Microsoft Authenticator presents Verified ID credentials, and the browser performs YubiKey/FIDO2 WebAuthn step-up. The Android wallet receives the downstream Aegis wallet challenge, signs the high-value action, and records the ledger event.
+
+OpenID4VP support is intentionally limited to parsing, storing, and ledger-tracking presentation requests at this stage. Full OpenID4VP response support still requires a W3C verifiable credential store, DID/key management, verifiable presentation signing, verifier response submission, and response validation.
 
 ## Project
 

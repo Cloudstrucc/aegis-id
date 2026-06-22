@@ -623,6 +623,7 @@ async function listCredentialMembershipsForEmail(email) {
         displayName: credential.displayName,
         personType: normalizePersonType(credential.personType),
         personTypeLabel: personTypeLabel(credential.personType),
+        divisionId: credential.divisionId || null,
         status: credential.status || 'invited',
         statusLabel: statusLabel(credential.status || 'invited'),
         roleIds: normalizeArray(credential.roleIds),

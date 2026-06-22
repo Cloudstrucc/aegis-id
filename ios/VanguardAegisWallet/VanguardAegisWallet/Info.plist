@@ -32,6 +32,16 @@
 				<string>$(AEGIS_URL_SCHEME)</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>OpenID VC Presentation</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>openid-vc</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
@@ -43,7 +53,7 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Vanguard Aegis ID Wallet uses the camera to scan Aegis ID credential and Aries lab invitation QR codes.</string>
+	<string>Vanguard Aegis ID Wallet uses the camera to scan Aegis ID credential, Aries lab, and OpenID VC presentation QR codes.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Vanguard Aegis ID Wallet connects to local ACA-Py lab agents while running in the simulator.</string>
 	<key>UIApplicationSceneManifest</key>
