@@ -7,14 +7,15 @@ const { getPresentationPolicy } = require('../services/credential-policy-service
 const { getHealthDashboard } = require('../services/health-service');
 const { getHomeContent } = require('../services/home-content');
 const { getCredentialInvitationView } = require('../services/org-admin-service');
+const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', authorize('public.home'), (req, res) => {
   res.render('pages/home', getHomeContent());
 });
 
-router.get('/architecture', requireAuthenticated, (req, res) => {
+router.get('/architecture', requireAuthenticated, authorize('account.view'), (req, res) => {
   res.render('pages/architecture', {
     title: 'Architecture',
     description: 'Vanguard Cloud Services - Aegis ID reference architecture.',
@@ -23,7 +24,7 @@ router.get('/architecture', requireAuthenticated, (req, res) => {
   });
 });
 
-router.get('/health', async (req, res, next) => {
+router.get('/health', authorize('public.health'), async (req, res, next) => {
   try {
     const health = await getHealthDashboard();
     res.render('pages/health', {
@@ -36,7 +37,7 @@ router.get('/health', async (req, res, next) => {
   }
 });
 
-router.get('/lab/mock-wallet/:kind/:state', requireAuthenticated, async (req, res, next) => {
+router.get('/lab/mock-wallet/:kind/:state', requireAuthenticated, authorize('api.verifiedId.present'), async (req, res, next) => {
   try {
     const publicBaseUrl = config.app.publicBaseUrl.replace(/\/$/, '');
     const requestUrl = `${publicBaseUrl}${req.originalUrl}`;
@@ -55,7 +56,7 @@ router.get('/lab/mock-wallet/:kind/:state', requireAuthenticated, async (req, re
   }
 });
 
-router.get('/wallet/credential-invitations/:credentialId', async (req, res, next) => {
+router.get('/wallet/credential-invitations/:credentialId', authorize('api.wallet.mobile'), async (req, res, next) => {
   try {
     const invite = await getCredentialInvitationView(req.query.organizationId, req.params.credentialId, {
       publicBaseUrl: getRequestBaseUrl(req)

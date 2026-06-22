@@ -70,16 +70,16 @@ function decorateVerifiedIdCheck() {
   const mockMode = config.verifiedId.mode !== 'live';
   return {
     name: 'verified-id',
-    label: 'Microsoft Verified ID',
-    category: 'Production path',
+    label: 'Verified ID integration',
+    category: 'Core assurance',
     endpoint: config.verifiedId.mode,
     ok: mockMode || liveConfigured,
     statusLabel: mockMode ? 'Mock mode' : liveConfigured ? 'Configured' : 'Needs configuration',
     message: mockMode
-      ? 'Running without live Microsoft Entra Verified ID calls.'
+      ? 'Running with local mock credential request handling.'
       : liveConfigured
-        ? 'Tenant, client, authority DID, and manifest are configured.'
-        : 'Live mode is enabled, but one or more Verified ID settings are missing.',
+        ? 'Tenant, client, authority DID, and credential manifest are configured.'
+        : 'Live mode is enabled, but one or more Verified ID integration settings are missing.',
     badgeClass: mockMode || liveConfigured ? 'ok' : 'warn'
   };
 }

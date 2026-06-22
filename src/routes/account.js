@@ -1,6 +1,7 @@
 const express = require('express');
 
 const { requireAuthenticated } = require('../middleware/auth');
+const { authorize } = require('../middleware/authorization');
 const {
   ensureAccountAccessSubscription,
   isAccountAccessSubscription,
@@ -11,7 +12,7 @@ const { listCredentialMembershipsForEmail } = require('../services/org-admin-ser
 
 const router = express.Router();
 
-router.get('/account', requireAuthenticated, async (req, res, next) => {
+router.get('/account', requireAuthenticated, authorize('account.view'), async (req, res, next) => {
   try {
     const subscriptions = (await listSubscriptionsForUser(req.user)).filter((subscription) => !isAccountAccessSubscription(subscription));
     const credentialMemberships = await listCredentialMembershipsForEmail(req.user.email);

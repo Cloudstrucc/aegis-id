@@ -4,7 +4,7 @@ function getHomeContent(overrides = {}) {
   return {
     title: 'Vanguard Cloud Services - Aegis ID',
     description:
-      'Dual-track verified identity architecture for Microsoft Entra Verified ID production and Aries interoperability labs.',
+      'Governed identity assurance, wallet challenges, and interoperability labs for enterprise applications.',
     iosDownloadUrl: config.app.iosTestFlightUrl,
     hasIosDownloadUrl: Boolean(config.app.iosTestFlightUrl),
     androidDownloadUrl: config.app.androidTestingUrl,
@@ -70,9 +70,9 @@ function getHomeContent(overrides = {}) {
     tracks: [
       {
         label: 'Production Track',
-        title: 'Microsoft-native trust path',
+        title: 'Enterprise assurance path',
         summary:
-          'Entra ID, YubiKey/passkeys, Conditional Access, and Microsoft Entra Verified ID stay in one governed enterprise lane.',
+          'Verified credentials, YubiKey/passkeys, OIDC/SAML integrations, wallet challenges, and audit evidence stay in one governed enterprise lane.',
         markers: ['FIDO2 sign-in', 'Verified ID issuance', 'Presentation callbacks', 'Audit-ready events']
       },
       {

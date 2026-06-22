@@ -1,6 +1,7 @@
 const express = require('express');
 
 const { requireAuthenticated } = require('../middleware/auth');
+const { authorize } = require('../middleware/authorization');
 const { getSubscriptionForUser } = require('../services/subscription-service');
 const {
   buildDashboardView,
@@ -23,7 +24,7 @@ const { writeAuditEvent } = require('../services/audit-service');
 const router = express.Router();
 router.use('/dashboard', requireAuthenticated);
 
-router.get('/dashboard/:subscriptionId', async (req, res, next) => {
+router.get('/dashboard/:subscriptionId', authorize('workspace.view'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const membershipWorkspaceIds = await getCredentialMembershipWorkspaceIds(req);
@@ -40,7 +41,7 @@ router.get('/dashboard/:subscriptionId', async (req, res, next) => {
   }
 });
 
-router.get('/dashboard/:subscriptionId/orgs/:workspaceId', async (req, res, next) => {
+router.get('/dashboard/:subscriptionId/orgs/:workspaceId', authorize('workspace.view'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(req, subscription, req.params.workspaceId);
@@ -63,7 +64,7 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', async (req, res, next
   }
 });
 
-router.get('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req, res, next) => {
+router.get('/dashboard/:subscriptionId/platforms/:platformId/setup', authorize('platform.view', { createDefaultWorkspace: true }), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
@@ -73,7 +74,7 @@ router.get('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req,
   }
 });
 
-router.get('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/setup', async (req, res, next) => {
+router.get('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/setup', authorize('platform.view'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(req, subscription, req.params.workspaceId);
@@ -88,7 +89,7 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/s
   }
 });
 
-router.post('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req, res, next) => {
+router.post('/dashboard/:subscriptionId/platforms/:platformId/setup', authorize('platform.configure', { createDefaultWorkspace: true }), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
@@ -105,7 +106,7 @@ router.post('/dashboard/:subscriptionId/platforms/:platformId/setup', async (req
   }
 });
 
-router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/setup', async (req, res, next) => {
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/setup', authorize('platform.configure'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const platform = getPlatformDefinition(req.params.platformId);
@@ -132,7 +133,7 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/
   }
 });
 
-router.post('/dashboard/:subscriptionId/platforms/:platformId/test', async (req, res, next) => {
+router.post('/dashboard/:subscriptionId/platforms/:platformId/test', authorize('platform.test', { createDefaultWorkspace: true }), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
@@ -159,7 +160,7 @@ router.post('/dashboard/:subscriptionId/platforms/:platformId/test', async (req,
   }
 });
 
-router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/test', async (req, res, next) => {
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/platforms/:platformId/test', authorize('platform.test'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const platform = getPlatformDefinition(req.params.platformId);

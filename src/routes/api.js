@@ -41,6 +41,7 @@ const {
   startWalletPasskeyAuthentication,
   startWalletPasskeyRegistration
 } = require('../services/wallet-passkey-service');
+const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
 const verifiedId = createMicrosoftVerifiedIdAdapter();
@@ -54,7 +55,7 @@ router.get('/health', (req, res) => {
   });
 });
 
-router.post('/issuer/create-offer', async (req, res, next) => {
+router.post('/issuer/create-offer', authorize('api.verifiedId.issue'), async (req, res, next) => {
   try {
     const claims = buildDemoEmployeeClaims(req.body);
     const result = await verifiedId.createCredentialOffer({
@@ -87,7 +88,7 @@ router.post('/issuer/create-offer', async (req, res, next) => {
   }
 });
 
-router.post('/issuer/callback', async (req, res, next) => {
+router.post('/issuer/callback', authorize('api.verifiedId.callback'), async (req, res, next) => {
   try {
     validateCallbackApiKey(req);
     await updateTransactionByState(req.body?.state, {
@@ -107,7 +108,7 @@ router.post('/issuer/callback', async (req, res, next) => {
   }
 });
 
-router.post('/verifier/create-request', async (req, res, next) => {
+router.post('/verifier/create-request', authorize('api.verifiedId.present'), async (req, res, next) => {
   try {
     const policy = {
       ...getPresentationPolicy(),
@@ -140,7 +141,7 @@ router.post('/verifier/create-request', async (req, res, next) => {
   }
 });
 
-router.post('/verifier/callback', async (req, res, next) => {
+router.post('/verifier/callback', authorize('api.verifiedId.callback'), async (req, res, next) => {
   try {
     validateCallbackApiKey(req);
     const claims = req.body?.verifiedCredentialsData?.[0]?.claims || req.body?.claims || {};
@@ -176,7 +177,7 @@ router.get('/aries/status', async (req, res, next) => {
   }
 });
 
-router.post('/aries/:agent/invitation', async (req, res, next) => {
+router.post('/aries/:agent/invitation', authorize('api.aries.lab'), async (req, res, next) => {
   try {
     const invitation = await createOutOfBandInvitation(req.params.agent);
     res.status(201).json(invitation);
@@ -185,7 +186,7 @@ router.post('/aries/:agent/invitation', async (req, res, next) => {
   }
 });
 
-router.post('/wallet-lab/accept-invitation', async (req, res, next) => {
+router.post('/wallet-lab/accept-invitation', authorize('api.aries.lab'), async (req, res, next) => {
   try {
     if (!req.body?.rawInvitationUrl) {
       const error = new Error('rawInvitationUrl is required.');
@@ -199,7 +200,7 @@ router.post('/wallet-lab/accept-invitation', async (req, res, next) => {
   }
 });
 
-router.post('/wallet-lab/issuer-mock-credential', async (req, res, next) => {
+router.post('/wallet-lab/issuer-mock-credential', authorize('api.aries.lab'), async (req, res, next) => {
   try {
     if (!req.body?.issuerConnectionId) {
       const error = new Error('issuerConnectionId is required.');
@@ -217,7 +218,7 @@ router.post('/wallet-lab/issuer-mock-credential', async (req, res, next) => {
   }
 });
 
-router.post('/wallet-lab/issuer-challenge', async (req, res, next) => {
+router.post('/wallet-lab/issuer-challenge', authorize('api.aries.lab'), async (req, res, next) => {
   try {
     if (!req.body?.issuerConnectionId) {
       const error = new Error('issuerConnectionId is required.');
@@ -231,7 +232,7 @@ router.post('/wallet-lab/issuer-challenge', async (req, res, next) => {
   }
 });
 
-router.post('/wallet-lab/holder-message', async (req, res, next) => {
+router.post('/wallet-lab/holder-message', authorize('api.aries.lab'), async (req, res, next) => {
   try {
     if (!req.body?.holderConnectionId || !req.body?.content) {
       const error = new Error('holderConnectionId and content are required.');
@@ -276,7 +277,7 @@ router.get('/organizations/:organizationId/profile', async (req, res, next) => {
   }
 });
 
-router.post('/wallet/credential-invitations/:credentialId/accept', async (req, res, next) => {
+router.post('/wallet/credential-invitations/:credentialId/accept', authorize('api.wallet.mobile'), async (req, res, next) => {
   try {
     const organizationId = req.body.organizationId || req.query.organizationId;
     if (!organizationId) {
@@ -313,7 +314,7 @@ router.get('/wallet/passkeys/status', async (req, res, next) => {
   }
 });
 
-router.post('/wallet/passkeys/register/options', async (req, res, next) => {
+router.post('/wallet/passkeys/register/options', authorize('api.wallet.mobile'), async (req, res, next) => {
   try {
     res.json(await startWalletPasskeyRegistration(req.body, getPasskeyRequestInfo(req)));
   } catch (error) {
@@ -321,7 +322,7 @@ router.post('/wallet/passkeys/register/options', async (req, res, next) => {
   }
 });
 
-router.post('/wallet/passkeys/register/verify', async (req, res, next) => {
+router.post('/wallet/passkeys/register/verify', authorize('api.wallet.mobile'), async (req, res, next) => {
   try {
     const status = await finishWalletPasskeyRegistration(req.body, getPasskeyRequestInfo(req));
     await writeAuditEvent('wallet-passkey.registered', {
@@ -335,7 +336,7 @@ router.post('/wallet/passkeys/register/verify', async (req, res, next) => {
   }
 });
 
-router.post('/wallet/passkeys/authenticate/options', async (req, res, next) => {
+router.post('/wallet/passkeys/authenticate/options', authorize('api.wallet.mobile'), async (req, res, next) => {
   try {
     res.json(await startWalletPasskeyAuthentication(req.body, getPasskeyRequestInfo(req)));
   } catch (error) {
@@ -343,7 +344,7 @@ router.post('/wallet/passkeys/authenticate/options', async (req, res, next) => {
   }
 });
 
-router.post('/wallet/passkeys/authenticate/verify', async (req, res, next) => {
+router.post('/wallet/passkeys/authenticate/verify', authorize('api.wallet.mobile'), async (req, res, next) => {
   try {
     const evidence = await finishWalletPasskeyAuthentication(req.body, getPasskeyRequestInfo(req));
     await writeAuditEvent('wallet-passkey.verified', {
@@ -358,7 +359,7 @@ router.post('/wallet/passkeys/authenticate/verify', async (req, res, next) => {
   }
 });
 
-router.post('/wallet-challenges', async (req, res, next) => {
+router.post('/wallet-challenges', authorize('api.walletChallenge.external'), async (req, res, next) => {
   try {
     const challenge = await createExternalWalletChallenge(req.body);
     await writeAuditEvent('wallet-challenge.created', {
@@ -400,7 +401,7 @@ router.get('/wallet-challenges/:challengeId', async (req, res, next) => {
   }
 });
 
-router.post('/wallet-challenges/:challengeId/accept', async (req, res, next) => {
+router.post('/wallet-challenges/:challengeId/accept', authorize('api.walletChallenge.external'), async (req, res, next) => {
   try {
     const challenge = await acceptExternalWalletChallenge(req.params.challengeId, {
       acceptedBy: req.body.acceptedBy,
@@ -427,7 +428,7 @@ router.post('/wallet-challenges/:challengeId/accept', async (req, res, next) => 
   }
 });
 
-router.post('/wallet-challenges/:challengeId/decline', async (req, res, next) => {
+router.post('/wallet-challenges/:challengeId/decline', authorize('api.walletChallenge.external'), async (req, res, next) => {
   try {
     const challenge = await declineExternalWalletChallenge(req.params.challengeId, {
       declinedBy: req.body.declinedBy,
@@ -456,7 +457,7 @@ router.post('/wallet-challenges/:challengeId/decline', async (req, res, next) =>
   }
 });
 
-router.post('/wallet-challenges/:challengeId/accept-with-passkey', async (req, res, next) => {
+router.post('/wallet-challenges/:challengeId/accept-with-passkey', authorize('api.walletChallenge.external'), async (req, res, next) => {
   try {
     const current = await getWalletChallenge(req.params.challengeId);
     const evidence = await finishWalletPasskeyAuthentication(

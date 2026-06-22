@@ -1,11 +1,11 @@
 # Vanguard Cloud Services - Aegis ID
 
-Vanguard Cloud Services - Aegis ID is a Node.js Express + HBS reference implementation for a dual-track verified identity service:
+Vanguard Cloud Services - Aegis ID is a Node.js Express + HBS reference implementation for governed identity assurance, wallet challenges, and interoperability testing:
 
-- **Microsoft-native production path:** Microsoft Entra ID, YubiKey/passkeys, Conditional Access, and Microsoft Entra Verified ID.
+- **Production assurance path:** Subscriber workspaces, Passport-backed sign-in, YubiKey/passkeys, Verified ID integrations, OIDC/SAML integrations, wallet challenges, and audit evidence.
 - **Aries interoperability lab:** ACA-Py issuer/verifier/mediator, the Vanguard Aegis ID mobile app, DIDComm, AnonCreds, and optional VON/Indy development ledger work.
 
-The two tracks share a claim vocabulary and policy layer, but they stay operationally separate. The Aries lab is not a production dependency.
+The production assurance path and the Aries lab share a claim vocabulary and policy layer, but they stay operationally separate. The Aries lab is not a production dependency.
 
 ## What Is Included
 
@@ -25,6 +25,7 @@ The two tracks share a claim vocabulary and policy layer, but they stay operatio
 - Native SwiftUI iOS Aries wallet starter for Vanguard Cloud Services lab invitations.
 - Azure App Service Bicep baseline targeting the Free `F1` tier where available.
 - Architecture, operator, Azure deployment, Aries lab, and security docs.
+- Central authorization policy registry, route middleware, and deny-by-default RBAC tests.
 
 ## Operator Guide
 
@@ -35,6 +36,10 @@ For a branded Vanguard Cloud Services walkthrough covering subscription, dashboa
 For the end-to-end lab flow from web registration to Aries invitation acceptance and a wallet challenge, see:
 
 [docs/vanguard-wallet-e2e-runbook.md](docs/vanguard-wallet-e2e-runbook.md)
+
+For developer and assessor evidence covering route authorization, RBAC policy registration, org privilege enforcement, and deny-by-default tests, see:
+
+[docs/authorization-rbac.md](docs/authorization-rbac.md)
 
 ## When A Wallet Makes Sense
 
@@ -269,7 +274,7 @@ The examples below are intended to make every supported platform card testable f
 
 ### Microsoft Entra Verified ID
 
-Use this to test the Microsoft-native credential path. Mock mode works locally; live mode requires your Vanguard Cloud Services Azure tenant and public HTTPS callback URL.
+Use this to test the Verified ID credential integration. Mock mode works locally; live mode requires your Vanguard Cloud Services Azure tenant and public HTTPS callback URL.
 
 Wizard path:
 

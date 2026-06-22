@@ -1,6 +1,7 @@
 const express = require('express');
 
 const { requireAuthenticated } = require('../middleware/auth');
+const { authorize } = require('../middleware/authorization');
 const { getSubscriptionForUser } = require('../services/subscription-service');
 const {
   deleteWorkspaceForSubscription,
@@ -17,7 +18,7 @@ const { writeAuditEvent } = require('../services/audit-service');
 const router = express.Router();
 router.use('/organizations', requireAuthenticated);
 
-router.get('/organizations/:subscriptionId', async (req, res, next) => {
+router.get('/organizations/:subscriptionId', authorize('workspace.view'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const membershipWorkspaceIds = await getCredentialMembershipWorkspaceIds(req);
@@ -40,7 +41,7 @@ router.get('/organizations/:subscriptionId', async (req, res, next) => {
   }
 });
 
-router.post('/organizations/:subscriptionId', async (req, res, next) => {
+router.post('/organizations/:subscriptionId', authorize('workspace.register'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await registerWorkspaceForSubscription(subscription, req.body);
@@ -58,7 +59,7 @@ router.post('/organizations/:subscriptionId', async (req, res, next) => {
   }
 });
 
-router.post('/organizations/:subscriptionId/:workspaceId/disable', async (req, res, next) => {
+router.post('/organizations/:subscriptionId/:workspaceId/disable', authorize('workspace.manage'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await disableWorkspaceForSubscription(subscription, req.params.workspaceId, true);
@@ -74,7 +75,7 @@ router.post('/organizations/:subscriptionId/:workspaceId/disable', async (req, r
   }
 });
 
-router.post('/organizations/:subscriptionId/:workspaceId/enable', async (req, res, next) => {
+router.post('/organizations/:subscriptionId/:workspaceId/enable', authorize('workspace.manage'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await disableWorkspaceForSubscription(subscription, req.params.workspaceId, false);
@@ -90,7 +91,7 @@ router.post('/organizations/:subscriptionId/:workspaceId/enable', async (req, re
   }
 });
 
-router.post('/organizations/:subscriptionId/:workspaceId/delete', async (req, res, next) => {
+router.post('/organizations/:subscriptionId/:workspaceId/delete', authorize('workspace.manage'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await deleteWorkspaceForSubscription(subscription, req.params.workspaceId);

@@ -23,6 +23,7 @@ const {
   requireAnonymous,
   requirePendingSecondFactor
 } = require('../middleware/auth');
+const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.get('/auth/register', requireAnonymous, (req, res) => {
   res.render('pages/auth-register', buildRegisterView(req));
 });
 
-router.post('/auth/register', requireAnonymous, async (req, res, next) => {
+router.post('/auth/register', requireAnonymous, authorize('auth.register'), async (req, res, next) => {
   try {
     const user = await registerUser(req.body);
     req.session.pendingSecondFactorUserId = user.id;
@@ -76,7 +77,7 @@ router.get('/auth/login', requireAnonymous, (req, res) => {
   req.session.authError = null;
 });
 
-router.post('/auth/login', requireAnonymous, (req, res, next) => {
+router.post('/auth/login', requireAnonymous, authorize('auth.login'), (req, res, next) => {
   passport.authenticate('local', async (error, user, info) => {
     try {
       if (error) {
@@ -118,7 +119,7 @@ router.get('/auth/verify', requirePendingSecondFactor, async (req, res, next) =>
   }
 });
 
-router.post('/auth/verify', requirePendingSecondFactor, async (req, res, next) => {
+router.post('/auth/verify', requirePendingSecondFactor, authorize('auth.secondFactor'), async (req, res, next) => {
   try {
     const user = await getUserById(req.session.pendingSecondFactorUserId);
     const ok = await verifyOtpChallenge(user.id, req.body.code);
@@ -133,7 +134,7 @@ router.post('/auth/verify', requirePendingSecondFactor, async (req, res, next) =
   }
 });
 
-router.post('/auth/verify/resend', requirePendingSecondFactor, async (req, res, next) => {
+router.post('/auth/verify/resend', requirePendingSecondFactor, authorize('auth.secondFactor'), async (req, res, next) => {
   try {
     const user = await getUserById(req.session.pendingSecondFactorUserId);
     const method = ['email', 'sms'].includes(req.body.method) ? req.body.method : user.preferredMfa;
@@ -145,7 +146,7 @@ router.post('/auth/verify/resend', requirePendingSecondFactor, async (req, res, 
   }
 });
 
-router.post('/auth/passkeys/register/options', requirePendingSecondFactor, async (req, res, next) => {
+router.post('/auth/passkeys/register/options', requirePendingSecondFactor, authorize('auth.passkey'), async (req, res, next) => {
   try {
     const options = await startPasskeyRegistration(req.session.pendingSecondFactorUserId, getPasskeyRequestInfo(req));
     res.json(options);
@@ -154,7 +155,7 @@ router.post('/auth/passkeys/register/options', requirePendingSecondFactor, async
   }
 });
 
-router.post('/auth/passkeys/register/verify', requirePendingSecondFactor, async (req, res, next) => {
+router.post('/auth/passkeys/register/verify', requirePendingSecondFactor, authorize('auth.passkey'), async (req, res, next) => {
   try {
     const user = await getUserById(req.session.pendingSecondFactorUserId);
     await finishPasskeyRegistration(user.id, req.body, getPasskeyRequestInfo(req));
@@ -164,7 +165,7 @@ router.post('/auth/passkeys/register/verify', requirePendingSecondFactor, async 
   }
 });
 
-router.post('/auth/passkeys/authenticate/options', requirePendingSecondFactor, async (req, res, next) => {
+router.post('/auth/passkeys/authenticate/options', requirePendingSecondFactor, authorize('auth.passkey'), async (req, res, next) => {
   try {
     const options = await startPasskeyAuthentication(req.session.pendingSecondFactorUserId, getPasskeyRequestInfo(req));
     res.json(options);
@@ -173,7 +174,7 @@ router.post('/auth/passkeys/authenticate/options', requirePendingSecondFactor, a
   }
 });
 
-router.post('/auth/passkeys/authenticate/verify', requirePendingSecondFactor, async (req, res, next) => {
+router.post('/auth/passkeys/authenticate/verify', requirePendingSecondFactor, authorize('auth.passkey'), async (req, res, next) => {
   try {
     const user = await getUserById(req.session.pendingSecondFactorUserId);
     await finishPasskeyAuthentication(user.id, req.body, getPasskeyRequestInfo(req));
@@ -183,7 +184,7 @@ router.post('/auth/passkeys/authenticate/verify', requirePendingSecondFactor, as
   }
 });
 
-router.post('/auth/logout', (req, res, next) => {
+router.post('/auth/logout', authorize('auth.logout'), (req, res, next) => {
   req.logout((error) => {
     if (error) {
       return next(error);

@@ -15,6 +15,7 @@ const {
   listPendingWalletChallenges,
   listWalletConnections
 } = require('../services/oidc-wallet-demo-service');
+const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
 router.use('/demo/oidc-wallet', requireAuthenticated);
@@ -33,7 +34,7 @@ router.get('/demo/oidc-wallet', async (req, res) => {
   });
 });
 
-router.post('/demo/oidc-wallet/login', async (req, res, next) => {
+router.post('/demo/oidc-wallet/login', authorize('oidcDemo.use'), async (req, res, next) => {
   try {
     const { session, authorizationUrl } = await createLoginRequest(getRequestBaseUrl(req));
     await writeAuditEvent('oidc-wallet-demo.login.started', {
@@ -60,7 +61,7 @@ router.get('/demo/oidc-wallet/mock-authorize', (req, res) => {
   });
 });
 
-router.post('/demo/oidc-wallet/mock-authorize', (req, res) => {
+router.post('/demo/oidc-wallet/mock-authorize', authorize('api.oidcProvider.external'), (req, res) => {
   const redirectUri = new URL(req.body.redirectUri);
   redirectUri.searchParams.set('code', `mock-code-${Date.now()}`);
   redirectUri.searchParams.set('state', req.body.state);
@@ -100,7 +101,7 @@ router.get('/demo/oidc-wallet/sessions/:sessionId/challenge', async (req, res, n
   }
 });
 
-router.post('/demo/oidc-wallet/sessions/:sessionId/challenge', async (req, res, next) => {
+router.post('/demo/oidc-wallet/sessions/:sessionId/challenge', authorize('oidcDemo.use'), async (req, res, next) => {
   try {
     const issuerChoice = parseIssuerChoice(req.body.issuerChoice);
     const session = await createWalletChallenge(req.params.sessionId, {
@@ -135,7 +136,7 @@ router.post('/demo/oidc-wallet/sessions/:sessionId/challenge', async (req, res, 
   }
 });
 
-router.post('/demo/oidc-wallet/sessions/:sessionId/complete', async (req, res, next) => {
+router.post('/demo/oidc-wallet/sessions/:sessionId/complete', authorize('oidcDemo.use'), async (req, res, next) => {
   try {
     const session = await confirmWalletChallenge(req.params.sessionId);
     await writeAuditEvent('oidc-wallet-demo.challenge.accepted', {
@@ -179,7 +180,7 @@ router.get('/api/oidc-wallet/challenges', async (req, res, next) => {
   }
 });
 
-router.post('/api/oidc-wallet/challenges/:sessionId/accept', async (req, res, next) => {
+router.post('/api/oidc-wallet/challenges/:sessionId/accept', authorize('api.walletChallenge.external'), async (req, res, next) => {
   try {
     const session = await confirmWalletChallenge(req.params.sessionId);
     await writeAuditEvent('oidc-wallet-demo.challenge.accepted', {
@@ -199,7 +200,7 @@ router.post('/api/oidc-wallet/challenges/:sessionId/accept', async (req, res, ne
   }
 });
 
-router.post('/api/oidc-wallet/challenges/:sessionId/decline', async (req, res, next) => {
+router.post('/api/oidc-wallet/challenges/:sessionId/decline', authorize('api.walletChallenge.external'), async (req, res, next) => {
   try {
     const session = await declineWalletChallenge(req.params.sessionId, {
       reason: req.body.reason

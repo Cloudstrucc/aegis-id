@@ -3,6 +3,7 @@ const express = require('express');
 const config = require('../config');
 const { createAuthorizationCode, exchangeAuthorizationCode } = require('../services/oidc-provider-service');
 const { writeAuditEvent } = require('../services/audit-service');
+const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
 
@@ -35,7 +36,7 @@ router.get('/oidc/authorize', (req, res) => {
   });
 });
 
-router.post('/oidc/authorize', async (req, res, next) => {
+router.post('/oidc/authorize', authorize('api.oidcProvider.external'), async (req, res, next) => {
   try {
     if (req.body.responseType && req.body.responseType !== 'code') {
       const error = new Error('Only authorization code flow is supported in this lab provider.');
@@ -66,7 +67,7 @@ router.post('/oidc/authorize', async (req, res, next) => {
   }
 });
 
-router.post('/oidc/token', async (req, res, next) => {
+router.post('/oidc/token', authorize('api.oidcProvider.external'), async (req, res, next) => {
   try {
     if (req.body.grant_type !== 'authorization_code') {
       const error = new Error('Only authorization_code grant_type is supported.');

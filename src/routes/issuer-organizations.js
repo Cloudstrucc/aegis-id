@@ -9,10 +9,11 @@ const {
 } = require('../services/issuer-organization-service');
 const { assertOrgPrivilege } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
+const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
 
-router.post('/dashboard/:subscriptionId/issuer-organizations/invitations', requireAuthenticated, async (req, res, next) => {
+router.post('/dashboard/:subscriptionId/issuer-organizations/invitations', requireAuthenticated, authorize('issuerOrganization.invite', { createDefaultWorkspace: true }), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await getOrCreateWorkspace(subscription);
@@ -32,7 +33,7 @@ router.post('/dashboard/:subscriptionId/issuer-organizations/invitations', requi
   }
 });
 
-router.post('/dashboard/:subscriptionId/orgs/:workspaceId/issuer-organizations/invitations', requireAuthenticated, async (req, res, next) => {
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/issuer-organizations/invitations', requireAuthenticated, authorize('issuerOrganization.invite'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(subscription, req.params.workspaceId);
@@ -53,7 +54,7 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/issuer-organizations/i
   }
 });
 
-router.post('/api/issuer-organizations/:organizationId/connections', async (req, res, next) => {
+router.post('/api/issuer-organizations/:organizationId/connections', authorize('api.aries.lab'), async (req, res, next) => {
   try {
     const issuerOrganization = await registerIssuerOrganizationConnection(req.params.organizationId, req.body || {});
     await writeAuditEvent('issuer-organization.connection.registered', {

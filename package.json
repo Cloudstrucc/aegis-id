@@ -2,7 +2,7 @@
   "name": "aegis-id",
   "version": "0.1.0",
   "private": true,
-  "description": "Vanguard Cloud Services - Aegis ID dual-track identity architecture: Microsoft Entra Verified ID production path plus Aries interoperability lab.",
+  "description": "Vanguard Cloud Services - Aegis ID identity assurance platform with Verified ID, passkey, wallet challenge, OIDC/SAML, and Aries interoperability lab support.",
   "main": "src/server.js",
   "engines": {
     "node": ">=20"

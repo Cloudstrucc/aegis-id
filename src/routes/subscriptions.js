@@ -3,6 +3,7 @@ const express = require('express');
 const { createSubscription, validateSubscription } = require('../services/subscription-service');
 const { writeAuditEvent } = require('../services/audit-service');
 const { requireAuthenticated } = require('../middleware/auth');
+const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.get('/subscribe', requireAuthenticated, (req, res) => {
   res.render('pages/subscribe', buildSubscribeView(req));
 });
 
-router.post('/subscribe', requireAuthenticated, async (req, res, next) => {
+router.post('/subscribe', requireAuthenticated, authorize('subscription.create'), async (req, res, next) => {
   try {
     const record = await createSubscription(req.body, req.user);
     delete req.session.subscriptionDraft;

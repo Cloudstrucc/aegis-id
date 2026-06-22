@@ -5286,7 +5286,7 @@ body:has(.workspace-blade) .site-footer div span {
 .health-page {
   display: grid;
   gap: 28px;
-  padding: 72px 6% 84px;
+  padding: 132px 6% 84px;
   background:
     radial-gradient(circle at top right, rgba(15, 178, 203, 0.14), transparent 30%),
     linear-gradient(180deg, #f4f9fc 0%, #ffffff 60%);
