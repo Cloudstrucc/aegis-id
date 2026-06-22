@@ -230,6 +230,31 @@ const PRIVILEGE_GROUPS = [
         description: 'Open setup wizards, test providers, and create org issuer invitations.'
       },
       {
+        id: 'connectedApps.view',
+        name: 'View connected apps',
+        description: 'See relying-party app registrations, protocol settings, and non-secret configuration.'
+      },
+      {
+        id: 'connectedApps.manage',
+        name: 'Manage connected apps',
+        description: 'Create, edit, disable, and configure relying-party applications that trust Aegis ID.'
+      },
+      {
+        id: 'connectedApps.credentials.manage',
+        name: 'Manage connected app credentials',
+        description: 'Generate client secrets, import certificates, and rotate application credentials.'
+      },
+      {
+        id: 'connectedApps.logs.view',
+        name: 'View connected app logs',
+        description: 'Review authentication, API, and wallet challenge events for relying-party applications.'
+      },
+      {
+        id: 'connectedApps.logs.export',
+        name: 'Export connected app logs',
+        description: 'Export connected app authentication, API, and wallet challenge evidence as CSV.'
+      },
+      {
         id: 'admin.nomination.eligible',
         name: 'Admin nomination eligible',
         description: 'Marks a holder as eligible for co-admin promotion after wallet challenges.'
@@ -428,6 +453,10 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
     canManageBranding: viewer.canManageBranding,
     canViewIntegrations: viewer.canViewIntegrations,
     canManageIntegrations: viewer.canManageIntegrations,
+    canViewConnectedApps: viewer.canViewConnectedApps,
+    canManageConnectedApps: viewer.canManageConnectedApps,
+    canManageConnectedAppCredentials: viewer.canManageConnectedAppCredentials,
+    canExportConnectedAppLogs: viewer.canExportConnectedAppLogs,
     canViewOrgLedger: viewer.canViewOrgLedger,
     canManageAdminAssurance: viewer.canManageAdminAssurance,
     events: viewer.canViewOrgLedger
@@ -1745,6 +1774,10 @@ function buildViewerAccess(workspace, subscription, state) {
   const canManageBranding = has('branding.manage');
   const canViewIntegrations = hasAny(['integrations.view', 'integrations.manage']);
   const canManageIntegrations = has('integrations.manage');
+  const canViewConnectedApps = hasAny(['connectedApps.view', 'connectedApps.manage', 'connectedApps.logs.view']);
+  const canManageConnectedApps = has('connectedApps.manage');
+  const canManageConnectedAppCredentials = hasAny(['connectedApps.manage', 'connectedApps.credentials.manage']);
+  const canExportConnectedAppLogs = has('connectedApps.logs.export');
   const canViewOrgLedger = has('ledger.view.org');
   const canManageAdminAssurance = has('admin.assurance.manage');
 
@@ -1775,6 +1808,10 @@ function buildViewerAccess(workspace, subscription, state) {
     canManageBranding,
     canViewIntegrations,
     canManageIntegrations,
+    canViewConnectedApps,
+    canManageConnectedApps,
+    canManageConnectedAppCredentials,
+    canExportConnectedAppLogs,
     canViewOrgLedger,
     canManageAdminAssurance,
     modeLabel: canAdminister ? 'Administrator workspace' : canViewPeople ? 'Privileged contributor workspace' : 'Credential holder workspace',
@@ -1863,11 +1900,19 @@ function buildBladeNavSections(viewer, adminProfile = null) {
       label: 'Assurance',
       items: [
         {
+          key: 'connected-apps',
+          href: '#connected-apps',
+          label: 'Connected apps',
+          description: 'Relying parties',
+          icon: '08',
+          visible: viewer.canViewConnectedApps
+        },
+        {
           key: 'platforms',
           href: '#identity-platforms',
           label: 'Integrations',
           description: 'IdP',
-          icon: '08',
+          icon: '09',
           visible: viewer.canViewIntegrations
         },
         {
@@ -1875,7 +1920,7 @@ function buildBladeNavSections(viewer, adminProfile = null) {
           href: '#issuer-orgs',
           label: 'Issuer orgs',
           description: 'Wallet',
-          icon: '09',
+          icon: '10',
           visible: viewer.canViewIntegrations
         },
         {
@@ -1883,7 +1928,7 @@ function buildBladeNavSections(viewer, adminProfile = null) {
           href: '#wallet-challenge-events',
           label: 'Wallet events',
           description: 'Audit',
-          icon: '10',
+          icon: '11',
           visible: true
         },
         {
@@ -1891,7 +1936,7 @@ function buildBladeNavSections(viewer, adminProfile = null) {
           href: '#external-wallet-ledger',
           label: viewer.canViewOrgLedger ? 'App ledger' : 'My ledger',
           description: 'Apps',
-          icon: '11',
+          icon: '12',
           visible: true
         },
         {
@@ -1899,7 +1944,7 @@ function buildBladeNavSections(viewer, adminProfile = null) {
           href: '#admin-verification',
           label: 'Admin verification',
           description: 'IDV',
-          icon: '12',
+          icon: '13',
           statusTone: adminProfile?.isVerified ? 'success' : 'warning',
           statusLabel: adminProfile?.isVerified ? 'Profile validated' : 'Verification required',
           visible: viewer.canManageAdminAssurance
@@ -1909,7 +1954,7 @@ function buildBladeNavSections(viewer, adminProfile = null) {
           href: '#workspace-settings',
           label: 'Settings',
           description: 'Policy',
-          icon: '13',
+          icon: '14',
           visible: viewer.canAdminister
         }
       ]
@@ -2188,10 +2233,23 @@ async function buildCredentialInvitation(workspace, credential, options = {}) {
   });
   const inviteUrl = `aegisid://credential-invite?${walletParams.toString()}`;
   const webInviteUrl = `${publicBaseUrl}/wallet/credential-invitations/${encodeURIComponent(credential.id)}?organizationId=${encodeURIComponent(workspace.id)}`;
+  const invitePayload = {
+    credentialId: credential.id,
+    holderEmail: credential.holderEmail,
+    organizationId: workspace.id,
+    organizationName: workspace.organization || credential.organizationName || 'Vanguard organization',
+    personType: credential.personType,
+    roleIds: credential.roleIds || [],
+    requestedClaimKeys: credential.consent?.requestedClaimKeys || credential.requestedClaimKeys || [],
+    expiresAt: credential.inviteExpiresAt || '',
+    inviteUrl,
+    webInviteUrl
+  };
   return {
     inviteUrl,
     webInviteUrl,
-    inviteQrCodeDataUrl: await QRCode.toDataURL(inviteUrl, { margin: 1, width: 360 })
+    inviteQrCodeDataUrl: await QRCode.toDataURL(inviteUrl, { margin: 1, width: 360 }),
+    invitePayloadJson: JSON.stringify(invitePayload, null, 2)
   };
 }
 
@@ -2650,6 +2708,7 @@ module.exports = {
   grantCredentialConsent,
   getCredentialInvitationView,
   hasCredentialMembershipForEmail,
+  isWorkspaceAdmin,
   listCredentialMembershipsForEmail,
   getOrgAdminView,
   getOrganizationBranding,

@@ -19,6 +19,7 @@ The production assurance path and the Aries lab share a claim vocabulary and pol
 - MSAL-backed `VID_MODE=live` adapter boundary for Microsoft Entra Verified ID.
 - Redacted audit event storage.
 - Subscriber dashboard with setup wizards for Microsoft Verified ID, Keycloak, Okta, and generic OIDC/SAML.
+- Connected Apps blade for registering relying-party OIDC/OAuth clients, generating secrets, importing certificate credentials, sending wallet challenges, and auditing API activity.
 - OIDC + wallet challenge example relying-party app.
 - Standalone example app showing Aegis ID OIDC, wallet-signed expense approvals, and PDF e-signature envelopes backed by wallet challenges.
 - ACA-Py Docker Compose lab and helper scripts.
@@ -40,6 +41,10 @@ For the end-to-end lab flow from web registration to Aries invitation acceptance
 For developer and assessor evidence covering route authorization, RBAC policy registration, org privilege enforcement, and deny-by-default tests, see:
 
 [docs/authorization-rbac.md](docs/authorization-rbac.md)
+
+For Connected Apps, OIDC/OAuth relying-party setup, client credentials, certificate fingerprints, wallet challenge APIs, and developer evidence, see:
+
+[docs/connected-apps.md](docs/connected-apps.md)
 
 ## When A Wallet Makes Sense
 

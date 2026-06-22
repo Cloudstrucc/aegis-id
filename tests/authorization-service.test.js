@@ -20,6 +20,8 @@ test('authorization registry exposes explicit, valid policies', () => {
   assert.ok(policies.length > 0);
   assert.equal(new Set(ids).size, ids.length, 'Policy IDs must be unique.');
   assert.ok(getPolicy('org.credentials.issue'));
+  assert.equal(getPolicy('admin.health.view').type, 'adminAnyWorkspace');
+  assert.equal(getPolicy('public.health'), null);
   assert.equal(isExternalPolicy('api.wallet.mobile'), true);
   assert.throws(() => requirePolicy('missing.policy'), /Unknown authorization policy/);
 

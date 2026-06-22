@@ -6,6 +6,7 @@
   <nav class="site-nav" aria-label="Site">
     {{#if isAuthenticated}}
       <a href="/account">Account</a>
+      <a href="/developer/api">API Docs</a>
       <a href="/subscribe">Subscribe Org</a>
       <a href="/architecture">Architecture</a>
       <a href="/demo/oidc-wallet">OIDC Demo</a>
@@ -17,6 +18,8 @@
       <a href="/auth/login">Sign in</a>
       <a href="/#signup">Create account</a>
     {{/if}}
-    <a href="/health">Health</a>
+    {{#if canViewHealth}}
+      <a href="/health">Health</a>
+    {{/if}}
   </nav>
 </header>

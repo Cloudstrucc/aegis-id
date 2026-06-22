@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vanguard Aegis ID and Microsoft Verified ID</title>
+  <title>Vanguard Aegis ID Product Brief</title>
   <style>
     :root {
       --ink: #061625;
@@ -1232,8 +1232,6 @@
   </style>
 </head>
 <body>
-  <button class="print-button" type="button" data-print>Export PDF</button>
-
   <div class="shell">
     <div class="hero" id="cover">
       <div class="topbar">
@@ -1246,7 +1244,7 @@
           <h1>Identity assurance for real business decisions.</h1>
           <p class="lead">
             Vanguard Aegis ID helps organizations prove who someone is, what they are allowed to do,
-            and whether they personally approved a sensitive action across Microsoft 365, enterprise
+            and whether they personally approved a sensitive action across enterprise directories,
             web apps, portals, badges, and contractor workflows.
           </p>
           <div class="hero-actions">
@@ -1273,9 +1271,9 @@
                   </div>
                   <span class="chip">Assurance required</span>
                 </div>
-                <h2 class="screen-title">Business Expenses</h2>
+                <h2 class="screen-title">High-integrity decisions</h2>
                 <p class="screen-copy">
-                  One policy layer for Verified ID, YubiKey/FIDO2, OIDC/SAML apps, wallet challenges, and ledger evidence.
+                  One policy layer for verified credentials, FIDO2/passkey step-up, connected apps, wallet challenges, and ledger evidence.
                 </p>
                 <div class="status-row">
                   <div class="status-pill"><strong>Credential</strong><span>Verified ID</span></div>
@@ -1308,8 +1306,8 @@
                 </div>
               </div>
               <p class="mock-caption">
-                Aegis ID supports multiple assurance modes: Microsoft Verified ID for portable credentials,
-                YubiKey/FIDO2 for hardware-backed step-up, and wallet challenges for signed business actions.
+                Aegis ID supports multiple assurance modes: portable verified credentials,
+                hardware-backed FIDO2/passkey step-up, and wallet challenges for signed business actions.
               </p>
             </div>
           </div>
@@ -1346,9 +1344,9 @@
 
       <div class="value-grid" style="margin-top: 34px;">
         <div class="value-card">
-          <small>Executive value</small>
-          <strong>Reduce risk in sensitive decisions.</strong>
-          <p>Require stronger proof for approvals, administrator changes, claims sharing, badge access, and contractor onboarding.</p>
+          <small>High-integrity decisions</small>
+          <strong>Turn app actions into signed evidence.</strong>
+          <p>Use example workflows such as digital signatures and expense approvals to test wallet challenges. The same OIDC/OAuth and API pattern can protect contract approvals, registrations, portal actions, attestations, and custom high-value decisions.</p>
         </div>
         <div class="value-card">
           <small>Management value</small>
@@ -1358,7 +1356,7 @@
         <div class="value-card">
           <small>IT value</small>
           <strong>Connect to the stack you already use.</strong>
-          <p>Work with Entra, Verified ID, YubiKey/FIDO2, OIDC, SAML, Keycloak, Okta, custom web apps, and portal scenarios.</p>
+          <p>Work with enterprise directories, verified credentials, FIDO2/passkeys, OIDC, SAML, Keycloak, Okta, custom web apps, APIs, and portal scenarios.</p>
         </div>
       </div>
 
@@ -1397,14 +1395,14 @@
             <p class="eyebrow">Assurance architecture</p>
             <h2>One policy layer for many kinds of proof.</h2>
             <p class="section-kicker">
-              Aegis ID does not force every organization into one identity pattern. It can use Microsoft
-              Verified ID for portable credentials, YubiKey/FIDO2 for hardware-backed assurance, and
-              OIDC/SAML for standard application integration.
+              Aegis ID does not force every organization into one identity pattern. It can use
+              verified credentials for portable proof, FIDO2/passkeys for hardware-backed assurance,
+              and OIDC/OAuth or SAML for standard application integration.
             </p>
             <ul class="quiet-list">
               <li>
                 <strong>Portable credential proof</strong>
-                <span>Use Microsoft Verified ID when a credential needs to be presented across departments, portals, or external organizations.</span>
+                <span>Use a verified credential integration when a credential needs to be presented across departments, portals, or external organizations.</span>
               </li>
               <li>
                 <strong>Hardware-backed step-up</strong>
@@ -1422,9 +1420,9 @@
               <div class="node">
                 <div class="logo-row">
                   <span class="ms-mark"><i></i><i></i><i></i><i></i></span>
-                  <strong>Microsoft Verified ID</strong>
+                <strong>Verified credential issuer</strong>
                 </div>
-                <p>Credential issuance, Authenticator presentation, Request Service API callbacks.</p>
+                <p>Credential issuance, wallet presentation, request-service callbacks, and issuer policy.</p>
               </div>
               <div class="arrow" aria-hidden="true">
                 <span></span>
@@ -1479,8 +1477,8 @@
         </div>
         <div class="connector-strip">
           <span class="connector-chip"><span>AD</span> Active Directory</span>
-          <span class="connector-chip"><span>EID</span> Microsoft Entra ID</span>
-          <span class="connector-chip"><span>VID</span> Verified ID</span>
+          <span class="connector-chip"><span>IDP</span> Enterprise identity provider</span>
+          <span class="connector-chip"><span>VID</span> Verified credentials</span>
           <span class="connector-chip"><span>YK</span> YubiKey 5C NFC</span>
           <span class="connector-chip"><span>OIDC</span> OpenID Connect</span>
           <span class="connector-chip"><span>SAML</span> SAML</span>
@@ -1530,15 +1528,15 @@
             <div class="portal-hero">
               <div class="mini-logo" style="color: #ffffff;">
                 <span class="app-mark">APP</span>
-                <span>Business Expenses</span>
+                <span>High-integrity workflow</span>
               </div>
-              <h3 style="margin-top: 26px;">Approval requires stronger assurance.</h3>
-              <p>Verified ID or YubiKey step-up for entry. Aegis wallet challenge for every high-value decision.</p>
+              <h3 style="margin-top: 26px;">Sensitive actions require stronger assurance.</h3>
+              <p>Use OIDC/OAuth entry, optional FIDO2/passkey step-up, and Aegis wallet challenges for high-value decisions.</p>
             </div>
             <div class="portal-body">
               <div class="portal-tile">
-                <strong>EXP-2026-1048</strong>
-                <span>Cloud security assessment - CAD 4,250.00</span>
+                <strong>Example use cases</strong>
+                <span>Digital signatures, expense approvals, registrations, contracts, and portal attestations.</span>
               </div>
               <div class="portal-tile">
                 <strong>Ledger event</strong>
@@ -1546,7 +1544,7 @@
               </div>
             </div>
           </div>
-          <p class="mock-caption">Application view: business users stay in the app while Aegis adds proof, consent, and evidence.</p>
+          <p class="mock-caption">Application view: users stay in the relying-party app while Aegis adds proof, consent, and decision evidence.</p>
         </div>
       </div>
 
@@ -1659,7 +1657,7 @@
           <div><p>Records who did what, for which application, with what payload, and at what time.</p></div>
         </div>
         <div class="matrix-row">
-          <div><strong>Microsoft Verified ID</strong><p>Portable credential proof</p></div>
+          <div><strong>Verified credentials</strong><p>Portable credential proof</p></div>
           <div><p>The user needs to present an employee, contractor, badge, or eligibility credential outside a single app.</p></div>
           <div><p>Users can scan a QR code or open a deep link in Authenticator. The QR code is a transport mechanism, not the trust model.</p></div>
         </div>
@@ -1772,8 +1770,5 @@
     </div>
   </div>
 
-  <script>
-    document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
-  </script>
 </body>
 </html>

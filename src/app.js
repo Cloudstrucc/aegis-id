@@ -20,6 +20,9 @@ const oidcProviderRoutes = require('./routes/oidc-provider');
 const apiRoutes = require('./routes/api');
 const oidcWalletDemoRoutes = require('./routes/oidc-wallet-demo');
 const issuerOrganizationRoutes = require('./routes/issuer-organizations');
+const connectedAppRoutes = require('./routes/connected-apps');
+const connectedOAuthRoutes = require('./routes/connected-oauth');
+const developerDocsRoutes = require('./routes/developer-docs');
 const { attachAuthLocals } = require('./middleware/auth');
 const { configurePassport } = require('./services/passport-service');
 
@@ -464,6 +467,9 @@ function createApp() {
   app.use('/', oidcProviderRoutes);
   app.use('/', issuerOrganizationRoutes);
   app.use('/', oidcWalletDemoRoutes);
+  app.use('/', connectedAppRoutes);
+  app.use('/', connectedOAuthRoutes);
+  app.use('/', developerDocsRoutes);
   app.use('/api', apiRoutes);
 
   app.use((req, res) => {

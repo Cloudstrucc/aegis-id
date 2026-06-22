@@ -1,0 +1,110 @@
+<main class="api-docs-page">
+  <section class="api-docs-hero">
+    <p class="eyebrow">Developer API</p>
+    <h1>Connect relying-party apps to Aegis ID.</h1>
+    <p>Use Connected Apps to register OIDC clients, issue client secrets or certificate fingerprints, authenticate users, and send high-assurance wallet challenges from external applications.</p>
+    <div class="button-row">
+      <a class="button button--primary button--blue" href="{{openApiUrl}}" target="_blank" rel="noopener">OpenAPI JSON</a>
+      <a class="button button--ghost" href="/account">Account</a>
+    </div>
+  </section>
+
+  <section class="api-docs-grid">
+    <article>
+      <span>01</span>
+      <h2>Register a connected app</h2>
+      <p>Open an organization workspace, go to Connected Apps, then create a relying-party registration with callback URIs, grants, claim release settings, branding, and onboarding mode.</p>
+    </article>
+    <article>
+      <span>02</span>
+      <h2>Create credentials</h2>
+      <p>Generate a one-time client secret for pilots or import a certificate and use its SHA-256 fingerprint for certificate-backed client authentication.</p>
+    </article>
+    <article>
+      <span>03</span>
+      <h2>Use OIDC</h2>
+      <p>Point your application to the discovery document and use authorization-code flow for browser/mobile sign-in. Client credentials are available for server-to-server API access.</p>
+    </article>
+    <article>
+      <span>04</span>
+      <h2>Send wallet challenges</h2>
+      <p>Call the challenge API when a user approves an expense, signs a PDF, accepts a role change, or performs another high-value business action.</p>
+    </article>
+  </section>
+
+  <section class="api-docs-section">
+    <div class="section-heading">
+      <p class="eyebrow">Endpoints</p>
+      <h2>OIDC and wallet challenge APIs.</h2>
+      <p>Replace <code>{{publicBaseUrl}}</code> with the environment you are testing: local, dev, QA, or production.</p>
+    </div>
+    <div class="api-endpoint-list">
+      <article>
+        <span>GET</span>
+        <code>{{publicBaseUrl}}/oauth2/.well-known/openid-configuration</code>
+        <p>Discovery metadata for authorization, token, JWKS, userinfo, introspection, and revocation endpoints.</p>
+      </article>
+      <article>
+        <span>GET</span>
+        <code>{{publicBaseUrl}}/oauth2/authorize</code>
+        <p>Authorization-code sign-in endpoint for browser and mobile relying parties.</p>
+      </article>
+      <article>
+        <span>POST</span>
+        <code>{{publicBaseUrl}}/oauth2/token</code>
+        <p>Token exchange endpoint for authorization_code and client_credentials grants.</p>
+      </article>
+      <article>
+        <span>POST</span>
+        <code>{{publicBaseUrl}}/api/connected-apps/wallet-challenges</code>
+        <p>Client-authenticated API for sending wallet challenges and recording the immutable decision event.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="api-docs-section">
+    <div class="section-heading">
+      <p class="eyebrow">Examples</p>
+      <h2>Token and challenge requests.</h2>
+    </div>
+    <div class="api-code-grid">
+      <article>
+        <h3>Authorization URL</h3>
+        <pre><code>{{publicBaseUrl}}/oauth2/authorize?client_id=aegis_client_id&amp;redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback&amp;response_type=code&amp;scope=openid%20profile%20email&amp;state=opaque&amp;nonce=opaque</code></pre>
+      </article>
+      <article>
+        <h3>Token request</h3>
+        <pre><code>curl -X POST {{publicBaseUrl}}/oauth2/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "client_id=aegis_client_id" \
+  -d "client_secret=one_time_secret" \
+  -d "code=aegis_code_value" \
+  -d "redirect_uri=https://app.example.com/callback"</code></pre>
+      </article>
+      <article>
+        <h3>Wallet challenge</h3>
+        <pre><code>curl -X POST {{publicBaseUrl}}/api/connected-apps/wallet-challenges \
+  -H "Content-Type: application/json" \
+  -H "x-aegis-client-id: aegis_client_id" \
+  -H "x-aegis-client-secret: one_time_secret" \
+  -d '{
+    "subject": "person@example.com",
+    "action": "approve-expense",
+    "resourceType": "expense",
+    "resourceId": "EXP-2026-1048",
+    "payload": { "amount": 1250.75, "currency": "CAD" },
+    "requiredAssurance": "passkey"
+  }'</code></pre>
+      </article>
+      <article>
+        <h3>Certificate fingerprint auth</h3>
+        <pre><code>curl -X POST {{publicBaseUrl}}/api/connected-apps/wallet-challenges \
+  -H "x-aegis-client-id: aegis_client_id" \
+  -H "x-aegis-certificate-sha256: certificate_sha256_fingerprint" \
+  -H "Content-Type: application/json" \
+  -d '{ "subject": "person@example.com", "action": "sign-contract" }'</code></pre>
+      </article>
+    </div>
+  </section>
+</main>

@@ -34,7 +34,7 @@ function getHomeContent(overrides = {}) {
       {
         icon: '01',
         title: 'Credential proof',
-        summary: 'Microsoft Verified ID presents portable employee, contractor, partner, or badge credentials.'
+        summary: 'Verified credentials present portable employee, contractor, partner, or badge proof across trusted workflows.'
       },
       {
         icon: '02',

@@ -24,7 +24,7 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
   });
 });
 
-router.get('/health', authorize('public.health'), async (req, res, next) => {
+router.get('/health', authorize('admin.health.view'), async (req, res, next) => {
   try {
     const health = await getHealthDashboard();
     res.render('pages/health', {

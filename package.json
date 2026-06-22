@@ -28,7 +28,9 @@
     "express-session": "^1.19.0",
     "hbs": "^4.2.0",
     "helmet": "^8.0.0",
+    "jose": "^6.2.3",
     "morgan": "^1.10.0",
+    "oidc-provider": "^9.8.5",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "qrcode": "^1.5.4"

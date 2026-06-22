@@ -1,0 +1,44 @@
+<main class="authorize-page">
+  <section class="authorize-panel">
+    <p class="eyebrow">Connected app authorization</p>
+    <h1>{{app.name}}</h1>
+    <p>{{app.description}}</p>
+
+    <dl class="claim-list">
+      <div>
+        <dt>Organization</dt>
+        <dd>{{app.workspaceId}}</dd>
+      </div>
+      <div>
+        <dt>Client ID</dt>
+        <dd><code>{{app.clientId}}</code></dd>
+      </div>
+      <div>
+        <dt>Redirect URI</dt>
+        <dd><code>{{request.redirectUri}}</code></dd>
+      </div>
+    </dl>
+
+    <div class="authorize-scopes" aria-label="Requested scopes">
+      {{#each scopes}}
+        <span>{{this}}</span>
+      {{/each}}
+    </div>
+
+    <article class="note-panel">
+      <strong>What will happen</strong>
+      <span>Aegis ID will issue an authorization code to this connected app. The app can exchange it for OIDC tokens containing only the configured claims.</span>
+    </article>
+
+    <form method="post" action="/oauth2/authorize" class="button-row">
+      <input type="hidden" name="client_id" value="{{request.clientId}}">
+      <input type="hidden" name="redirect_uri" value="{{request.redirectUri}}">
+      <input type="hidden" name="response_type" value="{{request.responseType}}">
+      <input type="hidden" name="scope" value="{{request.scope}}">
+      <input type="hidden" name="state" value="{{request.state}}">
+      <input type="hidden" name="nonce" value="{{request.nonce}}">
+      <button class="button button--primary button--blue" type="submit">Authorize app</button>
+      <a class="button button--ghost" href="/">Cancel</a>
+    </form>
+  </section>
+</main>

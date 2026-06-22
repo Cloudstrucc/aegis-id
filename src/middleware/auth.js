@@ -1,7 +1,20 @@
+const { canViewAdminOperations } = require('../services/admin-access-service');
+
 function attachAuthLocals(req, res, next) {
   res.locals.currentUser = req.user || null;
   res.locals.isAuthenticated = Boolean(req.user);
-  next();
+  res.locals.canViewHealth = false;
+
+  if (!req.user) {
+    return next();
+  }
+
+  return canViewAdminOperations(req.user)
+    .then((canViewHealth) => {
+      res.locals.canViewHealth = canViewHealth;
+      next();
+    })
+    .catch(next);
 }
 
 function requireAuthenticated(req, res, next) {

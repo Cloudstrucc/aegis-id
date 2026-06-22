@@ -14,6 +14,7 @@ const {
   savePlatformStep
 } = require('../services/platform-service');
 const { listIssuerOrganizations } = require('../services/issuer-organization-service');
+const { getConnectedAppsView } = require('../services/connected-app-service');
 const {
   getOrgAdminView,
   listCredentialMembershipsForEmail
@@ -49,6 +50,24 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', authorize('workspace.
     const orgAdmin = await getOrgAdminView(workspace, subscription, req.query, {
       publicBaseUrl: getRequestBaseUrl(req)
     });
+    const connectedAppSecret = req.session.connectedAppSecret || null;
+    delete req.session.connectedAppSecret;
+    const connectedAppSecretReveal = req.session.connectedAppSecretReveal || null;
+    if (connectedAppSecretReveal && Date.parse(connectedAppSecretReveal.expiresAt || '') <= Date.now()) {
+      delete req.session.connectedAppSecretReveal;
+    }
+    const connectedAppSecretRevealPending = req.session.connectedAppSecretRevealRequest || null;
+    if (connectedAppSecretRevealPending && Date.parse(connectedAppSecretRevealPending.expiresAt || '') <= Date.now()) {
+      delete req.session.connectedAppSecretRevealRequest;
+    }
+    const connectedApps = orgAdmin.canViewConnectedApps
+      ? await getConnectedAppsView(workspace, subscription, req.query, {
+          publicBaseUrl: getRequestBaseUrl(req),
+          secretCreated: connectedAppSecret,
+          revealedSecret: req.session.connectedAppSecretReveal || null,
+          secretRevealPending: req.session.connectedAppSecretRevealRequest || null
+        })
+      : null;
     const walletChallengeLedger = await listWalletChallengeLedger({ organizationId: workspace.id, limit: 25 });
     res.render('pages/dashboard', {
       ...buildDashboardView(subscription, workspace),
@@ -56,6 +75,7 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', authorize('workspace.
       hasIssuerOrganizations: issuerOrganizations.length > 0,
       walletChallengeLedger,
       hasWalletChallengeLedger: walletChallengeLedger.length > 0,
+      connectedApps,
       orgAdmin,
       welcome: req.query.welcome === '1'
     });

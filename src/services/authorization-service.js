@@ -2,6 +2,7 @@ const POLICY_TYPES = new Set([
   'public',
   'anonymous',
   'authenticated',
+  'adminAnyWorkspace',
   'subscription',
   'orgPrivilege',
   'external'
@@ -11,8 +12,8 @@ const POLICIES = Object.freeze({
   'public.home': policy('public.home', 'public', 'page', 'read', {
     description: 'Anonymous landing page and static product content.'
   }),
-  'public.health': policy('public.health', 'public', 'health', 'read', {
-    description: 'Human-readable service health dashboard.'
+  'admin.health.view': policy('admin.health.view', 'adminAnyWorkspace', 'health', 'read', {
+    description: 'Human-readable service health dashboard for organization administrators.'
   }),
   'auth.register': policy('auth.register', 'anonymous', 'user', 'create', {
     fields: ['displayName', 'email', 'phone', 'organization', 'plan', 'interest', 'preferredMfa']
@@ -44,6 +45,32 @@ const POLICIES = Object.freeze({
   'platform.test': policy('platform.test', 'orgPrivilege', 'integration', 'execute', {
     privilegeId: 'integrations.manage'
   }),
+  'connectedApps.view': policy('connectedApps.view', 'orgPrivilege', 'connected-app', 'read', {
+    privilegeId: 'connectedApps.view'
+  }),
+  'connectedApps.manage': policy('connectedApps.manage', 'orgPrivilege', 'connected-app', 'manage', {
+    privilegeId: 'connectedApps.manage',
+    fields: [
+      'name',
+      'description',
+      'redirectUris',
+      'postLogoutRedirectUris',
+      'grantTypes',
+      'scopes',
+      'claimKeys',
+      'onboardingMode',
+      'walletChallengePolicy',
+      'tokenEndpointAuthMethod'
+    ]
+  }),
+  'connectedApps.credentials.manage': policy('connectedApps.credentials.manage', 'orgPrivilege', 'connected-app-credential', 'manage', {
+    privilegeId: 'connectedApps.credentials.manage',
+    fields: ['label', 'expiresAt', 'certificatePem']
+  }),
+  'connectedApps.logs.export': policy('connectedApps.logs.export', 'orgPrivilege', 'connected-app-log', 'export', {
+    privilegeId: 'connectedApps.logs.export'
+  }),
+  'developerApiDocs.view': policy('developerApiDocs.view', 'authenticated', 'developer-api-docs', 'read'),
   'issuerOrganization.invite': policy('issuerOrganization.invite', 'orgPrivilege', 'issuer-organization', 'create', {
     privilegeId: 'integrations.manage'
   }),
@@ -121,7 +148,13 @@ const POLICIES = Object.freeze({
   'api.walletChallenge.external': policy('api.walletChallenge.external', 'external', 'wallet-challenge', 'execute', {
     description: 'External app challenge API. Production deployments should pair this with client authentication.'
   }),
-  'api.oidcProvider.external': policy('api.oidcProvider.external', 'external', 'oidc-provider', 'execute')
+  'api.oidcProvider.external': policy('api.oidcProvider.external', 'external', 'oidc-provider', 'execute'),
+  'api.connectedApps.oauth': policy('api.connectedApps.oauth', 'external', 'connected-app-oauth', 'execute', {
+    description: 'OIDC/OAuth endpoints used by registered relying-party applications.'
+  }),
+  'api.connectedApps.client': policy('api.connectedApps.client', 'external', 'connected-app-api', 'execute', {
+    description: 'Client-authenticated API endpoints for connected relying-party applications.'
+  })
 });
 
 function policy(id, type, resource, operation, options = {}) {

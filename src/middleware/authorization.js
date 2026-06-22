@@ -4,6 +4,7 @@ const {
   getWorkspaceForSubscription
 } = require('../services/platform-service');
 const { assertOrgPrivilege } = require('../services/org-admin-service');
+const { assertAdminOperations } = require('../services/admin-access-service');
 const { requirePolicy } = require('../services/authorization-service');
 
 function authorize(policyId, options = {}) {
@@ -25,6 +26,11 @@ function authorize(policyId, options = {}) {
       ensureAuthenticated(req, res);
 
       if (selectedPolicy.type === 'authenticated') {
+        return next();
+      }
+
+      if (selectedPolicy.type === 'adminAnyWorkspace') {
+        await assertAdminOperations(req.user);
         return next();
       }
 
