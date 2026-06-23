@@ -24,3 +24,6 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Validate docs
+        run: npm run docs:validate

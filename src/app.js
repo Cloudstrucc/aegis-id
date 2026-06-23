@@ -322,7 +322,7 @@ function createApp() {
           fontSrc: ["'self'", 'data:'],
           formAction: ["'self'"],
           frameAncestors: ["'none'"],
-          imgSrc: ["'self'", 'data:'],
+          imgSrc: ["'self'", 'data:', 'https://img.shields.io'],
           objectSrc: ["'none'"],
           scriptSrc: ["'self'", "'unsafe-eval'", "'wasm-unsafe-eval'"],
           styleSrc: ["'self'", "'unsafe-inline'"]
@@ -455,6 +455,12 @@ function createApp() {
   app.use(
     '/vendor/d3-org-chart',
     express.static(path.join(config.paths.root, 'node_modules', 'd3-org-chart', 'build'), {
+      maxAge: config.app.env === 'production' ? '7d' : 0
+    })
+  );
+  app.use(
+    '/vendor/mermaid',
+    express.static(path.join(config.paths.root, 'node_modules', 'mermaid', 'dist'), {
       maxAge: config.app.env === 'production' ? '7d' : 0
     })
   );

@@ -272,7 +272,12 @@ function initWorkspaceBlade() {
     window.history.scrollRestoration = 'manual';
   }
   window.addEventListener('hashchange', () => activateWorkspaceBladeFromHash(window.location.hash));
-  activateWorkspaceBladeFromHash(window.location.hash || '#dashboard-overview');
+  const initialBlade = new URLSearchParams(window.location.search).get('blade');
+  if (initialBlade && findBladePanel(shell, initialBlade, null)) {
+    activateWorkspaceBlade(initialBlade, null);
+  } else {
+    activateWorkspaceBladeFromHash(window.location.hash || '#dashboard-overview');
+  }
   requestAnimationFrame(() => resetWorkspaceBladeScroll(shell, false));
   window.setTimeout(() => resetWorkspaceBladeScroll(shell, false), 80);
 }

@@ -1,0 +1,68 @@
+<section class="docs-workspace-page">
+  <section class="docs-shell" aria-label="Aegis ID documentation">
+    <aside class="docs-sidebar">
+      <div class="docs-sidebar__header">
+        <p class="eyebrow">Documentation</p>
+        <h1>Docs</h1>
+        <p>{{documentCount}} technical guides organized by implementation area.</p>
+      </div>
+
+      <form class="docs-search" method="get" action="/developer/api">
+        <label for="docs-search-query">Search docs</label>
+        <div>
+          <input id="docs-search-query" name="q" type="search" value="{{query}}" placeholder="Search OIDC, RBAC, passkeys">
+          <button type="submit">Search</button>
+        </div>
+      </form>
+
+      {{#if hasQuery}}
+        <section class="docs-search-results" aria-label="Search results">
+          <div class="docs-nav-heading">Results</div>
+          {{#if hasSearchResults}}
+            {{#each searchResults}}
+              <a class="docs-result-link" href="{{href}}">
+                <strong>{{title}}</strong>
+                <span>{{categoryTitle}}</span>
+              </a>
+            {{/each}}
+          {{else}}
+            <p>No docs matched “{{query}}”.</p>
+          {{/if}}
+        </section>
+      {{/if}}
+
+      <nav class="docs-nav" aria-label="Documentation categories">
+        {{#each categories}}
+          <details class="docs-category" {{#if isActive}}open{{/if}}>
+            <summary>
+              <span>{{title}}</span>
+              <small>{{count}}</small>
+            </summary>
+            <div class="docs-category__links">
+              {{#each documents}}
+                <a href="{{href}}" class="{{#if isActive}}is-active{{/if}}">{{title}}</a>
+              {{/each}}
+            </div>
+          </details>
+        {{/each}}
+      </nav>
+    </aside>
+
+    <article class="docs-reader">
+      {{#if selected}}
+        <div class="docs-reader__meta">
+          <span>{{selected.categoryTitle}}</span>
+          <a href="/developer/openapi.json" target="_blank" rel="noopener">OpenAPI JSON</a>
+        </div>
+        <div class="docs-reader__content">
+          {{{selected.html}}}
+        </div>
+      {{else}}
+        <div class="docs-empty-state">
+          <h2>No documentation found.</h2>
+          <p>Add Markdown files under <code>docs/content</code> and refresh this page.</p>
+        </div>
+      {{/if}}
+    </article>
+  </section>
+</section>

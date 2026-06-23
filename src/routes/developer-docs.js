@@ -2,18 +2,21 @@ const express = require('express');
 
 const { requireAuthenticated } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
+const { getDocsWorkspace, isKnownCategory } = require('../services/docs-service');
 
 const router = express.Router();
 
 router.use('/developer', requireAuthenticated);
 
-router.get('/developer/api', authorize('developerApiDocs.view'), (req, res) => {
-  res.render('pages/api-developer-docs', {
-    title: 'Aegis ID API Docs',
-    description: 'Developer documentation for Connected Apps, OAuth/OIDC, and wallet challenge APIs.',
-    openApiUrl: '/developer/openapi.json',
-    publicBaseUrl: getRequestBaseUrl(req)
-  });
+router.get('/developer/api', authorize('developerApiDocs.view'), renderDocsWorkspace);
+router.get('/developer/docs', authorize('developerApiDocs.view'), renderDocsWorkspace);
+
+router.get('/developer/docs/:categoryId/:slug', authorize('developerApiDocs.view'), (req, res, next) => {
+  if (!isKnownCategory(req.params.categoryId)) {
+    return next();
+  }
+
+  return renderDocsWorkspace(req, res);
 });
 
 router.get('/developer/openapi.json', authorize('developerApiDocs.view'), (req, res) => {
@@ -154,6 +157,27 @@ function buildOpenApiSpec(baseUrl) {
 
 function getRequestBaseUrl(req) {
   return `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
+}
+
+function renderDocsWorkspace(req, res) {
+  const workspace = getDocsWorkspace({
+    categoryId: req.params.categoryId,
+    slug: req.params.slug,
+    query: req.query.q
+  });
+
+  res.render('pages/docs-workspace', {
+    title: 'Aegis ID Docs',
+    description: 'Technical documentation for Aegis ID integrations, policy, RBAC, wallet, and platform APIs.',
+    bodyClass: 'docs-workspace-body',
+    openApiUrl: '/developer/openapi.json',
+    publicBaseUrl: getRequestBaseUrl(req),
+    pageScripts: [
+      { src: '/vendor/mermaid/mermaid.min.js' },
+      { src: '/scripts/docs-workspace.js' }
+    ],
+    ...workspace
+  });
 }
 
 module.exports = router;

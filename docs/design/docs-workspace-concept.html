@@ -15,7 +15,7 @@
       --cyan: #00a9bd;
       --green: #20bf78;
       --nav: #071827;
-      --shadow: 0 28px 70px rgba(22, 48, 68, .16);
+      --shadow: 0 12px 34px rgba(22, 48, 68, .1);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
@@ -32,12 +32,12 @@
     a { color: inherit; text-decoration: none; }
 
     .topbar {
-      min-height: 86px;
+      min-height: 68px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 24px;
-      padding: 18px 6%;
+      gap: 18px;
+      padding: 12px 5%;
       background: rgba(7, 24, 39, .82);
       color: #fff;
       border-bottom: 1px solid rgba(255, 255, 255, .22);
@@ -51,23 +51,23 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      min-width: 260px;
+      min-width: 230px;
     }
 
     .brand-mark {
-      width: 64px;
-      height: 50px;
-      border-radius: 15px;
+      width: 46px;
+      height: 40px;
+      border-radius: 12px;
       background: linear-gradient(135deg, #2d72e8, #00adb8);
       display: grid;
       place-items: center;
-      font-weight: 900;
+      font-weight: 750;
       color: #fff;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .32);
     }
 
-    .brand strong { display: block; font-size: 18px; }
-    .brand span { color: rgba(255, 255, 255, .72); font-weight: 800; font-size: 13px; }
+    .brand strong { display: block; font-size: 15px; font-weight: 720; }
+    .brand span { color: rgba(255, 255, 255, .72); font-weight: 620; font-size: 12px; }
 
     .topbar nav {
       display: flex;
@@ -77,10 +77,11 @@
     }
 
     .topbar nav a {
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-radius: 999px;
       color: rgba(255, 255, 255, .86);
-      font-weight: 850;
+      font-weight: 650;
+      font-size: 14px;
     }
 
     .topbar nav a.active {
@@ -90,55 +91,57 @@
 
     .docs-shell {
       display: grid;
-      grid-template-columns: 360px minmax(0, 1fr);
-      min-height: calc(100vh - 86px);
+      grid-template-columns: 304px minmax(0, 1fr);
+      min-height: calc(100vh - 68px);
     }
 
     .docs-sidebar {
       background: rgba(255, 255, 255, .82);
       border-right: 1px solid var(--line);
-      padding: 28px 22px;
+      padding: 20px 18px;
       position: sticky;
-      top: 86px;
-      height: calc(100vh - 86px);
+      top: 68px;
+      height: calc(100vh - 68px);
       overflow: auto;
     }
 
     .eyebrow {
       color: var(--cyan);
-      letter-spacing: .14em;
+      letter-spacing: .11em;
       text-transform: uppercase;
-      font-size: 12px;
-      font-weight: 950;
+      font-size: 11px;
+      font-weight: 760;
     }
 
     .docs-sidebar h1 {
-      margin: 8px 0 8px;
-      font-size: 34px;
-      line-height: 1;
+      margin: 6px 0 6px;
+      font-size: 26px;
+      line-height: 1.1;
       letter-spacing: 0;
     }
 
     .docs-sidebar p {
-      margin: 0 0 22px;
+      margin: 0 0 18px;
       color: var(--muted);
-      font-weight: 750;
-      line-height: 1.45;
+      font-weight: 520;
+      line-height: 1.5;
+      font-size: 14px;
     }
 
     .search-box {
       display: grid;
-      gap: 10px;
-      margin-bottom: 22px;
+      gap: 8px;
+      margin-bottom: 18px;
     }
 
     .search-box input {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px 16px;
+      border-radius: 8px;
+      padding: 10px 12px;
       font: inherit;
-      font-weight: 750;
+      font-weight: 520;
+      font-size: 14px;
       color: var(--ink);
       background: #fff;
     }
@@ -151,14 +154,15 @@
 
     .search-result {
       border: 1px solid #cfe1f2;
-      border-radius: 12px;
-      padding: 10px 12px;
+      border-radius: 8px;
+      padding: 9px 10px;
       background: #fff;
       cursor: pointer;
       text-align: left;
       color: var(--ink);
       font: inherit;
-      font-weight: 850;
+      font-weight: 650;
+      font-size: 14px;
     }
 
     .search-result small {
@@ -170,7 +174,7 @@
 
     details {
       border-top: 1px solid var(--line);
-      padding: 12px 0;
+      padding: 10px 0;
     }
 
     details[open] summary {
@@ -184,12 +188,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      font-weight: 950;
+      font-weight: 720;
+      font-size: 14px;
       color: var(--ink);
     }
 
     summary::-webkit-details-marker { display: none; }
-    summary::after { content: "+"; color: var(--muted); font-weight: 950; }
+    summary::after { content: "+"; color: var(--muted); font-weight: 720; }
     details[open] summary::after { content: "-"; }
 
     .doc-list {
@@ -204,11 +209,12 @@
       border: 0;
       background: transparent;
       color: var(--muted);
-      padding: 10px 12px;
-      border-radius: 12px;
+      padding: 8px 10px;
+      border-radius: 8px;
       cursor: pointer;
       font: inherit;
-      font-weight: 800;
+      font-weight: 560;
+      font-size: 14px;
     }
 
     .doc-link.active {
@@ -217,33 +223,34 @@
     }
 
     .docs-main {
-      padding: 42px min(6vw, 72px);
+      padding: 24px min(4vw, 44px);
       overflow: hidden;
     }
 
     .reader-card {
       background: rgba(255, 255, 255, .88);
       border: 1px solid var(--line);
-      border-radius: 18px;
+      border-radius: 12px;
       box-shadow: var(--shadow);
-      min-height: calc(100vh - 170px);
+      min-height: calc(100vh - 116px);
       overflow: hidden;
     }
 
     .reader-head {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 24px;
+      gap: 18px;
       align-items: start;
-      padding: 34px;
+      padding: 22px 26px;
       border-bottom: 1px solid var(--line);
       background: linear-gradient(135deg, #fff, #effaff);
     }
 
     .reader-head h2 {
-      margin: 8px 0 10px;
-      font-size: clamp(38px, 5vw, 74px);
-      line-height: .95;
+      margin: 6px 0 8px;
+      font-size: clamp(28px, 3vw, 44px);
+      line-height: 1.08;
+      font-weight: 720;
       letter-spacing: 0;
     }
 
@@ -251,9 +258,9 @@
       margin: 0;
       max-width: 760px;
       color: var(--muted);
-      font-size: 20px;
-      line-height: 1.45;
-      font-weight: 760;
+      font-size: 15px;
+      line-height: 1.5;
+      font-weight: 520;
     }
 
     .reader-actions {
@@ -268,25 +275,26 @@
       border: 1px solid #cae0f6;
       border-radius: 999px;
       background: #fff;
-      padding: 10px 14px;
+      padding: 7px 10px;
       color: var(--muted);
-      font-weight: 900;
+      font-weight: 620;
+      font-size: 13px;
       white-space: nowrap;
     }
 
     .content-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 280px;
-      gap: 30px;
-      padding: 34px;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 24px;
+      padding: 26px;
       align-items: start;
     }
 
     .markdown-body {
       min-width: 0;
       color: var(--ink);
-      font-size: 18px;
-      line-height: 1.65;
+      font-size: 15.5px;
+      line-height: 1.62;
     }
 
     .markdown-body h1,
@@ -296,16 +304,16 @@
       line-height: 1.05;
     }
 
-    .markdown-body h1 { font-size: 46px; margin: 0 0 18px; }
-    .markdown-body h2 { font-size: 34px; margin: 38px 0 12px; }
-    .markdown-body h3 { font-size: 24px; margin: 28px 0 10px; }
-    .markdown-body p { color: #34465c; font-weight: 650; }
-    .markdown-body li { margin-bottom: 8px; color: #34465c; font-weight: 650; }
+    .markdown-body h1 { font-size: 32px; margin: 0 0 14px; font-weight: 720; }
+    .markdown-body h2 { font-size: 24px; margin: 30px 0 10px; font-weight: 700; }
+    .markdown-body h3 { font-size: 19px; margin: 22px 0 8px; font-weight: 680; }
+    .markdown-body p { color: #34465c; font-weight: 460; }
+    .markdown-body li { margin-bottom: 6px; color: #34465c; font-weight: 460; }
 
     .markdown-body code {
       background: #eef5fb;
       color: #0a2340;
-      border-radius: 7px;
+      border-radius: 5px;
       padding: 2px 6px;
       font-size: .92em;
     }
@@ -313,8 +321,8 @@
     .markdown-body pre {
       background: #071827;
       color: #d8f4ff;
-      border-radius: 14px;
-      padding: 18px;
+      border-radius: 10px;
+      padding: 14px;
       overflow: auto;
       border: 1px solid #17314a;
     }
@@ -327,24 +335,24 @@
 
     .markdown-body blockquote {
       border-left: 5px solid var(--blue);
-      margin: 24px 0;
-      padding: 18px 22px;
+      margin: 20px 0;
+      padding: 14px 18px;
       background: #f5f9fe;
-      border-radius: 0 14px 14px 0;
+      border-radius: 0 10px 10px 0;
     }
 
     .markdown-body table {
       width: 100%;
       border-collapse: collapse;
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 10px;
       overflow: hidden;
       display: block;
     }
 
     .markdown-body th,
     .markdown-body td {
-      padding: 12px;
+      padding: 10px;
       border-bottom: 1px solid var(--line);
       text-align: left;
       vertical-align: top;
@@ -352,16 +360,16 @@
 
     .doc-aside {
       display: grid;
-      gap: 14px;
+      gap: 12px;
       position: sticky;
-      top: 116px;
+      top: 94px;
     }
 
     .aside-card {
       border: 1px solid var(--line);
       background: #fff;
-      border-radius: 16px;
-      padding: 18px;
+      border-radius: 10px;
+      padding: 14px;
     }
 
     .aside-card strong {
@@ -372,39 +380,40 @@
     .aside-card p {
       margin: 0;
       color: var(--muted);
-      font-weight: 720;
+      font-weight: 460;
       line-height: 1.45;
+      font-size: 13.5px;
     }
 
     .diagram {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin: 24px 0;
+      gap: 10px;
+      margin: 20px 0;
     }
 
     .diagram-step {
       border: 1px solid #cfe1f2;
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: 10px;
+      padding: 14px;
       background: #fff;
-      min-height: 130px;
+      min-height: 116px;
     }
 
     .diagram-step span {
       display: inline-grid;
       place-items: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
       background: linear-gradient(135deg, var(--blue), var(--cyan));
       color: #fff;
-      font-weight: 950;
-      margin-bottom: 14px;
+      font-weight: 740;
+      margin-bottom: 10px;
     }
 
-    .diagram-step strong { display: block; font-size: 17px; }
-    .diagram-step small { color: var(--muted); font-weight: 750; }
+    .diagram-step strong { display: block; font-size: 15px; font-weight: 700; }
+    .diagram-step small { color: var(--muted); font-weight: 480; }
 
     @media (max-width: 1100px) {
       .docs-shell { grid-template-columns: 1fr; }

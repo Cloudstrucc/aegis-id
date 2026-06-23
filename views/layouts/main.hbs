@@ -13,6 +13,9 @@
       {{{body}}}
     </main>
     {{> site-footer}}
+    {{#each pageScripts}}
+      <script src="{{src}}" defer></script>
+    {{/each}}
     <script src="/scripts/main.js" defer></script>
   </body>
 </html>

@@ -46,6 +46,7 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', authorize('workspace.
   try {
     const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(req, subscription, req.params.workspaceId);
+    const credentialMemberships = await listCredentialMembershipsForEmail(req.user.email);
     const issuerOrganizations = await listIssuerOrganizations(subscription.id, workspace.id);
     const orgAdmin = await getOrgAdminView(workspace, subscription, req.query, {
       publicBaseUrl: getRequestBaseUrl(req)
@@ -77,6 +78,7 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', authorize('workspace.
       hasWalletChallengeLedger: walletChallengeLedger.length > 0,
       connectedApps,
       orgAdmin,
+      userProfile: buildUserProfileView(req.user, subscription, workspace, orgAdmin, credentialMemberships),
       welcome: req.query.welcome === '1'
     });
   } catch (error) {
@@ -258,4 +260,80 @@ function renderPlatformTestError(res, subscription, workspace, platform, error) 
       details: error.details || {}
     }
   });
+}
+
+function buildUserProfileView(user, subscription, workspace, orgAdmin, credentialMemberships = []) {
+  const memberships = Array.isArray(credentialMemberships) ? credentialMemberships : [];
+  const currentMembership = memberships.find((membership) => membership.workspaceId === workspace.id);
+  const organizations = [];
+
+  if (currentMembership) {
+    organizations.push(profileOrgFromMembership(currentMembership, true));
+  } else {
+    organizations.push({
+      organizationName: workspace.organization,
+      persona: orgAdmin?.viewer?.modeLabel || 'Workspace member',
+      status: workspace.disabled ? 'Disabled' : 'Active',
+      roleSummary: orgAdmin?.isAdmin ? 'Organization administrator' : 'Contributor',
+      source: 'Workspace access',
+      isCurrent: true
+    });
+  }
+
+  for (const membership of memberships) {
+    if (membership.workspaceId === workspace.id) {
+      continue;
+    }
+    organizations.push(profileOrgFromMembership(membership, false));
+  }
+
+  return {
+    displayName: user.displayName || user.email,
+    initials: initialsFromName(user.displayName || user.email),
+    email: user.email,
+    phone: user.phone || 'Not provided',
+    preferredMfa: user.preferredMfa || 'Not configured',
+    passkeyCount: user.passkeyCount || 0,
+    lastSecondFactorAtLabel: formatProfileDate(user.lastSecondFactorAt),
+    createdAtLabel: formatProfileDate(user.createdAt),
+    organizations,
+    hasOrganizations: organizations.length > 0
+  };
+}
+
+function initialsFromName(value = '') {
+  const words = String(value || '')
+    .trim()
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean);
+  if (words.length === 0) {
+    return 'ID';
+  }
+  return words
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+}
+
+function profileOrgFromMembership(membership, isCurrent) {
+  return {
+    organizationName: membership.organizationName,
+    persona: membership.personTypeLabel,
+    status: membership.statusLabel,
+    roleSummary: membership.roleLabels?.length ? membership.roleLabels.join(', ') : 'No roles assigned',
+    source: 'Credential membership',
+    isCurrent
+  };
+}
+
+function formatProfileDate(value) {
+  if (!value) {
+    return 'Not recorded';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'Not recorded';
+  }
+  return date.toISOString().slice(0, 10);
 }
