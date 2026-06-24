@@ -63,7 +63,15 @@
           fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
         }
       });
-      await window.mermaid.run({ nodes: diagrams });
+      try {
+        await window.mermaid.run({ nodes: diagrams });
+      } catch (runError) {
+        if (typeof window.mermaid.init === 'function') {
+          await window.mermaid.init(undefined, diagrams);
+        } else {
+          throw runError;
+        }
+      }
     } catch (error) {
       console.error('Unable to render Mermaid docs diagrams.', error);
       diagrams.forEach((diagram) => {

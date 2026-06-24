@@ -4437,6 +4437,11 @@ body:has(.workspace-blade) main {
   gap: 14px;
 }
 
+.profile-summary-card--table {
+  align-content: start;
+  padding: 4px 0;
+}
+
 .profile-summary-card h3 {
   margin: 0;
   color: var(--workspace-ink);
@@ -4468,6 +4473,15 @@ body:has(.workspace-blade) main {
 .profile-org-row small {
   color: var(--muted);
   font-weight: 750;
+}
+
+.site-header__profile-trigger {
+  margin-left: 6px;
+}
+
+.modal-actions--profile {
+  justify-content: space-between;
+  align-items: center;
 }
 
 @media (max-width: 1180px) {
@@ -6173,14 +6187,14 @@ body:has(.workspace-blade) .site-footer div span {
 
 .docs-workspace-body > main {
   --docs-site-header-offset: 90px;
-  --docs-top-gap: 14px;
+  --docs-top-gap: 4px;
   background: #f4f8fb;
   padding-top: var(--docs-site-header-offset);
 }
 
 .docs-workspace-page {
   color: #071928;
-  padding: var(--docs-top-gap, 14px) 4% 24px;
+  padding: var(--docs-top-gap, 4px) 4% 18px;
   background: #f4f8fb;
 }
 
@@ -6208,16 +6222,13 @@ body:has(.workspace-blade) .site-footer div span {
   overflow: auto;
   padding: 18px;
   overscroll-behavior: contain;
-  scroll-padding-top: 132px;
+  scroll-padding-top: 96px;
 }
 
 .docs-sidebar__header {
-  position: sticky;
-  z-index: 2;
-  top: 0;
   margin: -18px -18px 0;
   padding: 18px 18px 14px;
-  background: rgba(255, 255, 255, 0.98);
+  background: #ffffff;
   border-bottom: 1px solid rgba(148, 170, 196, 0.18);
 }
 

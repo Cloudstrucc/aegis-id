@@ -1,20 +1,69 @@
 const { canViewAdminOperations } = require('../services/admin-access-service');
+const { listCredentialMembershipsForEmail } = require('../services/org-admin-service');
 
 function attachAuthLocals(req, res, next) {
   res.locals.currentUser = req.user || null;
   res.locals.isAuthenticated = Boolean(req.user);
   res.locals.canViewHealth = false;
+  res.locals.headerProfile = null;
 
   if (!req.user) {
     return next();
   }
 
-  return canViewAdminOperations(req.user)
-    .then((canViewHealth) => {
+  return Promise.all([canViewAdminOperations(req.user), listCredentialMembershipsForEmail(req.user.email)])
+    .then(([canViewHealth, memberships]) => {
       res.locals.canViewHealth = canViewHealth;
+      res.locals.headerProfile = buildHeaderProfile(req.user, memberships);
       next();
     })
     .catch(next);
+}
+
+function buildHeaderProfile(user, memberships = []) {
+  return {
+    displayName: user.displayName || user.email,
+    initials: initialsFromName(user.displayName || user.email),
+    email: user.email,
+    phone: user.phone || 'Not provided',
+    preferredMfa: user.preferredMfa || 'Not configured',
+    passkeyCount: user.passkeyCount || 0,
+    lastSecondFactorAtLabel: formatProfileDate(user.lastSecondFactorAt),
+    createdAtLabel: formatProfileDate(user.createdAt),
+    organizations: memberships.map((membership) => ({
+      organizationName: membership.organizationName,
+      persona: membership.personTypeLabel,
+      status: membership.statusLabel,
+      roleSummary: membership.roleLabels?.length ? membership.roleLabels.join(', ') : 'No roles assigned'
+    })),
+    hasOrganizations: memberships.length > 0
+  };
+}
+
+function initialsFromName(value = '') {
+  const words = String(value || '')
+    .trim()
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean);
+  if (!words.length) {
+    return 'ID';
+  }
+  return words
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+}
+
+function formatProfileDate(value) {
+  if (!value) {
+    return 'Not recorded';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'Not recorded';
+  }
+  return date.toISOString().slice(0, 10);
 }
 
 function requireAuthenticated(req, res, next) {

@@ -14,76 +14,7 @@
       {{/if}}
       <a href="#external-wallet-ledger" data-blade-link="ledger">Ledger</a>
     </nav>
-    <button class="workspace-blade__avatar" type="button" data-modal-target="#profile-modal" aria-label="Open profile">
-      {{userProfile.initials}}
-    </button>
   </header>
-
-  <div class="app-modal" id="profile-modal" hidden>
-    <div class="app-modal__backdrop" data-modal-close></div>
-    <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
-      <div class="app-modal__head">
-        <div>
-          <p class="eyebrow">Profile</p>
-          <h2 id="profile-modal-title">{{userProfile.displayName}}</h2>
-          <p>{{userProfile.email}}</p>
-        </div>
-        <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
-      </div>
-      <div class="profile-modal-grid">
-        <article class="profile-summary-card">
-          <h3>Basic information</h3>
-          <dl class="definition-list definition-list--compact">
-            <div>
-              <span>Email</span>
-              <strong>{{userProfile.email}}</strong>
-            </div>
-            <div>
-              <span>Phone</span>
-              <strong>{{userProfile.phone}}</strong>
-            </div>
-            <div>
-              <span>Preferred MFA</span>
-              <strong>{{userProfile.preferredMfa}}</strong>
-            </div>
-            <div>
-              <span>Registered passkeys</span>
-              <strong>{{userProfile.passkeyCount}}</strong>
-            </div>
-            <div>
-              <span>Last second factor</span>
-              <strong>{{userProfile.lastSecondFactorAtLabel}}</strong>
-            </div>
-            <div>
-              <span>Account created</span>
-              <strong>{{userProfile.createdAtLabel}}</strong>
-            </div>
-          </dl>
-        </article>
-        <article class="profile-summary-card">
-          <h3>Organizations</h3>
-          {{#if userProfile.hasOrganizations}}
-            <div class="profile-org-list">
-              {{#each userProfile.organizations}}
-                <div class="profile-org-row">
-                  <div>
-                    <strong>{{organizationName}}</strong>
-                    <span>{{persona}} · {{status}}</span>
-                  </div>
-                  <small>{{roleSummary}}{{#if isCurrent}} · Current{{/if}}</small>
-                </div>
-              {{/each}}
-            </div>
-          {{else}}
-            <p class="muted">No organization memberships are currently associated with this account.</p>
-          {{/if}}
-        </article>
-      </div>
-      <div class="modal-actions">
-        <button class="button button--secondary button--dark-text" type="button" data-modal-close>Close</button>
-      </div>
-    </section>
-  </div>
 
   <aside class="workspace-blade__rail" aria-label="Global workspace navigation">
     <a href="#dashboard-overview" data-blade-link="dashboard" aria-label="Dashboard">D</a>

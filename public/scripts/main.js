@@ -378,7 +378,19 @@ function initOrgChart() {
     chart: null,
     nodes,
     showPeople: true,
-    renderAttempts: 0
+    renderAttempts: 0,
+    fitTimer: null,
+    resizeObserver: null
+  };
+
+  const scheduleFit = (delay = 0) => {
+    if (state.fitTimer) {
+      window.clearTimeout(state.fitTimer);
+    }
+    state.fitTimer = window.setTimeout(() => {
+      state.chart?.fit?.();
+      window.setTimeout(() => state.chart?.fit?.(), 140);
+    }, delay);
   };
 
   const render = () => {
@@ -441,7 +453,7 @@ function initOrgChart() {
         state.showPeople = !state.showPeople;
         trigger.textContent = state.showPeople ? 'Hide people' : 'Show people';
         render();
-        window.setTimeout(() => state.chart?.fit?.(), 120);
+        scheduleFit(120);
         return;
       }
       if (action === 'expand') {
@@ -464,7 +476,13 @@ function initOrgChart() {
   };
 
   render();
-  window.setTimeout(() => state.chart?.fit?.(), 250);
+  scheduleFit(220);
+  window.setTimeout(() => state.chart?.fit?.(), 520);
+
+  if ('ResizeObserver' in window) {
+    state.resizeObserver = new ResizeObserver(() => scheduleFit(60));
+    state.resizeObserver.observe(container);
+  }
 }
 
 function renderOrgChartNode(node) {
