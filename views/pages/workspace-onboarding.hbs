@@ -1,0 +1,108 @@
+<section class="band band--light onboarding-shell">
+  <div class="section-heading">
+    <p class="eyebrow">Organization setup</p>
+    <h1>Finish setup for {{workspace.organization}}.</h1>
+    <p>{{#if welcome}}Your organization is registered.{{else}}This administrator workspace needs one wallet connection before the full dashboard opens.{{/if}} Download the Aegis mobile wallet, connect it to {{workspace.organization}}, then return here.</p>
+  </div>
+
+  <ol class="auth-stepper" style="--step-count: 2;" aria-label="Organization setup progress">
+    {{#each onboardingSteps}}
+      <li class="auth-stepper__item auth-stepper__item--{{state}}">{{label}}</li>
+    {{/each}}
+  </ol>
+</section>
+
+<section class="band band--white">
+  <div class="issuer-org-layout issuer-org-layout--onboarding">
+    <article class="platform-card">
+      <div class="platform-card__head">
+        <span class="platform-icon">ORG</span>
+        <div>
+          <span class="track-label">Step 1 complete</span>
+          <h2>{{workspace.organization}}</h2>
+        </div>
+      </div>
+      <p>The workspace is registered and this subscriber is the first administrator. The final setup step is to register the first wallet for {{workspace.organization}} so wallet challenges, credentials, and app demos all have a trusted wallet context.</p>
+      <div class="onboarding-actions">
+        <a class="button button--ghost" href="{{organizationsPath}}">Back to organizations</a>
+        {{#if walletSetupComplete}}
+          <a class="button button--primary button--blue" href="{{dashboardBasePath}}">Open dashboard</a>
+        {{/if}}
+      </div>
+    </article>
+
+    {{#if hasInvitation}}
+      <article class="demo-qr-card demo-qr-card--onboarding">
+        <p class="eyebrow">Step 2</p>
+        <h3>{{#if walletSetupComplete}}Wallet connected for {{workspace.organization}}{{else}}Register {{workspace.organization}} in the Aegis wallet{{/if}}</h3>
+        <p class="demo-qr-card__description">{{#if walletSetupComplete}}The first administrator wallet is now linked to this organization.{{else}}Download the mobile wallet on iOS or Android, open it on your phone, scan the QR code, and accept the issuer invitation for {{workspace.organization}}. Refresh after acceptance if this page does not update automatically.{{/if}}</p>
+        <div class="store-badge-row">
+          {{#if hasIosDownloadUrl}}
+            <a class="store-badge store-badge--ios" href="{{iosDownloadUrl}}" target="_blank" rel="noopener">
+              <span class="store-badge__mark">iOS</span>
+              <span>
+                <span class="store-badge__eyebrow">Download on</span>
+                <strong>TestFlight</strong>
+              </span>
+            </a>
+          {{else}}
+            <span class="store-badge store-badge--ios store-badge--pending" aria-disabled="true">
+              <span class="store-badge__mark">iOS</span>
+              <span>
+                <span class="store-badge__eyebrow">TestFlight link</span>
+                <strong>Pending</strong>
+              </span>
+            </span>
+          {{/if}}
+
+          {{#if hasAndroidDownloadUrl}}
+            <a class="store-badge store-badge--android" href="{{androidDownloadUrl}}" target="_blank" rel="noopener">
+              <span class="store-badge__mark">AOS</span>
+              <span>
+                <span class="store-badge__eyebrow">Get the beta on</span>
+                <strong>Android</strong>
+              </span>
+            </a>
+          {{else}}
+            <span class="store-badge store-badge--android store-badge--pending" aria-disabled="true">
+              <span class="store-badge__mark">AOS</span>
+              <span>
+                <span class="store-badge__eyebrow">Android wallet</span>
+                <strong>Coming soon</strong>
+              </span>
+            </span>
+          {{/if}}
+        </div>
+        {{#if latestInvitation.iosQrCodeDataUrl}}
+          <img class="demo-qr-card__image" src="{{latestInvitation.iosQrCodeDataUrl}}" alt="{{workspace.organization}} wallet invitation QR code">
+        {{/if}}
+        <code class="demo-qr-card__url">{{latestInvitation.iosDeepLinkUrl}}</code>
+        <dl class="claim-list">
+          <div>
+            <dt>Status</dt>
+            <dd>{{latestInvitation.status}}</dd>
+          </div>
+          <div>
+            <dt>Issuer connection</dt>
+            <dd>{{#if latestInvitation.issuerConnectionId}}{{latestInvitation.issuerConnectionId}}{{else}}Waiting for wallet acceptance{{/if}}</dd>
+          </div>
+          <div>
+            <dt>Invitation</dt>
+            <dd>{{latestInvitation.invitationId}}</dd>
+          </div>
+        </dl>
+        {{#unless walletSetupComplete}}
+          <form action="{{dashboardBasePath}}/issuer-organizations/invitations" method="post">
+            <input type="hidden" name="returnTo" value="onboarding">
+            <button class="button button--ghost" type="submit">Generate new wallet invitation</button>
+          </form>
+        {{/unless}}
+      </article>
+    {{else}}
+      <article class="note-panel">
+        <strong>No wallet invitation yet.</strong>
+        <span>Create the first wallet invitation now. Until one wallet accepts it, the dashboard remains locked for this administrator workspace.</span>
+      </article>
+    {{/if}}
+  </div>
+</section>

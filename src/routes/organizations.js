@@ -13,6 +13,8 @@ const {
   getOrganizationBranding,
   listCredentialMembershipsForEmail
 } = require('../services/org-admin-service');
+const { createIssuerOrganizationInvitation } = require('../services/issuer-organization-service');
+const { getWorkspaceWalletOnboardingState } = require('../services/workspace-onboarding-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
@@ -22,7 +24,10 @@ router.get('/organizations/:subscriptionId', authorize('workspace.view'), async 
   try {
     const subscription = await loadSubscription(req);
     const membershipWorkspaceIds = await getCredentialMembershipWorkspaceIds(req);
-    const organizations = await decorateOrganizations(await listWorkspacesForSubscription(subscription, { membershipWorkspaceIds }));
+    const organizations = await decorateOrganizations(
+      await listWorkspacesForSubscription(subscription, { membershipWorkspaceIds }),
+      subscription
+    );
 
     res.render('pages/organizations', {
       title: 'Organizations',
@@ -45,6 +50,11 @@ router.post('/organizations/:subscriptionId', authorize('workspace.register'), a
   try {
     const subscription = await loadSubscription(req);
     const workspace = await registerWorkspaceForSubscription(subscription, req.body);
+    const onboarding = await getWorkspaceWalletOnboardingState(subscription, workspace);
+
+    if (onboarding.requiresWalletSetup && !onboarding.latestInvitation) {
+      await createIssuerOrganizationInvitation(subscription, workspace);
+    }
 
     await writeAuditEvent('organization.workspace.registered', {
       subscriptionId: subscription.id,
@@ -53,7 +63,7 @@ router.post('/organizations/:subscriptionId', authorize('workspace.register'), a
       role: workspace.role
     });
 
-    res.redirect(303, `${workspace.dashboardPath}?welcome=1`);
+    res.redirect(303, `${onboarding.requiresWalletSetup ? onboarding.onboardingPath : workspace.dashboardPath}?welcome=1`);
   } catch (error) {
     next(error);
   }
@@ -107,15 +117,18 @@ router.post('/organizations/:subscriptionId/:workspaceId/delete', authorize('wor
   }
 });
 
-async function decorateOrganizations(organizations) {
+async function decorateOrganizations(organizations, subscription) {
   return Promise.all(organizations.map(async (organization) => {
     const branding = await getOrganizationBranding(organization.id);
+    const onboarding = await getWorkspaceWalletOnboardingState(subscription, organization);
     return {
       ...organization,
       brandInitial: organization.organization?.trim()?.charAt(0)?.toUpperCase() || 'V',
       brandPrimaryColor: branding?.primaryColor || '#1769e0',
       brandAccentColor: branding?.accentColor || '#00b7c7',
-      brandLogoDataUrl: branding?.logoDataUrl || ''
+      brandLogoDataUrl: branding?.logoDataUrl || '',
+      openPath: onboarding.requiresWalletSetup ? onboarding.onboardingPath : organization.dashboardPath,
+      requiresWalletSetup: onboarding.requiresWalletSetup
     };
   }));
 }

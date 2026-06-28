@@ -3401,7 +3401,7 @@ textarea:focus {
 
 .auth-stepper {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--step-count, 3), minmax(0, 1fr));
   gap: 1px;
   padding: 0;
   margin: 0;
@@ -3420,6 +3420,26 @@ textarea:focus {
   color: var(--muted);
   background: #ffffff;
   font-weight: 900;
+}
+
+.onboarding-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.issuer-org-layout--onboarding {
+  align-items: start;
+}
+
+.demo-qr-card--onboarding {
+  max-width: 100%;
+}
+
+.onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
 }
 
 .auth-stepper__item--active {

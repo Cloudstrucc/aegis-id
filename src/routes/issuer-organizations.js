@@ -27,7 +27,7 @@ router.post('/dashboard/:subscriptionId/issuer-organizations/invitations', requi
       invitationId: issuerOrganization.invitationId
     });
 
-    res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#issuer-orgs`);
+    res.redirect(303, buildReturnPath(subscription.id, workspace.id, req.body.returnTo));
   } catch (error) {
     next(error);
   }
@@ -48,7 +48,7 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/issuer-organizations/i
       invitationId: issuerOrganization.invitationId
     });
 
-    res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#issuer-orgs`);
+    res.redirect(303, buildReturnPath(subscription.id, workspace.id, req.body.returnTo));
   } catch (error) {
     next(error);
   }
@@ -89,6 +89,13 @@ async function loadWorkspace(subscription, workspaceId) {
     throw error;
   }
   return workspace;
+}
+
+function buildReturnPath(subscriptionId, workspaceId, returnTo) {
+  if (returnTo === 'onboarding') {
+    return `/dashboard/${subscriptionId}/orgs/${workspaceId}/onboarding`;
+  }
+  return `/dashboard/${subscriptionId}/orgs/${workspaceId}#issuer-orgs`;
 }
 
 module.exports = router;

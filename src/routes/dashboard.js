@@ -1,5 +1,6 @@
 const express = require('express');
 
+const config = require('../config');
 const { requireAuthenticated } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
 const { getSubscriptionForUser } = require('../services/subscription-service');
@@ -13,8 +14,12 @@ const {
   runPlatformTest,
   savePlatformStep
 } = require('../services/platform-service');
-const { listIssuerOrganizations } = require('../services/issuer-organization-service');
+const {
+  createIssuerOrganizationInvitation,
+  listIssuerOrganizations
+} = require('../services/issuer-organization-service');
 const { getConnectedAppsView } = require('../services/connected-app-service');
+const { getWorkspaceWalletOnboardingState } = require('../services/workspace-onboarding-service');
 const {
   getOrgAdminView,
   listCredentialMembershipsForEmail
@@ -36,7 +41,53 @@ router.get('/dashboard/:subscriptionId', authorize('workspace.view'), async (req
     if (workspaces.length > 1) {
       return res.redirect(303, `/organizations/${subscription.id}`);
     }
-    return res.redirect(303, `${workspaces[0].dashboardPath}${req.query.welcome === '1' ? '?welcome=1' : ''}`);
+    const onboarding = await getWorkspaceWalletOnboardingState(subscription, workspaces[0]);
+    const destination = onboarding.requiresWalletSetup ? onboarding.onboardingPath : workspaces[0].dashboardPath;
+    return res.redirect(303, `${destination}${req.query.welcome === '1' ? '?welcome=1' : ''}`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/dashboard/:subscriptionId/orgs/:workspaceId/onboarding', authorize('workspace.view'), async (req, res, next) => {
+  try {
+    const subscription = await loadSubscription(req);
+    const workspace = await loadWorkspace(req, subscription, req.params.workspaceId);
+    let onboarding = await getWorkspaceWalletOnboardingState(subscription, workspace);
+
+    if (!onboarding.requiresWalletSetup) {
+      return res.redirect(303, workspace.dashboardPath);
+    }
+
+    if (onboarding.walletSetupComplete) {
+      return res.redirect(303, workspace.dashboardPath);
+    }
+
+    if (!onboarding.latestInvitation) {
+      await createIssuerOrganizationInvitation(subscription, workspace);
+      onboarding = await getWorkspaceWalletOnboardingState(subscription, workspace);
+    }
+
+    return res.render('pages/workspace-onboarding', {
+      title: 'Wallet setup',
+      description: 'Complete organization setup by connecting the first wallet.',
+      bodyClass: 'workspace-page',
+      subscription,
+      workspace,
+      workspaceRole: workspace.roleLabel,
+      dashboardBasePath: workspace.dashboardPath,
+      organizationsPath: `/organizations/${subscription.id}`,
+      onboardingPath: onboarding.onboardingPath,
+      latestInvitation: onboarding.latestInvitation,
+      hasInvitation: Boolean(onboarding.latestInvitation),
+      iosDownloadUrl: config.app.iosTestFlightUrl,
+      hasIosDownloadUrl: Boolean(config.app.iosTestFlightUrl),
+      androidDownloadUrl: config.app.androidTestingUrl,
+      hasAndroidDownloadUrl: Boolean(config.app.androidTestingUrl),
+      welcome: req.query.welcome === '1',
+      onboardingSteps: buildOnboardingSteps(onboarding.latestInvitation),
+      walletSetupComplete: onboarding.walletSetupComplete
+    });
   } catch (error) {
     next(error);
   }
@@ -46,6 +97,10 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', authorize('workspace.
   try {
     const subscription = await loadSubscription(req);
     const workspace = await loadWorkspace(req, subscription, req.params.workspaceId);
+    const onboarding = await getWorkspaceWalletOnboardingState(subscription, workspace);
+    if (onboarding.requiresWalletSetup) {
+      return res.redirect(303, `${onboarding.onboardingPath}${req.query.welcome === '1' ? '?welcome=1' : ''}`);
+    }
     const credentialMemberships = await listCredentialMembershipsForEmail(req.user.email);
     const issuerOrganizations = await listIssuerOrganizations(subscription.id, workspace.id);
     const orgAdmin = await getOrgAdminView(workspace, subscription, req.query, {
@@ -299,6 +354,19 @@ function buildUserProfileView(user, subscription, workspace, orgAdmin, credentia
     organizations,
     hasOrganizations: organizations.length > 0
   };
+}
+
+function buildOnboardingSteps(invitation) {
+  return [
+    {
+      label: 'Organization created',
+      state: 'complete'
+    },
+    {
+      label: invitation?.status === 'connected' ? 'Wallet connected' : invitation ? 'Scan and accept wallet invite' : 'Create wallet invite',
+      state: invitation?.status === 'connected' ? 'complete' : 'active'
+    }
+  ];
 }
 
 function initialsFromName(value = '') {

@@ -28,7 +28,7 @@
             <p>{{#if updatedAt}}Updated {{updatedAt}}{{else}}Ready to configure{{/if}}</p>
           </div>
           <div class="organization-tile__actions">
-            <a class="button button--blue" href="{{dashboardPath}}">Open</a>
+            <a class="button button--blue" href="{{openPath}}">{{#if requiresWalletSetup}}Set up wallet{{else}}Open{{/if}}</a>
             {{#if canManageWorkspace}}
               {{#if isDisabled}}
                 <form action="/organizations/{{subscriptionId}}/{{id}}/enable" method="post">
