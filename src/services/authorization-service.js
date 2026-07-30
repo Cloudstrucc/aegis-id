@@ -155,6 +155,9 @@ const POLICIES = Object.freeze({
   }),
   'api.connectedApps.client': policy('api.connectedApps.client', 'external', 'connected-app-api', 'execute', {
     description: 'Client-authenticated API endpoints for connected relying-party applications.'
+  }),
+  'admin.audit.verify': policy('admin.audit.verify', 'adminAnyWorkspace', 'audit-ledger', 'read', {
+    description: 'Verify integrity of the tamper-evident evidence ledger (hash-chain + signatures).'
   })
 });
 
