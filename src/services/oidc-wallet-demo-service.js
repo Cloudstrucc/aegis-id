@@ -141,7 +141,11 @@ async function createWalletChallenge(sessionId, options = {}) {
   }
   const connectionId = issuerOrganization?.issuerConnectionId || options.connectionId || undefined;
   const organizationName = issuerOrganization?.organizationName || options.organizationName || 'Vanguard Aries Issuer';
-  const challenge = await sendWalletChallenge('issuer', {
+  // Product-path organizations have no DIDComm connection, so the challenge is
+  // recorded for the wallet to collect by polling instead of being pushed.
+  let challenge = { agent: null, connectionId: null, ping: null };
+  if (connectionId) {
+    challenge = await sendWalletChallenge('issuer', {
     connectionId,
     comment: `${organizationName} OIDC step-up challenge ${nonce}`,
     content: [
@@ -152,7 +156,8 @@ async function createWalletChallenge(sessionId, options = {}) {
       `issuerOrg=${issuerOrganization?.organizationId || 'raw-connection'}`,
       'Accept this in the Vanguard Aegis ID wallet to unlock the protected web app.'
     ].join('\n')
-  });
+    });
+  }
 
   return updateSession(session.id, (record) => ({
     ...record,

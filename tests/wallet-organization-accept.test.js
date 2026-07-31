@@ -26,6 +26,7 @@ async function withIsolatedStore(run) {
   process.env.ISSUER_ORG_STORE_PATH = path.join(dir, 'issuer-organizations.json');
   process.env.AUDIT_STORE_PATH = path.join(dir, 'audit-events.json');
   process.env.PUBLIC_BASE_URL = 'https://aegis.test';
+  process.env.WALLET_CHALLENGE_STORE_PATH = path.join(dir, 'wallet-challenges.json');
   delete process.env.ARIES_ORG_INVITATION_MODE; // default = product path
   resetModules();
   try {
@@ -73,9 +74,14 @@ test('accepting an organization invitation connects the wallet with no ACA-Py', 
     assert.equal(accepted.walletId, 'AEG-4K7P-2M9X-QT3B');
     assert.ok(accepted.acceptedAt);
 
-    // The workspace onboarding state should now consider the wallet connected.
+    // A product-path connection must appear as connected everywhere, including
+    // the wallet-challenge surfaces. Requiring an issuerConnectionId here hid it
+    // from the OIDC demo, which then reported "no connected issuing org found".
     const connected = await service.listConnectedIssuerOrganizations();
-    assert.equal(connected.length, 0, 'product-path connections have no issuerConnectionId');
+    assert.equal(connected.length, 1);
+    assert.equal(connected[0].organizationId, 'ws-1');
+    assert.equal(connected[0].issuerConnectionId, null, 'no DIDComm channel on the product path');
+
     const all = await service.listIssuerOrganizations('sub-1', 'ws-1');
     assert.equal(all[0].status, 'connected');
   });
@@ -111,5 +117,31 @@ test('unknown invitation returns 404', async () => {
       () => service.acceptOrganizationInvitation('does-not-exist', { walletId: 'AEG-1111-2222-3333' }),
       (error) => error.status === 404
     );
+  });
+});
+
+test('a product-path organization can receive a wallet challenge with no ACA-Py', async () => {
+  await withIsolatedStore(async (service) => {
+    const invitation = await service.createIssuerOrganizationInvitation(subscription, workspace);
+    await service.acceptOrganizationInvitation(invitation.id, { walletId: 'AEG-1111-2222-3333' });
+
+    // Fresh module instance so it binds to this test's isolated stores.
+    delete require.cache[require.resolve('../src/services/wallet-challenge-service')];
+    const { createExternalWalletChallenge } = require('../src/services/wallet-challenge-service');
+
+    const challenge = await createExternalWalletChallenge({
+      appName: 'OIDC demo',
+      subject: 'holder@example.com',
+      organizationId: 'ws-1',
+      action: 'approve'
+    });
+
+    // Previously this threw "a wallet issuer connection is required", which is
+    // what made the OIDC wallet gate unusable after a product-path connect.
+    assert.equal(challenge.organizationId, 'ws-1');
+    assert.equal(challenge.status, 'sent');
+    assert.equal(challenge.delivery.status, 'api-pending', 'wallet collects it by polling');
+
+    delete require.cache[require.resolve('../src/services/wallet-challenge-service')];
   });
 });

@@ -188,9 +188,12 @@ async function listIssuerOrganizations(subscriptionId, organizationId) {
   );
 }
 
+// Connected organizations, whichever path connected them. Product-path
+// connections have no issuerConnectionId because there is no DIDComm channel —
+// requiring one here hid them from every wallet-challenge surface.
 async function listConnectedIssuerOrganizations() {
   const records = await store.read();
-  return records.filter((record) => record.status === 'connected' && record.issuerConnectionId);
+  return records.filter((record) => record.status === 'connected');
 }
 
 async function getIssuerOrganization(organizationId) {

@@ -50,7 +50,10 @@ async function createExternalWalletChallenge(input = {}) {
   }
 
   const connectionId = issuerOrganization?.issuerConnectionId || normalizeText(input.connectionId, 120);
-  if (!connectionId) {
+  // A product-path organization has no DIDComm connection. The challenge is
+  // still created and the wallet collects it by polling, so only require a
+  // connection when we have no connected organization to attach the challenge to.
+  if (!connectionId && !issuerOrganization) {
     const error = validationError('A wallet issuer connection is required for this organization.');
     error.status = 409;
     error.details = {
@@ -91,23 +94,28 @@ async function createExternalWalletChallenge(input = {}) {
 
   let delivery = baseRecord.delivery;
   let threadId = null;
-  try {
-    const sent = await sendWalletChallenge('issuer', {
-      connectionId,
-      comment: `${appName} ${action} challenge ${nonce}`,
-      content: buildChallengeContent(baseRecord)
-    });
-    delivery = {
-      status: 'didcomm-sent',
-      agent: sent.agent,
-      connectionId: sent.connectionId
-    };
-    threadId = sent.ping?.thread_id || null;
-  } catch (error) {
-    delivery = {
-      status: 'api-pending',
-      error: error.hint || error.message
-    };
+  if (!connectionId) {
+    // Product path: no DIDComm channel, so the wallet picks this up by polling.
+    delivery = { status: 'api-pending' };
+  } else {
+    try {
+      const sent = await sendWalletChallenge('issuer', {
+        connectionId,
+        comment: `${appName} ${action} challenge ${nonce}`,
+        content: buildChallengeContent(baseRecord)
+      });
+      delivery = {
+        status: 'didcomm-sent',
+        agent: sent.agent,
+        connectionId: sent.connectionId
+      };
+      threadId = sent.ping?.thread_id || null;
+    } catch (error) {
+      delivery = {
+        status: 'api-pending',
+        error: error.hint || error.message
+      };
+    }
   }
 
   const record = {
