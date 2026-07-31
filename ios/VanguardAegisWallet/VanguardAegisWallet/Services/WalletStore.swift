@@ -443,7 +443,10 @@ final class WalletStore: ObservableObject {
     func refreshOIDCWalletChallenges(_ connection: WalletConnection) async {
         clearLabMessages()
 
-        guard current(connection)?.issuerConnectionId != nil else {
+        // A product-path connection has no DIDComm id and polls by organization,
+        // so requiring one here blocked exactly the wallets that need polling.
+        guard current(connection)?.issuerConnectionId != nil
+            || connection.invitation.organizationId != nil else {
             lastLabError = "Accept the invitation before checking web app challenges."
             return
         }
@@ -466,7 +469,9 @@ final class WalletStore: ObservableObject {
             return
         }
 
-        let refreshableConnections = connections.filter { $0.issuerConnectionId != nil }
+        let refreshableConnections = connections.filter {
+            $0.issuerConnectionId != nil || $0.invitation.organizationId != nil
+        }
         guard !refreshableConnections.isEmpty else {
             return
         }
