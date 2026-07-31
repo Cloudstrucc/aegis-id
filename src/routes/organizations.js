@@ -10,6 +10,7 @@ const {
   registerWorkspaceForSubscription
 } = require('../services/platform-service');
 const {
+  ensureAdminCredential,
   getOrganizationBranding,
   listCredentialMembershipsForEmail
 } = require('../services/org-admin-service');
@@ -53,7 +54,29 @@ router.post('/organizations/:subscriptionId', authorize('workspace.register'), a
     const onboarding = await getWorkspaceWalletOnboardingState(subscription, workspace);
 
     if (onboarding.requiresWalletSetup && !onboarding.latestInvitation) {
-      await createIssuerOrganizationInvitation(subscription, workspace);
+      // Never fail workspace registration because the wallet invitation could not
+      // be created (e.g. the Aries lab is unreachable). The workspace is the
+      // primary outcome; the invitation can be re-issued from the onboarding page.
+      try {
+        await createIssuerOrganizationInvitation(subscription, workspace);
+      } catch (invitationError) {
+        await writeAuditEvent('organization.workspace.invitation.deferred', {
+          subscriptionId: subscription.id,
+          workspaceId: workspace.id,
+          reason: invitationError.message
+        });
+      }
+    }
+
+    // Issue the founding administrator their own credential (plan Issue C).
+    try {
+      await ensureAdminCredential(workspace, subscription, { walletId: req.body.walletId });
+    } catch (credentialError) {
+      await writeAuditEvent('organization.admin.credential.deferred', {
+        subscriptionId: subscription.id,
+        workspaceId: workspace.id,
+        reason: credentialError.message
+      });
     }
 
     await writeAuditEvent('organization.workspace.registered', {

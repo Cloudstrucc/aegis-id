@@ -414,6 +414,31 @@ flowchart LR
 
 ---
 
+## Wallet Identity, Wallet ID And Recovery
+
+Every wallet now registers on first launch and receives a **Wallet ID** in the
+form `AEG-XXXX-XXXX-XXXX-XXXX`. Holders share it with an administrator so
+credentials can be issued to that specific wallet.
+
+**Issuing a credential.** The issue form takes an optional Wallet ID and mobile
+number alongside the holder email. Binding to a Wallet ID is the strongest
+option and lets the credential email differ from the email the holder registered
+on their wallet, which is what supports people who work with several
+organizations. Email- and phone-bound invitations must match the contact
+registered on the wallet and are flagged **Lower assurance** in the people table.
+
+**Approving a recovery.** Administrators holding the **Approve wallet recovery**
+privilege see a **Wallet recovery** panel in the dashboard. Re-verify the person
+the same way you did at onboarding — in person, or with government photo ID plus
+a liveness check. Approving restores only your organization's credentials.
+
+**Delivery settings.** Recovery codes are sent by email or SMS. Configure this at
+**/admin/notifications**, which has presets for Microsoft 365 / Exchange Online
+and Gmail / Google Workspace. In production, recovery fails closed if no channel
+is configured.
+
+Full detail: [Wallet Identity, Wallet ID and Recovery](../wallet-and-passkeys/wallet-identity-and-recovery.md).
+
 ## Aries Interoperability Lab
 
 The Aries lab is intentionally separate from the Microsoft production path.

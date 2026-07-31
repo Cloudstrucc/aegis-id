@@ -1,0 +1,53 @@
+{
+  "description": "Shared Wallet ID vectors consumed by the Node, iOS and Android format tests so the three implementations cannot drift.",
+  "valid": [
+    "AEG-KVAM-P0KW-RTJ9-3V18",
+    "AEG-ZG4K-MJCF-RZKF-9YP3",
+    "AEG-RX3V-60T3-ZB4K-ESVS",
+    "AEG-8NQW-3TCP-3BBX-6AZC",
+    "AEG-SQFT-SVZM-KV4X-BK82",
+    "AEG-B4A8-D16T-85DX-AYDQ",
+    "AEG-PHNT-A8SE-8J6G-DZQY",
+    "AEG-1GN8-9JRC-1TP7-3Q9Q"
+  ],
+  "invalid": [
+    {
+      "value": "AEG-KVAN-P0KW-RTJ9-3V18",
+      "reason": "single-character typo"
+    },
+    {
+      "value": "AEG-KVAM-PK0W-RTJ9-3V18",
+      "reason": "adjacent transposition"
+    },
+    {
+      "value": "AEG-TOO-SHORT",
+      "reason": "wrong length"
+    },
+    {
+      "value": "",
+      "reason": "empty"
+    },
+    {
+      "value": "AEG-KVAM-P0KW-RTJ9-3V19",
+      "reason": "incorrect check symbol"
+    },
+    {
+      "value": "AEG-KVAM-P0KW-RTJ9-3V1!",
+      "reason": "illegal character"
+    }
+  ],
+  "normalization": [
+    {
+      "input": "aeg-zg4k-mjcf-rzkf-9yp3",
+      "expected": "AEG-ZG4K-MJCF-RZKF-9YP3"
+    },
+    {
+      "input": "AEGZG4KMJCFRZKF9YP3",
+      "expected": "AEG-ZG4K-MJCF-RZKF-9YP3"
+    },
+    {
+      "input": "  aeg-zg4k-mjcf-rzkf-9yp3  ",
+      "expected": "AEG-ZG4K-MJCF-RZKF-9YP3"
+    }
+  ]
+}

@@ -8,6 +8,12 @@ const { getHealthDashboard } = require('../services/health-service');
 const { getHomeContent } = require('../services/home-content');
 const { getCredentialInvitationView } = require('../services/org-admin-service');
 const { authorize } = require('../middleware/authorization');
+const {
+  getNotificationSettingsForDisplay,
+  updateNotificationSettings
+} = require('../services/notification-settings-service');
+const { verifyEmail } = require('../adapters/notify/notification-adapter');
+const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
 
@@ -22,6 +28,48 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
     policy: getPresentationPolicy(),
     microsoftMode: config.verifiedId.mode
   });
+});
+
+// Platform-level delivery settings for wallet recovery codes.
+router.get('/admin/notifications', authorize('admin.notifications.manage'), async (req, res, next) => {
+  try {
+    res.render('pages/notification-settings', {
+      title: 'Notification delivery',
+      description: 'Configure how Aegis ID sends wallet recovery codes.',
+      settings: await getNotificationSettingsForDisplay(),
+      saved: req.query.saved === '1',
+      testResult: req.query.test || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/admin/notifications', authorize('admin.notifications.manage'), async (req, res, next) => {
+  try {
+    const settings = await updateNotificationSettings(req.body, req.user?.email);
+    await writeAuditEvent('admin.notifications.updated', {
+      actorEmail: req.user?.email,
+      emailEnabled: settings.email.enabled,
+      emailPreset: settings.email.preset,
+      smsEnabled: settings.sms.enabled,
+      smsPreset: settings.sms.preset
+    });
+
+    // "Save and test" verifies the SMTP credentials without sending anything.
+    if (req.body.action === 'test') {
+      try {
+        await verifyEmail(settings);
+        return res.redirect(303, '/admin/notifications?saved=1&test=ok');
+      } catch (error) {
+        return res.redirect(303, `/admin/notifications?saved=1&test=${encodeURIComponent(error.message.slice(0, 160))}`);
+      }
+    }
+
+    res.redirect(303, '/admin/notifications?saved=1');
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get('/health', authorize('admin.health.view'), async (req, res, next) => {

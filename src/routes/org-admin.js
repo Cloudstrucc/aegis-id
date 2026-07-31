@@ -31,6 +31,10 @@ const {
   updateRole
 } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
+const {
+  approveOrgAttestation,
+  rejectOrgAttestation
+} = require('../services/wallet-recovery-service');
 
 const router = express.Router();
 router.use('/dashboard', requireAuthenticated);
@@ -185,6 +189,41 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/profile-validati
   res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#workspace-settings`);
 }));
 
+// Tier-2 wallet recovery approvals. Gated on wallet.recovery.approve, which is
+// intentionally separate from credential issuance so it can be granted and
+// audited on its own.
+router.post(
+  '/dashboard/:subscriptionId/orgs/:workspaceId/admin/wallet-recovery/:requestId/approve',
+  authorize('wallet.recovery.approve'),
+  withOrg(async ({ subscription, workspace, req, res }) => {
+    const request = await approveOrgAttestation(req.params.requestId, {
+      approvedBy: subscription.email,
+      method: req.body.method || 'in-person',
+      idImageHash: req.body.idImageHash || null,
+      faceImageHash: req.body.faceImageHash || null
+    });
+    await audit('org.wallet.recovery.approved', subscription, workspace, {
+      requestId: request.id,
+      walletId: request.walletId
+    });
+    res.redirect(303, `${dashboardPath(subscription.id, workspace.id)}#wallet-recovery`);
+  })
+);
+
+router.post(
+  '/dashboard/:subscriptionId/orgs/:workspaceId/admin/wallet-recovery/:requestId/reject',
+  authorize('wallet.recovery.approve'),
+  withOrg(async ({ subscription, workspace, req, res }) => {
+    const request = await rejectOrgAttestation(req.params.requestId, req.body.reason, subscription.email);
+    await audit('org.wallet.recovery.rejected', subscription, workspace, {
+      requestId: request.id,
+      walletId: request.walletId,
+      reason: request.rejectedReason
+    });
+    res.redirect(303, `${dashboardPath(subscription.id, workspace.id)}#wallet-recovery`);
+  })
+);
+
 function withOrg(handler) {
   return async (req, res, next) => {
     try {
@@ -224,6 +263,10 @@ async function audit(type, subscription, workspace, data = {}) {
     actorEmail: subscription.email,
     ...data
   });
+}
+
+function dashboardPath(subscriptionId, workspaceId) {
+  return `/dashboard/${subscriptionId}/orgs/${workspaceId}`;
 }
 
 function orgAdminPath(subscriptionId, workspaceId, credentialId) {

@@ -281,7 +281,12 @@
                   <span class="status-pill status-pill--revoked">Expired</span>
                 {{/if}}
               </td>
-              <td><span class="status-pill status-pill--consent">{{consentStatusLabel}}</span></td>
+              <td>
+                <span class="status-pill status-pill--consent">{{consentStatusLabel}}</span>
+                {{#if isLowerAssuranceBinding}}
+                  <span class="status-pill status-pill--warn" title="{{bindingModeLabel}} — lower assurance than a Wallet ID binding">Lower assurance</span>
+                {{/if}}
+              </td>
               <td>
                 <div class="row-actions">
                   <button class="icon-button" type="button" title="View details" data-modal-target="#{{detailModalId}}">View</button>
@@ -406,12 +411,23 @@
         <form class="wizard-form" action="{{dashboardBasePath}}/admin/credentials" method="post">
           <div class="field-row">
             <div class="field-group">
-              <label class="field-label" for="holderEmail">Holder email <span class="field-tooltip" tabindex="0" data-tooltip="The email address used to identify the wallet holder and send human follow-up.">?</span></label>
-              <input id="holderEmail" name="holderEmail" type="email" value="identity@vanguardcs.ca" required>
+              <label class="field-label" for="holderEmail">Holder email <span class="field-tooltip" tabindex="0" data-tooltip="The address this organization knows the holder by. With a Wallet ID this can differ from the email registered on their wallet.">?</span></label>
+              <input id="holderEmail" name="holderEmail" type="email" placeholder="person@example.com" required>
             </div>
             <div class="field-group">
               <label class="field-label" for="displayName">Display name <span class="field-tooltip" tabindex="0" data-tooltip="The name shown in the admin dashboard and wallet credential profile.">?</span></label>
-              <input id="displayName" name="displayName" type="text" value="Vanguard Team Member" required>
+              <input id="displayName" name="displayName" type="text" placeholder="Jordan Smith" required>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="walletId">Wallet ID <span class="field-tooltip" tabindex="0" data-tooltip="Ask the holder for the Wallet ID shown in their Aegis ID app. Binding to a Wallet ID is the strongest option and lets the credential email differ from their wallet email.">?</span></label>
+              <input id="walletId" name="walletId" type="text" placeholder="AEG-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+              <p class="field-hint">Recommended. Without it the invite binds to the holder's registered email or phone, which is lower assurance.</p>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="holderPhone">Holder mobile <span class="field-tooltip" tabindex="0" data-tooltip="Optional. Used only when issuing an SMS-bound invite with no Wallet ID; it must match the phone registered on the holder's wallet.">?</span></label>
+              <input id="holderPhone" name="holderPhone" type="tel" placeholder="+1 613 555 0100" autocomplete="off">
             </div>
           </div>
           <div class="field-row">
@@ -646,7 +662,12 @@
             {{/if}}
           </div>
         </div>
-        <section class="credential-invite-viewer" aria-label="Credential invitation">
+        <section
+          class="credential-invite-viewer"
+          aria-label="Credential invitation"
+          data-invite-poll="{{id}}"
+          data-invite-organization="{{../id}}"
+        >
           <div class="credential-invite-viewer__head">
             <div>
               <p class="eyebrow">Wallet invitation</p>
@@ -1179,6 +1200,61 @@
         </section>
       </div>
     {{/each}}
+  {{/if}}
+</section>
+{{/if}}
+
+{{#if orgAdmin.canApproveWalletRecovery}}
+<section id="wallet-recovery" class="band band--white blade-panel" data-blade-panel="wallet-recovery">
+  <div class="section-heading">
+    <p class="eyebrow">Wallet recovery</p>
+    <h2>Approve wallet recovery for holders who lost their device.</h2>
+    <p>A holder with no recovery codes can ask this organization to confirm their identity. Approving restores <strong>only this organization's credentials</strong> — other organizations approve their own separately.</p>
+  </div>
+  <article class="blade-guidance">
+    <strong>Before you approve</strong>
+    <span>Re-verify the person the same way you did at onboarding: in person, or with government photo ID plus a liveness check. Approving on a phone call or an email request alone is how wallets get taken over.</span>
+  </article>
+
+  {{#if orgAdmin.walletRecoveryRequests.length}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Wallet</th>
+          <th>Requested</th>
+          <th>Verified contact</th>
+          <th>Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each orgAdmin.walletRecoveryRequests}}
+          <tr>
+            <td><code>{{walletId}}</code></td>
+            <td>{{requestedAt}}</td>
+            <td>
+              {{#if otpVerified}}
+                <span class="status-pill status-pill--consent">Contact verified</span>
+              {{else}}
+                <span class="status-pill status-pill--warn">Not verified</span>
+              {{/if}}
+            </td>
+            <td class="table-actions">
+              <form action="{{../dashboardBasePath}}/admin/wallet-recovery/{{id}}/approve" method="post"
+                    data-confirm-message="Confirm you have re-verified this person's identity in person or with photo ID and a liveness check. This restores their wallet on a new device.">
+                <input type="hidden" name="method" value="in-person">
+                <button class="button button--primary" type="submit">Approve</button>
+              </form>
+              <form action="{{../dashboardBasePath}}/admin/wallet-recovery/{{id}}/reject" method="post">
+                <input type="text" name="reason" placeholder="Reason" required>
+                <button class="button button--ghost" type="submit">Reject</button>
+              </form>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="muted">No wallet recovery requests are waiting for this organization.</p>
   {{/if}}
 </section>
 {{/if}}

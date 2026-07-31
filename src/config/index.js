@@ -121,7 +121,24 @@ const config = {
     oidcCodes: resolveFromRoot(process.env.OIDC_CODE_STORE_PATH, 'data/oidc-codes.json'),
     walletChallenges: resolveFromRoot(process.env.WALLET_CHALLENGE_STORE_PATH, 'data/wallet-challenges.json'),
     walletPasskeys: resolveFromRoot(process.env.WALLET_PASSKEY_STORE_PATH, 'data/wallet-passkeys.json'),
-    audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json')
+    audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json'),
+    wallets: resolveFromRoot(process.env.WALLET_STORE_PATH, 'data/wallets.json'),
+    walletContactChallenges: resolveFromRoot(
+      process.env.WALLET_CONTACT_CHALLENGE_STORE_PATH,
+      'data/wallet-contact-challenges.json'
+    ),
+    walletRecoveryCodes: resolveFromRoot(
+      process.env.WALLET_RECOVERY_CODE_STORE_PATH,
+      'data/wallet-recovery-codes.json'
+    ),
+    walletRecoveryRequests: resolveFromRoot(
+      process.env.WALLET_RECOVERY_REQUEST_STORE_PATH,
+      'data/wallet-recovery-requests.json'
+    ),
+    notificationSettings: resolveFromRoot(
+      process.env.NOTIFICATION_SETTINGS_STORE_PATH,
+      'data/notification-settings.json'
+    )
   },
   auth: {
     sessionSecret: process.env.SESSION_SECRET || 'dev-change-this-session-secret',
@@ -189,6 +206,10 @@ const config = {
     }
   },
   aries: {
+    // 'product' (default) issues self-contained aegisid:// org invites with no
+    // ACA-Py dependency. 'aries-lab' uses DIDComm out-of-band invitations and
+    // requires the Aries lab to be running.
+    orgInvitationMode: process.env.ARIES_ORG_INVITATION_MODE || 'product',
     holderAdminUrl: process.env.ARIES_HOLDER_ADMIN_URL || 'http://localhost:6011',
     issuerAdminUrl: process.env.ARIES_ISSUER_ADMIN_URL || 'http://localhost:4011',
     verifierAdminUrl: process.env.ARIES_VERIFIER_ADMIN_URL || 'http://localhost:5011',
@@ -221,6 +242,25 @@ const config = {
     anchorContainer: process.env.AUDIT_ANCHOR_CONTAINER || '',
     anchorDir: resolveFromRoot(process.env.AUDIT_ANCHOR_DIR, 'data/audit-heads'),
     anchorIntervalSeconds: integerValue(process.env.AUDIT_ANCHOR_INTERVAL_SECONDS, 3600)
+  },
+  assurance: {
+    // A7: how a credential's assurance level is decided when the issuer does not
+    // set one explicitly. 'derive' infers it from the credential's assurance
+    // claim (hardware/YubiKey/passkey => high); 'explicit' uses the supplied
+    // value only. Tier-1 wallet recovery suspends whatever lands on 'high'.
+    mode: process.env.CREDENTIAL_ASSURANCE_MODE || 'derive',
+    // Claim values that count as high assurance, matched case-insensitively.
+    highSignals: tokenList(process.env.CREDENTIAL_ASSURANCE_HIGH_SIGNALS, [
+      'fido2',
+      'yubikey',
+      'hardware',
+      'passkey',
+      'webauthn',
+      'high'
+    ]),
+    // Roles whose credentials default to high assurance.
+    highRolePattern: process.env.CREDENTIAL_ASSURANCE_HIGH_ROLE_PATTERN || 'admin',
+    defaultLevel: process.env.CREDENTIAL_ASSURANCE_DEFAULT || 'medium'
   },
   ledger: {
     // Features B/C/D — Indy ledger-profile registry + did:indy / TAA settings.

@@ -29,8 +29,23 @@ final class WalletStore: ObservableObject {
     @Published var challengeBanner: WalletChallengeBanner?
     @Published private(set) var organizationProfiles: [String: OrganizationProfile] = [:]
     @Published private(set) var walletPasskeyStatus: WalletPasskeyStatus?
-    @Published var walletPasskeySubject: String = "identity@vanguardcs.ca"
+    // Defaults to empty: the holder supplies their address during first-run setup
+    // instead of inheriting a shared placeholder.
+    @Published var walletPasskeySubject: String = ""
     @Published var requirePasskeyForAllWalletChallenges = false
+
+    // Wallet identity (see WalletStore+Identity.swift)
+    @Published var identity: WalletIdentityRecord?
+    @Published var isWalletRegistered = false
+    @Published var pendingRecoveryCodes: [String] = []
+    @Published var pendingContactChallengeId: String?
+    @Published var recoveryRequestId: String?
+    @Published var recoveryWalletId: String?
+    @Published var recoveryOptions: WalletRegistrationClient.RecoveryOptions?
+    /// Populated only outside production, where the server echoes the OTP.
+    @Published var devDeliveredOtp: String?
+
+    let registrationClient = WalletRegistrationClient()
 
     private let storageKey = "vanguard.aegis.wallet.connections"
     private let transactionsStorageKey = "vanguard.aegis.wallet.transactions"
@@ -47,6 +62,14 @@ final class WalletStore: ObservableObject {
         load()
         loadTransactions()
         loadOrganizationProfiles()
+
+        // Installs that predate the Wallet ID have data but no identity, so they
+        // are routed through first-run setup on next launch.
+        identity = loadIdentity()
+        isWalletRegistered = identity != nil
+        if let email = identity?.email, !email.isEmpty {
+            walletPasskeySubject = email
+        }
     }
 
     func importInvitation(from rawText: String) {
@@ -56,8 +79,18 @@ final class WalletStore: ObservableObject {
         lastLabError = nil
 
         do {
+            // Product-path organization invite: accepted directly, with no ACA-Py
+            // round trip, so it works against any deployment.
+            if AegisOrganizationInviteParser.canParse(rawText) {
+                let orgInvite = try AegisOrganizationInviteParser.parse(rawText)
+                Task { await acceptOrganizationInvite(orgInvite) }
+                return
+            }
+
             if AegisCredentialInviteParser.canParse(rawText) {
                 let credentialInvite = try AegisCredentialInviteParser.parse(rawText)
+                // Fail fast and explain when the invite belongs to another wallet.
+                try assertInvitationMatchesWallet(inviteWalletId: credentialInvite.walletId)
                 importCredentialInvite(credentialInvite)
                 return
             }

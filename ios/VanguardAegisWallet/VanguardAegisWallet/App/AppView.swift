@@ -6,6 +6,16 @@ struct AppView: View {
     @State private var selectedTab: AppTab = .home
 
     var body: some View {
+        if store.isWalletRegistered {
+            walletTabs
+        } else {
+            // Setup gate: no credential can bind to this wallet until it has a
+            // Wallet ID, so the tabs stay unavailable until registration finishes.
+            WalletSetupView()
+        }
+    }
+
+    private var walletTabs: some View {
         TabView(selection: $selectedTab) {
             ForEach(AppTab.allCases) { tab in
                 NavigationStack {

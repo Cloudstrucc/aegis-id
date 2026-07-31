@@ -11,6 +11,11 @@
 		A10000000000000000000002 /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AppView.swift */; };
 		A10000000000000000000003 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* DesignSystem.swift */; };
 		A10000000000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Models.swift */; };
+		A10000000000000000000050 /* WalletIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000050 /* WalletIdentity.swift */; };
+		A10000000000000000000051 /* WalletRegistrationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000051 /* WalletRegistrationClient.swift */; };
+		A10000000000000000000052 /* WalletStore+Identity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000052 /* WalletStore+Identity.swift */; };
+		A10000000000000000000053 /* WalletSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000053 /* WalletSetupView.swift */; };
+		A10000000000000000000054 /* WalletRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000054 /* WalletRecoveryView.swift */; };
 		A10000000000000000000005 /* WalletStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* WalletStore.swift */; };
 		A10000000000000000000006 /* OOBInvitationParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* OOBInvitationParser.swift */; };
 		A10000000000000000000007 /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* QRCodeScannerView.swift */; };
@@ -33,6 +38,11 @@
 		A20000000000000000000002 /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		A20000000000000000000050 /* WalletIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletIdentity.swift"; sourceTree = "<group>"; };
+		A20000000000000000000051 /* WalletRegistrationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletRegistrationClient.swift"; sourceTree = "<group>"; };
+		A20000000000000000000052 /* WalletStore+Identity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletStore+Identity.swift"; sourceTree = "<group>"; };
+		A20000000000000000000053 /* WalletSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletSetupView.swift"; sourceTree = "<group>"; };
+		A20000000000000000000054 /* WalletRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletRecoveryView.swift"; sourceTree = "<group>"; };
 		A20000000000000000000005 /* WalletStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletStore.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* OOBInvitationParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OOBInvitationParser.swift; sourceTree = "<group>"; };
 		A20000000000000000000007 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
@@ -124,6 +134,9 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000005 /* WalletStore.swift */,
+				A20000000000000000000050 /* WalletIdentity.swift */,
+				A20000000000000000000051 /* WalletRegistrationClient.swift */,
+				A20000000000000000000052 /* WalletStore+Identity.swift */,
 				A20000000000000000000021 /* AegisWalletEnvironment.swift */,
 				A20000000000000000000006 /* OOBInvitationParser.swift */,
 				A20000000000000000000014 /* LabAgentClient.swift */,
@@ -131,9 +144,19 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		A40000000000000000000050 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000053 /* WalletSetupView.swift */,
+				A20000000000000000000054 /* WalletRecoveryView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		A40000000000000000000008 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				A40000000000000000000050 /* Onboarding */,
 				A40000000000000000000009 /* Home */,
 				A40000000000000000000010 /* Scan */,
 				A40000000000000000000013 /* Organizations */,
@@ -279,6 +302,11 @@
 				A10000000000000000000003 /* DesignSystem.swift in Sources */,
 				A10000000000000000000004 /* Models.swift in Sources */,
 				A10000000000000000000005 /* WalletStore.swift in Sources */,
+				A10000000000000000000050 /* WalletIdentity.swift in Sources */,
+				A10000000000000000000051 /* WalletRegistrationClient.swift in Sources */,
+				A10000000000000000000052 /* WalletStore+Identity.swift in Sources */,
+				A10000000000000000000053 /* WalletSetupView.swift in Sources */,
+				A10000000000000000000054 /* WalletRecoveryView.swift in Sources */,
 				A10000000000000000000006 /* OOBInvitationParser.swift in Sources */,
 				A10000000000000000000012 /* LabAgentClient.swift in Sources */,
 				A10000000000000000000007 /* QRCodeScannerView.swift in Sources */,

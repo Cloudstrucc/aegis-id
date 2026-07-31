@@ -5,6 +5,10 @@ struct AegisCredentialInvite: Equatable, Hashable {
     var organizationName: String
     var credentialId: String
     var holderEmail: String
+    /// Present on Wallet-ID-bound (mode 1) invites so the app can reject an
+    /// invitation addressed to a different wallet before calling the server.
+    var walletId: String?
+    var bindingMode: String?
     var expiresAt: String?
     var sourceWebAppURL: String?
     var rawURL: String
@@ -42,6 +46,8 @@ enum AegisCredentialInviteParser {
             organizationName: queryValue(["organization_name", "organizationName"], in: queryItems) ?? "Vanguard organization",
             credentialId: credentialId,
             holderEmail: queryValue(["holder_email", "holderEmail"], in: queryItems) ?? "",
+            walletId: queryValue(["wallet_id", "walletId"], in: queryItems),
+            bindingMode: queryValue(["binding_mode", "bindingMode"], in: queryItems),
             expiresAt: queryValue(["expires_at", "expiresAt"], in: queryItems),
             sourceWebAppURL: sourceWebAppURL(from: queryItems, fallbackComponents: components),
             rawURL: trimmed
@@ -347,5 +353,82 @@ private struct DynamicCodingKey: CodingKey {
     init?(intValue: Int) {
         self.stringValue = "\(intValue)"
         self.intValue = intValue
+    }
+}
+
+// MARK: - Organization invitations (product path)
+
+/// `aegisid://org-invite?...` — the ACA-Py-free organization invitation. The
+/// wallet accepts these through the product API, so they work on deployments
+/// where the Aries lab is not running.
+struct AegisOrganizationInvite: Equatable, Hashable {
+    var invitationId: String
+    var organizationId: String
+    var organizationName: String
+    var sourceWebAppURL: String?
+    var rawURL: String
+}
+
+enum AegisOrganizationInviteParser {
+    static func canParse(_ rawText: String) -> Bool {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = URLComponents(string: trimmed) else {
+            return false
+        }
+        return isOrganizationInvite(components)
+    }
+
+    static func parse(_ rawText: String) throws -> AegisOrganizationInvite {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = URLComponents(string: trimmed), isOrganizationInvite(components) else {
+            throw ParserError.invalidInviteURL
+        }
+
+        let items = components.queryItems ?? []
+        guard let invitationId = value(["invitation_id", "invitationId"], in: items),
+              let organizationId = value(["organization_id", "organizationId"], in: items),
+              !invitationId.isEmpty,
+              !organizationId.isEmpty
+        else {
+            throw ParserError.missingRequiredFields
+        }
+
+        return AegisOrganizationInvite(
+            invitationId: invitationId,
+            organizationId: organizationId,
+            organizationName: value(["organization_name", "organizationName"], in: items) ?? "Vanguard organization",
+            sourceWebAppURL: value(["vanguard_web_app_url"], in: items),
+            rawURL: trimmed
+        )
+    }
+
+    private static func isOrganizationInvite(_ components: URLComponents) -> Bool {
+        let scheme = components.scheme?.lowercased()
+        let host = components.host?.lowercased()
+        let path = components.path.lowercased()
+        return scheme == "aegisid" && (host == "org-invite" || path.contains("org-invite"))
+    }
+
+    private static func value(_ names: [String], in items: [URLQueryItem]) -> String? {
+        for name in names {
+            if let found = items.first(where: { $0.name == name })?.value, !found.isEmpty {
+                return found
+            }
+        }
+        return nil
+    }
+
+    enum ParserError: LocalizedError {
+        case invalidInviteURL
+        case missingRequiredFields
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidInviteURL:
+                return "That QR code is not an Aegis organization invitation."
+            case .missingRequiredFields:
+                return "This organization invitation is missing required details."
+            }
+        }
     }
 }
