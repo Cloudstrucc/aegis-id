@@ -13,7 +13,8 @@ const {
   getDemoSession,
   isAuthenticated,
   listPendingWalletChallenges,
-  listWalletConnections
+  listWalletConnections,
+  setMockLogin
 } = require('../services/oidc-wallet-demo-service');
 const { authorize } = require('../middleware/authorization');
 
@@ -57,15 +58,30 @@ router.get('/demo/oidc-wallet/mock-authorize', (req, res) => {
     scope: req.query.scope,
     state: req.query.state,
     nonce: req.query.nonce,
-    redirectUri: req.query.redirect_uri
+    redirectUri: req.query.redirect_uri,
+    // Prefill with the signed-in operator so the common case is one click.
+    defaultEmail: req.user?.email || '',
+    defaultName: req.user?.displayName || ''
   });
 });
 
-router.post('/demo/oidc-wallet/mock-authorize', authorize('api.oidcProvider.external'), (req, res) => {
-  const redirectUri = new URL(req.body.redirectUri);
-  redirectUri.searchParams.set('code', `mock-code-${Date.now()}`);
-  redirectUri.searchParams.set('state', req.body.state);
-  res.redirect(303, redirectUri.toString());
+router.post('/demo/oidc-wallet/mock-authorize', authorize('api.oidcProvider.external'), async (req, res, next) => {
+  try {
+    // Remember who the tester signed in as so the wallet challenge is addressed
+    // to them rather than to a fixed demo user.
+    await setMockLogin(req.body.state, {
+      email: req.body.email,
+      name: req.body.name,
+      subject: req.body.subject
+    });
+
+    const redirectUri = new URL(req.body.redirectUri);
+    redirectUri.searchParams.set('code', `mock-code-${Date.now()}`);
+    redirectUri.searchParams.set('state', req.body.state);
+    res.redirect(303, redirectUri.toString());
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get('/demo/oidc-wallet/callback', async (req, res, next) => {
@@ -251,6 +267,9 @@ async function loadConnectionState() {
         label: connection.label,
         state: connection.status,
         connectionId: connection.connectionId,
+        // Product-path connections have no DIDComm id, which rendered as a
+        // dangling "- " in the picker. Describe the channel instead.
+        channelLabel: connection.connectionId ? `DIDComm ${connection.connectionId}` : 'wallet app',
         type: connection.type,
         selected: false
       })),

@@ -58,7 +58,7 @@
               <label for="issuerChoice">Issuing organization</label>
               <select id="issuerChoice" name="issuerChoice">
                 {{#each connections}}
-                  <option value="{{choiceValue}}" {{#if selected}}selected{{/if}}>{{label}} - {{state}} - {{connectionId}}</option>
+                  <option value="{{choiceValue}}" {{#if selected}}selected{{/if}}>{{label}} &middot; {{state}} &middot; {{channelLabel}}</option>
                 {{/each}}
               </select>
             </div>

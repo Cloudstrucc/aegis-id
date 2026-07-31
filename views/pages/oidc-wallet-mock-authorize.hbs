@@ -33,11 +33,26 @@
       </div>
     </dl>
 
-    <form class="wizard-actions" action="/demo/oidc-wallet/mock-authorize" method="post">
+    <form action="/demo/oidc-wallet/mock-authorize" method="post">
       <input type="hidden" name="state" value="{{state}}">
       <input type="hidden" name="redirectUri" value="{{redirectUri}}">
-      <button class="button button--primary button--blue" type="submit">Approve OIDC Login</button>
-      <a class="button button--ghost" href="/demo/oidc-wallet">Cancel</a>
+
+      <div class="field-group">
+        <label class="field-label" for="email">Sign in as</label>
+        <input id="email" name="email" type="email" value="{{defaultEmail}}" required
+               placeholder="you@example.com" autocomplete="off">
+        <p class="field-hint">Use the email registered on the wallet you want the challenge delivered to. This mock provider signs in whoever you name here.</p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="name">Display name</label>
+        <input id="name" name="name" type="text" value="{{defaultName}}" placeholder="Your name">
+      </div>
+
+      <div class="wizard-actions">
+        <button class="button button--primary button--blue" type="submit">Approve OIDC Login</button>
+        <a class="button button--ghost" href="/demo/oidc-wallet">Cancel</a>
+      </div>
     </form>
   </div>
 </section>

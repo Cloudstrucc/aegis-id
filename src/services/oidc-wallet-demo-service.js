@@ -64,6 +64,25 @@ function buildAuthorizationUrl(session, baseUrl) {
   return authorizationEndpoint.toString();
 }
 
+// Record who the tester chose to sign in as. Keyed by state, which is what the
+// mock provider carries through the redirect.
+async function setMockLogin(state, input = {}) {
+  const session = await findByState(state);
+  const email = normalizeText(input.email, 180);
+  if (!email) {
+    return session;
+  }
+
+  return updateSession(session.id, (record) => ({
+    ...record,
+    mockLogin: {
+      email,
+      name: normalizeText(input.name, 180) || email,
+      subject: normalizeText(input.subject, 180) || email
+    }
+  }));
+}
+
 async function completeOidcCallback({ state, code }) {
   const session = await findByState(state);
   assertSessionActive(session);
@@ -316,13 +335,23 @@ function assertSessionActive(session) {
   }
 }
 
+// The mock identity provider signs in whoever the tester chose on the approval
+// page. Hard-coding a demo user meant the wallet challenge was always addressed
+// to that user, so it never reached the tester's own wallet.
 function buildMockClaims(session) {
+  const chosen = session.mockLogin || {};
+  const chosenEmail = normalizeText(chosen.email, 180);
+  // With no choice made, the claims stay exactly as the original demo user, so
+  // nothing that relied on the old fixture changes.
+  const email = chosenEmail || 'identity@vanguardcs.ca';
+  const name = normalizeText(chosen.name, 180) || (chosenEmail ? chosenEmail : 'Vanguard Demo User');
+  const subject = normalizeText(chosen.subject, 180) || (chosenEmail ? chosenEmail : 'vanguard-demo-user');
   return {
     iss: config.oidcWalletDemo.issuer,
-    sub: 'vanguard-demo-user',
+    sub: subject,
     aud: config.oidcWalletDemo.clientId,
-    email: 'identity@vanguardcs.ca',
-    name: 'Vanguard Demo User',
+    email,
+    name,
     acr: 'urn:vanguard:aegis-id:auth:oidc-password',
     nonce: session.nonce,
     auth_time: Math.floor(Date.now() / 1000)
@@ -362,6 +391,7 @@ function isAuthenticated(session) {
 }
 
 module.exports = {
+  setMockLogin,
   buildAuthorizationUrl,
   buildFlowSteps,
   confirmWalletChallenge,
