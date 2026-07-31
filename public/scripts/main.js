@@ -243,6 +243,7 @@ function openAppModal(selector, trigger) {
   modal.hidden = false;
   document.body.classList.add('modal-open');
   initAdminIdvWizard(modal.querySelector('[data-idv-form]'));
+  startCredentialInvitePolling(modal.querySelector('[data-invite-poll]'));
   const firstFocusable = modal.querySelector('input, select, textarea, button, a[href], [tabindex]:not([tabindex="-1"])');
   firstFocusable?.focus();
 }
@@ -253,6 +254,7 @@ function closeAppModal(modal, restoreFocus = true) {
   }
 
   stopIdvCamera(modal.querySelector('[data-idv-form]'));
+  stopCredentialInvitePolling();
   modal.hidden = true;
   if (!document.querySelector('.app-modal:not([hidden])') && (!videoModal || videoModal.hidden)) {
     document.body.classList.remove('modal-open');
@@ -1199,6 +1201,51 @@ function openInviteModalFromHash() {
   window.setTimeout(() => {
     openAppModal(`#credential-invite-${window.CSS.escape(match[1])}`);
   }, 180);
+}
+
+let credentialInvitePollTimer = null;
+
+// While the invite modal is open, poll for acceptance so the admin sees the
+// credential go active without refreshing. The holder accepts on their phone,
+// so there is no browser event to react to otherwise.
+function startCredentialInvitePolling(viewer) {
+  stopCredentialInvitePolling();
+  if (!viewer) {
+    return;
+  }
+
+  const credentialId = viewer.dataset.invitePoll;
+  const organizationId = viewer.dataset.inviteOrganization;
+  if (!credentialId || !organizationId) {
+    return;
+  }
+
+  const statusUrl =
+    `/api/wallet/credential-invitations/${encodeURIComponent(credentialId)}` +
+    `/status?organizationId=${encodeURIComponent(organizationId)}`;
+
+  credentialInvitePollTimer = window.setInterval(async () => {
+    try {
+      const response = await fetch(statusUrl, { headers: { accept: 'application/json' } });
+      if (!response.ok) {
+        return;
+      }
+      const status = await response.json();
+      if (status.status === 'active') {
+        stopCredentialInvitePolling();
+        window.location.reload();
+      }
+    } catch (error) {
+      // Transient network errors are ignored; the next tick retries.
+    }
+  }, 3000);
+}
+
+function stopCredentialInvitePolling() {
+  if (credentialInvitePollTimer) {
+    window.clearInterval(credentialInvitePollTimer);
+    credentialInvitePollTimer = null;
+  }
 }
 
 function initWorkspaceTour() {

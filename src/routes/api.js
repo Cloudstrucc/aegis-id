@@ -19,6 +19,7 @@ const {
 } = require('../services/credential-policy-service');
 const {
   acceptCredentialInvitation,
+  getCredentialInvitationStatus,
   getOrganizationProfile
 } = require('../services/org-admin-service');
 const { acceptOrganizationInvitation } = require('../services/issuer-organization-service');
@@ -412,6 +413,26 @@ router.post(
   }
 );
 
+// Poll target for the admin invite modal so it can auto-close when the holder
+// accepts on their phone.
+router.get(
+  '/wallet/credential-invitations/:credentialId/status',
+  authorize('api.wallet.mobile'),
+  async (req, res, next) => {
+    try {
+      const organizationId = req.query.organizationId;
+      if (!organizationId) {
+        const error = new Error('organizationId is required.');
+        error.status = 400;
+        throw error;
+      }
+      res.json(await getCredentialInvitationStatus(organizationId, req.params.credentialId));
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 router.post('/wallet/credential-invitations/:credentialId/accept', authorize('api.wallet.mobile'), async (req, res, next) => {
   try {
     const organizationId = req.body.organizationId || req.query.organizationId;
@@ -423,12 +444,15 @@ router.post('/wallet/credential-invitations/:credentialId/accept', authorize('ap
 
     const credential = await acceptCredentialInvitation(organizationId, req.params.credentialId, {
       holderEmail: req.body.holderEmail,
+      walletId: req.body.walletId,
       source: req.body.source || 'wallet-api'
     });
     await writeAuditEvent('wallet.credential.accepted', {
       organizationId,
       credentialId: credential.id,
       holderEmail: credential.holderEmail,
+      walletId: credential.walletId,
+      bindingMode: credential.bindingMode,
       source: req.body.source || 'wallet-api'
     });
     res.json({

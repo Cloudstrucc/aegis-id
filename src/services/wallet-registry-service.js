@@ -144,6 +144,19 @@ async function getWalletByPhone(value) {
 // Determine which binding mode a credential uses and resolve the wallet it is
 // bound to. Returns { mode, wallet } — wallet is null when nothing matches.
 async function resolveWalletForCredential(credential = {}) {
+  // Honour the mode chosen at issue time when it is recorded, so a phone-only
+  // invite is not re-resolved against a defaulted email claim.
+  switch (credential.bindingMode) {
+    case 'wallet-id':
+      return { mode: 'wallet-id', wallet: await getWalletByWalletId(credential.walletId) };
+    case 'email':
+      return { mode: 'email', wallet: await getWalletByEmail(credential.holderEmail) };
+    case 'phone':
+      return { mode: 'phone', wallet: await getWalletByPhone(credential.holderPhone) };
+    default:
+      break;
+  }
+
   if (credential.walletId) {
     return { mode: 'wallet-id', wallet: await getWalletByWalletId(credential.walletId) };
   }

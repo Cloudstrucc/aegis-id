@@ -1,8 +1,9 @@
 # Implementation Plan — Wallet Identity, Wallet ID, Recovery, and Onboarding Fixes
 
-> **Status:** v4 — **Phases 1 and 2 implemented** on branch `feature/wallet-identity` (local only, not deployed).
+> **Status:** v5 — **Phases 1, 2 and 4 implemented** on branch `feature/wallet-identity` (local only, not deployed).
 > Implemented: product-path org invites + accept (no ACA-Py), graceful degradation, Wallet ID module, wallet registry with 3-mode binding, register/profile APIs, evidence events, 24 new tests.
-> Remaining: Phases 3-7 (mobile setup, invite binding wiring, org wizard, contact changes, recovery).
+> Phase 4 adds: three-mode binding on accept, consent granted on wallet accept, invite status endpoint + modal auto-close, wallet_id in the invite QR, lower-assurance badge (A6).
+> Remaining: Phase 3 (mobile setup), Phase 5 (org wizard + admin credential), Phase 6 (contact changes), Phase 7 (recovery).
 > Covers the **web app**, **iOS wallet**, and **Android wallet**.
 > Scope: 7 issues from the dev deployment (4 defects/UX fixes + 3 new features) **plus Wallet Recovery**.
 

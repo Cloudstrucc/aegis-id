@@ -281,7 +281,12 @@
                   <span class="status-pill status-pill--revoked">Expired</span>
                 {{/if}}
               </td>
-              <td><span class="status-pill status-pill--consent">{{consentStatusLabel}}</span></td>
+              <td>
+                <span class="status-pill status-pill--consent">{{consentStatusLabel}}</span>
+                {{#if isLowerAssuranceBinding}}
+                  <span class="status-pill status-pill--warn" title="{{bindingModeLabel}} — lower assurance than a Wallet ID binding">Lower assurance</span>
+                {{/if}}
+              </td>
               <td>
                 <div class="row-actions">
                   <button class="icon-button" type="button" title="View details" data-modal-target="#{{detailModalId}}">View</button>
@@ -646,7 +651,12 @@
             {{/if}}
           </div>
         </div>
-        <section class="credential-invite-viewer" aria-label="Credential invitation">
+        <section
+          class="credential-invite-viewer"
+          aria-label="Credential invitation"
+          data-invite-poll="{{id}}"
+          data-invite-organization="{{../id}}"
+        >
           <div class="credential-invite-viewer__head">
             <div>
               <p class="eyebrow">Wallet invitation</p>

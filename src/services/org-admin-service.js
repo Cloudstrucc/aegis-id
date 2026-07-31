@@ -4,6 +4,8 @@ const QRCode = require('qrcode');
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { revokeWorkspaceMemberRole, setWorkspaceMemberRole } = require('./platform-service');
+const { assertBinding } = require('./wallet-registry-service');
+const { parseWalletId } = require('./wallet-id');
 
 const stateStore = new FileJsonStore(config.paths.orgAdmin, []);
 const eventStore = new FileJsonStore(config.paths.orgAdminEvents, []);
@@ -475,10 +477,20 @@ async function issueCredential(workspace, subscription, input = {}) {
   const state = await getOrCreateState(workspace);
   const roleIds = normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
   const claims = buildClaims(state.claimDefinitions, input);
-  const holderEmail = normalizeEmail(input.holderEmail || claims.email);
-  if (!holderEmail) {
-    throw validationError('Holder email is required.');
+  // Distinguish an email the admin actually supplied from one defaulted by the
+  // claim definitions, so a phone-only invite is not misread as email-bound.
+  const explicitEmail = normalizeEmail(input.holderEmail || '');
+  const holderEmail = explicitEmail || normalizeEmail(claims.email);
+  const walletId = parseWalletId(input.walletId) || null;
+  const holderPhone = normalizeText(input.holderPhone, 40) || null;
+  if (!holderEmail && !walletId && !holderPhone) {
+    throw validationError('A Wallet ID, holder email, or holder phone is required.');
   }
+  if (input.walletId && !walletId) {
+    throw validationError('That Wallet ID is not valid. Check for a typo.');
+  }
+  // Binding mode drives how the wallet is matched on accept (plan §3.2).
+  const bindingMode = walletId ? 'wallet-id' : !explicitEmail && holderPhone ? 'phone' : 'email';
 
   const now = new Date().toISOString();
   const inviteTtlDays = normalizeInviteTtlDays(input.inviteTtlDays || state.policy.inviteTtlDays);
@@ -488,6 +500,9 @@ async function issueCredential(workspace, subscription, input = {}) {
     workspaceId: workspace.id,
     organizationName: workspace.organization,
     holderEmail,
+    holderPhone,
+    walletId,
+    bindingMode,
     displayName: normalizeText(input.displayName || claims.displayName || holderEmail, 180),
     personType: normalizePersonType(input.personType),
     divisionId: normalizeOrgUnitId(state, input.divisionId),
@@ -545,6 +560,30 @@ async function markCredentialAccepted(workspace, subscription, credentialId) {
   });
 }
 
+// Lightweight status lookup so the admin invite modal can poll and auto-close
+// once the holder accepts on their phone.
+async function getCredentialInvitationStatus(organizationId, credentialId) {
+  const states = await stateStore.read();
+  const state = states.find((record) => record.workspaceId === organizationId);
+  if (!state) {
+    throw notFound('Credential invitation was not found.');
+  }
+  normalizeState(state);
+
+  const credential = findCredential(state, credentialId);
+  return {
+    id: credential.id,
+    organizationId,
+    status: credential.status,
+    consentStatus: credential.consent?.status || null,
+    bindingMode: credential.bindingMode || null,
+    acceptedAt: credential.acceptedAt || null,
+    expiresAt: credential.inviteExpiresAt || null,
+    expired: credential.status !== 'active' && isInviteExpired(credential),
+    updatedAt: credential.updatedAt
+  };
+}
+
 async function acceptCredentialInvitation(organizationId, credentialId, input = {}) {
   const states = await stateStore.read();
   const state = states.find((record) => record.workspaceId === organizationId);
@@ -555,9 +594,29 @@ async function acceptCredentialInvitation(organizationId, credentialId, input = 
 
   const credential = findCredential(state, credentialId);
   const holderEmail = normalizeEmail(input.holderEmail || '');
-  if (holderEmail && holderEmail !== credential.holderEmail) {
+  const presentedWalletId = String(input.walletId || '').trim();
+  let bindingMode = credential.bindingMode || null;
+
+  if (presentedWalletId) {
+    // Authoritative binding check (plan §3.2). Mode 1 binds on the Wallet ID, so
+    // the credential's email may be any per-organization address; modes 2 and 3
+    // require the invite contact to be the wallet's registered contact.
+    const binding = await assertBinding(
+      {
+        walletId: credential.walletId,
+        holderEmail: credential.holderEmail,
+        holderPhone: credential.holderPhone,
+        bindingMode: credential.bindingMode
+      },
+      presentedWalletId
+    );
+    bindingMode = binding.mode;
+  } else if (holderEmail && holderEmail !== credential.holderEmail) {
+    // Legacy path for wallet builds that predate the Wallet ID. Kept so existing
+    // installs continue to work until they upgrade.
     throw validationError('Credential invite holder did not match this wallet.');
   }
+
   if (credential.status === 'revoked') {
     throw validationError('This credential was revoked and cannot be accepted.');
   }
@@ -570,18 +629,41 @@ async function acceptCredentialInvitation(organizationId, credentialId, input = 
     credential.status = 'active';
     credential.acceptedAt = now;
     credential.acceptedBy = holderEmail || credential.holderEmail;
+    credential.bindingMode = bindingMode;
+    if (presentedWalletId && !credential.walletId) {
+      credential.walletId = presentedWalletId.toUpperCase();
+    }
+
+    // Accepting the invitation in the wallet IS the holder's consent, so grant it
+    // here. Previously only the admin-side grantCredentialConsent could do this,
+    // which left every wallet-accepted credential stuck at "requested".
+    credential.consent = normalizeConsent(credential, state);
+    const sharedClaims = {};
+    for (const key of credential.consent.requestedClaimKeys) {
+      sharedClaims[key] = credential.claims[key] || '';
+    }
+    credential.consent.status = 'granted';
+    credential.consent.sharedClaims = sharedClaims;
+    credential.consent.grantedAt = now;
     credential.updatedAt = now;
+
     await writeState(state);
-    await appendWorkspaceEvent(
-      { id: organizationId, organization: state.organizationName },
-      { email: holderEmail || credential.holderEmail },
-      'credential.accepted.wallet',
-      {
-        credentialId: credential.id,
-        holderEmail: credential.holderEmail,
-        source: normalizeText(input.source || 'mobile-wallet', 120)
-      }
-    );
+    const actor = { email: holderEmail || credential.holderEmail };
+    const workspaceRef = { id: organizationId, organization: state.organizationName };
+    await appendWorkspaceEvent(workspaceRef, actor, 'credential.accepted.wallet', {
+      credentialId: credential.id,
+      holderEmail: credential.holderEmail,
+      walletId: credential.walletId || null,
+      bindingMode,
+      source: normalizeText(input.source || 'mobile-wallet', 120)
+    });
+    await appendWorkspaceEvent(workspaceRef, actor, 'wallet.challenge.accepted', {
+      credentialId: credential.id,
+      challenge: 'claim-consent',
+      target: credential.holderEmail,
+      sharedClaimKeys: credential.consent.requestedClaimKeys,
+      immutable: true
+    });
   }
 
   return {
@@ -589,8 +671,11 @@ async function acceptCredentialInvitation(organizationId, credentialId, input = 
     organizationId,
     organizationName: state.organizationName,
     holderEmail: credential.holderEmail,
+    walletId: credential.walletId || null,
+    bindingMode: credential.bindingMode || null,
     displayName: credential.displayName,
     status: credential.status,
+    consentStatus: credential.consent?.status || null,
     acceptedAt: credential.acceptedAt || null,
     updatedAt: credential.updatedAt
   };
@@ -1442,6 +1527,10 @@ async function decorateCredential(credential, state, events, workspace, options 
     inviteModalId: `credential-invite-${credential.id}`,
     revokeModalId: `credential-revoke-${credential.id}`,
     statusLabel: statusLabel(credential.status),
+    bindingModeLabel: bindingModeLabel(credential.bindingMode),
+    // Modes 2/3 bind on a contact rather than a Wallet ID, so flag them as
+    // lower assurance in the admin UI.
+    isLowerAssuranceBinding: Boolean(credential.bindingMode) && credential.bindingMode !== 'wallet-id',
     personTypeLabel: personTypeLabel(credential.personType),
     divisionName: division?.name || state.organizationName,
     inviteExpired: isInviteExpired(credential),
@@ -2228,15 +2317,25 @@ async function buildCredentialInvitation(workspace, credential, options = {}) {
     organization_id: workspace.id,
     organization_name: workspace.organization || credential.organizationName || 'Vanguard organization',
     credential_id: credential.id,
-    holder_email: credential.holderEmail,
+    holder_email: credential.holderEmail || '',
     expires_at: credential.inviteExpiresAt || '',
     vanguard_web_app_url: publicBaseUrl
   });
+  // Wallet-ID-bound invites (mode 1) carry the ID so the wallet can reject an
+  // invitation addressed to a different holder before contacting the server.
+  if (credential.walletId) {
+    walletParams.set('wallet_id', credential.walletId);
+  }
+  if (credential.bindingMode) {
+    walletParams.set('binding_mode', credential.bindingMode);
+  }
   const inviteUrl = `aegisid://credential-invite?${walletParams.toString()}`;
   const webInviteUrl = `${publicBaseUrl}/wallet/credential-invitations/${encodeURIComponent(credential.id)}?organizationId=${encodeURIComponent(workspace.id)}`;
   const invitePayload = {
     credentialId: credential.id,
     holderEmail: credential.holderEmail,
+    walletId: credential.walletId || null,
+    bindingMode: credential.bindingMode || null,
     organizationId: workspace.id,
     organizationName: workspace.organization || credential.organizationName || 'Vanguard organization',
     personType: credential.personType,
@@ -2594,6 +2693,19 @@ function isInviteExpired(credential) {
   return new Date(credential.inviteExpiresAt).getTime() < Date.now();
 }
 
+function bindingModeLabel(mode) {
+  if (mode === 'wallet-id') {
+    return 'Wallet ID bound';
+  }
+  if (mode === 'email') {
+    return 'Email bound';
+  }
+  if (mode === 'phone') {
+    return 'Phone bound';
+  }
+  return '';
+}
+
 function consentStatusLabel(status) {
   return (
     {
@@ -2715,6 +2827,8 @@ module.exports = {
   getOrganizationBranding,
   getOrganizationProfile,
   acceptCredentialInvitation,
+  buildCredentialInvitation,
+  getCredentialInvitationStatus,
   issueCredential,
   markCredentialAccepted,
   reissueCredentialInvitation,
