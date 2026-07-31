@@ -107,7 +107,14 @@ async function listWalletConnections() {
     }));
   }
 
-  const connections = await listCompletedConnections('issuer');
+  // Lab fallback only. If ACA-Py is not running there is simply nothing to add.
+  let connections = [];
+  try {
+    connections = await listCompletedConnections('issuer');
+  } catch (error) {
+    return [];
+  }
+
   return connections.map((connection) => ({
     id: connection.connection_id,
     organizationId: null,
@@ -218,7 +225,12 @@ async function declineWalletChallenge(sessionId, input = {}) {
   }));
 }
 
-async function listPendingWalletChallenges(connectionId) {
+// Accepts either a DIDComm connectionId or, for product-path wallets that have
+// no connection, an organizationId.
+async function listPendingWalletChallenges(filters = {}) {
+  const options = typeof filters === 'string' ? { connectionId: filters } : filters || {};
+  const connectionId = options.connectionId || '';
+  const organizationId = options.organizationId || '';
   const records = await store.read();
   const oidcChallenges = records
     .filter((record) => {
@@ -226,8 +238,12 @@ async function listPendingWalletChallenges(connectionId) {
         return false;
       }
 
-      if (connectionId && record.walletChallenge.connectionId !== connectionId) {
-        return false;
+      if (connectionId || organizationId) {
+        const matchesConnection = connectionId && record.walletChallenge.connectionId === connectionId;
+        const matchesOrganization = organizationId && record.walletChallenge.organizationId === organizationId;
+        if (!matchesConnection && !matchesOrganization) {
+          return false;
+        }
       }
 
       return new Date(record.expiresAt).getTime() >= Date.now();
@@ -258,7 +274,7 @@ async function listPendingWalletChallenges(connectionId) {
         { key: 'issuer', value: record.oidc?.claims?.iss || record.oidc?.issuer || '' }
       ]
     }));
-  const externalChallenges = await listPendingExternalWalletChallenges(connectionId);
+  const externalChallenges = await listPendingExternalWalletChallenges({ connectionId, organizationId });
   return [...oidcChallenges, ...externalChallenges];
 }
 

@@ -173,7 +173,10 @@ router.get('/demo/oidc-wallet/sessions/:sessionId/app', async (req, res, next) =
 router.get('/api/oidc-wallet/challenges', async (req, res, next) => {
   try {
     res.json({
-      challenges: await listPendingWalletChallenges(req.query.connectionId)
+      challenges: await listPendingWalletChallenges({
+        connectionId: req.query.connectionId,
+        organizationId: req.query.organizationId
+      })
     });
   } catch (error) {
     next(error);

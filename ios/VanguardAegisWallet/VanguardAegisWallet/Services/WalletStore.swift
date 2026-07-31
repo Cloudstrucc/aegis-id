@@ -306,6 +306,32 @@ final class WalletStore: ObservableObject {
         .sorted { $0.latestUpdatedAt > $1.latestUpdatedAt }
     }
 
+    /// Record an organization connected through the product path. These have no
+    /// DIDComm identifiers, so challenge polling falls back to the organization id.
+    func registerProductOrganizationConnection(_ invite: AegisOrganizationInvite) {
+        guard !connections.contains(where: { $0.invitation.organizationId == invite.organizationId }) else {
+            return
+        }
+
+        let invitation = AriesInvitation(
+            id: invite.invitationId,
+            label: invite.organizationName,
+            rawURL: invite.rawURL,
+            endpoint: nil,
+            organizationId: invite.organizationId,
+            organizationName: invite.organizationName,
+            subscriptionId: nil,
+            sourceWebAppURL: invite.sourceWebAppURL,
+            handshakeProtocols: [],
+            services: [],
+            receivedAt: Date()
+        )
+        var connection = WalletConnection(invitation: invitation)
+        connection.state = .connected
+        connections.insert(connection, at: 0)
+        save()
+    }
+
     func dismissChallengeBanner() {
         challengeBanner = nil
     }
@@ -698,12 +724,18 @@ final class WalletStore: ObservableObject {
     }
 
     private func importOIDCWalletChallenges(for connection: WalletConnection) async throws -> [WalletTransaction] {
-        guard let issuerConnectionId = current(connection)?.issuerConnectionId else {
+        // Product-path connections have no issuerConnectionId, so fall back to the
+        // organization. Returning early here meant such wallets never polled at
+        // all and no challenge ever reached them.
+        let issuerConnectionId = current(connection)?.issuerConnectionId
+        let organizationId = connection.invitation.organizationId
+        guard issuerConnectionId != nil || organizationId != nil else {
             return []
         }
 
         let challenges = try await labClient.fetchOIDCWalletChallenges(
             issuerConnectionId: issuerConnectionId,
+            organizationId: organizationId,
             sourceWebAppURL: connection.invitation.sourceWebAppURL
         )
         var addedTransactions: [WalletTransaction] = []

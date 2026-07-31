@@ -109,12 +109,28 @@ struct LabAgentClient {
         ) as EmptyResponse
     }
 
-    func fetchOIDCWalletChallenges(issuerConnectionId: String, sourceWebAppURL: String? = nil) async throws -> [OIDCWalletChallenge] {
+    /// Poll for challenges addressed to this wallet. A DIDComm wallet identifies
+    /// itself by connection; a product-path wallet has no connection and
+    /// identifies itself by organization instead.
+    func fetchOIDCWalletChallenges(
+        issuerConnectionId: String? = nil,
+        organizationId: String? = nil,
+        sourceWebAppURL: String? = nil
+    ) async throws -> [OIDCWalletChallenge] {
+        var queryItems: [URLQueryItem] = []
+        if let issuerConnectionId, !issuerConnectionId.isEmpty {
+            queryItems.append(URLQueryItem(name: "connectionId", value: issuerConnectionId))
+        }
+        if let organizationId, !organizationId.isEmpty {
+            queryItems.append(URLQueryItem(name: "organizationId", value: organizationId))
+        }
+        guard !queryItems.isEmpty else {
+            return []
+        }
+
         let response: OIDCWalletChallengeList = try await get(
             portalURL(sourceWebAppURL).appending(path: "api/oidc-wallet/challenges"),
-            queryItems: [
-                URLQueryItem(name: "connectionId", value: issuerConnectionId)
-            ]
+            queryItems: queryItems
         )
         return response.challenges
     }

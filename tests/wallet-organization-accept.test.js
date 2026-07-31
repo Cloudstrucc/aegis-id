@@ -145,3 +145,39 @@ test('a product-path organization can receive a wallet challenge with no ACA-Py'
     delete require.cache[require.resolve('../src/services/wallet-challenge-service')];
   });
 });
+
+test('a product-path wallet can poll for its challenge by organization', async () => {
+  await withIsolatedStore(async (service) => {
+    const invitation = await service.createIssuerOrganizationInvitation(subscription, workspace);
+    await service.acceptOrganizationInvitation(invitation.id, { walletId: 'AEG-1111-2222-3333' });
+
+    delete require.cache[require.resolve('../src/services/wallet-challenge-service')];
+    const {
+      createExternalWalletChallenge,
+      listPendingExternalWalletChallenges
+    } = require('../src/services/wallet-challenge-service');
+
+    await createExternalWalletChallenge({
+      appName: 'OIDC demo',
+      subject: 'holder@example.com',
+      organizationId: 'ws-1',
+      action: 'approve'
+    });
+
+    // Polling by organization must find it. Filtering on connectionId alone made
+    // product-path challenges undeliverable: the wallet has no connection id.
+    const byOrg = await listPendingExternalWalletChallenges({ organizationId: 'ws-1' });
+    assert.equal(byOrg.length, 1);
+    assert.equal(byOrg[0].organizationId, 'ws-1');
+
+    // A different organization must not see it.
+    const otherOrg = await listPendingExternalWalletChallenges({ organizationId: 'ws-other' });
+    assert.equal(otherOrg.length, 0);
+
+    // The legacy string argument still behaves as a connectionId filter.
+    const byConnection = await listPendingExternalWalletChallenges('some-didcomm-id');
+    assert.equal(byConnection.length, 0);
+
+    delete require.cache[require.resolve('../src/services/wallet-challenge-service')];
+  });
+});

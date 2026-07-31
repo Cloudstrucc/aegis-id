@@ -212,15 +212,27 @@ async function declineExternalWalletChallenge(challengeId, input = {}) {
   return decorateChallenge(records[index]);
 }
 
-async function listPendingExternalWalletChallenges(connectionId) {
+// Wallets poll for challenges addressed to them. A DIDComm wallet identifies
+// itself by connectionId; a product-path wallet has no connection, so it
+// identifies itself by organizationId. Matching on either keeps both working —
+// filtering on connectionId alone made product-path challenges undeliverable.
+async function listPendingExternalWalletChallenges(filters = {}) {
+  const options = typeof filters === 'string' ? { connectionId: filters } : filters || {};
+  const connectionId = normalizeText(options.connectionId, 120);
+  const organizationId = normalizeText(options.organizationId, 120);
   const records = await store.read();
+
   return records
     .filter((record) => {
       if (record.status !== 'sent') {
         return false;
       }
-      if (connectionId && record.connectionId !== connectionId) {
-        return false;
+      if (connectionId || organizationId) {
+        const matchesConnection = connectionId && record.connectionId === connectionId;
+        const matchesOrganization = organizationId && record.organizationId === organizationId;
+        if (!matchesConnection && !matchesOrganization) {
+          return false;
+        }
       }
       return new Date(record.expiresAt).getTime() >= Date.now();
     })

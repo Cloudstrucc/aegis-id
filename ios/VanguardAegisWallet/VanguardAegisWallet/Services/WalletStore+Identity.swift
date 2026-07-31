@@ -270,6 +270,10 @@ extension WalletStore {
                 walletId: walletId,
                 sourceWebAppURL: invite.sourceWebAppURL
             )
+            // Record a connection so the organization appears in the wallet and
+            // so challenge polling has something to iterate.
+            registerProductOrganizationConnection(invite)
+
             lastImportMessage = "Connected to \(invite.organizationName)."
             await refreshOrganizationProfiles()
         } catch {
