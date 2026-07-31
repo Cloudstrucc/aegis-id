@@ -10,6 +10,7 @@ const {
   registerWorkspaceForSubscription
 } = require('../services/platform-service');
 const {
+  ensureAdminCredential,
   getOrganizationBranding,
   listCredentialMembershipsForEmail
 } = require('../services/org-admin-service');
@@ -65,6 +66,17 @@ router.post('/organizations/:subscriptionId', authorize('workspace.register'), a
           reason: invitationError.message
         });
       }
+    }
+
+    // Issue the founding administrator their own credential (plan Issue C).
+    try {
+      await ensureAdminCredential(workspace, subscription, { walletId: req.body.walletId });
+    } catch (credentialError) {
+      await writeAuditEvent('organization.admin.credential.deferred', {
+        subscriptionId: subscription.id,
+        workspaceId: workspace.id,
+        reason: credentialError.message
+      });
     }
 
     await writeAuditEvent('organization.workspace.registered', {

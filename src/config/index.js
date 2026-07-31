@@ -122,7 +122,19 @@ const config = {
     walletChallenges: resolveFromRoot(process.env.WALLET_CHALLENGE_STORE_PATH, 'data/wallet-challenges.json'),
     walletPasskeys: resolveFromRoot(process.env.WALLET_PASSKEY_STORE_PATH, 'data/wallet-passkeys.json'),
     audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json'),
-    wallets: resolveFromRoot(process.env.WALLET_STORE_PATH, 'data/wallets.json')
+    wallets: resolveFromRoot(process.env.WALLET_STORE_PATH, 'data/wallets.json'),
+    walletContactChallenges: resolveFromRoot(
+      process.env.WALLET_CONTACT_CHALLENGE_STORE_PATH,
+      'data/wallet-contact-challenges.json'
+    ),
+    walletRecoveryCodes: resolveFromRoot(
+      process.env.WALLET_RECOVERY_CODE_STORE_PATH,
+      'data/wallet-recovery-codes.json'
+    ),
+    walletRecoveryRequests: resolveFromRoot(
+      process.env.WALLET_RECOVERY_REQUEST_STORE_PATH,
+      'data/wallet-recovery-requests.json'
+    )
   },
   auth: {
     sessionSecret: process.env.SESSION_SECRET || 'dev-change-this-session-secret',

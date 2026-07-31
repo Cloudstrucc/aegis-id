@@ -158,6 +158,11 @@ const POLICIES = Object.freeze({
   }),
   'admin.audit.verify': policy('admin.audit.verify', 'adminAnyWorkspace', 'audit-ledger', 'read', {
     description: 'Verify integrity of the tamper-evident evidence ledger (hash-chain + signatures).'
+  }),
+  'wallet.recovery.approve': policy('wallet.recovery.approve', 'orgPrivilege', 'wallet-recovery', 'approve', {
+    privilegeId: 'wallet.recovery.approve',
+    description:
+      'Approve a Tier-2 wallet recovery after re-verifying the holder in person. Deliberately separate from credential issuance so it can be granted and audited independently.'
   })
 });
 

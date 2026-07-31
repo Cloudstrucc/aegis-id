@@ -411,12 +411,23 @@
         <form class="wizard-form" action="{{dashboardBasePath}}/admin/credentials" method="post">
           <div class="field-row">
             <div class="field-group">
-              <label class="field-label" for="holderEmail">Holder email <span class="field-tooltip" tabindex="0" data-tooltip="The email address used to identify the wallet holder and send human follow-up.">?</span></label>
-              <input id="holderEmail" name="holderEmail" type="email" value="identity@vanguardcs.ca" required>
+              <label class="field-label" for="holderEmail">Holder email <span class="field-tooltip" tabindex="0" data-tooltip="The address this organization knows the holder by. With a Wallet ID this can differ from the email registered on their wallet.">?</span></label>
+              <input id="holderEmail" name="holderEmail" type="email" placeholder="person@example.com" required>
             </div>
             <div class="field-group">
               <label class="field-label" for="displayName">Display name <span class="field-tooltip" tabindex="0" data-tooltip="The name shown in the admin dashboard and wallet credential profile.">?</span></label>
-              <input id="displayName" name="displayName" type="text" value="Vanguard Team Member" required>
+              <input id="displayName" name="displayName" type="text" placeholder="Jordan Smith" required>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="walletId">Wallet ID <span class="field-tooltip" tabindex="0" data-tooltip="Ask the holder for the Wallet ID shown in their Aegis ID app. Binding to a Wallet ID is the strongest option and lets the credential email differ from their wallet email.">?</span></label>
+              <input id="walletId" name="walletId" type="text" placeholder="AEG-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+              <p class="field-hint">Recommended. Without it the invite binds to the holder's registered email or phone, which is lower assurance.</p>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="holderPhone">Holder mobile <span class="field-tooltip" tabindex="0" data-tooltip="Optional. Used only when issuing an SMS-bound invite with no Wallet ID; it must match the phone registered on the holder's wallet.">?</span></label>
+              <input id="holderPhone" name="holderPhone" type="tel" placeholder="+1 613 555 0100" autocomplete="off">
             </div>
           </div>
           <div class="field-row">

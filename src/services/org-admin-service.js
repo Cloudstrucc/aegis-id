@@ -503,6 +503,9 @@ async function issueCredential(workspace, subscription, input = {}) {
     holderPhone,
     walletId,
     bindingMode,
+    // A7: explicit per-credential assurance flag. Admin-role credentials default
+    // to high, which is what a Tier-1 (self-service) recovery suspends.
+    assuranceLevel: normalizeAssuranceLevel(input.assuranceLevel),
     displayName: normalizeText(input.displayName || claims.displayName || holderEmail, 180),
     personType: normalizePersonType(input.personType),
     divisionId: normalizeOrgUnitId(state, input.divisionId),
@@ -557,6 +560,37 @@ async function markCredentialAccepted(workspace, subscription, credentialId) {
     }
     credential.status = 'active';
     credential.acceptedAt = new Date().toISOString();
+  });
+}
+
+// Issue the founding administrator's own credential when an organization is
+// registered. Without this the person who created the workspace holds no
+// credential at all, which surprised admins during onboarding.
+async function ensureAdminCredential(workspace, subscription, input = {}) {
+  const state = await getOrCreateState(workspace);
+  const email = normalizeEmail(subscription.email);
+  if (!email) {
+    return null;
+  }
+
+  const existing = state.credentials.find(
+    (credential) => normalizeEmail(credential.holderEmail) === email && credential.status !== 'revoked'
+  );
+  if (existing) {
+    return existing;
+  }
+
+  const adminRoleIds = state.roles
+    .filter((role) => /admin/i.test(role.name || role.id || ''))
+    .map((role) => role.id);
+
+  return issueCredential(workspace, subscription, {
+    holderEmail: email,
+    walletId: input.walletId,
+    displayName: input.displayName || subscription.contactName || email,
+    personType: 'employee',
+    roleIds: adminRoleIds,
+    assuranceLevel: 'high'
   });
 }
 
@@ -2693,6 +2727,10 @@ function isInviteExpired(credential) {
   return new Date(credential.inviteExpiresAt).getTime() < Date.now();
 }
 
+function normalizeAssuranceLevel(value) {
+  return ['low', 'medium', 'high'].includes(value) ? value : 'medium';
+}
+
 function bindingModeLabel(mode) {
   if (mode === 'wallet-id') {
     return 'Wallet ID bound';
@@ -2828,6 +2866,7 @@ module.exports = {
   getOrganizationProfile,
   acceptCredentialInvitation,
   buildCredentialInvitation,
+  ensureAdminCredential,
   getCredentialInvitationStatus,
   issueCredential,
   markCredentialAccepted,

@@ -22,7 +22,22 @@ const {
   getCredentialInvitationStatus,
   getOrganizationProfile
 } = require('../services/org-admin-service');
-const { acceptOrganizationInvitation } = require('../services/issuer-organization-service');
+const {
+  acceptOrganizationInvitation,
+  listIssuerOrganizations
+} = require('../services/issuer-organization-service');
+const { resolveContactChange, startContactChange } = require('../services/wallet-contact-service');
+const {
+  cancelRecovery,
+  completeRecovery,
+  generateRecoveryCodes,
+  getRecoveryOptions,
+  getRecoveryRequest,
+  redeemCodeForRequest,
+  requestOrgAttestation,
+  startRecovery,
+  verifyOtp
+} = require('../services/wallet-recovery-service');
 const { getWalletByWalletId, registerWallet } = require('../services/wallet-registry-service');
 const {
   getTransaction,
@@ -378,6 +393,116 @@ router.get('/wallet/:walletId/profile', authorize('api.wallet.mobile'), async (r
       contactFrozenUntil: wallet.contactFrozenUntil,
       createdAt: wallet.createdAt
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- Contact changes (challenge-gated, plan Issue G) -----------------------
+
+router.post('/wallet/:walletId/contact/challenge', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    res.status(201).json(await startContactChange(req.params.walletId, req.body));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/contact/challenges/:challengeId/resolve', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    res.json(await resolveContactChange(req.params.challengeId, { decision: req.body.decision }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- Wallet recovery (plan §7) ---------------------------------------------
+
+router.post('/wallet/:walletId/recovery-codes/regenerate', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    res.status(201).json(await generateRecoveryCodes(req.params.walletId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/wallet/:walletId/recovery-options', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    const connectedOrgIds = (await listIssuerOrganizations(null, null))
+      .filter((record) => record.walletId === req.params.walletId.toUpperCase() && record.status === 'connected')
+      .map((record) => record.organizationId);
+    res.json(await getRecoveryOptions(req.params.walletId, { connectedOrgIds }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/recovery/start', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    const result = await startRecovery({ walletId: req.body.walletId, email: req.body.email });
+    // The OTP is echoed only outside production, where there is no SMS/email sender.
+    res.status(201).json(
+      config.app.env === 'production' ? { request: result.request } : result
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/recovery/:requestId/verify-otp', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    res.json(await verifyOtp(req.params.requestId, req.body.otp));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/recovery/:requestId/redeem-code', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    res.json(await redeemCodeForRequest(req.params.requestId, req.body.code));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/recovery/:requestId/request-attestation', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    res.json(await requestOrgAttestation(req.params.requestId, req.body.organizationId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/recovery/:requestId/complete', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    res.json(
+      await completeRecovery(req.params.requestId, {
+        devicePublicKey: req.body.devicePublicKey,
+        deviceKeyAlg: req.body.deviceKeyAlg
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/wallet/recovery/:requestId/cancel', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    res.json(await cancelRecovery(req.params.requestId));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/wallet/recovery/:requestId/status', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    const request = await getRecoveryRequest(req.params.requestId);
+    if (!request) {
+      const error = new Error('Recovery request not found.');
+      error.status = 404;
+      throw error;
+    }
+    res.json(request);
   } catch (error) {
     next(error);
   }

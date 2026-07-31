@@ -1,6 +1,7 @@
 const express = require('express');
 
 const { createSubscription, validateSubscription } = require('../services/subscription-service');
+const { registerWorkspaceForSubscription } = require('../services/platform-service');
 const { writeAuditEvent } = require('../services/audit-service');
 const { requireAuthenticated } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
@@ -23,6 +24,31 @@ router.post('/subscribe', requireAuthenticated, authorize('subscription.create')
       plan: record.plan,
       interest: record.interest
     });
+
+    // Create the organization workspace up front so subscribing does not dead-end
+    // on "Register your organization to continue". The subscriber supplied the
+    // organization name already; re-asking for it was pure friction.
+    try {
+      const workspace = await registerWorkspaceForSubscription(record, {
+        organization: record.organization,
+        role: 'administrator'
+      });
+      await writeAuditEvent('organization.workspace.registered', {
+        subscriptionId: record.id,
+        workspaceId: workspace.id,
+        organization: workspace.organization,
+        role: workspace.role,
+        source: 'subscription-auto'
+      });
+      return res.redirect(303, `/organizations/${record.id}?welcome=1&workspace=${encodeURIComponent(workspace.id)}`);
+    } catch (workspaceError) {
+      // Fall back to the manual registration form rather than failing signup.
+      await writeAuditEvent('organization.workspace.autocreate.failed', {
+        subscriptionId: record.id,
+        reason: workspaceError.message
+      });
+    }
+
     res.redirect(303, `/organizations/${record.id}?welcome=1`);
   } catch (error) {
     if (error.status === 422) {
