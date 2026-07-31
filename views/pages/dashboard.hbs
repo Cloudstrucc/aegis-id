@@ -1204,6 +1204,61 @@
 </section>
 {{/if}}
 
+{{#if orgAdmin.canApproveWalletRecovery}}
+<section id="wallet-recovery" class="band band--white blade-panel" data-blade-panel="wallet-recovery">
+  <div class="section-heading">
+    <p class="eyebrow">Wallet recovery</p>
+    <h2>Approve wallet recovery for holders who lost their device.</h2>
+    <p>A holder with no recovery codes can ask this organization to confirm their identity. Approving restores <strong>only this organization's credentials</strong> — other organizations approve their own separately.</p>
+  </div>
+  <article class="blade-guidance">
+    <strong>Before you approve</strong>
+    <span>Re-verify the person the same way you did at onboarding: in person, or with government photo ID plus a liveness check. Approving on a phone call or an email request alone is how wallets get taken over.</span>
+  </article>
+
+  {{#if orgAdmin.walletRecoveryRequests.length}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Wallet</th>
+          <th>Requested</th>
+          <th>Verified contact</th>
+          <th>Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each orgAdmin.walletRecoveryRequests}}
+          <tr>
+            <td><code>{{walletId}}</code></td>
+            <td>{{requestedAt}}</td>
+            <td>
+              {{#if otpVerified}}
+                <span class="status-pill status-pill--consent">Contact verified</span>
+              {{else}}
+                <span class="status-pill status-pill--warn">Not verified</span>
+              {{/if}}
+            </td>
+            <td class="table-actions">
+              <form action="{{../dashboardBasePath}}/admin/wallet-recovery/{{id}}/approve" method="post"
+                    data-confirm-message="Confirm you have re-verified this person's identity in person or with photo ID and a liveness check. This restores their wallet on a new device.">
+                <input type="hidden" name="method" value="in-person">
+                <button class="button button--primary" type="submit">Approve</button>
+              </form>
+              <form action="{{../dashboardBasePath}}/admin/wallet-recovery/{{id}}/reject" method="post">
+                <input type="text" name="reason" placeholder="Reason" required>
+                <button class="button button--ghost" type="submit">Reject</button>
+              </form>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="muted">No wallet recovery requests are waiting for this organization.</p>
+  {{/if}}
+</section>
+{{/if}}
+
 <section id="wallet-challenge-events" class="band band--light blade-panel" data-blade-panel="wallet-events">
   <div class="section-heading">
     <p class="eyebrow">Wallet events</p>

@@ -159,6 +159,14 @@ const POLICIES = Object.freeze({
   'admin.audit.verify': policy('admin.audit.verify', 'adminAnyWorkspace', 'audit-ledger', 'read', {
     description: 'Verify integrity of the tamper-evident evidence ledger (hash-chain + signatures).'
   }),
+  'admin.notifications.manage': policy('admin.notifications.manage', 'adminAnyWorkspace', 'notification-settings', 'manage', {
+    fields: [
+      'emailEnabled', 'emailPreset', 'emailHost', 'emailPort', 'emailSecure', 'emailUsername',
+      'emailPassword', 'emailFromAddress', 'emailFromName',
+      'smsEnabled', 'smsPreset', 'smsEndpoint', 'smsAccountSid', 'smsAuthToken', 'smsFromNumber'
+    ],
+    description: 'Configure SMTP and SMS delivery used for wallet recovery codes.'
+  }),
   'wallet.recovery.approve': policy('wallet.recovery.approve', 'orgPrivilege', 'wallet-recovery', 'approve', {
     privilegeId: 'wallet.recovery.approve',
     description:

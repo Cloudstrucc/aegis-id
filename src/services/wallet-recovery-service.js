@@ -19,6 +19,7 @@ const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { getWalletByEmail, getWalletByWalletId } = require('./wallet-registry-service');
 const { writeAuditEvent } = require('./audit-service');
+const { deliverRecoveryCode } = require('./otp-delivery-service');
 
 const codeStore = new FileJsonStore(config.paths.walletRecoveryCodes, []);
 const requestStore = new FileJsonStore(config.paths.walletRecoveryRequests, []);
@@ -187,8 +188,20 @@ async function startRecovery(input = {}) {
     requestId: request.id
   });
 
-  // The OTP is returned only for local/dev delivery; production sends it out of band.
-  return { request: publicRequest(request), otp };
+  // Send to the wallet's registered contact. In production this must succeed or
+  // the call fails closed; outside production the code comes back for testing.
+  const delivery = await deliverRecoveryCode({
+    code: otp,
+    walletId: wallet.walletId,
+    email: wallet.email,
+    phone: wallet.phone
+  });
+
+  return {
+    request: publicRequest(request),
+    delivery: { delivered: delivery.delivered, channels: delivery.channels },
+    otp: delivery.devCode
+  };
 }
 
 async function loadActiveRequest(requestId) {

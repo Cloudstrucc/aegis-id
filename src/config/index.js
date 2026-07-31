@@ -134,6 +134,10 @@ const config = {
     walletRecoveryRequests: resolveFromRoot(
       process.env.WALLET_RECOVERY_REQUEST_STORE_PATH,
       'data/wallet-recovery-requests.json'
+    ),
+    notificationSettings: resolveFromRoot(
+      process.env.NOTIFICATION_SETTINGS_STORE_PATH,
+      'data/notification-settings.json'
     )
   },
   auth: {
@@ -238,6 +242,25 @@ const config = {
     anchorContainer: process.env.AUDIT_ANCHOR_CONTAINER || '',
     anchorDir: resolveFromRoot(process.env.AUDIT_ANCHOR_DIR, 'data/audit-heads'),
     anchorIntervalSeconds: integerValue(process.env.AUDIT_ANCHOR_INTERVAL_SECONDS, 3600)
+  },
+  assurance: {
+    // A7: how a credential's assurance level is decided when the issuer does not
+    // set one explicitly. 'derive' infers it from the credential's assurance
+    // claim (hardware/YubiKey/passkey => high); 'explicit' uses the supplied
+    // value only. Tier-1 wallet recovery suspends whatever lands on 'high'.
+    mode: process.env.CREDENTIAL_ASSURANCE_MODE || 'derive',
+    // Claim values that count as high assurance, matched case-insensitively.
+    highSignals: tokenList(process.env.CREDENTIAL_ASSURANCE_HIGH_SIGNALS, [
+      'fido2',
+      'yubikey',
+      'hardware',
+      'passkey',
+      'webauthn',
+      'high'
+    ]),
+    // Roles whose credentials default to high assurance.
+    highRolePattern: process.env.CREDENTIAL_ASSURANCE_HIGH_ROLE_PATTERN || 'admin',
+    defaultLevel: process.env.CREDENTIAL_ASSURANCE_DEFAULT || 'medium'
   },
   ledger: {
     // Features B/C/D — Indy ledger-profile registry + did:indy / TAA settings.

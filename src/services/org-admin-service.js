@@ -6,6 +6,7 @@ const FileJsonStore = require('./file-json-store');
 const { revokeWorkspaceMemberRole, setWorkspaceMemberRole } = require('./platform-service');
 const { assertBinding } = require('./wallet-registry-service');
 const { parseWalletId } = require('./wallet-id');
+const { listRecoveryRequestsForOrg } = require('./wallet-recovery-service');
 
 const stateStore = new FileJsonStore(config.paths.orgAdmin, []);
 const eventStore = new FileJsonStore(config.paths.orgAdminEvents, []);
@@ -139,6 +140,12 @@ const PRIVILEGE_GROUPS = [
         id: 'credentials.update',
         name: 'Update credentials',
         description: 'Edit holder profile fields, role assignments, consent request scope, and expiry.'
+      },
+      {
+        id: 'wallet.recovery.approve',
+        name: 'Approve wallet recovery',
+        description:
+          'Confirm a holder\'s identity in person and restore their wallet on a new device. Deliberately separate from issuing credentials so it can be granted and audited on its own.'
       },
       {
         id: 'credentials.revoke',
@@ -445,6 +452,10 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
     canManageCredentials: viewer.canManageCredentials,
     canViewRoles: viewer.canViewRoles,
     canManageRoles: viewer.canManageRoles,
+    canApproveWalletRecovery: viewer.canApproveWalletRecovery,
+    walletRecoveryRequests: viewer.canApproveWalletRecovery
+      ? await listRecoveryRequestsForOrg(workspace.id)
+      : [],
     canViewClaims: viewer.canViewClaims,
     canManageClaims: viewer.canManageClaims,
     canViewConfiguration: viewer.canViewRoles || viewer.canViewClaims,
@@ -505,7 +516,14 @@ async function issueCredential(workspace, subscription, input = {}) {
     bindingMode,
     // A7: explicit per-credential assurance flag. Admin-role credentials default
     // to high, which is what a Tier-1 (self-service) recovery suspends.
-    assuranceLevel: normalizeAssuranceLevel(input.assuranceLevel),
+    assuranceLevel: normalizeAssuranceLevel(input.assuranceLevel, {
+      // Derive only from an assurance value the issuer actually supplied. The
+      // claim definition ships with a sample default, and treating that as a
+      // real hardware signal would mark every credential high assurance.
+      assuranceClaim: input.claim_assuranceLevel || input.assurance || '',
+      roleNames: roleIds
+        .map((roleId) => state.roles.find((role) => role.id === roleId)?.name || roleId)
+    }),
     displayName: normalizeText(input.displayName || claims.displayName || holderEmail, 180),
     personType: normalizePersonType(input.personType),
     divisionId: normalizeOrgUnitId(state, input.divisionId),
@@ -1890,6 +1908,7 @@ function buildViewerAccess(workspace, subscription, state) {
   const canManageCredentials = hasAny(['credentials.issue', 'credentials.update', 'credentials.revoke']);
   const canViewRoles = hasAny(['roles.view', 'roles.manage', 'roles.assign']);
   const canManageRoles = has('roles.manage');
+  const canApproveWalletRecovery = has('wallet.recovery.approve');
   const canViewClaims = hasAny(['claims.view.all', 'claims.manage', 'claims.request']);
   const canManageClaims = has('claims.manage');
   const canViewOrgChart = hasAny(['orgchart.view', 'orgchart.manage']);
@@ -1922,6 +1941,7 @@ function buildViewerAccess(workspace, subscription, state) {
     canManageCredentials,
     canViewRoles,
     canManageRoles,
+    canApproveWalletRecovery,
     canViewClaims,
     canManageClaims,
     canViewConfiguration: canViewRoles || canViewClaims,
@@ -2046,6 +2066,14 @@ function buildBladeNavSections(viewer, adminProfile = null) {
           description: 'Wallet',
           icon: '10',
           visible: viewer.canViewIntegrations
+        },
+        {
+          key: 'wallet-recovery',
+          href: '#wallet-recovery',
+          label: 'Wallet recovery',
+          description: 'Approvals',
+          icon: 'R',
+          visible: viewer.canApproveWalletRecovery
         },
         {
           key: 'wallet-events',
@@ -2727,8 +2755,35 @@ function isInviteExpired(credential) {
   return new Date(credential.inviteExpiresAt).getTime() < Date.now();
 }
 
-function normalizeAssuranceLevel(value) {
-  return ['low', 'medium', 'high'].includes(value) ? value : 'medium';
+// A7 (configurable): when the issuer supplies an explicit level we honour it.
+// Otherwise, in 'derive' mode the level is inferred from the credential's
+// assurance claim and roles — hardware/YubiKey/passkey signals mean high, which
+// is exactly what a Tier-1 self-service wallet recovery suspends.
+function normalizeAssuranceLevel(value, context = {}) {
+  if (['low', 'medium', 'high'].includes(value)) {
+    return value;
+  }
+
+  const settings = config.assurance || {};
+  if (settings.mode !== 'derive') {
+    return settings.defaultLevel || 'medium';
+  }
+
+  const signals = (settings.highSignals || []).map((signal) => signal.toLowerCase());
+  const claimValue = String(context.assuranceClaim || '').toLowerCase();
+  if (claimValue && signals.some((signal) => claimValue.includes(signal))) {
+    return 'high';
+  }
+
+  const rolePattern = String(settings.highRolePattern || '').trim();
+  if (rolePattern) {
+    const matcher = new RegExp(rolePattern, 'i');
+    if ((context.roleNames || []).some((name) => matcher.test(String(name || '')))) {
+      return 'high';
+    }
+  }
+
+  return settings.defaultLevel || 'medium';
 }
 
 function bindingModeLabel(mode) {
