@@ -91,3 +91,19 @@ test('generated Wallet IDs are unique across a large sample', () => {
   }
   assert.equal(seen.size, 10000, 'no collisions expected');
 });
+
+test('shared cross-platform vectors agree with this implementation', () => {
+  // tests/fixtures/wallet-id-vectors.json is also consumed by the iOS and
+  // Android format tests, so all three platforms stay in agreement.
+  const vectors = require('./fixtures/wallet-id-vectors.json');
+
+  for (const value of vectors.valid) {
+    assert.equal(walletId.isValidWalletId(value), true, `${value} should be valid`);
+  }
+  for (const { value, reason } of vectors.invalid) {
+    assert.equal(walletId.isValidWalletId(value), false, `${value} should be rejected (${reason})`);
+  }
+  for (const { input, expected } of vectors.normalization) {
+    assert.equal(walletId.parseWalletId(input), expected);
+  }
+});

@@ -47,7 +47,7 @@ class WalletStore(
         private set
     var challengeBanner by mutableStateOf<WalletChallengeBanner?>(null)
         private set
-    var walletPasskeySubject by mutableStateOf(preferences.getString("walletPasskeySubject", "identity@vanguardcs.ca") ?: "identity@vanguardcs.ca")
+    var walletPasskeySubject by mutableStateOf(preferences.getString("walletPasskeySubject", "") ?: "")
         private set
     var walletPasskeyStatus by mutableStateOf<WalletPasskeyStatus?>(null)
         private set
@@ -317,7 +317,7 @@ class WalletStore(
         runLabOperation {
             labClient.issueMockCredential(
                 issuerConnectionId,
-                "identity@vanguardcs.ca",
+                walletPasskeySubject.ifBlank { "" },
                 connection.invitation.sourceWebAppUrl
             )
             updateConnection(connection.id) { it.copy(state = WalletConnectionState.CredentialOffered) }
@@ -326,7 +326,7 @@ class WalletStore(
                 type = WalletTransactionType.Credential,
                 status = WalletTransactionStatus.PendingAcceptance,
                 title = "Mock credential offered",
-                detail = "VanguardEmployeeCredential for identity@vanguardcs.ca"
+                detail = "VanguardEmployeeCredential for " + walletPasskeySubject.ifBlank { "this wallet" }
             )
             lastLabMessage = "Mock credential offer delivered to the wallet."
         }
@@ -413,7 +413,7 @@ class WalletStore(
     }
 
     fun updateWalletPasskeySubject(subject: String) {
-        val normalized = subject.trim().ifBlank { "identity@vanguardcs.ca" }
+        val normalized = subject.trim()
         walletPasskeySubject = normalized
         preferences.edit().putString("walletPasskeySubject", normalized).apply()
     }
