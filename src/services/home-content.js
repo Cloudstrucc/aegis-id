@@ -9,7 +9,7 @@ function getHomeContent(overrides = {}) {
     hasIosDownloadUrl: Boolean(config.app.iosTestFlightUrl),
     androidDownloadUrl: config.app.androidTestingUrl,
     hasAndroidDownloadUrl: Boolean(config.app.androidTestingUrl),
-    productBriefUrl: '/docs/aegis-verified-id-value-story.html',
+    productBriefUrl: '/docs/aegis-id-overview.html',
     exampleApps: [
       {
         label: 'Standalone example',

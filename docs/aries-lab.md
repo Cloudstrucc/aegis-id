@@ -71,6 +71,27 @@ aries-lab/scripts/send-wallet-challenge.sh verifier | jq
 
 Use a fresh invitation for each acceptance test. Reusing the same single-use OOB invitation can leave records at `request-sent` and produce `reuse-not-accepted` ACA-Py log noise.
 
+## Ledger-backed profile (VON) — Feature B
+
+The default compose runs `--no-ledger`. To enable AnonCreds locally, start the
+VON/Indy ledger + tails server and point the issuer/verifier at the genesis using
+the override file [`docker-compose.ledger.yml`](../aries-lab/docker-compose.ledger.yml):
+
+```bash
+cd aries-lab
+docker compose --profile ledger -f docker-compose.yml -f docker-compose.ledger.yml up -d
+# register the issuer DID once: open http://localhost:9000 → "Register from seed"
+```
+
+Point the Node app at the profile with `LEDGER_NETWORK=von-local` (see the ledger
+config keys in `.env.example`). Confirm the selected profile at
+`GET /api/ledger/profile`. The ledger-profile registry
+([`src/adapters/ledger/ledger-profiles.js`](../src/adapters/ledger/ledger-profiles.js))
+also defines `candy-test`, `candy-prod`, `sovrin-staging`, and `sovrin-main`;
+those production networks additionally require a pinned `LEDGER_GENESIS_URL`, an
+endorser DID, and TAA acceptance (plan §5.F) before writes are possible. This is
+local/dev only and is not deployed to Azure.
+
 ## AnonCreds Flow
 
 The commands below require a running ledger-backed profile. The default `--no-ledger` compose mode is intentionally lighter and will not publish schemas or credential definitions.

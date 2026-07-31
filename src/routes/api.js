@@ -27,7 +27,8 @@ const {
   listTransactions,
   updateTransactionByState
 } = require('../services/transaction-store');
-const { writeAuditEvent } = require('../services/audit-service');
+const { writeAuditEvent, verifyAuditChain } = require('../services/audit-service');
+const { getActiveProfile, isWriteReady } = require('../adapters/ledger/ledger-profiles');
 const {
   acceptExternalWalletChallenge,
   createExternalWalletChallenge,
@@ -206,6 +207,25 @@ router.post('/verifier/callback', authorize('api.verifiedId.callback'), async (r
 router.get('/aries/status', async (req, res, next) => {
   try {
     res.json(await getAriesStatus());
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Non-secret view of the selected Indy ledger profile (Features B/C/D).
+router.get('/ledger/profile', (req, res, next) => {
+  try {
+    const profile = getActiveProfile();
+    res.json({ profile, writeReady: isWriteReady(profile) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Verify integrity of the tamper-evident evidence ledger (Feature A). Admin-only.
+router.get('/audit/verify', authorize('admin.audit.verify'), async (req, res, next) => {
+  try {
+    res.json(await verifyAuditChain());
   } catch (error) {
     next(error);
   }

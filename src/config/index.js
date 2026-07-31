@@ -208,6 +208,32 @@ const config = {
     scope: process.env.OIDC_WALLET_SCOPE || 'openid profile email',
     redirectPath: '/demo/oidc-wallet/callback',
     sessionTtlSeconds: Number.parseInt(process.env.OIDC_WALLET_SESSION_TTL_SECONDS || '900', 10)
+  },
+  evidenceLedger: {
+    // Feature A — tamper-evident evidence ledger. Chaining is on by default
+    // (cheap, no external deps); signing/anchoring default off locally.
+    chainingEnabled: booleanFlag(process.env.AUDIT_CHAIN_ENABLED, true),
+    signingEnabled: booleanFlag(process.env.AUDIT_SIGNING_ENABLED, false),
+    signingMode: process.env.AUDIT_SIGNING_MODE || 'local',
+    signingKeyVaultKeyId: process.env.AUDIT_SIGNING_KEYVAULT_KEY_ID || '',
+    signingKeyPath: resolveFromRoot(process.env.AUDIT_SIGNING_LOCAL_KEY_PATH, 'data/keys/audit-signing-dev.json'),
+    anchorMode: process.env.AUDIT_ANCHOR_MODE || 'none',
+    anchorContainer: process.env.AUDIT_ANCHOR_CONTAINER || '',
+    anchorDir: resolveFromRoot(process.env.AUDIT_ANCHOR_DIR, 'data/audit-heads'),
+    anchorIntervalSeconds: integerValue(process.env.AUDIT_ANCHOR_INTERVAL_SECONDS, 3600)
+  },
+  ledger: {
+    // Features B/C/D — Indy ledger-profile registry + did:indy / TAA settings.
+    network: process.env.LEDGER_NETWORK || 'none',
+    genesisUrl: process.env.LEDGER_GENESIS_URL || '',
+    taaAccept: process.env.LEDGER_TAA_ACCEPT || '',
+    taaMechanism: process.env.LEDGER_TAA_MECHANISM || 'service_agreement',
+    taaTextSha256: process.env.LEDGER_TAA_TEXT_SHA256 || '',
+    endorserDid: process.env.LEDGER_ENDORSER_DID || '',
+    tailsServerBaseUrl: process.env.TAILS_SERVER_BASE_URL || '',
+    issuerDidMethod: process.env.AEGIS_ISSUER_DID_METHOD || 'web',
+    indyDidNamespace: process.env.AEGIS_INDY_DID_NAMESPACE || '',
+    issuerWalletDbUrl: process.env.ISSUER_WALLET_DB_URL || ''
   }
 };
 
