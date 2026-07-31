@@ -121,7 +121,8 @@ const config = {
     oidcCodes: resolveFromRoot(process.env.OIDC_CODE_STORE_PATH, 'data/oidc-codes.json'),
     walletChallenges: resolveFromRoot(process.env.WALLET_CHALLENGE_STORE_PATH, 'data/wallet-challenges.json'),
     walletPasskeys: resolveFromRoot(process.env.WALLET_PASSKEY_STORE_PATH, 'data/wallet-passkeys.json'),
-    audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json')
+    audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json'),
+    wallets: resolveFromRoot(process.env.WALLET_STORE_PATH, 'data/wallets.json')
   },
   auth: {
     sessionSecret: process.env.SESSION_SECRET || 'dev-change-this-session-secret',
@@ -189,6 +190,10 @@ const config = {
     }
   },
   aries: {
+    // 'product' (default) issues self-contained aegisid:// org invites with no
+    // ACA-Py dependency. 'aries-lab' uses DIDComm out-of-band invitations and
+    // requires the Aries lab to be running.
+    orgInvitationMode: process.env.ARIES_ORG_INVITATION_MODE || 'product',
     holderAdminUrl: process.env.ARIES_HOLDER_ADMIN_URL || 'http://localhost:6011',
     issuerAdminUrl: process.env.ARIES_ISSUER_ADMIN_URL || 'http://localhost:4011',
     verifierAdminUrl: process.env.ARIES_VERIFIER_ADMIN_URL || 'http://localhost:5011',

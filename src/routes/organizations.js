@@ -53,7 +53,18 @@ router.post('/organizations/:subscriptionId', authorize('workspace.register'), a
     const onboarding = await getWorkspaceWalletOnboardingState(subscription, workspace);
 
     if (onboarding.requiresWalletSetup && !onboarding.latestInvitation) {
-      await createIssuerOrganizationInvitation(subscription, workspace);
+      // Never fail workspace registration because the wallet invitation could not
+      // be created (e.g. the Aries lab is unreachable). The workspace is the
+      // primary outcome; the invitation can be re-issued from the onboarding page.
+      try {
+        await createIssuerOrganizationInvitation(subscription, workspace);
+      } catch (invitationError) {
+        await writeAuditEvent('organization.workspace.invitation.deferred', {
+          subscriptionId: subscription.id,
+          workspaceId: workspace.id,
+          reason: invitationError.message
+        });
+      }
     }
 
     await writeAuditEvent('organization.workspace.registered', {

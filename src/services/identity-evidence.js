@@ -15,9 +15,19 @@ function recordAuthenticatorBound({ subject, credentialId, aaguid, type, boundBy
   return writeAuditEvent('authenticator.bound', { subject, credentialId, aaguid, type, boundBy });
 }
 
+// Wallet first-run setup: a Wallet ID was minted for this device.
+function recordWalletRegistered({ walletId, email, hasPhone } = {}) {
+  return writeAuditEvent('wallet.registered', { walletId, email, hasPhone });
+}
+
 // Onboarding: the mobile wallet enrolled and bound to the identity.
 function recordWalletEnrolled({ subject, walletId } = {}) {
   return writeAuditEvent('wallet.enrolled', { subject, walletId });
+}
+
+// Holder changed their global wallet contact after an approved challenge.
+function recordWalletContactChanged({ walletId, field, approvedByChallengeId } = {}) {
+  return writeAuditEvent('wallet.contact.changed', { walletId, field, approvedByChallengeId });
 }
 
 // Each federated sign-in: claims-based authentication evidence from Entra.
@@ -33,6 +43,8 @@ function recordTaaAcceptance({ network, version, digest, mechanism, approver } =
 module.exports = {
   recordIdentityProofed,
   recordAuthenticatorBound,
+  recordWalletRegistered,
+  recordWalletContactChanged,
   recordWalletEnrolled,
   recordIdentityAuthenticated,
   recordTaaAcceptance

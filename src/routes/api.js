@@ -21,6 +21,8 @@ const {
   acceptCredentialInvitation,
   getOrganizationProfile
 } = require('../services/org-admin-service');
+const { acceptOrganizationInvitation } = require('../services/issuer-organization-service');
+const { getWalletByWalletId, registerWallet } = require('../services/wallet-registry-service');
 const {
   getTransaction,
   saveTransaction,
@@ -330,6 +332,85 @@ router.get('/organizations/:organizationId/profile', async (req, res, next) => {
     next(error);
   }
 });
+
+// Wallet registration — mints the holder's Wallet ID on first app setup.
+router.post('/wallet/register', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    const wallet = await registerWallet({
+      email: req.body.email,
+      phone: req.body.phone,
+      displayName: req.body.displayName,
+      devicePublicKey: req.body.devicePublicKey,
+      deviceKeyAlg: req.body.deviceKeyAlg
+    });
+    await writeAuditEvent('wallet.registered', {
+      walletId: wallet.walletId,
+      email: wallet.email,
+      hasPhone: Boolean(wallet.phone)
+    });
+    res.status(201).json({
+      ok: true,
+      walletId: wallet.walletId,
+      email: wallet.email,
+      phone: wallet.phone,
+      createdAt: wallet.createdAt
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/wallet/:walletId/profile', authorize('api.wallet.mobile'), async (req, res, next) => {
+  try {
+    const wallet = await getWalletByWalletId(req.params.walletId);
+    if (!wallet) {
+      const error = new Error('Wallet not found.');
+      error.status = 404;
+      throw error;
+    }
+    res.json({
+      walletId: wallet.walletId,
+      email: wallet.email,
+      phone: wallet.phone,
+      displayName: wallet.displayName,
+      status: wallet.status,
+      contactFrozenUntil: wallet.contactFrozenUntil,
+      createdAt: wallet.createdAt
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Product-path organization connect. Requires no ACA-Py, so it works on any
+// deployment (Azure included) where the Aries lab is not running.
+router.post(
+  '/wallet/organization-invitations/:invitationId/accept',
+  authorize('api.wallet.mobile'),
+  async (req, res, next) => {
+    try {
+      const record = await acceptOrganizationInvitation(req.params.invitationId, {
+        walletId: req.body.walletId
+      });
+      await writeAuditEvent('wallet.organization.accepted', {
+        invitationId: record.id,
+        organizationId: record.organizationId,
+        organizationName: record.organizationName,
+        walletId: record.walletId,
+        source: req.body.source || 'wallet-api'
+      });
+      res.json({
+        ok: true,
+        status: record.status,
+        organizationId: record.organizationId,
+        organizationName: record.organizationName,
+        acceptedAt: record.acceptedAt
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.post('/wallet/credential-invitations/:credentialId/accept', authorize('api.wallet.mobile'), async (req, res, next) => {
   try {

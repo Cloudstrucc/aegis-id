@@ -7,7 +7,68 @@ const { createIosWalletDeepLink, createOutOfBandInvitation } = require('../adapt
 
 const store = new FileJsonStore(config.paths.issuerOrganizations, []);
 
-async function createIssuerOrganizationInvitation(subscription, workspace) {
+// Product path (default): a self-contained `aegisid://org-invite` deep link that
+// needs no ACA-Py. The lab path (DIDComm out-of-band) is opt-in and only used for
+// Aries interoperability testing, because ACA-Py is not deployed outside the lab.
+async function createIssuerOrganizationInvitation(subscription, workspace, options = {}) {
+  if (!useAriesLabInvitations(options)) {
+    return createProductOrganizationInvitation(subscription, workspace);
+  }
+
+  return createLabOrganizationInvitation(subscription, workspace);
+}
+
+function useAriesLabInvitations(options = {}) {
+  if (typeof options.useAriesLab === 'boolean') {
+    return options.useAriesLab;
+  }
+  return config.aries.orgInvitationMode === 'aries-lab';
+}
+
+async function createProductOrganizationInvitation(subscription, workspace) {
+  const organizationId = workspace.id;
+  const organizationName = workspace.organization || subscription.organization || 'Vanguard subscriber';
+  const publicBaseUrl = config.app.publicBaseUrl.replace(/\/$/, '');
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+  const params = new URLSearchParams({
+    invitation_id: id,
+    organization_id: organizationId,
+    organization_name: organizationName,
+    subscription_id: subscription.id,
+    vanguard_web_app_url: publicBaseUrl
+  });
+  const inviteUrl = `aegisid://org-invite?${params.toString()}`;
+  const webInviteUrl = `${publicBaseUrl}/wallet/organization-invitations/${encodeURIComponent(id)}`;
+  const record = {
+    id,
+    subscriptionId: subscription.id,
+    organizationId,
+    organizationName,
+    label: `${organizationName} Issuer`,
+    mode: 'product',
+    invitationId: id,
+    invitationUrl: inviteUrl,
+    requestUrl: inviteUrl,
+    webInviteUrl,
+    iosDeepLinkUrl: inviteUrl,
+    qrCodeDataUrl: await QRCode.toDataURL(inviteUrl, { margin: 1, width: 420 }),
+    iosQrCodeDataUrl: await QRCode.toDataURL(inviteUrl, { margin: 1, width: 420 }),
+    walletId: null,
+    issuerConnectionId: null,
+    holderConnectionId: null,
+    status: 'invitation-created',
+    createdAt: now,
+    updatedAt: now
+  };
+
+  const records = await store.read();
+  records.unshift(record);
+  await store.write(records);
+  return record;
+}
+
+async function createLabOrganizationInvitation(subscription, workspace) {
   const organizationId = workspace.id;
   const organizationName = workspace.organization || subscription.organization || 'Vanguard subscriber';
   const label = `${organizationName} Issuer`;
@@ -37,6 +98,7 @@ async function createIssuerOrganizationInvitation(subscription, workspace) {
     organizationId,
     organizationName,
     label,
+    mode: 'aries-lab',
     invitationId,
     invitationUrl: decoratedInvitationUrl,
     requestUrl: decoratedInvitationUrl,
@@ -76,6 +138,45 @@ async function registerIssuerOrganizationConnection(organizationId, input = {}) 
   };
   await store.write(records);
   return records[index];
+}
+
+// Product-path accept: binds a wallet to an organization invitation directly,
+// with no DIDComm/ACA-Py round-trip. Idempotent so a rescan cannot duplicate.
+async function acceptOrganizationInvitation(invitationId, input = {}) {
+  const records = await store.read();
+  const index = records.findIndex(
+    (record) => record.id === invitationId || record.invitationId === invitationId
+  );
+
+  if (index === -1) {
+    const error = new Error('Organization invitation was not found.');
+    error.status = 404;
+    throw error;
+  }
+
+  const record = records[index];
+  const walletId = normalizeWalletId(input.walletId);
+  if (record.walletId && walletId && record.walletId !== walletId) {
+    const error = new Error('This invitation is bound to a different wallet.');
+    error.status = 409;
+    throw error;
+  }
+
+  const now = new Date().toISOString();
+  records[index] = {
+    ...record,
+    walletId: walletId || record.walletId || null,
+    status: 'connected',
+    acceptedAt: record.acceptedAt || now,
+    updatedAt: now
+  };
+  await store.write(records);
+  return records[index];
+}
+
+function normalizeWalletId(value) {
+  const normalized = String(value || '').trim().toUpperCase();
+  return normalized || null;
 }
 
 async function listIssuerOrganizations(subscriptionId, organizationId) {
@@ -122,6 +223,7 @@ function decorateInvitationUrl(invitationUrl, params) {
 }
 
 module.exports = {
+  acceptOrganizationInvitation,
   createIssuerOrganizationInvitation,
   getIssuerOrganization,
   listConnectedIssuerOrganizations,
