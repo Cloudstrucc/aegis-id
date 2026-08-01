@@ -75,40 +75,48 @@ private struct ConnectionDetailView: View {
                         }
                     }
 
-                    Section("Lab actions") {
-                        Button {
-                            run { await store.acceptInLab(connection) }
-                        } label: {
-                            Label("Accept invitation in lab", systemImage: "arrow.triangle.2.circlepath")
-                        }
-                        .disabled(
-                            isWorking
-                                || connection.holderConnectionId != nil
-                                || !connection.invitation.isLabInvitation
-                        )
-
-                        Button {
-                            run { await store.issueMockCredential(connection) }
-                        } label: {
-                            Label("Issue mock credential", systemImage: "person.text.rectangle")
-                        }
-                        .disabled(isWorking || connection.issuerConnectionId == nil)
-
-                        Button {
-                            run { await store.sendWalletChallenge(connection) }
-                        } label: {
-                            Label("Send wallet challenge", systemImage: "bolt.shield")
-                        }
-                        .disabled(isWorking || connection.issuerConnectionId == nil)
-
+                    // Works for every connection: a product-path wallet polls by
+                    // organization, a lab wallet by its DIDComm connection.
+                    Section("Actions") {
                         Button {
                             run { await store.refreshOIDCWalletChallenges(connection) }
                         } label: {
-                            Label("Fetch OIDC challenges", systemImage: "network")
+                            Label("Check for challenges", systemImage: "network")
                         }
-                        .disabled(isWorking || connection.issuerConnectionId == nil)
+                        .disabled(isWorking)
 
                         feedbackMessage
+                    }
+
+                    // ACA-Py only. Hidden entirely for product-path connections
+                    // rather than shown greyed out with no explanation.
+                    if connection.invitation.isLabInvitation {
+                        Section {
+                            Button {
+                                run { await store.acceptInLab(connection) }
+                            } label: {
+                                Label("Accept invitation in lab", systemImage: "arrow.triangle.2.circlepath")
+                            }
+                            .disabled(isWorking || connection.holderConnectionId != nil)
+
+                            Button {
+                                run { await store.issueMockCredential(connection) }
+                            } label: {
+                                Label("Issue mock credential", systemImage: "person.text.rectangle")
+                            }
+                            .disabled(isWorking || connection.issuerConnectionId == nil)
+
+                            Button {
+                                run { await store.sendWalletChallenge(connection) }
+                            } label: {
+                                Label("Send wallet challenge", systemImage: "bolt.shield")
+                            }
+                            .disabled(isWorking || connection.issuerConnectionId == nil)
+                        } header: {
+                            Text("Lab actions")
+                        } footer: {
+                            Text("These drive the ACA-Py interoperability lab and need a DIDComm connection.")
+                        }
                     }
 
                     transactionsSection(connection: connection)

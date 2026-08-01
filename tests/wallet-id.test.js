@@ -107,3 +107,19 @@ test('shared cross-platform vectors agree with this implementation', () => {
     assert.equal(walletId.parseWalletId(input), expected);
   }
 });
+
+test('a shared wallet payload is accepted wherever a Wallet ID is expected', () => {
+  // Holders share their ID from the app as an aegisid://wallet link (share sheet
+  // or QR), so an administrator can paste that whole string into the form.
+  const id = walletId.generateWalletId();
+
+  assert.equal(walletId.parseWalletId(`aegisid://wallet?wallet_id=${id}`), id);
+  assert.equal(walletId.parseWalletId(`aegisid://wallet?wallet_id=${id.toLowerCase()}`), id);
+  assert.equal(walletId.parseWalletId(`aegisid://wallet?wallet_id=${encodeURIComponent(id)}`), id);
+  assert.equal(walletId.parseWalletId(`  aegisid://wallet?wallet_id=${id}  `), id);
+
+  // A payload carrying something that is not a valid Wallet ID is still refused.
+  assert.equal(walletId.parseWalletId('aegisid://wallet?wallet_id=NOT-A-WALLET'), null);
+  // And a plain Wallet ID keeps working unchanged.
+  assert.equal(walletId.parseWalletId(id), id);
+});

@@ -11,6 +11,7 @@
 		A10000000000000000000002 /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AppView.swift */; };
 		A10000000000000000000003 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* DesignSystem.swift */; };
 		A10000000000000000000004 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* Models.swift */; };
+		A10000000000000000000055 /* WalletProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000055 /* WalletProfileView.swift */; };
 		A10000000000000000000005 /* WalletStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* WalletStore.swift */; };
 		A10000000000000000000006 /* OOBInvitationParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* OOBInvitationParser.swift */; };
 		A10000000000000000000007 /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* QRCodeScannerView.swift */; };
@@ -38,6 +39,7 @@
 		A20000000000000000000002 /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		A20000000000000000000055 /* WalletProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletProfileView.swift"; sourceTree = "<group>"; };
 		A20000000000000000000005 /* WalletStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletStore.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* OOBInvitationParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OOBInvitationParser.swift; sourceTree = "<group>"; };
 		A20000000000000000000007 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
@@ -185,6 +187,7 @@
 		A40000000000000000000012 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000055 /* WalletProfileView.swift */,
 				A20000000000000000000011 /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -302,6 +305,7 @@
 				A10000000000000000000003 /* DesignSystem.swift in Sources */,
 				A10000000000000000000004 /* Models.swift in Sources */,
 				A10000000000000000000005 /* WalletStore.swift in Sources */,
+				A10000000000000000000055 /* WalletProfileView.swift in Sources */,
 				A10000000000000000000050 /* WalletIdentity.swift in Sources */,
 				A10000000000000000000051 /* WalletRegistrationClient.swift in Sources */,
 				A10000000000000000000052 /* WalletStore+Identity.swift in Sources */,

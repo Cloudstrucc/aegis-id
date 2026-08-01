@@ -84,10 +84,19 @@ function generateWalletId() {
   }
 }
 
+// Holders share their Wallet ID as `aegisid://wallet?wallet_id=...`, from the
+// share sheet or a scanned QR. Accept that whole payload so an administrator can
+// paste it as-is.
+function extractWalletId(value) {
+  const raw = String(value || '').trim();
+  const match = raw.match(/[?&]wallet_id=([^&\s]+)/i);
+  return match ? decodeURIComponent(match[1]) : raw;
+}
+
 // Returns the canonical `AEG-XXXX-XXXX-XXXX` form, or null when the input is not
 // a structurally valid Wallet ID (wrong length, bad characters, bad check symbol).
 function parseWalletId(value) {
-  const significant = normalizeInput(value);
+  const significant = normalizeInput(extractWalletId(value));
   if (significant.length !== TOTAL_LENGTH) {
     return null;
   }
@@ -110,6 +119,7 @@ function isValidWalletId(value) {
 
 module.exports = {
   ALPHABET,
+  extractWalletId,
   PREFIX,
   TOTAL_LENGTH,
   checkSymbol,

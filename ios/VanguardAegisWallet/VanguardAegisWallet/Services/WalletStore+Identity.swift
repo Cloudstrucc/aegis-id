@@ -78,6 +78,15 @@ extension WalletStore {
         pendingRecoveryCodes = []
     }
 
+    /// Issue a fresh set of recovery codes, invalidating the previous set.
+    func regenerateRecoveryCodes() async throws {
+        guard let walletId = identity?.walletId else {
+            throw WalletRegistrationError.server("This wallet is not registered yet.")
+        }
+        let result = try await registrationClient.generateRecoveryCodes(walletId: walletId)
+        pendingRecoveryCodes = result.codes
+    }
+
     // MARK: - Invitation guards
 
     /// Reject an invitation addressed to a different wallet before calling the

@@ -8,11 +8,18 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            Section("Profile") {
-                LabeledContent("Organization", value: "Vanguard Cloud Services")
-                LabeledContent("Wallet", value: "Aegis ID Wallet")
-                LabeledContent("Mode", value: "Aries lab")
-                LabeledContent("Website", value: "vanguardcs.ca")
+            Section("My wallet") {
+                NavigationLink {
+                    WalletProfileView()
+                } label: {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(store.identity?.walletId ?? "Not registered")
+                            .font(.system(.subheadline, design: .monospaced).bold())
+                        Text(store.identity?.email ?? "Set up your wallet")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Section("Aegis ID service") {
@@ -27,7 +34,17 @@ struct SettingsView: View {
                 LabeledContent("Mediator admin", value: AegisWalletEnvironment.mediatorAdminURL.hostPortDisplay)
             }
 
-            Section("Protocol") {
+            Section {
+                LabeledContent("Credentials", value: "Aegis ID service")
+                LabeledContent("Invitations", value: "aegisid:// deep links")
+                LabeledContent("Challenges", value: "Polled from the Aegis ID service")
+            } header: {
+                Text("Protocol")
+            } footer: {
+                Text("Organization and credential invitations are handled by the Aegis ID service directly. The Aries protocols below apply only to lab connections.")
+            }
+
+            Section("Aries lab protocol") {
                 LabeledContent("Invitation", value: "Out-of-Band 1.1")
                 LabeledContent("Handshake", value: "DIDExchange 1.0")
                 LabeledContent("Credential engine", value: "Lab bridge")
