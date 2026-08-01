@@ -38,14 +38,36 @@ default).
 The Testing page in the platform links to `/apps/signatures` for the signature
 demo, via `DIGITAL_SIGNATURE_APP_URL` or derived from the Business Expenses URL.
 
+### Organization selection
+
+**`AEGIS_ORGANIZATION_ID` is no longer required.** The holder signs in through
+Aegis OIDC and the token carries every organization they hold a live credential
+in. A holder in more than one is sent to `/organizations` to choose before the
+demo surfaces open; a holder in exactly one is selected automatically. Only
+organizations present on their own token are selectable, so a posted id cannot
+reach an organization they do not belong to.
+
+Challenges are addressed to the chosen organization, falling back to
+`AEGIS_ORGANIZATION_ID` only when nothing was chosen.
+
+### Per-holder data
+
+Demo records live under `data/holders/<holder>/` and are namespaced per signed-in
+holder using `AsyncLocalStorage`, so concurrent sessions never see each other's
+records. `users.json` stays shared because it describes the app rather than a
+holder. Records seed themselves on first read, so a new holder gets a working set
+without any setup. `/expenses/reset` and `/signatures/reset` drop that holder's
+files, and expenses re-seed on the next read.
+
+When adding a store, decide whether it is per-holder (default) or belongs in
+`GLOBAL_FILES`.
+
 ### Configuration
 
-Reads its own `.env`: `PORT` (4300), `AEGIS_ID_BASE_URL`, `AEGIS_ORGANIZATION_ID`,
-`AEGIS_ISSUER_CONNECTION_ID`, `OIDC_CLIENT_ID`, `OIDC_SCOPE`, `SESSION_SECRET`,
-plus `VERIFIED_ID_AUTH_ENABLED` and `YUBIKEY_AUTH_ENABLED` toggles.
-
-`AEGIS_ORGANIZATION_ID` must name an organization the wallet is connected to, or
-challenges raised here have nothing to deliver to.
+Reads its own `.env`: `PORT` (4300), `AEGIS_ID_BASE_URL`, `OIDC_CLIENT_ID`,
+`OIDC_SCOPE`, `SESSION_SECRET`, plus `VERIFIED_ID_AUTH_ENABLED` and
+`YUBIKEY_AUTH_ENABLED` toggles. `AEGIS_ORGANIZATION_ID` and
+`AEGIS_ISSUER_CONNECTION_ID` remain as optional fallbacks.
 
 ## When platform changes affect these apps
 

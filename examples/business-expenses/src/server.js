@@ -1,7 +1,16 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { AsyncLocalStorage } = require('node:async_hooks');
 const express = require('express');
+
+// Namespace for the signed-in holder's demo records.
+const dataScope = new AsyncLocalStorage();
+
+function scopeKeyFor(user) {
+  const raw = String(user?.email || user?.sub || '').toLowerCase();
+  return raw.replace(/[^a-z0-9._-]+/g, '_') || 'anonymous';
+}
 const session = require('express-session');
 const helmet = require('helmet');
 const hbs = require('hbs');
@@ -98,13 +107,17 @@ app.use((req, res, next) => {
   res.locals.isAuthenticated = Boolean(req.session.authenticated);
   res.locals.aegisBaseUrl = config.aegisBaseUrl;
   res.locals.authReturnTo = normalizeReturnTo(req.originalUrl || '/');
-  next();
+  res.locals.activeOrganization = activeOrganization(req);
+  res.locals.availableOrganizations = req.session.user?.organizations || [];
+
+  // Everything downstream reads and writes inside this holder's namespace.
+  dataScope.run(scopeKeyFor(req.session.user), next);
 });
 
 app.get('/', (req, res) => {
   res.render('pages/index', {
     title: 'Example Apps',
-    configured: Boolean(config.organizationId || config.issuerConnectionId),
+    configured: true,
     verifiedIdEnabled: config.verifiedIdEnabled,
     yubiKeyEnabled: config.yubiKeyEnabled,
     isAuthenticated: Boolean(req.session.authenticated)
@@ -158,8 +171,17 @@ app.get('/auth/callback', async (req, res, next) => {
       sub: token.claims.sub,
       email: token.claims.email,
       name: token.claims.name,
-      organizationId: token.claims.organization_id
+      organizationId: token.claims.organization_id,
+      // Every organization this holder belongs to, so they can choose one
+      // instead of the app being pinned to a configured organization.
+      organizations: Array.isArray(token.claims.organizations) ? token.claims.organizations : []
     };
+    // Choose automatically when there is nothing to choose between.
+    if (req.session.user.organizations.length === 1) {
+      req.session.activeOrganizationId = req.session.user.organizations[0].id;
+    } else if (token.claims.organization_id) {
+      req.session.activeOrganizationId = token.claims.organization_id;
+    }
     req.session.authenticated = false;
 
     const action = userExisted || req.session.oidc.intent === 'sign-in' ? 'sign-in' : 'register';
@@ -181,6 +203,7 @@ app.get('/auth/callback', async (req, res, next) => {
     }
 
     const challenge = await createAegisChallenge({
+      organizationId: activeOrganizationId(req),
       challengeType: 'authentication',
       action,
       resourceType: 'session',
@@ -320,6 +343,7 @@ app.get('/expenses', requireAuthenticated, async (req, res, next) => {
       expenses: await readExpenses(),
       decisions: await readDecisions(),
       createdExpenseId: req.query.created || null,
+      reset: req.query.reset === '1',
       yubiKeyAuthenticated: Boolean(req.session.yubiKeyAuthenticated),
       verifiedIdAuthenticated: Boolean(req.session.verifiedIdAuthenticated)
     });
@@ -352,6 +376,7 @@ app.post('/expenses/:expenseId/:action', requireAuthenticated, async (req, res, 
     }
 
     const challenge = await createAegisChallenge({
+      organizationId: activeOrganizationId(req),
       challengeType: 'expense-decision',
       action,
       resourceType: 'expense',
@@ -450,6 +475,7 @@ app.post('/signatures/templates/:templateId/envelopes', requireAuthenticated, as
     const actorName = req.session.user.name || req.session.user.email;
 
     const challenge = await createAegisChallenge({
+      organizationId: activeOrganizationId(req),
       appName: 'Vanguard E-Signatures',
       challengeType: 'document-signature',
       action: 'sign-document',
@@ -523,6 +549,53 @@ app.get('/signatures/envelopes/:envelopeId/status', requireAuthenticated, async 
       signedBy: envelope.signedBy || null,
       signatureId: envelope.signatureId
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Organization selection and per-holder demo data
+// ---------------------------------------------------------------------------
+
+app.get('/organizations', requireAuthenticated, (req, res) => {
+  const organizations = req.session.user?.organizations || [];
+  res.render('pages/organizations', {
+    title: 'Choose an organization',
+    organizations,
+    hasOrganizations: organizations.length > 0,
+    activeOrganizationId: req.session.activeOrganizationId || '',
+    returnTo: normalizeReturnTo(req.query.returnTo || '/expenses')
+  });
+});
+
+app.post('/organizations', requireAuthenticated, (req, res) => {
+  const organizations = req.session.user?.organizations || [];
+  const chosen = organizations.find((organization) => organization.id === req.body.organizationId);
+  if (!chosen) {
+    // Only organizations carried on the holder's own token are selectable, so a
+    // posted id cannot grant access to one they do not belong to.
+    return res.redirect(303, '/organizations');
+  }
+  req.session.activeOrganizationId = chosen.id;
+  res.redirect(303, normalizeReturnTo(req.body.returnTo || '/expenses'));
+});
+
+app.post('/expenses/reset', requireAuthenticated, async (req, res, next) => {
+  try {
+    // Dropping the holder's copies makes the next read re-seed from the sample data.
+    await clearScopedFiles(['expenses.json', 'decisions.json']);
+    await readExpenses();
+    res.redirect(303, '/expenses?reset=1');
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/signatures/reset', requireAuthenticated, async (req, res, next) => {
+  try {
+    await clearScopedFiles(['signature-templates.json', 'signature-envelopes.json']);
+    res.redirect(303, '/signatures?reset=1');
   } catch (error) {
     next(error);
   }
@@ -603,6 +676,26 @@ async function exchangeCode(code) {
   return payload;
 }
 
+// The organization this holder chose for the session. Falls back to the
+// configured one only when nothing was chosen, so the app works with or without
+// AEGIS_ORGANIZATION_ID set.
+function activeOrganization(req) {
+  const chosen = req?.session?.activeOrganizationId;
+  const available = req?.session?.user?.organizations || [];
+  const match = available.find((organization) => organization.id === chosen);
+  if (match) {
+    return match;
+  }
+  if (available.length === 1) {
+    return available[0];
+  }
+  return chosen ? { id: chosen, name: 'Selected organization' } : null;
+}
+
+function activeOrganizationId(req) {
+  return activeOrganization(req)?.id || config.organizationId || '';
+}
+
 async function createAegisChallenge(input) {
   const challenge = await fetchAegisJson('/api/wallet-challenges', {
     method: 'POST',
@@ -610,7 +703,7 @@ async function createAegisChallenge(input) {
       ...input,
       appName: input.appName || config.appName,
       appInstanceId: config.appInstanceId,
-      organizationId: config.organizationId,
+      organizationId: input.organizationId || config.organizationId,
       connectionId: config.issuerConnectionId,
       returnUrl: `${config.appPublicBaseUrl}/challenge/pending`,
       ttlSeconds: 900
@@ -996,17 +1089,39 @@ function randomInteger(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Demo records belong to whoever is signed in, so each holder gets their own
+// namespace under the data directory. AsyncLocalStorage keeps that per-request
+// rather than global, so concurrent sessions cannot read each other's records.
+// Files listed in GLOBAL_FILES stay shared — they describe the app, not a user.
+const GLOBAL_FILES = new Set(['users.json']);
+
+function scopedPath(fileName) {
+  const scope = dataScope.getStore();
+  if (!scope || GLOBAL_FILES.has(fileName)) {
+    return path.join(dataDir, fileName);
+  }
+  return path.join(dataDir, 'holders', scope, fileName);
+}
+
 async function readJson(fileName, fallback) {
   try {
-    return JSON.parse(await fs.readFile(path.join(dataDir, fileName), 'utf8'));
+    return JSON.parse(await fs.readFile(scopedPath(fileName), 'utf8'));
   } catch (error) {
     return fallback;
   }
 }
 
 async function writeJson(fileName, value) {
-  await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(path.join(dataDir, fileName), JSON.stringify(value, null, 2), 'utf8');
+  const target = scopedPath(fileName);
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target, JSON.stringify(value, null, 2), 'utf8');
+}
+
+/** Remove a holder's copy of the given files, so the next read re-seeds. */
+async function clearScopedFiles(fileNames = []) {
+  for (const fileName of fileNames) {
+    await fs.rm(scopedPath(fileName), { force: true });
+  }
 }
 
 function normalizeText(value, fallback, maxLength) {
@@ -1048,10 +1163,22 @@ function clampNumber(value, min, max, fallback) {
 }
 
 function requireAuthenticated(req, res, next) {
-  if (req.session.authenticated && req.session.user) {
-    return next();
+  if (!req.session.authenticated || !req.session.user) {
+    return res.redirect(303, loginLandingForPath(req.originalUrl || '/'));
   }
-  return res.redirect(303, loginLandingForPath(req.originalUrl || '/'));
+
+  // A holder in more than one organization picks which to act in before the
+  // demo surfaces are usable, since challenges are addressed per organization.
+  const organizations = req.session.user.organizations || [];
+  const needsChoice =
+    organizations.length > 1 &&
+    !organizations.some((organization) => organization.id === req.session.activeOrganizationId);
+
+  if (needsChoice && !String(req.path || '').startsWith('/organizations')) {
+    return res.redirect(303, `/organizations?returnTo=${encodeURIComponent(req.originalUrl || '/expenses')}`);
+  }
+
+  return next();
 }
 
 function requireKnownChallenge(req, res, next) {

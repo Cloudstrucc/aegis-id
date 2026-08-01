@@ -4,6 +4,12 @@
       <span class="badge text-bg-primary">Protected application</span>
       <h1 class="mt-2 mb-1">Expense records</h1>
       <p class="text-muted mb-0">Approvals and rejections require a wallet challenge that acts like a high-assurance signature.</p>
+      {{#if activeOrganization}}
+        <p class="small text-muted mb-0 mt-1">
+          Testing as <strong>{{activeOrganization.name}}</strong>
+          {{#if availableOrganizations.length}}<a class="ms-1" href="/organizations?returnTo=/expenses">Change</a>{{/if}}
+        </p>
+      {{/if}}
     </div>
     <div class="d-flex flex-wrap gap-2">
       <form action="/expenses/random" method="post">
@@ -14,8 +20,19 @@
       </form>
       <a class="btn btn-outline-primary" href="/signatures">E-signatures</a>
       <a class="btn btn-outline-primary" href="/ledger">View ledger</a>
+      <form action="/expenses/reset" method="post"
+            onsubmit="return confirm('Delete your expense records and generate a fresh set?');">
+        <button class="btn btn-outline-secondary" type="submit">
+          <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+          Reset data
+        </button>
+      </form>
     </div>
   </div>
+
+  {{#if reset}}
+    <div class="alert alert-success">Your expense records were reset and a fresh set generated.</div>
+  {{/if}}
 
   {{#if createdExpenseId}}
     <div class="alert alert-success d-flex align-items-center gap-2" role="status">

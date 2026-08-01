@@ -1,0 +1,46 @@
+<section class="container py-5">
+  <div class="mb-4">
+    <span class="badge text-bg-primary">Signed in with Aegis ID</span>
+    <h1 class="mt-2 mb-1">Choose an organization</h1>
+    <p class="text-muted mb-0">
+      Wallet challenges are addressed to an organization, so pick the one you want to test with.
+      Only organizations you hold a live credential in are listed.
+    </p>
+  </div>
+
+  {{#if hasOrganizations}}
+    <form action="/organizations" method="post">
+      <input type="hidden" name="returnTo" value="{{returnTo}}">
+      <div class="list-group mb-4">
+        {{#each organizations}}
+          <label class="list-group-item d-flex gap-3 align-items-center">
+            <input
+              class="form-check-input flex-shrink-0"
+              type="radio"
+              name="organizationId"
+              value="{{id}}"
+              {{#if (eq id ../activeOrganizationId)}}checked{{/if}}
+              required
+            >
+            <span>
+              <strong class="d-block">{{name}}</strong>
+              <small class="text-muted">
+                {{#if roles.length}}{{#each roles}}{{this}}{{#unless @last}} · {{/unless}}{{/each}}{{else}}Credential holder{{/if}}
+              </small>
+            </span>
+          </label>
+        {{/each}}
+      </div>
+      <button class="btn btn-primary" type="submit">Continue</button>
+    </form>
+  {{else}}
+    <div class="alert alert-warning">
+      <strong>No organizations found.</strong>
+      <p class="mb-0">
+        You need a live credential in at least one organization before you can test here.
+        Ask an administrator to issue one to your wallet, then sign in again.
+      </p>
+    </div>
+    <a class="btn btn-outline-primary" href="/">Back</a>
+  {{/if}}
+</section>

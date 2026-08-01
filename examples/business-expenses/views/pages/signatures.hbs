@@ -8,6 +8,13 @@
     <div class="d-flex flex-wrap gap-2">
       <a class="btn btn-outline-primary" href="/expenses">Expense approvals</a>
       <a class="btn btn-outline-primary" href="/ledger">View ledger</a>
+      <form action="/signatures/reset" method="post"
+            onsubmit="return confirm('Delete all of your signature templates and envelopes?');">
+        <button class="btn btn-outline-secondary" type="submit">
+          <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+          Reset templates
+        </button>
+      </form>
     </div>
   </div>
 
