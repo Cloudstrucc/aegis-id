@@ -37,11 +37,25 @@
       <input type="hidden" name="state" value="{{state}}">
       <input type="hidden" name="redirectUri" value="{{redirectUri}}">
 
+      {{#if hasHolders}}
+        <div class="field-group">
+          <label class="field-label" for="holderChoice">Sign in as</label>
+          <select id="holderChoice" name="holderChoice">
+            {{#each holders}}
+              <option value="{{email}}">
+                {{displayName}} &middot; {{email}} &middot; {{organizationName}}{{#unless walletId}} (no Wallet ID){{/unless}}
+              </option>
+            {{/each}}
+          </select>
+          <p class="field-hint">Credential holders in your connected organizations. Pick the person whose wallet should receive the challenge.</p>
+        </div>
+      {{/if}}
+
       <div class="field-group">
-        <label class="field-label" for="email">Sign in as</label>
-        <input id="email" name="email" type="email" value="{{defaultEmail}}" required
+        <label class="field-label" for="email">{{#if hasHolders}}Or another address{{else}}Sign in as{{/if}}</label>
+        <input id="email" name="email" type="email" value="{{#unless hasHolders}}{{defaultEmail}}{{/unless}}"
                placeholder="you@example.com" autocomplete="off">
-        <p class="field-hint">Use the email registered on the wallet you want the challenge delivered to. This mock provider signs in whoever you name here.</p>
+        <p class="field-hint">{{#if hasHolders}}Leave blank to use the holder selected above. Fill it in to sign in as someone not listed.{{else}}The email registered on the wallet that should receive the challenge.{{/if}}</p>
       </div>
 
       <div class="field-group">

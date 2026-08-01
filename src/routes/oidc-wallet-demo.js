@@ -16,6 +16,8 @@ const {
   listWalletConnections,
   setMockLogin
 } = require('../services/oidc-wallet-demo-service');
+const { listCredentialHoldersForOrganization } = require('../services/org-admin-service');
+const { listConnectedIssuerOrganizations } = require('../services/issuer-organization-service');
 const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
@@ -50,7 +52,24 @@ router.post('/demo/oidc-wallet/login', authorize('oidcDemo.use'), async (req, re
   }
 });
 
-router.get('/demo/oidc-wallet/mock-authorize', (req, res) => {
+router.get('/demo/oidc-wallet/mock-authorize', async (req, res, next) => {
+  try {
+  // Offer the actual credential holders of connected organizations so the tester
+  // picks a real wallet instead of retyping an address (and mistyping it).
+  const organizations = await listConnectedIssuerOrganizations();
+  const holderLists = await Promise.all(
+    organizations.map((organization) => listCredentialHoldersForOrganization(organization.organizationId))
+  );
+  const seen = new Set();
+  const holders = holderLists.flat().filter((holder) => {
+    const key = holder.email.toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+
   res.render('pages/oidc-wallet-mock-authorize', {
     title: 'Mock OIDC Provider',
     description: 'Mock OIDC authorization page for the Vanguard Aegis ID wallet challenge demo.',
@@ -61,16 +80,22 @@ router.get('/demo/oidc-wallet/mock-authorize', (req, res) => {
     redirectUri: req.query.redirect_uri,
     // Prefill with the signed-in operator so the common case is one click.
     defaultEmail: req.user?.email || '',
-    defaultName: req.user?.displayName || ''
+    defaultName: req.user?.displayName || '',
+    holders,
+    hasHolders: holders.length > 0
   });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.post('/demo/oidc-wallet/mock-authorize', authorize('api.oidcProvider.external'), async (req, res, next) => {
   try {
     // Remember who the tester signed in as so the wallet challenge is addressed
     // to them rather than to a fixed demo user.
+    // A typed address wins over the picker, so "someone else" needs no JavaScript.
     await setMockLogin(req.body.state, {
-      email: req.body.email,
+      email: String(req.body.email || '').trim() || req.body.holderChoice,
       name: req.body.name,
       subject: req.body.subject
     });

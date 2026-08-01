@@ -748,6 +748,29 @@ async function acceptCredentialInvitation(organizationId, credentialId, input = 
   };
 }
 
+// Credential holders for a connected organization, used to offer a real chooser
+// instead of asking a tester to retype an address. Read-only and non-privileged:
+// it exposes only what an operator running the demo already knows.
+async function listCredentialHoldersForOrganization(organizationId) {
+  const states = await stateStore.read();
+  const state = states.find((record) => record.workspaceId === organizationId);
+  if (!state) {
+    return [];
+  }
+  normalizeState(state);
+
+  return state.credentials
+    .filter((credential) => credential.status !== 'revoked' && credential.holderEmail)
+    .map((credential) => ({
+      email: credential.holderEmail,
+      displayName: credential.displayName || credential.holderEmail,
+      walletId: credential.walletId || null,
+      status: credential.status,
+      organizationId,
+      organizationName: state.organizationName
+    }));
+}
+
 async function listCredentialMembershipsForEmail(email) {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) {
@@ -2936,6 +2959,7 @@ module.exports = {
   getOrganizationProfile,
   acceptCredentialInvitation,
   buildCredentialInvitation,
+  listCredentialHoldersForOrganization,
   ensureAdminCredential,
   getCredentialInvitationStatus,
   issueCredential,

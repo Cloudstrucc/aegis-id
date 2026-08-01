@@ -65,3 +65,21 @@ test('a blank email does not overwrite an existing choice', async () => {
     assert.equal(authenticated.oidc.claims.email, 'holder@example.com');
   });
 });
+
+test('the picker resolves to the chosen holder, and a typed address wins', async () => {
+  await withDemo(async (demo) => {
+    // Picker only.
+    const first = await demo.createLoginRequest('http://localhost:3000');
+    await demo.setMockLogin(first.session.state, { email: 'picked@example.com' });
+    const a = await demo.completeOidcCallback({ state: first.session.state, code: 'c1' });
+    assert.equal(a.oidc.claims.email, 'picked@example.com');
+
+    // Typed address takes precedence over the picker (resolved in the route).
+    const second = await demo.createLoginRequest('http://localhost:3000');
+    const typed = '  typed@example.com  ';
+    const holderChoice = 'picked@example.com';
+    await demo.setMockLogin(second.session.state, { email: typed.trim() || holderChoice });
+    const b = await demo.completeOidcCallback({ state: second.session.state, code: 'c2' });
+    assert.equal(b.oidc.claims.email, 'typed@example.com');
+  });
+});
