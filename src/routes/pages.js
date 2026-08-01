@@ -8,6 +8,7 @@ const { getHealthDashboard } = require('../services/health-service');
 const { getHomeContent } = require('../services/home-content');
 const { getCredentialInvitationView } = require('../services/org-admin-service');
 const { authorize } = require('../middleware/authorization');
+const { getTestingApps } = require('../services/home-content');
 const {
   getNotificationSettingsForDisplay,
   updateNotificationSettings
@@ -70,6 +71,16 @@ router.post('/admin/notifications', authorize('admin.notifications.manage'), asy
   } catch (error) {
     next(error);
   }
+});
+
+// Demo and test applications. Authenticated only — requireAuthenticated gives a
+// redirect to sign-in, and the policy keeps it in the authorization registry.
+router.get('/testing', requireAuthenticated, authorize('testing.view'), (req, res) => {
+  res.render('pages/testing', {
+    title: 'Testing',
+    description: 'Demo and test applications for Vanguard Aegis ID.',
+    testingApps: getTestingApps()
+  });
 });
 
 router.get('/health', authorize('admin.health.view'), async (req, res, next) => {

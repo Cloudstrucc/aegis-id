@@ -1,0 +1,64 @@
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Testing</p>
+    <h1>Try Aegis ID in a working application.</h1>
+    <p>Each application below exercises a different part of the platform. Open one, complete the assurance step, then approve the challenge in your Aegis ID wallet and review the evidence in the ledger.</p>
+  </div>
+
+  <article class="blade-guidance">
+    <strong>Before you start</strong>
+    <span>Set up your wallet in the Aegis ID mobile app and connect it to an organization. Credentials and challenges are addressed to a connected organization, so an unconnected wallet will not receive them.</span>
+  </article>
+
+  <div class="example-app-grid">
+    {{#each testingApps}}
+      <article class="example-app-card" id="{{id}}">
+        <span class="track-label">{{label}}</span>
+        <h3>{{title}}</h3>
+        <p class="example-app-card__purpose">{{purpose}}</p>
+        <p>{{summary}}</p>
+
+        <ul class="example-app-card__tests">
+          {{#each tests}}
+            <li>{{this}}</li>
+          {{/each}}
+        </ul>
+
+        <div class="example-app-card__footer">
+          <span class="example-app-card__meta">{{meta}}</span>
+          <a class="button button--blue example-app-card__cta" href="{{href}}" target="_blank" rel="noopener">{{action}}</a>
+        </div>
+      </article>
+    {{/each}}
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="section-heading">
+    <p class="eyebrow">Where to look afterwards</p>
+    <h2>Every test leaves evidence.</h2>
+  </div>
+  <div class="example-app-grid">
+    <article class="example-app-card">
+      <h3>Wallet events</h3>
+      <p>Authentication, consent, approval, and revocation activity for your organization, in the order it happened.</p>
+      <div class="example-app-card__footer">
+        <span class="example-app-card__meta">Organization dashboard</span>
+      </div>
+    </article>
+    <article class="example-app-card">
+      <h3>App ledger</h3>
+      <p>Cross-application records raised by apps such as Business Expenses when they request a wallet signature.</p>
+      <div class="example-app-card__footer">
+        <span class="example-app-card__meta">Organization dashboard</span>
+      </div>
+    </article>
+    <article class="example-app-card">
+      <h3>Evidence ledger</h3>
+      <p>The tamper-evident chain behind those records. Each entry carries the fingerprint of the one before it, so any edit is detectable.</p>
+      <div class="example-app-card__footer">
+        <span class="example-app-card__meta">Hash-chained</span>
+      </div>
+    </article>
+  </div>
+</section>

@@ -69,29 +69,6 @@
   </div>
 </section>
 
-{{#if isAuthenticated}}
-  <section class="band band--light" id="example-apps">
-    <div class="section-heading">
-      <p class="eyebrow">Example apps</p>
-      <h2>Try Aegis ID in a working application.</h2>
-      <p>Open a demo app, complete the assurance step, then use the Vanguard Aegis ID mobile app to sign the wallet challenge and review the ledger.</p>
-    </div>
-    <div class="example-app-grid">
-      {{#each exampleApps}}
-        <article class="example-app-card">
-          <span class="track-label">{{label}}</span>
-          <h3>{{title}}</h3>
-          <p>{{summary}}</p>
-          <div class="example-app-card__footer">
-            <span class="example-app-card__meta">{{meta}}</span>
-            <a class="button button--blue example-app-card__cta" href="{{href}}" target="_blank" rel="noopener">{{action}}</a>
-          </div>
-        </article>
-      {{/each}}
-    </div>
-  </section>
-{{/if}}
-
 <section class="band band--white" id="setup-video">
   <div class="video-layout">
     <div class="section-heading">

@@ -1,5 +1,48 @@
 const config = require('../config');
 
+// Demo and test applications, surfaced on the authenticated Testing page.
+function getTestingApps() {
+  const hosted = config.app.env === 'production';
+  return [
+    {
+      id: 'business-expenses',
+      label: 'Standalone application',
+      title: 'Business Expenses',
+      purpose: 'Shows Aegis ID protecting a real relying-party application end to end.',
+      summary:
+        'Sign in with Aegis OIDC, satisfy a Verified ID or YubiKey assurance step, then approve an expense from your wallet. Every approval lands in the immutable ledger.',
+      tests: ['OIDC sign-in', 'Assurance step-up', 'Wallet-signed approval', 'Ledger evidence'],
+      href: config.app.businessExpensesUrl,
+      action: 'Open Business Expenses',
+      meta: hosted ? 'Azure App Service' : 'Localhost demo'
+    },
+    {
+      id: 'digital-signature',
+      label: 'Signature flow',
+      title: 'Digital signature approval',
+      purpose: 'Exercises the wallet as a signing device for a high-value action.',
+      summary:
+        'Raise an approval that must be signed in the wallet, then confirm the signature and its full context were written to the tamper-evident ledger. Runs inside Business Expenses, which is where signed approvals originate.',
+      tests: ['Wallet challenge', 'Approve and decline paths', 'Non-repudiable evidence'],
+      href: config.app.businessExpensesUrl,
+      action: 'Open signature flow',
+      meta: 'Part of Business Expenses'
+    },
+    {
+      id: 'oidc-wallet',
+      label: 'Built-in demo',
+      title: 'OIDC wallet challenge',
+      purpose: 'Tests the wallet gate on its own, without needing a separate application.',
+      summary:
+        'Sign in through the mock identity provider as any credential holder, send a wallet challenge to their wallet, and unlock the protected page once it is approved.',
+      tests: ['Mock OIDC login', 'Organization-addressed challenge', 'Wallet approval unlock'],
+      href: '/demo/oidc-wallet',
+      action: 'Open OIDC demo',
+      meta: 'Runs inside Aegis ID'
+    }
+  ];
+}
+
 function getHomeContent(overrides = {}) {
   return {
     title: 'Vanguard Cloud Services - Aegis ID',
@@ -115,4 +158,7 @@ function getHomeContent(overrides = {}) {
   };
 }
 
-module.exports = { getHomeContent };
+module.exports = {
+  getHomeContent,
+  getTestingApps
+};

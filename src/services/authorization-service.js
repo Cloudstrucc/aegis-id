@@ -71,6 +71,9 @@ const POLICIES = Object.freeze({
   'connectedApps.logs.export': policy('connectedApps.logs.export', 'orgPrivilege', 'connected-app-log', 'export', {
     privilegeId: 'connectedApps.logs.export'
   }),
+  'testing.view': policy('testing.view', 'authenticated', 'testing-apps', 'read', {
+    description: 'Authenticated-only index of demo and test applications.'
+  }),
   'developerApiDocs.view': policy('developerApiDocs.view', 'authenticated', 'developer-api-docs', 'read'),
   'issuerOrganization.invite': policy('issuerOrganization.invite', 'orgPrivilege', 'issuer-organization', 'create', {
     privilegeId: 'integrations.manage'
