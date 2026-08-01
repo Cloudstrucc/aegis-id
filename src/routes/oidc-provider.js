@@ -2,6 +2,7 @@ const express = require('express');
 
 const config = require('../config');
 const { createAuthorizationCode, exchangeAuthorizationCode } = require('../services/oidc-provider-service');
+const { listCredentialMembershipsForEmail } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
 const { authorize } = require('../middleware/authorization');
 
@@ -44,13 +45,20 @@ router.post('/oidc/authorize', authorize('api.oidcProvider.external'), async (re
       throw error;
     }
 
+    // Relying parties let the holder choose which of their organizations to act
+    // in, so the token carries every organization they hold a live credential in
+    // rather than a single configured one.
+    const memberships = await listCredentialMembershipsForEmail(req.body.email);
+    const organizations = dedupeOrganizations(memberships);
+
     const authorization = await createAuthorizationCode({
       clientId: req.body.clientId,
       redirectUri: req.body.redirectUri,
       nonce: req.body.nonce,
       email: req.body.email,
       name: req.body.name,
-      organizationId: req.body.organizationId
+      organizationId: req.body.organizationId,
+      organizations
     });
     await writeAuditEvent('oidc-provider.authorization.issued', {
       clientId: req.body.clientId,
@@ -98,3 +106,20 @@ function getRequestBaseUrl(req) {
 }
 
 module.exports = router;
+
+// One entry per organization, carrying only what a relying party needs to render
+// a chooser.
+function dedupeOrganizations(memberships = []) {
+  const byId = new Map();
+  for (const membership of memberships) {
+    if (!membership.workspaceId || byId.has(membership.workspaceId)) {
+      continue;
+    }
+    byId.set(membership.workspaceId, {
+      id: membership.workspaceId,
+      name: membership.organizationName || membership.organization || 'Organization',
+      roles: membership.roleLabels || []
+    });
+  }
+  return [...byId.values()];
+}

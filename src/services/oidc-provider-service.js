@@ -22,6 +22,9 @@ async function createAuthorizationCode(input = {}) {
     email: normalizeEmail(input.email),
     name: normalizeText(input.name, 160) || 'Aegis ID User',
     organization_id: normalizeText(input.organizationId, 120),
+    // The organizations this holder actually belongs to, so a relying party can
+    // offer a choice instead of being pinned to one organization by configuration.
+    organizations: Array.isArray(input.organizations) ? input.organizations : [],
     acr: 'urn:vanguard:aegis-id:auth:oidc-wallet-required',
     nonce: normalizeText(input.nonce, 180),
     auth_time: Math.floor(Date.now() / 1000)
