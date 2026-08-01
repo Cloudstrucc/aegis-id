@@ -60,7 +60,22 @@ const DEFAULT_CLAIMS = [
   { key: 'email', label: 'Email', type: 'email', required: true, defaultValue: 'identity@vanguardcs.ca' },
   { key: 'department', label: 'Department', type: 'text', required: true, defaultValue: 'Cloud Services' },
   { key: 'employmentStatus', label: 'Employment status', type: 'text', required: true, defaultValue: 'active' },
-  { key: 'assuranceLevel', label: 'Assurance level', type: 'text', required: true, defaultValue: 'FIDO2_YUBIKEY' }
+  {
+    key: 'assuranceLevel',
+    label: 'Assurance level',
+    type: 'select',
+    required: true,
+    defaultValue: 'FIDO2_YUBIKEY',
+    // How the holder proves themselves. Presented as a choice so the issuer
+    // states it deliberately rather than inheriting a value that claims hardware
+    // backing. Hardware and passkey count as high assurance, which is what a
+    // self-service wallet recovery suspends until an organization re-attests.
+    options: [
+      { value: 'FIDO2_YUBIKEY', label: 'Hardware security key (YubiKey / FIDO2)' },
+      { value: 'PASSKEY', label: 'Passkey (device biometric)' },
+      { value: 'PASSWORD', label: 'Password only' }
+    ]
+  }
 ];
 
 const DEFAULT_ROLES = [

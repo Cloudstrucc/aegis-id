@@ -131,6 +131,24 @@ An explicitly supplied level always wins. Derivation only considers an assurance
 value the issuer actually provided, so the sample claim default does not silently
 mark every credential as high assurance.
 
+### Choosing an assurance level
+
+The assurance claim on a credential is a choice rather than free text, so the
+issuer states how the holder proves themselves instead of inheriting a value that
+claims hardware backing:
+
+| Choice | Derived level | Effect on recovery |
+|---|---|---|
+| Hardware security key (YubiKey / FIDO2) | high | Suspended by a Tier-1 self-service recovery |
+| Passkey (device biometric) | high | Suspended by a Tier-1 self-service recovery |
+| Password only | medium | Restored by a Tier-1 self-service recovery |
+
+The default stays **Hardware security key**, because the Verified ID demo
+authorization rule only grants portal access for that value. Choosing an
+assurance level does not gate acceptance: a holder needs a passkey to accept a
+wallet challenge only when the organization sets its wallet approval passkey
+policy to required.
+
 ## Delivery of recovery codes
 
 One-time codes are sent to the wallet's registered contact. Configure delivery at

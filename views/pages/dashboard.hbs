@@ -478,7 +478,15 @@
             {{#each orgAdmin.claimDefinitions}}
               <div class="field-group">
                 <label for="issue-claim-{{key}}">{{label}}</label>
-                <input id="issue-claim-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{defaultValue}}">
+                {{#if options}}
+                  <select id="issue-claim-{{key}}" name="claim_{{key}}">
+                    {{#each options}}
+                      <option value="{{value}}" {{#if (eq value ../defaultValue)}}selected{{/if}}>{{label}}</option>
+                    {{/each}}
+                  </select>
+                {{else}}
+                  <input id="issue-claim-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{defaultValue}}">
+                {{/if}}
               </div>
             {{/each}}
           </div>
@@ -793,7 +801,15 @@
               {{#each claimFields}}
                 <div class="field-group">
                   <label for="credential-{{../id}}-{{key}}">{{label}}</label>
-                  <input id="credential-{{../id}}-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{value}}">
+                  {{#if options}}
+                    <select id="credential-{{../id}}-{{key}}" name="claim_{{key}}">
+                      {{#each options}}
+                        <option value="{{value}}" {{#if (eq value ../value)}}selected{{/if}}>{{label}}</option>
+                      {{/each}}
+                    </select>
+                  {{else}}
+                    <input id="credential-{{../id}}-{{key}}" name="claim_{{key}}" type="{{type}}" value="{{value}}">
+                  {{/if}}
                 </div>
               {{/each}}
             </div>

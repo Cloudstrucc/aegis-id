@@ -190,3 +190,44 @@ test('Exchange and Gmail presets use STARTTLS on 587', async () => {
     assert.equal(EMAIL_PRESETS.gmail.host, 'smtp.gmail.com');
   });
 });
+
+test('the assurance claim is a choice, not a free-text field', async () => {
+  await withEnv({}, async () => {
+    const orgAdmin = require('../src/services/org-admin-service');
+    const credential = await orgAdmin.issueCredential(workspace, subscription, {
+      holderEmail: 'claims@example.com'
+    });
+    const view = await orgAdmin.getOrgAdminView(workspace, subscription, {});
+    const assurance = view.claimDefinitions.find((claim) => claim.key === 'assuranceLevel');
+
+    assert.equal(assurance.type, 'select');
+    assert.deepEqual(
+      assurance.options.map((option) => option.value),
+      ['FIDO2_YUBIKEY', 'PASSKEY', 'PASSWORD']
+    );
+    // The default must stay FIDO2_YUBIKEY: the Verified ID demo authorization
+    // rule only grants portal access for that value.
+    assert.equal(assurance.defaultValue, 'FIDO2_YUBIKEY');
+    assert.ok(credential.id);
+  });
+});
+
+test('each assurance choice maps to the level a Tier-1 recovery acts on', async () => {
+  await withEnv({ CREDENTIAL_ASSURANCE_MODE: 'derive' }, async () => {
+    const orgAdmin = require('../src/services/org-admin-service');
+
+    const cases = [
+      ['FIDO2_YUBIKEY', 'high'],
+      ['PASSKEY', 'high'],
+      ['PASSWORD', 'medium']
+    ];
+
+    for (const [choice, expected] of cases) {
+      const credential = await orgAdmin.issueCredential(workspace, subscription, {
+        holderEmail: `${choice.toLowerCase()}@example.com`,
+        claim_assuranceLevel: choice
+      });
+      assert.equal(credential.assuranceLevel, expected, `${choice} should be ${expected}`);
+    }
+  });
+});
