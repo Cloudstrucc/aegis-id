@@ -6666,9 +6666,17 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 /* Page-level heading: the global h1 is sized for the marketing hero, which is
-   oversized for an interior page and crowds the fixed header. */
+   oversized for an interior page. The site header is fixed and roughly 104px
+   tall, so an interior page that starts at the top of the document has to clear
+   it explicitly or the heading renders underneath it. */
 .band--page-top {
-  padding-top: 80px;
+  padding-top: calc(104px + 48px);
+}
+
+@media (max-width: 760px) {
+  .band--page-top {
+    padding-top: calc(104px + 24px);
+  }
 }
 
 .section-heading--page h1 {
