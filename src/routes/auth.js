@@ -220,7 +220,7 @@ async function getPostAuthState(req, user) {
     };
   }
 
-  const redirectUrl = req.session.returnTo || (req.session.subscriptionDraft ? '/subscribe' : '/account');
+  const redirectUrl = req.session.returnTo || (req.session.subscriptionDraft ? '/subscribe' : '/');
   return {
     redirectUrl,
     subscriptionDraft: req.session.subscriptionDraft || null

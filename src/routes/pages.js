@@ -9,6 +9,7 @@ const { getHomeContent } = require('../services/home-content');
 const { getCredentialInvitationView } = require('../services/org-admin-service');
 const { authorize } = require('../middleware/authorization');
 const { getTestingApps } = require('../services/home-content');
+const { buildAccountLanding } = require('../services/account-landing-service');
 const {
   getNotificationSettingsForDisplay,
   updateNotificationSettings
@@ -18,8 +19,21 @@ const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
 
-router.get('/', authorize('public.home'), (req, res) => {
-  res.render('pages/home', getHomeContent());
+// Signed-in users land on their organizations rather than the marketing page.
+router.get('/', authorize('public.home'), async (req, res, next) => {
+  try {
+    if (req.isAuthenticated?.() && req.user) {
+      const landing = await buildAccountLanding(req.user);
+      if (landing.redirectTo) {
+        return res.redirect(303, landing.redirectTo);
+      }
+      return res.render('pages/account', landing.view);
+    }
+
+    res.render('pages/home', getHomeContent());
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get('/architecture', requireAuthenticated, authorize('account.view'), (req, res) => {
