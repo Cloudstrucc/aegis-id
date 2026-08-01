@@ -23,7 +23,10 @@ struct HomeView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .navigationTitle("Aegis ID")
+        // The hero card already carries the Aegis ID branding, so the navigation
+        // title only repeated it and pushed the content down.
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     private var landingHero: some View {
