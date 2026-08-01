@@ -44,6 +44,9 @@ final class WalletStore: ObservableObject {
     @Published var recoveryOptions: WalletRegistrationClient.RecoveryOptions?
     /// Populated only outside production, where the server echoes the OTP.
     @Published var devDeliveredOtp: String?
+    /// Set when the server no longer recognises this device's wallet, so setup
+    /// can explain why the holder is being asked to register again.
+    @Published var walletServerMismatch = false
 
     let registrationClient = WalletRegistrationClient()
 

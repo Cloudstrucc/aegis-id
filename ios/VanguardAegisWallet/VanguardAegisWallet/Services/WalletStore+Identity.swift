@@ -46,6 +46,38 @@ extension WalletStore {
 
     var walletId: String? { identity?.walletId }
 
+    /// Confirm the server still knows this wallet.
+    ///
+    /// A wallet can disappear server-side (a reset environment, a restore from an
+    /// older backup). The app trusts its local Keychain, so without this check it
+    /// would show a registered wallet whose every request fails, with no way out
+    /// but deleting the app. Only a definite "not found" clears the identity —
+    /// a transport failure means we are offline, not that the wallet is gone.
+    func verifyWalletStillRegistered() async {
+        guard let walletId = identity?.walletId else {
+            return
+        }
+
+        do {
+            _ = try await registrationClient.fetchProfile(walletId: walletId)
+            walletServerMismatch = false
+        } catch WalletRegistrationError.notFound {
+            clearLocalIdentity()
+            walletServerMismatch = true
+        } catch {
+            // Offline or a server error: keep the wallet and try again later.
+        }
+    }
+
+    /// Forget this device's wallet identity and return to first-run setup. The
+    /// wallet on the server, if any, is untouched.
+    func clearLocalIdentity() {
+        deleteKeychain(service: Self.identityService)
+        identity = nil
+        isWalletRegistered = false
+        pendingRecoveryCodes = []
+    }
+
     // MARK: - Invitation guards
 
     /// Reject an invitation addressed to a different wallet before calling the
@@ -232,6 +264,13 @@ extension WalletStore {
             return nil
         }
         return String(data: data, encoding: .utf8)
+    }
+
+    private func deleteKeychain(service: String) {
+        SecItemDelete([
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service
+        ] as CFDictionary)
     }
 
     private func writeKeychain(service: String, value: String) {

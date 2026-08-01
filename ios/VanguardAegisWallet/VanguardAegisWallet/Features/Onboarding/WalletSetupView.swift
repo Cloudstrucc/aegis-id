@@ -46,6 +46,15 @@ struct WalletSetupView: View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Vanguard Aegis ID")
                 .font(.largeTitle.bold())
+            if store.walletServerMismatch {
+                // Explain rather than silently restarting setup.
+                Label(
+                    "This wallet is no longer registered on the server, so it needs to be set up again. Recover it if you have your recovery codes.",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .font(.footnote)
+                .foregroundStyle(.orange)
+            }
             Text("Your wallet holds the credentials your organizations issue to you. Set it up once and you will receive a Wallet ID to share with your administrators.")
                 .foregroundStyle(.secondary)
             Spacer()

@@ -70,6 +70,12 @@ struct WalletRegistrationClient {
         ])
     }
 
+    /// Fetch the wallet profile. Throws `.notFound` when the server has no such
+    /// wallet, which the app uses to detect a stale local identity.
+    func fetchProfile(walletId: String) async throws -> RegistrationResult {
+        try await get(path: "api/wallet/\(walletId)/profile")
+    }
+
     func generateRecoveryCodes(walletId: String) async throws -> RecoveryCodesResult {
         try await post(path: "api/wallet/\(walletId)/recovery-codes/regenerate", body: [:])
     }
@@ -195,6 +201,11 @@ struct WalletRegistrationClient {
         }
         guard (200..<300).contains(http.statusCode) else {
             let message = (try? JSONDecoder().decode(ServerError.self, from: data))?.error?.message
+            // 404 means the server genuinely does not know this resource, which
+            // callers treat differently from a transport or server failure.
+            if http.statusCode == 404 {
+                throw WalletRegistrationError.notFound(message ?? "Not found.")
+            }
             throw WalletRegistrationError.server(message ?? "Request failed (\(http.statusCode)).")
         }
         if T.self == EmptyResponse.self {
@@ -207,11 +218,12 @@ struct WalletRegistrationClient {
 enum WalletRegistrationError: LocalizedError {
     case transport(String)
     case server(String)
+    case notFound(String)
     case walletMismatch
 
     var errorDescription: String? {
         switch self {
-        case .transport(let message), .server(let message):
+        case .transport(let message), .server(let message), .notFound(let message):
             return message
         case .walletMismatch:
             return "This invitation is for a different wallet."
