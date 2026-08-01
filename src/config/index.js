@@ -95,6 +95,8 @@ const config = {
     publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.APP_PUBLIC_BASE_URL || 'http://localhost:3000',
     iosTestFlightUrl: process.env.IOS_TESTFLIGHT_PUBLIC_URL || '',
     androidTestingUrl: process.env.ANDROID_TESTING_URL || '',
+    // The signature demo lives inside the Business Expenses app.
+    digitalSignatureUrl: process.env.DIGITAL_SIGNATURE_APP_URL || '',
     businessExpensesUrl:
       process.env.BUSINESS_EXPENSES_APP_URL ||
       (process.env.NODE_ENV === 'production'

@@ -22,11 +22,14 @@ function getTestingApps() {
       title: 'Digital signature approval',
       purpose: 'Exercises the wallet as a signing device for a high-value action.',
       summary:
-        'Raise an approval that must be signed in the wallet, then confirm the signature and its full context were written to the tamper-evident ledger. Runs inside Business Expenses, which is where signed approvals originate.',
+        'Raise an approval that must be signed in the wallet, then confirm the signature and its full context were written to the tamper-evident ledger.',
       tests: ['Wallet challenge', 'Approve and decline paths', 'Non-repudiable evidence'],
-      href: config.app.businessExpensesUrl,
-      action: 'Open signature flow',
-      meta: 'Part of Business Expenses'
+      // Defaults to the signatures area of the Business Expenses app.
+      href:
+        config.app.digitalSignatureUrl ||
+        `${String(config.app.businessExpensesUrl).replace(/\/$/, '')}/apps/signatures`,
+      action: 'Open signature app',
+      meta: 'Signatures app'
     },
     {
       id: 'oidc-wallet',

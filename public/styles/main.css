@@ -6664,3 +6664,14 @@ body:has(.workspace-blade) .site-footer div span {
   border-radius: 999px;
   padding: 3px 10px;
 }
+
+/* Page-level heading: the global h1 is sized for the marketing hero, which is
+   oversized for an interior page and crowds the fixed header. */
+.band--page-top {
+  padding-top: 80px;
+}
+
+.section-heading--page h1 {
+  font-size: clamp(30px, 3.4vw, 52px);
+  line-height: 1.08;
+}
