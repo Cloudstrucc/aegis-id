@@ -87,6 +87,16 @@ const iosBundleIds = configuredIosBundleIds.length
 const didWebDomain = (process.env.AEGIS_DID_WEB_DOMAIN || '').trim();
 const didWebOrigin = normalizedOrigin(process.env.AEGIS_DID_WEB_ORIGIN, didWebDomain ? `https://${didWebDomain}` : '');
 
+// Local-only test affordances. Three independent conditions must hold, so that
+// no single mistake can enable this outside a developer's machine:
+//   1. LOCAL_TEST_MODE is explicitly set (default off)
+//   2. the build is not a production build — dev, qa and prod all run
+//      NODE_ENV=production, so this alone excludes every hosted environment
+//   3. the request arrives on a loopback address (checked per-request in
+//      middleware, since config cannot see the request)
+const localTestModeRequested = booleanFlag(process.env.LOCAL_TEST_MODE, false);
+const localTestModeAllowed = localTestModeRequested && (process.env.NODE_ENV || 'development') !== 'production';
+
 const config = {
   app: {
     name: 'Vanguard Cloud Services - Aegis ID',
@@ -97,6 +107,10 @@ const config = {
     androidTestingUrl: process.env.ANDROID_TESTING_URL || '',
     // The signature demo lives inside the Business Expenses app.
     digitalSignatureUrl: process.env.DIGITAL_SIGNATURE_APP_URL || '',
+    // Requested vs allowed are kept apart so startup can warn when the flag was
+    // set but refused.
+    localTestModeRequested,
+    localTestMode: localTestModeAllowed,
     businessExpensesUrl:
       process.env.BUSINESS_EXPENSES_APP_URL ||
       (process.env.NODE_ENV === 'production'

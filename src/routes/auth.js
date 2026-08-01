@@ -14,6 +14,7 @@ const {
   verifyOtpChallenge
 } = require('../services/auth-service');
 const { writeAuditEvent } = require('../services/audit-service');
+const { isLocalTestRequest } = require('../middleware/local-test-mode');
 const {
   ensureAccountAccessSubscription
 } = require('../services/subscription-service');
@@ -89,6 +90,23 @@ router.post('/auth/login', requireAnonymous, authorize('auth.login'), (req, res,
           description: 'Sign in to Vanguard Cloud Services - Aegis ID.',
           formValues: { email: req.body.email || '' },
           errorMessage: info?.message || 'Invalid email or password.'
+        });
+      }
+
+      // Local test accounts skip the second factor so an automated journey can
+      // sign in without reading a mailbox. Gated by isLocalTestRequest, which
+      // requires the flag, a non-production build, and a loopback request.
+      if (user.testAccount === true && isLocalTestRequest(req)) {
+        return req.logIn(user, async (loginError) => {
+          if (loginError) {
+            return next(loginError);
+          }
+          await writeAuditEvent('auth.login.local-test-mode', {
+            userId: user.id,
+            email: user.email,
+            secondFactor: 'bypassed'
+          });
+          return res.redirect(303, req.session.returnTo || '/');
         });
       }
 

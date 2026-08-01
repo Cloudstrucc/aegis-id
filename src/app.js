@@ -25,6 +25,7 @@ const connectedOAuthRoutes = require('./routes/connected-oauth');
 const developerDocsRoutes = require('./routes/developer-docs');
 const didWebRoutes = require('./routes/did-web');
 const { attachAuthLocals } = require('./middleware/auth');
+const { attachLocalTestMode } = require('./middleware/local-test-mode');
 const { configurePassport } = require('./services/passport-service');
 
 function registerHandlebars() {
@@ -407,6 +408,7 @@ function createApp() {
     res.locals.verifiedIdMode = config.verifiedId.mode;
     next();
   });
+  app.use(attachLocalTestMode);
   app.use(attachAuthLocals);
 
   app.get(
