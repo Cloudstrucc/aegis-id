@@ -137,7 +137,8 @@ require_cmd npm
 require_cmd node
 require_cmd zip
 
-[[ -n "$AEGIS_ORGANIZATION_ID" || -n "${AEGIS_ISSUER_CONNECTION_ID:-}" ]] || fail "Set AEGIS_ORGANIZATION_ID or AEGIS_ISSUER_CONNECTION_ID before deploying."
+# AEGIS_ORGANIZATION_ID is no longer required: holders choose their organization
+# from the ones their own token carries. It stays supported as a fallback.
 
 cd "$APP_DIR"
 
@@ -148,7 +149,7 @@ log "Resource group:$AZURE_RESOURCE_GROUP"
 log "Web app:       $AZURE_WEBAPP_NAME"
 log "Base URL:      $APP_PUBLIC_BASE_URL"
 log "Aegis URL:     $AEGIS_ID_BASE_URL"
-log "Organization:  $AEGIS_ORGANIZATION_ID"
+log "Organization:  ${AEGIS_ORGANIZATION_ID:-<holder chooses>}"
 log "Env file:      $ENV_FILE_PATH"
 if [[ -n "${TENANT_PROFILE:-}" ]]; then
   log "Tenant profile:$TENANT_PROFILE"
@@ -207,7 +208,7 @@ app_settings=(
   "VERIFIED_ID_AUTH_ENABLED=${VERIFIED_ID_AUTH_ENABLED:-true}"
   "YUBIKEY_AUTH_ENABLED=${YUBIKEY_AUTH_ENABLED:-true}"
   "AEGIS_WALLET_PASSKEY_APPROVALS_REQUIRED=${AEGIS_WALLET_PASSKEY_APPROVALS_REQUIRED:-false}"
-  "AEGIS_ORGANIZATION_ID=$AEGIS_ORGANIZATION_ID"
+  "DATA_DIR=${DATA_DIR:-/home/data/business-expenses/$DEPLOY_ENV}"
 )
 
 append_if_set() {
@@ -217,6 +218,7 @@ append_if_set() {
   fi
 }
 
+append_if_set AEGIS_ORGANIZATION_ID
 append_if_set AEGIS_ISSUER_CONNECTION_ID
 
 az webapp config appsettings set \

@@ -19,7 +19,11 @@ const dotenv = require('dotenv');
 
 const rootDir = path.resolve(__dirname, '..');
 dotenv.config({ path: resolveEnvFile(rootDir) });
-const dataDir = path.join(rootDir, 'data', 'runtime');
+// Runtime records live outside the deployment payload when DATA_DIR is set, so
+// a redeploy does not wipe them — on Azure that means /home, not wwwroot.
+const dataDir = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(rootDir, 'data', 'runtime');
 const seedDir = path.join(rootDir, 'data');
 const config = {
   port: Number.parseInt(process.env.PORT || '4300', 10),
