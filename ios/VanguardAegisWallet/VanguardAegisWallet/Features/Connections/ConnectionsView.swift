@@ -81,7 +81,11 @@ private struct ConnectionDetailView: View {
                         } label: {
                             Label("Accept invitation in lab", systemImage: "arrow.triangle.2.circlepath")
                         }
-                        .disabled(isWorking || connection.holderConnectionId != nil)
+                        .disabled(
+                            isWorking
+                                || connection.holderConnectionId != nil
+                                || !connection.invitation.isLabInvitation
+                        )
 
                         Button {
                             run { await store.issueMockCredential(connection) }

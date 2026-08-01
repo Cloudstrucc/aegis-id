@@ -276,7 +276,11 @@ final class WalletStore: ObservableObject {
     }
 
     var latestPendingInvitation: WalletConnection? {
-        connections.first { $0.holderConnectionId == nil }
+        // Product-path connections have no holder id either, but they are already
+        // connected and cannot be accepted through the lab.
+        connections.first {
+            $0.state != .connected && $0.holderConnectionId == nil && $0.invitation.isLabInvitation
+        }
     }
 
     var pendingTransactionCount: Int {

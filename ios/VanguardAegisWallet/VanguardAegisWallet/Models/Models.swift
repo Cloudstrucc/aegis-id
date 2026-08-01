@@ -12,6 +12,13 @@ struct AriesInvitation: Codable, Equatable, Hashable, Identifiable {
     var handshakeProtocols: [String]
     var services: [String]
     var receivedAt: Date
+
+    /// True only for Aries out-of-band invitations. The lab bridge decodes the
+    /// `oob` payload, so offering it for a product-path invitation just fails
+    /// with "the invitation URL must include an oob parameter".
+    var isLabInvitation: Bool {
+        rawURL.contains("oob=")
+    }
 }
 
 struct WalletConnection: Codable, Equatable, Hashable, Identifiable {
