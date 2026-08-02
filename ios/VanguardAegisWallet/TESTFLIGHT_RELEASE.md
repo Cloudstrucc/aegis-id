@@ -153,6 +153,59 @@ xcodebuild -exportArchive \
 
 ## Upload
 
+### Scripted upload (all three environments)
+
+`scripts/release-ios.sh` archives, exports and uploads dev, qa and prod in one
+go. It needs App Store Connect API credentials, which live in an **untracked**
+`.env.ios` at the repository root:
+
+```bash
+cp .env.ios.example .env.ios
+```
+
+Fill in the two values and the script picks them up automatically:
+
+| Variable | Where to find it |
+|---|---|
+| `ASC_KEY_ID` | The 10-character Key ID in the key's row |
+| `ASC_ISSUER_ID` | The team's Issuer ID, a UUID shown above the key list |
+
+Both come from **appstoreconnect.apple.com → Users and Access → Integrations →
+App Store Connect API → Team Keys**. Create a key with the **App Manager** role,
+which is the least privilege that can upload builds.
+
+These are per Apple *team*, not per environment — dev, qa and prod all sign for
+the same team and upload to the same App Store Connect account, so one file
+covers every build. That is why they do not belong in `.env.dev` / `.env.qa` /
+`.env`, which configure the web app and are forwarded to Azure App Service.
+
+The private key is never stored in the repository. Apple lets you download the
+`.p8` exactly once; put it where `altool` looks, named after the Key ID:
+
+```bash
+mkdir -p ~/.appstoreconnect/private_keys
+mv ~/Downloads/AuthKey_<KEY_ID>.p8 ~/.appstoreconnect/private_keys/
+```
+
+Then:
+
+```bash
+scripts/release-ios.sh all
+```
+
+Anything already exported in the shell wins over the file, so CI can supply the
+values as secrets without one. `IOS_ENV_FILE=/path/to/file` points elsewhere.
+
+Without credentials the script still archives and exports, and prints the
+`altool` command to run yourself — useful for checking the builds before any
+credential is involved:
+
+```bash
+SKIP_UPLOAD=1 scripts/release-ios.sh dev
+```
+
+### Manual upload through Xcode
+
 Preferred first upload:
 
 1. Open Xcode.

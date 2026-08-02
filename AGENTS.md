@@ -79,6 +79,16 @@ harness reads `AEGIS_URL_SCHEME` from the project rather than assuming. It also
 launches the app before deep-linking, because opening a custom scheme from the
 home screen raises an "Open in …?" prompt that nothing can dismiss.
 
+## iOS releases
+
+`scripts/release-ios.sh` reads `ASC_KEY_ID` and `ASC_ISSUER_ID` from an
+untracked `.env.ios` at the repo root (template: `.env.ios.example`); exported
+values win, and `IOS_ENV_FILE` overrides the location. These are per Apple
+**team**, not per environment — dev, qa and prod share one App Store Connect
+account — so they never belong in `.env.dev` / `.env.qa` / `.env`, which
+configure the web app and are forwarded to Azure App Service. The `.p8` private
+key lives at `~/.appstoreconnect/private_keys/`, never in the repo.
+
 ## Sign-in and delivery
 
 **Every outbound message goes through `deliverMessage` in

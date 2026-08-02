@@ -246,3 +246,16 @@ For production, do not store keys or credentials in `UserDefaults`. Move wallet 
 ## TestFlight Release
 
 For business-colleague testing on physical iPhones, use the TestFlight runbook in [TESTFLIGHT_RELEASE.md](TESTFLIGHT_RELEASE.md).
+
+To archive, export and upload all three environments in one command:
+
+```bash
+scripts/release-ios.sh all
+```
+
+It reads `ASC_KEY_ID` and `ASC_ISSUER_ID` from an untracked `.env.ios` at the
+repository root — copy `.env.ios.example` and fill it in. The credentials are
+per Apple team rather than per environment, so one file covers dev, qa and prod;
+they do not belong in `.env.dev` / `.env.qa` / `.env`, which configure the web
+app. See [TESTFLIGHT_RELEASE.md](TESTFLIGHT_RELEASE.md#upload) for where to get
+the values and where the `.p8` private key goes.
