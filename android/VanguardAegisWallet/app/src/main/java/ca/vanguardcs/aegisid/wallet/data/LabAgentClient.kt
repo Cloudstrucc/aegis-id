@@ -49,9 +49,30 @@ class LabAgentClient(
         )
     }
 
-    suspend fun fetchOidcWalletChallenges(issuerConnectionId: String, sourceWebAppUrl: String? = null): List<OidcWalletChallenge> {
-        val encoded = URLEncoder.encode(issuerConnectionId, Charsets.UTF_8.name())
-        val response = getJson("/api/oidc-wallet/challenges?connectionId=$encoded", sourceWebAppUrl)
+    /**
+     * Poll for challenges by DIDComm connection, by organization, or both. A
+     * product-path organization has no ACA-Py connection, so querying only by
+     * connectionId returned nothing for it — the wallet appeared to receive no
+     * challenges at all.
+     */
+    suspend fun fetchOidcWalletChallenges(
+        issuerConnectionId: String? = null,
+        organizationId: String? = null,
+        sourceWebAppUrl: String? = null
+    ): List<OidcWalletChallenge> {
+        val query = buildList {
+            if (!issuerConnectionId.isNullOrEmpty()) {
+                add("connectionId=" + URLEncoder.encode(issuerConnectionId, Charsets.UTF_8.name()))
+            }
+            if (!organizationId.isNullOrEmpty()) {
+                add("organizationId=" + URLEncoder.encode(organizationId, Charsets.UTF_8.name()))
+            }
+        }
+        if (query.isEmpty()) {
+            return emptyList()
+        }
+
+        val response = getJson("/api/oidc-wallet/challenges?" + query.joinToString("&"), sourceWebAppUrl)
         val challenges = response.optJSONArray("challenges") ?: return emptyList()
         return (0 until challenges.length()).mapNotNull { index ->
             challenges.optJSONObject(index)?.let(OidcWalletChallenge::fromJson)

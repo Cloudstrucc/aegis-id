@@ -17,6 +17,14 @@ data class AriesInvitation(
     val services: List<String>,
     val receivedAt: Long = System.currentTimeMillis()
 ) {
+    /**
+     * True only for Aries out-of-band invitations. The lab bridge decodes the
+     * `oob` payload, so offering it for a product-path invitation just fails
+     * with "the invitation URL must include an oob parameter".
+     */
+    val isLabInvitation: Boolean
+        get() = rawUrl.contains("oob=")
+
     fun toJson() = JSONObject()
         .put("id", id)
         .put("label", label)

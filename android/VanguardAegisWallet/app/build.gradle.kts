@@ -4,6 +4,36 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+/** Android caps this; a friendly failure beats "For input string". */
+fun Project.resolveVersionCode(): Int {
+    val raw = findProperty("aegisVersionCode") as String? ?: return 1
+    val parsed = raw.toLongOrNull()
+        ?: throw GradleException("aegisVersionCode must be a number, got '$raw'")
+    if (parsed !in 1..2_100_000_000L) {
+        throw GradleException(
+            "aegisVersionCode must be between 1 and 2100000000 (Play's limit), got $parsed. " +
+                "A YYYYMMDDHHMM timestamp does not fit — use minutes since an epoch instead."
+        )
+    }
+    return parsed.toInt()
+}
+
+/**
+ * The three things that differ per environment. Kept in one place so a new
+ * environment cannot be added with, say, a base URL but no URL scheme — which
+ * would build fine and then silently fail to receive deep links.
+ */
+fun com.android.build.api.dsl.ApplicationProductFlavor.aegisEnvironment(
+    baseUrl: String,
+    urlScheme: String,
+    appLinkHost: String
+) {
+    buildConfigField("String", "AEGIS_WEB_APP_BASE_URL", "\"$baseUrl\"")
+    buildConfigField("String", "AEGIS_URL_SCHEME", "\"$urlScheme\"")
+    manifestPlaceholders["aegisUrlScheme"] = urlScheme
+    manifestPlaceholders["aegisAppLinkHost"] = appLinkHost
+}
+
 android {
     namespace = "ca.vanguardcs.aegisid.wallet"
     compileSdk = 35
@@ -12,14 +42,67 @@ android {
         applicationId = "ca.vanguardcs.aegisid.wallet"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // Overridable so the release script can stamp a shared, increasing
+        // number across every flavour in one run.
+        //
+        // Play caps versionCode at 2100000000, so the YYYYMMDDHHMM stamp iOS
+        // uses for CFBundleVersion does not fit here. The release script passes
+        // minutes elapsed since 2020-01-01, which is monotonic, ~3.4 million
+        // today, and good until the year 5000.
+        versionCode = resolveVersionCode()
+        versionName = (project.findProperty("aegisVersionName") as String?) ?: "0.1.1"
+    }
 
-        buildConfigField(
-            "String",
-            "AEGIS_WEB_APP_BASE_URL",
-            "\"https://vanguard-aegis-id-65067d.azurewebsites.net\""
-        )
+    // One flavour per environment, mirroring the iOS build configurations, so
+    // dev, qa and prod can be installed side by side on one device and each
+    // talks to its own web app.
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("local") {
+            dimension = "environment"
+            applicationIdSuffix = ".local"
+            versionNameSuffix = "-local"
+            resValue("string", "app_name", "Aegis ID Local")
+            // 10.0.2.2 is how an emulator reaches the host machine; localhost
+            // would be the emulator itself.
+            aegisEnvironment(
+                baseUrl = "http://10.0.2.2:3000",
+                urlScheme = "aegisid-local",
+                appLinkHost = "10.0.2.2"
+            )
+        }
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue("string", "app_name", "Aegis ID Dev")
+            aegisEnvironment(
+                baseUrl = "https://vanguard-aegis-id-dev-65067d.azurewebsites.net",
+                urlScheme = "aegisid-dev",
+                appLinkHost = "vanguard-aegis-id-dev-65067d.azurewebsites.net"
+            )
+        }
+        create("qa") {
+            dimension = "environment"
+            applicationIdSuffix = ".qa"
+            versionNameSuffix = "-qa"
+            resValue("string", "app_name", "Aegis ID QA")
+            aegisEnvironment(
+                baseUrl = "https://vanguard-aegis-id-qa-65067d.azurewebsites.net",
+                urlScheme = "aegisid-qa",
+                appLinkHost = "vanguard-aegis-id-qa-65067d.azurewebsites.net"
+            )
+        }
+        create("prod") {
+            dimension = "environment"
+            resValue("string", "app_name", "Aegis ID")
+            aegisEnvironment(
+                baseUrl = "https://vanguard-aegis-id-65067d.azurewebsites.net",
+                urlScheme = "aegisid",
+                appLinkHost = "vanguard-aegis-id-65067d.azurewebsites.net"
+            )
+        }
     }
 
     buildFeatures {

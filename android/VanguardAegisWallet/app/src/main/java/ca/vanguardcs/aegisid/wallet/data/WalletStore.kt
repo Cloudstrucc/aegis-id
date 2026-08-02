@@ -355,11 +355,8 @@ class WalletStore(
     }
 
     fun refreshOidcWalletChallenges(connection: WalletConnection) {
-        if (current(connection)?.issuerConnectionId == null) {
-            lastLabError = "Accept the invitation before checking web app challenges."
-            return
-        }
-
+        // No issuerConnectionId check: a product-path organization never has
+        // one, and polling by organization works without it.
         runLabOperation {
             val added = importOidcWalletChallenges(connection)
             if (added.isNotEmpty()) {
@@ -374,7 +371,10 @@ class WalletStore(
     fun autoRefreshOidcWalletChallenges() {
         viewModelScope.launch {
             while (true) {
-                val refreshable = connections.filter { it.issuerConnectionId != null }
+                // Anything reachable by either route, not just lab connections.
+                val refreshable = connections.filter {
+                    it.issuerConnectionId != null || it.invitation.organizationId != null
+                }
                 val added = mutableListOf<WalletTransaction>()
                 for (connection in refreshable) {
                     try {
@@ -619,10 +619,16 @@ class WalletStore(
     }
 
     private suspend fun importOidcWalletChallenges(connection: WalletConnection): List<WalletTransaction> {
-        val issuerConnectionId = current(connection)?.issuerConnectionId ?: return emptyList()
+        val issuerConnectionId = current(connection)?.issuerConnectionId
+        val organizationId = connection.invitation.organizationId
+        if (issuerConnectionId == null && organizationId == null) {
+            return emptyList()
+        }
+
         val challenges = labClient.fetchOidcWalletChallenges(
-            issuerConnectionId,
-            connection.invitation.sourceWebAppUrl
+            issuerConnectionId = issuerConnectionId,
+            organizationId = organizationId,
+            sourceWebAppUrl = connection.invitation.sourceWebAppUrl
         )
         val added = challenges
             .filterNot { challenge -> transactions.any { it.webSessionId == challenge.sessionId } }

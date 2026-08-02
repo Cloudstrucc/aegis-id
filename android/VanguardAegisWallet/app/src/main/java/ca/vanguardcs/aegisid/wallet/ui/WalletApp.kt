@@ -488,36 +488,59 @@ private fun ConnectionCard(connection: WalletConnection, store: WalletStore) {
             KeyValue("Organization", connection.invitation.organizationName)
         }
         KeyValue("Holder connection", connection.holderConnectionId)
-        KeyValue("Issuer connection", connection.issuerConnectionId)
+        if (connection.invitation.isLabInvitation) {
+            KeyValue("Issuer connection", connection.issuerConnectionId)
+        }
 
-        Button(
-            onClick = { store.acceptInLab(connection) },
-            enabled = !store.isWorking && connection.holderConnectionId == null,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Accept invitation in lab")
-        }
-        OutlinedButton(
-            onClick = { store.issueMockCredential(connection) },
-            enabled = !store.isWorking && connection.issuerConnectionId != null,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Issue mock credential")
-        }
-        OutlinedButton(
-            onClick = { store.sendWalletChallenge(connection) },
-            enabled = !store.isWorking && connection.issuerConnectionId != null,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Send wallet challenge")
-        }
+        // Works for every connection: a product-path wallet polls by
+        // organization, a lab wallet by its DIDComm connection. Gating this on
+        // issuerConnectionId disabled it permanently for product-path
+        // organizations, which never have one.
         OutlinedButton(
             onClick = { store.refreshOidcWalletChallenges(connection) },
-            enabled = !store.isWorking && connection.issuerConnectionId != null,
+            enabled = !store.isWorking,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Fetch OIDC challenges")
+            Text("Check for challenges")
         }
+
+        // ACA-Py only. Hidden entirely for product-path connections rather than
+        // shown greyed out with no explanation.
+        if (connection.invitation.isLabInvitation) {
+            Text(
+                "Lab actions",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.Gray
+            )
+            Button(
+                onClick = { store.acceptInLab(connection) },
+                enabled = !store.isWorking && connection.holderConnectionId == null,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Accept invitation in lab")
+            }
+            OutlinedButton(
+                onClick = { store.issueMockCredential(connection) },
+                enabled = !store.isWorking && connection.issuerConnectionId != null,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Issue mock credential")
+            }
+            OutlinedButton(
+                onClick = { store.sendWalletChallenge(connection) },
+                enabled = !store.isWorking && connection.issuerConnectionId != null,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Send wallet challenge")
+            }
+            Text(
+                "These drive the ACA-Py interoperability lab and need a DIDComm connection.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+        }
+
         OutlinedButton(
             onClick = { store.deleteConnection(connection) },
             enabled = !store.isWorking,

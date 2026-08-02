@@ -23,10 +23,19 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:host="invite"
-                    android:scheme="aegisid" />
+                    android:scheme="${aegisUrlScheme}" />
                 <data
                     android:host="credential-invite"
-                    android:scheme="aegisid" />
+                    android:scheme="${aegisUrlScheme}" />
+                <!-- Product-path organization invitations, which do not go
+                     through ACA-Py. Without this the deep link never reaches
+                     the app. -->
+                <data
+                    android:host="org-invite"
+                    android:scheme="${aegisUrlScheme}" />
+                <data
+                    android:host="wallet"
+                    android:scheme="${aegisUrlScheme}" />
             </intent-filter>
 
             <intent-filter>
@@ -41,7 +50,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:host="vanguard-aegis-id-65067d.azurewebsites.net"
+                    android:host="${aegisAppLinkHost}"
                     android:pathPrefix="/wallet"
                     android:scheme="https" />
             </intent-filter>
