@@ -101,6 +101,11 @@ const config = {
   app: {
     name: 'Vanguard Cloud Services - Aegis ID',
     env: process.env.NODE_ENV || 'development',
+    // The deployment's own name (local/dev/qa/prod), as distinct from NODE_ENV,
+    // which is 'production' for dev, qa and prod alike. Surfaced so a page can
+    // tell a tester which build belongs to the site they are on.
+    deployEnv: process.env.APP_ENV || process.env.DEPLOY_ENV ||
+      (process.env.NODE_ENV === 'production' ? 'prod' : 'local'),
     port: Number.parseInt(process.env.PORT || '3000', 10),
     publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.APP_PUBLIC_BASE_URL || 'http://localhost:3000',
     iosTestFlightUrl: process.env.IOS_TESTFLIGHT_PUBLIC_URL || '',

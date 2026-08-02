@@ -2,6 +2,13 @@
   <p class="eyebrow">Mobile wallet</p>
   <h1>Install the Aegis ID wallet on Android.</h1>
   <p>This is a testing build, installed directly rather than through Google Play. It takes about two minutes and Android will ask you to confirm a few things along the way.</p>
+  {{#if isNonProdBuild}}
+    <p class="download-env-note">
+      You are on the <strong>{{deployEnv}}</strong> environment, so this page offers
+      the <strong>{{deployEnv}}</strong> build. Each build only talks to the site it
+      came from — install the one from the site you were asked to test.
+    </p>
+  {{/if}}
 </section>
 
 <section class="band band--white">
@@ -21,6 +28,12 @@
       </p>
       {{#if androidPackageName}}
         <p class="form-footnote">Package: <code>{{androidPackageName}}</code></p>
+      {{/if}}
+      {{#if isNonProdBuild}}
+        <p class="form-footnote">
+          Because the package name differs per environment, the {{deployEnv}} build
+          installs alongside any others you already have rather than replacing them.
+        </p>
       {{/if}}
     </div>
 

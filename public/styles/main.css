@@ -840,6 +840,16 @@ h3 {
   flex: none;
 }
 
+.download-env-note {
+  margin: 14px 0 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--cyan-500);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 14.5px;
+  max-width: 620px;
+}
+
 .install-steps {
   display: grid;
   gap: 14px;

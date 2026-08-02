@@ -99,7 +99,11 @@ router.get('/downloads/android', authorize('public.home'), (req, res) => {
     description: 'Download and install the Vanguard Aegis ID Android wallet for testing.',
     androidDownloadUrl: config.app.androidTestingUrl,
     hasAndroidDownloadUrl: Boolean(config.app.androidTestingUrl),
-    androidPackageName: config.mobileApps.androidPackageName
+    androidPackageName: config.mobileApps.androidPackageName,
+    deployEnv: config.app.deployEnv,
+    // A build is bound to the server it was compiled against, so a tester who
+    // installs the wrong one gets failures that look like the app is broken.
+    isNonProdBuild: config.app.deployEnv !== 'prod'
   });
 });
 
