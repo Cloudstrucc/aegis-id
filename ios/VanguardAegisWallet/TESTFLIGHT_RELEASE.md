@@ -228,6 +228,25 @@ credential is involved:
 scripts/release-ios.sh --env dev --skip-upload
 ```
 
+### Export compliance
+
+`Info.plist` declares `ITSAppUsesNonExemptEncryption = false`, so TestFlight no
+longer shows **Missing Compliance** on every upload and builds go straight to
+*Testing*. One entry covers all three schemes, which share the same plist.
+
+That declaration is accurate for this app today: the only cryptographic
+primitive it implements is `P256.Signing` for the wallet device key, which is a
+digital signature rather than encryption, and everything else — TLS, Keychain,
+Secure Enclave — is Apple's own. Apps whose encryption is limited to
+authentication and digital signatures are exempt.
+
+**Revisit it if the app ever encrypts data itself** — for example encrypting
+credentials at rest with its own key rather than relying on Keychain. It is a
+regulatory declaration, not a build setting.
+
+Builds uploaded before this was added still show *Missing Compliance* and need
+the one-time **Manage** click each; only new uploads are covered.
+
 ### Manual upload through Xcode
 
 Preferred first upload:

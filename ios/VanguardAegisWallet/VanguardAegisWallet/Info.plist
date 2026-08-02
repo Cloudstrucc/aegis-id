@@ -20,6 +20,14 @@
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<!-- Export compliance. The app implements no encryption of its own: the one
+	     cryptographic primitive it uses is P256 *signing* for the wallet device
+	     key, which is a digital signature rather than encryption, and everything
+	     else is Apple's own TLS and Keychain. Declaring it here means TestFlight
+	     stops asking on every single build. Revisit if the app ever encrypts
+	     data itself. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
