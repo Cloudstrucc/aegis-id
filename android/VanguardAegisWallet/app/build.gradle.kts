@@ -145,6 +145,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     // Wallet ID and device key are stored encrypted at rest.
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    // QR rendering only — pure Java, no camera. An administrator scans the
+    // holder's Wallet ID from their screen.
+    implementation("com.google.zxing:core:3.5.3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 

@@ -11,7 +11,10 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetPublicKeyCredentialOption
 import androidx.credentials.PublicKeyCredential
+import androidx.lifecycle.lifecycleScope
 import ca.vanguardcs.aegisid.wallet.data.WalletStore
+import ca.vanguardcs.aegisid.wallet.data.verifyWalletStillRegistered
+import kotlinx.coroutines.launch
 import ca.vanguardcs.aegisid.wallet.ui.WalletApp
 import org.json.JSONObject
 
@@ -34,6 +37,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // A wallet can disappear server-side (a reset environment, a restore
+        // from an older backup). Without this the app would keep showing a
+        // registered wallet whose every request fails.
+        lifecycleScope.launch { store.verifyWalletStillRegistered() }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -42,9 +53,16 @@ class MainActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent?) {
         val data = intent?.data ?: return
-        if ((data.scheme == "aegisid" && (data.host == "invite" || data.host == "credential-invite")) ||
-            data.scheme == "openid-vc"
-        ) {
+        val scheme = data.scheme?.lowercase()
+
+        // Each flavour registers its own scheme, so matching the literal
+        // "aegisid" would drop every deep link outside the prod build. The
+        // hosts must stay in step with the intent filters in the manifest.
+        val isAegisScheme = scheme == BuildConfig.AEGIS_URL_SCHEME.lowercase() ||
+            scheme?.startsWith("aegisid") == true
+        val isKnownHost = data.host?.lowercase() in setOf("invite", "credential-invite", "org-invite", "wallet")
+
+        if ((isAegisScheme && isKnownHost) || scheme == "openid-vc") {
             store.importInvitation(data.toString())
         }
     }

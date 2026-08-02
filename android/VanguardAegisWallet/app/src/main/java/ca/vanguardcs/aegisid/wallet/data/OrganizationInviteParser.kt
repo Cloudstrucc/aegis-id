@@ -1,6 +1,7 @@
 package ca.vanguardcs.aegisid.wallet.data
 
 import android.net.Uri
+import ca.vanguardcs.aegisid.wallet.BuildConfig
 
 /**
  * `aegisid://org-invite?...` — the ACA-Py-free organization invitation.
@@ -44,7 +45,12 @@ object OrganizationInviteParser {
         val scheme = uri.scheme?.lowercase()
         val host = uri.host?.lowercase()
         val path = uri.path?.lowercase().orEmpty()
-        return scheme == "aegisid" && (host == "org-invite" || path.contains("org-invite"))
+        // Every flavour registers its own scheme (aegisid, aegisid-dev,
+        // aegisid-qa, aegisid-local), so matching the literal "aegisid" would
+        // silently reject every invite outside the prod build.
+        val isAegisScheme = scheme == BuildConfig.AEGIS_URL_SCHEME.lowercase() ||
+            scheme?.startsWith("aegisid") == true
+        return isAegisScheme && (host == "org-invite" || path.contains("org-invite"))
     }
 
     private fun value(uri: Uri, vararg names: String): String? {

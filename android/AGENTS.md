@@ -62,6 +62,24 @@ hand — it is only two files:
 
 x86_64 images cannot run on Apple Silicon, which rules out the API 36 AVD.
 
+## Wallet identity
+
+Registration, recovery, contact changes and organization acceptance live in
+`WalletStoreIdentity.kt` as extensions on `WalletStore`, talking to the product
+API through `WalletRegistrationClient` — never through ACA-Py, so they work on
+deployments with no Aries lab. The setup gate in `WalletApp` blocks the tabs
+until a Wallet ID exists, because a credential cannot bind without one.
+
+Identity and the device key live in `EncryptedSharedPreferences`. Recovery
+**rotates** the device key rather than restoring it, which is why nothing
+sensitive needs backing up.
+
+**Any code that matches a URL scheme must not hardcode `aegisid`** — each
+flavour registers its own (`aegisid-dev`, `aegisid-qa`, `aegisid-local`), so a
+literal match silently drops every deep link outside the prod build. This
+applies to `MainActivity.handleIntent` and `OrganizationInviteParser`, both of
+which had that bug.
+
 ## Rules
 
 - Do not fake security-sensitive flows.

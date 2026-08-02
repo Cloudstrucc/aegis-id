@@ -37,6 +37,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -73,13 +74,40 @@ fun WalletApp(
     onCreatePasskey: suspend (String) -> JSONObject,
     onGetPasskey: suspend (String) -> JSONObject
 ) {
+    var showRecovery by rememberSaveable { mutableStateOf(false) }
+
+    // The theme wraps both branches: the setup gate is a full screen of its own
+    // rather than a tab, so it would otherwise render in Material's defaults.
+    VanguardAegisTheme {
+        // Setup gate: no credential can bind to this wallet until it has a
+        // Wallet ID, so the tabs stay unavailable until registration finishes.
+        // Existing connections and transactions are untouched by this.
+        if (!store.isWalletRegistered) {
+            if (showRecovery) {
+                WalletRecoveryScreen(store = store, onCancel = { showRecovery = false })
+            } else {
+                WalletSetupScreen(store = store, onRecoverInstead = { showRecovery = true })
+            }
+        } else {
+            WalletTabs(store, onCreatePasskey, onGetPasskey)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WalletTabs(
+    store: WalletStore,
+    onCreatePasskey: suspend (String) -> JSONObject,
+    onGetPasskey: suspend (String) -> JSONObject
+) {
     var selectedTab by rememberSaveable { mutableStateOf(WalletTab.Home) }
 
     LaunchedEffect(Unit) {
         store.autoRefreshOidcWalletChallenges()
     }
 
-    VanguardAegisTheme {
+    run {
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -380,9 +408,18 @@ private fun ConnectionsScreen(store: WalletStore) {
 @Composable
 private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String) -> JSONObject) {
     var passkeySubject by rememberSaveable { mutableStateOf(store.walletPasskeySubject) }
+    var showProfile by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         store.refreshWalletPasskeyStatus()
+    }
+
+    if (showProfile) {
+        Column(Modifier.fillMaxSize()) {
+            TextButton(onClick = { showProfile = false }) { Text("< Settings") }
+            WalletProfileScreen(store)
+        }
+        return
     }
 
     LazyColumn(
@@ -390,6 +427,23 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        item {
+            AegisCard {
+                Text("My wallet", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    store.identity?.walletId ?: "Not registered",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(store.identity?.email ?: "", color = Color.Gray)
+                Button(
+                    onClick = { showProfile = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Wallet ID, contact and recovery") }
+            }
+        }
+
         item {
             AegisCard {
                 VanguardLogo()

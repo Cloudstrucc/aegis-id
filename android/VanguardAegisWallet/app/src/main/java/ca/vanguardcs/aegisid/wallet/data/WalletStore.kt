@@ -27,9 +27,36 @@ import org.json.JSONObject
 
 class WalletStore(
     context: Context,
-    private val labClient: LabAgentClient = LabAgentClient()
+    private val labClient: LabAgentClient = LabAgentClient(),
+    private val registrationClient: WalletRegistrationClient = WalletRegistrationClient()
 ) : ViewModel() {
     private val preferences = context.applicationContext.getSharedPreferences("vanguard-aegis-wallet", Context.MODE_PRIVATE)
+    private val identityStore = WalletIdentityStore(context.applicationContext)
+
+    // --- wallet identity ---------------------------------------------------
+    var identity by mutableStateOf<WalletIdentityRecord?>(null)
+        private set
+    var isWalletRegistered by mutableStateOf(false)
+        private set
+
+    /** Shown once during setup and never persisted. */
+    var pendingRecoveryCodes by mutableStateOf<List<String>>(emptyList())
+        private set
+
+    /** True when the server no longer knows a wallet this device thinks it has. */
+    var walletServerMismatch by mutableStateOf(false)
+        private set
+
+    var pendingContactChallengeId by mutableStateOf<String?>(null)
+        private set
+
+    // --- recovery ----------------------------------------------------------
+    var recoveryRequestId by mutableStateOf<String?>(null)
+        private set
+    var recoveryWalletId by mutableStateOf<String?>(null)
+        private set
+    var recoveryOptions by mutableStateOf<WalletRegistrationClient.RecoveryOptions?>(null)
+        private set
 
     var connections by mutableStateOf<List<WalletConnection>>(emptyList())
         private set
@@ -56,6 +83,73 @@ class WalletStore(
 
     init {
         load()
+        identity = identityStore.load()
+        isWalletRegistered = identity != null
+    }
+
+    val walletId: String?
+        get() = identity?.walletId
+
+    // --- identity plumbing -------------------------------------------------
+    //
+    // The identity flows live in WalletStoreIdentity.kt as extensions, so these
+    // are the narrow seams they mutate state through. Everything stays
+    // `private set` from the UI's point of view.
+
+    internal val registrationClientRef: WalletRegistrationClient
+        get() = registrationClient
+
+    internal fun ensureDeviceKey(): String = identityStore.ensureDeviceKey()
+
+    internal fun rotateDeviceKey(): String = identityStore.rotateDeviceKey()
+
+    internal fun persistIdentity(record: WalletIdentityRecord) {
+        identityStore.save(record)
+        identity = record
+    }
+
+    internal fun clearIdentityStorage() {
+        identityStore.clear()
+        identity = null
+    }
+
+    internal fun markWalletRegistered(registered: Boolean) {
+        isWalletRegistered = registered
+    }
+
+    internal fun setPendingRecoveryCodes(codes: List<String>) {
+        pendingRecoveryCodes = codes
+    }
+
+    internal fun setWalletServerMismatch(mismatch: Boolean) {
+        walletServerMismatch = mismatch
+    }
+
+    fun acknowledgeWalletServerMismatch() {
+        walletServerMismatch = false
+    }
+
+    internal fun setPendingContactChallenge(challengeId: String?) {
+        pendingContactChallengeId = challengeId
+    }
+
+    internal fun setRecoveryRequest(requestId: String?, forWalletId: String?) {
+        recoveryRequestId = requestId
+        recoveryWalletId = forWalletId
+    }
+
+    internal fun setRecoveryOptions(options: WalletRegistrationClient.RecoveryOptions?) {
+        recoveryOptions = options
+    }
+
+    internal fun setImportResult(message: String? = null, error: String? = null) {
+        lastImportMessage = message
+        lastImportError = error
+    }
+
+    internal fun addConnection(connection: WalletConnection) {
+        connections = listOf(connection) + connections
+        saveConnections()
     }
 
     val latestPendingInvitation: WalletConnection?
@@ -118,6 +212,17 @@ class WalletStore(
         lastLabError = null
 
         try {
+            // Product-path organization invitations, which never touch ACA-Py.
+            if (OrganizationInviteParser.canParse(rawText)) {
+                val invite = OrganizationInviteParser.parse(rawText)
+                if (invite == null) {
+                    lastImportError = "That organization invitation could not be read."
+                    return
+                }
+                viewModelScope.launch { acceptOrganizationInvite(invite) }
+                return
+            }
+
             if (AegisCredentialInviteParser.canParse(rawText)) {
                 importCredentialInvite(AegisCredentialInviteParser.parse(rawText))
                 return
