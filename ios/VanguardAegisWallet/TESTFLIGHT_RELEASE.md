@@ -220,6 +220,25 @@ Other flags:
 Anything already exported in the shell wins over the file, so CI can supply the
 values as secrets without one. `IOS_ENV_FILE=/path/to/file` points elsewhere.
 
+The script says which source each value came from:
+
+```
+Loaded from .env.ios: ASC_KEY_ID ASC_ISSUER_ID
+Taken from the environment, not the file: ASC_KEY_ID
+```
+
+If you see the second line unexpectedly, a stale `export` is shadowing the file:
+
+```bash
+unset ASC_KEY_ID ASC_ISSUER_ID
+```
+
+Both values and the presence of the matching `.p8` are checked before any
+archiving, so a bad credential fails in a second rather than after a
+ten-minute build. `altool` reports a malformed Key ID as a confusing
+"Failed to load AuthKey file" naming a path nobody wrote, so the script
+catches that shape first.
+
 Without credentials the script still archives and exports, and prints the
 `altool` command to run yourself — useful for checking the builds before any
 credential is involved:

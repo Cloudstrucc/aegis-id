@@ -44,7 +44,7 @@ log() { printf '\n[%s] %s\n' "$(date '+%H:%M:%S')" "$*"; }
 load_ios_env() {
   [[ -f "$IOS_ENV_FILE" ]] || return 0
 
-  local line key value
+  local line key value loaded="" overridden=""
   while IFS= read -r line || [[ -n "$line" ]]; do
     line="${line%%$'\r'}"
     [[ -z "${line// }" || "$line" == \#* ]] && continue
@@ -59,12 +59,45 @@ load_ios_env() {
     value="${value#\'}"; value="${value%\'}"
 
     [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
-    [[ -n "${!key:-}" ]] && continue
+    if [[ -n "${!key:-}" ]]; then
+      # Deliberate, so CI secrets win. Named so a stale export is obvious
+      # rather than silently shadowing the file.
+      overridden="$overridden $key"
+      continue
+    fi
 
     export "$key=$value"
+    loaded="$loaded $key"
   done < "$IOS_ENV_FILE"
 
-  log "Loaded App Store Connect settings from ${IOS_ENV_FILE#$ROOT_DIR/}"
+  [[ -n "$loaded" ]] && log "Loaded from ${IOS_ENV_FILE#$ROOT_DIR/}:$loaded"
+  [[ -n "$overridden" ]] && log "Taken from the environment, not the file:$overridden"
+  return 0
+}
+
+# altool's failure for a malformed key id is a confusing "file not found" naming
+# a path nobody wrote, so check the shape here and say what is actually wrong.
+check_asc_credentials() {
+  [[ -n "${ASC_KEY_ID:-}" && -n "${ASC_ISSUER_ID:-}" ]] || return 0
+
+  local source_hint="the environment (unset it, or fix ${IOS_ENV_FILE#$ROOT_DIR/})"
+
+  if [[ ! "$ASC_KEY_ID" =~ ^[A-Za-z0-9]{8,12}$ ]]; then
+    die "ASC_KEY_ID is '$ASC_KEY_ID', which is not a Key ID.
+  A Key ID is ~10 letters and digits, e.g. RS7734NF97.
+  This value came from $source_hint"
+  fi
+
+  if [[ ! "$ASC_ISSUER_ID" =~ ^[0-9a-fA-F-]{36}$ ]]; then
+    die "ASC_ISSUER_ID is '$ASC_ISSUER_ID', which is not an Issuer ID.
+  An Issuer ID is a 36-character UUID.
+  This value came from $source_hint"
+  fi
+
+  # Fail before a ten-minute archive rather than at the upload that follows it.
+  local key_file="$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8"
+  [[ -f "$key_file" ]] || die "No private key at $key_file
+  Download the .p8 from App Store Connect and put it there, or run with --skip-upload."
 }
 
 # environment -> scheme | configuration
@@ -181,6 +214,9 @@ ENVIRONMENTS=("${DEDUPED[@]}")
 
 # After parsing, so --env-file can choose the file.
 load_ios_env
+
+# Before any archiving, so a bad credential costs a second rather than a build.
+[[ "$SKIP_UPLOAD" == "1" ]] || check_asc_credentials
 
 command -v xcodebuild >/dev/null || die "xcodebuild not found"
 
