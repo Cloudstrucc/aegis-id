@@ -92,6 +92,22 @@ literal match silently drops every deep link outside the prod build. This
 applies to `MainActivity.handleIntent` and `OrganizationInviteParser`, both of
 which had that bug.
 
+## Running on an emulator
+
+```bash
+scripts/run-android.sh --env dev|qa|prod|local
+```
+
+Boots the AVD if nothing is running, fetches the published APK (or builds from
+source with `--build`, which is implied for `local`), installs and launches it.
+`--fresh` clears app data so the wallet starts at first-run setup.
+
+dev, qa and prod install side by side, so switching environments never means
+uninstalling. Two install failures it names rather than leaving to `adb`:
+swapping between a debug-signed source build and a release-signed published one
+is refused outright, and a source build carries a stamped versionCode so it is
+not rejected as a downgrade.
+
 ## Releases
 
 ```bash
