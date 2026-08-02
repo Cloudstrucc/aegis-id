@@ -4,6 +4,31 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+/**
+ * Release signing, supplied through the environment so no credential is ever
+ * committed. scripts/release-android.sh loads them from an untracked
+ * .env.android; Android Studio picks them up if they are exported in the shell.
+ *
+ * Absent, release builds stay unsigned rather than silently falling back to the
+ * debug key, which would produce an artifact that looks releasable and is not.
+ */
+fun aegisSigning(): Map<String, String>? {
+    val keystore = System.getenv("AEGIS_KEYSTORE_PATH")?.trim().orEmpty()
+    val storePassword = System.getenv("AEGIS_KEYSTORE_PASSWORD")?.trim().orEmpty()
+    val keyAlias = System.getenv("AEGIS_KEY_ALIAS")?.trim().orEmpty()
+    val keyPassword = System.getenv("AEGIS_KEY_PASSWORD")?.trim().orEmpty().ifEmpty { storePassword }
+
+    if (keystore.isEmpty() || storePassword.isEmpty() || keyAlias.isEmpty()) {
+        return null
+    }
+    return mapOf(
+        "path" to keystore,
+        "storePassword" to storePassword,
+        "keyAlias" to keyAlias,
+        "keyPassword" to keyPassword
+    )
+}
+
 /** Android caps this; a friendly failure beats "For input string". */
 fun Project.resolveVersionCode(): Int {
     val raw = findProperty("aegisVersionCode") as String? ?: return 1
@@ -102,6 +127,28 @@ android {
                 urlScheme = "aegisid",
                 appLinkHost = "vanguard-aegis-id-65067d.azurewebsites.net"
             )
+        }
+    }
+
+    val releaseSigning = aegisSigning()
+
+    signingConfigs {
+        if (releaseSigning != null) {
+            create("release") {
+                storeFile = file(releaseSigning.getValue("path"))
+                storePassword = releaseSigning.getValue("storePassword")
+                keyAlias = releaseSigning.getValue("keyAlias")
+                keyPassword = releaseSigning.getValue("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            if (releaseSigning != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

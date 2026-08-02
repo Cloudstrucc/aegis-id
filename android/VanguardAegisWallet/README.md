@@ -121,3 +121,17 @@ Use a **Google Play Internal Testing** or **Closed Testing** track when you have
 ## Direct APK Download
 
 Avoid direct APK downloads from the public homepage for non-technical partners. Android will require sideload permissions, and users may see security prompts. Keep direct APK install for internal developer devices only.
+
+## Releases
+
+```bash
+scripts/release-android.sh --env all
+```
+
+Builds and signs an `.aab` per environment into `artifacts/android/`. Signing
+credentials live in an untracked `.env.android` at the repository root — copy
+`.env.android.example` and fill it in. Nothing is uploaded; publishing to Play
+Console is a deliberate manual step. `--help` lists every flag.
+
+**Keep the release keystore backed up somewhere durable.** If it is lost the
+app can never be updated on Play under the same package name.

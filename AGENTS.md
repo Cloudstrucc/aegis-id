@@ -79,6 +79,13 @@ harness reads `AEGIS_URL_SCHEME` from the project rather than assuming. It also
 launches the app before deep-linking, because opening a custom scheme from the
 home screen raises an "Open in …?" prompt that nothing can dismiss.
 
+The Android leg needs a booted emulator (`Aegis_API35_arm64`) and the `local`
+flavour installed; `--install-wallet` builds and installs it. Two Android
+specifics the leg handles: the app is launched before deep-linking, because a
+freshly installed package is in the *stopped* state and implicit intents skip
+those; and the URL is quoted for the **device** shell, where an unquoted `&` is
+a background operator that silently truncates it at the first parameter.
+
 ## iOS releases
 
 `scripts/release-ios.sh --env dev|qa|prod|all` archives, exports and uploads;
@@ -90,6 +97,15 @@ values win, and `IOS_ENV_FILE` overrides the location. These are per Apple
 account — so they never belong in `.env.dev` / `.env.qa` / `.env`, which
 configure the web app and are forwarded to Azure App Service. The `.p8` private
 key lives at `~/.appstoreconnect/private_keys/`, never in the repo.
+
+## Android releases
+
+`scripts/release-android.sh --env dev|qa|prod|all` builds and signs an `.aab`
+per environment into `artifacts/android/`. Signing comes from an untracked
+`.env.android` (template `.env.android.example`); one keystore covers every
+environment. Nothing is uploaded — Play publishing is manual. `versionCode` is
+minutes since 2020-01-01, because Play caps it at 2100000000 and the
+`YYYYMMDDHHMM` stamp iOS uses does not fit.
 
 ## Sign-in and delivery
 

@@ -250,6 +250,70 @@ async function launchWallet() {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 }
 
+const ANDROID_PACKAGE = 'ca.vanguardcs.aegisid.wallet.local';
+const ANDROID_SCHEME = 'aegisid-local';
+
+async function adb(args) {
+  const { stdout } = await execFileAsync(
+    path.join(process.env.HOME || '', 'Library/Android/sdk/platform-tools/adb'),
+    args,
+    { maxBuffer: 8 * 1024 * 1024 }
+  );
+  return stdout;
+}
+
+async function androidDeviceBooted() {
+  try {
+    const stdout = await adb(['devices']);
+    return /\bdevice\s*$/m.test(stdout);
+  } catch {
+    return false;
+  }
+}
+
+async function androidAppInstalled() {
+  try {
+    const stdout = await adb(['shell', 'pm', 'list', 'packages', ANDROID_PACKAGE]);
+    return stdout.includes(ANDROID_PACKAGE);
+  } catch {
+    return false;
+  }
+}
+
+/** Build and install the local flavour. Opt-in: Gradle is slow. */
+async function installAndroidWallet() {
+  await execFileAsync(
+    path.join(ROOT, 'android/VanguardAegisWallet/gradlew'),
+    [':app:assembleLocalDebug'],
+    { cwd: path.join(ROOT, 'android/VanguardAegisWallet'), maxBuffer: 32 * 1024 * 1024 }
+  );
+  const apk = path.join(
+    ROOT,
+    'android/VanguardAegisWallet/app/build/outputs/apk/local/debug/app-local-debug.apk'
+  );
+  await adb(['install', '-r', apk]);
+  return path.basename(apk);
+}
+
+async function androidScreenshot(record, label) {
+  try {
+    const file = path.join(artifactsDir, 'screenshots', `android-${slugForFile(label)}.png`);
+    const raw = await execFileAsync(
+      path.join(process.env.HOME || '', 'Library/Android/sdk/platform-tools/adb'),
+      ['exec-out', 'screencap', '-p'],
+      { encoding: 'buffer', maxBuffer: 32 * 1024 * 1024 }
+    );
+    await fs.writeFile(file, raw.stdout);
+    record?.screenshots.push({ kind: 'simulator', label, file: path.relative(artifactsDir, file) });
+  } catch {
+    /* a screenshot is never worth failing the run over */
+  }
+}
+
+function slugForFile(value) {
+  return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+}
+
 async function openDeepLink(url) {
   try {
     await execFileAsync('xcrun', ['simctl', 'openurl', 'booted', url]);
@@ -517,6 +581,46 @@ async function main() {
       // behind that screen. The screenshots show where it got to; finishing the
       // flow is a human's job, since simctl cannot tap.
       return `${scheme}:// org-invite delivered to the running wallet`;
+    },
+    { optional: true }
+  );
+
+  await runner.step(
+    'Drive the wallet on an Android emulator',
+    async (record) => {
+      expect(await androidDeviceBooted(), 'no booted emulator — start one with: emulator -avd Aegis_API35_arm64');
+      expect(
+        walletCanReachAegis(),
+        `the Android local flavour points at port ${STANDARD_PORTS.aegis} via 10.0.2.2, which this run could not claim — ${portNote}`
+      );
+
+      if (!(await androidAppInstalled())) {
+        expect(
+          options.installWallet,
+          'the wallet is not installed on the emulator — re-run with --install-wallet to build and install it'
+        );
+        runner.info('building the Android local flavour — this takes a few minutes');
+        runner.info(`installed ${await installAndroidWallet()}`);
+      }
+
+      // Bring the app to the front first: a freshly installed package is in the
+      // stopped state, and implicit intents skip stopped packages.
+      await adb(['shell', 'am', 'start', '-n', `${ANDROID_PACKAGE}/ca.vanguardcs.aegisid.wallet.MainActivity`]);
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await androidScreenshot(record, 'wallet-launched');
+
+      // Quoted for the *device* shell: an unquoted & is a background operator
+      // there and silently truncates the URL at the first parameter.
+      const link =
+        `${ANDROID_SCHEME}://org-invite?invitation_id=${state.invitationId}` +
+        `&organization_id=${state.organizationId}` +
+        `&organization_name=${encodeURIComponent(orgName)}` +
+        `&vanguard_web_app_url=${encodeURIComponent('http://10.0.2.2:' + ports.aegis)}`;
+      await adb(['shell', `am start -a android.intent.action.VIEW -d '${link}'`]);
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await androidScreenshot(record, 'after-org-invite');
+      return `${ANDROID_SCHEME}:// org-invite delivered to the running wallet`;
     },
     { optional: true }
   );

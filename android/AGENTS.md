@@ -80,6 +80,31 @@ literal match silently drops every deep link outside the prod build. This
 applies to `MainActivity.handleIntent` and `OrganizationInviteParser`, both of
 which had that bug.
 
+## Releases
+
+```bash
+scripts/release-android.sh --env dev
+scripts/release-android.sh --env all --apk
+```
+
+`--env` mirrors `scripts/release-ios.sh` and the Azure deploy scripts, is
+repeatable, and accepts bare names. `all` means dev, qa and prod — never
+`local`, which points at a development server on the host machine.
+
+Signing comes from an untracked `.env.android` at the repo root (template:
+`.env.android.example`); exported values win, and `--env-file` overrides the
+location. **One keystore covers every environment**, unlike iOS's per-team API
+key, because the flavours differ only by applicationId suffix. Credentials are
+checked before any build, so a missing keystore costs a second rather than a
+full Gradle run.
+
+Without credentials a release build stays **unsigned** rather than falling back
+to the debug key, which would produce something that looks releasable and is
+not. `--debug` builds unsigned deliberately and needs no credentials.
+
+The script does not upload. Artifacts land in `artifacts/android/` and
+publishing to Play is a manual step.
+
 ## Rules
 
 - Do not fake security-sensitive flows.
