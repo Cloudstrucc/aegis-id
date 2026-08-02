@@ -15,6 +15,11 @@ const {
   updateNotificationSettings
 } = require('../services/notification-settings-service');
 const { verifyEmail } = require('../adapters/notify/notification-adapter');
+const { listDeliveryLog } = require('../services/otp-delivery-service');
+const {
+  getSignInMethodsForDisplay,
+  updateSignInMethods
+} = require('../services/sign-in-methods-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
@@ -45,13 +50,41 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
   });
 });
 
+// Which sign-in methods the platform offers.
+router.get('/admin/sign-in-methods', authorize('admin.signInMethods.manage'), async (req, res, next) => {
+  try {
+    res.render('pages/sign-in-methods', {
+      title: 'Sign-in methods',
+      description: 'Choose how people may sign in to Aegis ID.',
+      methods: await getSignInMethodsForDisplay(),
+      saved: req.query.saved === '1',
+      errorMessage: req.query.error || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/admin/sign-in-methods', authorize('admin.signInMethods.manage'), async (req, res, next) => {
+  try {
+    await updateSignInMethods(req.body, req.user?.email);
+    return res.redirect(303, '/admin/sign-in-methods?saved=1');
+  } catch (error) {
+    if (error.expose) {
+      return res.redirect(303, `/admin/sign-in-methods?error=${encodeURIComponent(error.message)}`);
+    }
+    return next(error);
+  }
+});
+
 // Platform-level delivery settings for wallet recovery codes.
 router.get('/admin/notifications', authorize('admin.notifications.manage'), async (req, res, next) => {
   try {
     res.render('pages/notification-settings', {
       title: 'Notification delivery',
-      description: 'Configure how Aegis ID sends wallet recovery codes.',
+      description: 'Configure how Aegis ID sends codes, links and notices.',
       settings: await getNotificationSettingsForDisplay(),
+      deliveryLog: await listDeliveryLog(25),
       saved: req.query.saved === '1',
       testResult: req.query.test || null
     });

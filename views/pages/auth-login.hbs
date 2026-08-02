@@ -23,7 +23,17 @@
         <input id="password" name="password" type="password" autocomplete="current-password" required>
       </div>
       <button class="button button--primary" type="submit">Continue</button>
+      <p class="form-footnote"><a href="/auth/forgot">Forgot your password?</a></p>
       <p class="form-footnote">Need access? <a href="/auth/register">Create an account</a>.</p>
     </form>
+
+    {{#if passkeyLoginEnabled}}
+      <div class="auth-alternatives">
+        <p class="auth-alternatives__divider"><span>or</span></p>
+        <button class="button button--ghost" type="button" data-passkey-login>Sign in with a passkey</button>
+        <p class="form-footnote" data-passkey-status aria-live="polite"></p>
+        <p class="form-footnote">Uses Face ID, Touch ID, Windows Hello or a security key. No password needed.</p>
+      </div>
+    {{/if}}
   </div>
 </section>

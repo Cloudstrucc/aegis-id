@@ -9,6 +9,7 @@ const {
 
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
+const { deliverMessage } = require('./otp-delivery-service');
 
 const store = new FileJsonStore(config.paths.users, []);
 const mfaMethods = new Set(['email', 'sms', 'passkey']);
@@ -131,10 +132,22 @@ async function createOtpChallenge(userId, requestedMethod) {
   user.updatedAt = new Date().toISOString();
   await store.write(users);
 
+  // Actually send it. Previously the code was generated, stored and shown on
+  // screen outside production — which meant nowhere, since dev and qa also run
+  // NODE_ENV=production. Locally the filesystem transport writes it to disk.
+  const delivery = await deliverMessage({
+    type: 'mfa-otp',
+    email: method === 'email' ? user.email : null,
+    phone: method === 'sms' ? user.phone : null,
+    variables: { code },
+    context: { userId: user.id }
+  });
+
   return {
     method,
     destination: method === 'sms' ? maskPhone(user.phone) : maskEmail(user.email),
-    developmentCode: config.app.env === 'production' ? null : code,
+    delivered: delivery.delivered,
+    deliveryFailures: delivery.failures.map((failure) => failure.message),
     expiresAt: challenge.expiresAt
   };
 }
@@ -175,8 +188,11 @@ async function startPasskeyRegistration(userId, requestInfo) {
       transports: passkey.credential.transports
     })),
     authenticatorSelection: {
-      residentKey: 'preferred',
-      userVerification: 'preferred'
+      // Discoverable, so the credential can start a sign-in with no username
+      // typed. Required (not preferred) or the authenticator may decline to
+      // store it and the passkey silently becomes second-factor-only.
+      residentKey: 'required',
+      userVerification: 'required'
     }
   });
 
@@ -318,6 +334,9 @@ function publicUser(user) {
     mfaMethods: user.mfaMethods || { email: true },
     passkeyCount: user.passkeys?.length || 0,
     lastSecondFactorAt: user.lastSecondFactorAt,
+    // Needed by deserializeUser to reject sessions that predate a password
+    // reset, so it has to survive publicUser().
+    sessionsValidFrom: user.sessionsValidFrom || null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };
@@ -380,8 +399,83 @@ function maskPhone(phone = '') {
   return phone.length > 4 ? `***${phone.slice(-4)}` : phone;
 }
 
+
+/**
+ * Begin a usernameless sign-in. `allowCredentials` is deliberately empty so the
+ * browser offers whichever discoverable passkey the person has for this site —
+ * we learn who they are from the credential they pick, not from a typed email.
+ */
+async function startPasskeyLogin(requestInfo) {
+  const rp = resolveRelyingParty(requestInfo);
+  const options = await generateAuthenticationOptions({
+    rpID: rp.rpId,
+    allowCredentials: [],
+    userVerification: 'required'
+  });
+  return { options, rpId: rp.rpId, origin: rp.origin };
+}
+
+/**
+ * Complete a usernameless sign-in. Resolves the account from the credential ID
+ * and insists on user verification, which is what makes a passkey two factors
+ * on its own rather than mere possession of an unlocked device.
+ */
+async function finishPasskeyLogin(response, requestInfo, challenge) {
+  if (!challenge?.challenge) {
+    throw validationError('No passkey sign-in challenge is active.');
+  }
+
+  const users = await store.read();
+  let owner = null;
+  let passkey = null;
+  for (const candidate of users) {
+    const match = (candidate.passkeys || []).find((entry) => entry.credential.id === response.id);
+    if (match) {
+      owner = candidate;
+      passkey = match;
+      break;
+    }
+  }
+
+  if (!owner || !passkey) {
+    throw validationError('This passkey is not registered to any account.');
+  }
+
+  const rp = resolveRelyingParty(requestInfo, challenge);
+  const verification = await verifyAuthenticationResponse({
+    response,
+    expectedChallenge: challenge.challenge,
+    expectedOrigin: rp.origin,
+    expectedRPID: rp.rpId,
+    credential: {
+      id: passkey.credential.id,
+      publicKey: Buffer.from(passkey.credential.publicKey, 'base64url'),
+      counter: passkey.credential.counter,
+      transports: passkey.credential.transports
+    },
+    // Enforced here, not merely requested in the options: a client is free to
+    // ignore what we asked for, so the server has to be the one that insists.
+    requireUserVerification: true
+  });
+
+  if (!verification.verified) {
+    throw validationError('Passkey sign-in could not be verified.');
+  }
+
+  passkey.credential.counter = verification.authenticationInfo.newCounter;
+  passkey.lastUsedAt = new Date().toISOString();
+  owner.lastSecondFactorAt = new Date().toISOString();
+  owner.pendingSecondFactor = null;
+  owner.updatedAt = new Date().toISOString();
+  await store.write(users);
+
+  return publicUser(owner);
+}
+
 module.exports = {
   createOtpChallenge,
+  finishPasskeyLogin,
+  startPasskeyLogin,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   getUserById,

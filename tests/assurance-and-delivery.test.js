@@ -12,7 +12,10 @@ const MODULES = [
   '../src/services/wallet-registry-service',
   '../src/services/notification-settings-service',
   '../src/services/otp-delivery-service',
-  '../src/services/audit-service'
+  '../src/services/audit-service',
+  // Holds its own reference to config, so it has to be reset too or it keeps
+  // writing to the previous test's temp directory.
+  '../src/adapters/notify/notification-adapter'
 ];
 
 function resetModules() {
@@ -30,6 +33,8 @@ async function withEnv(env, run) {
   process.env.WALLET_STORE_PATH = path.join(dir, 'wallets.json');
   process.env.AUDIT_STORE_PATH = path.join(dir, 'audit.json');
   process.env.NOTIFICATION_SETTINGS_STORE_PATH = path.join(dir, 'notify.json');
+  process.env.NOTIFICATION_LOG_STORE_PATH = path.join(dir, 'notify-log.json');
+  process.env.MAIL_DROP_PATH = path.join(dir, 'mail');
   Object.assign(process.env, env);
   resetModules();
   try {
@@ -118,16 +123,24 @@ test('A7: the high-assurance signal list is configurable', async () => {
   );
 });
 
-test('OTP delivery returns the code locally when no channel is configured', async () => {
-  await withEnv({ NODE_ENV: 'development' }, async () => {
+test('OTP delivery writes to disk locally instead of returning the code', async () => {
+  await withEnv({ NODE_ENV: 'development' }, async ({ dir }) => {
     const { deliverRecoveryCode } = require('../src/services/otp-delivery-service');
     const result = await deliverRecoveryCode({
       code: '123456',
       walletId: 'AEG-TEST',
       email: 'holder@example.com'
     });
-    assert.equal(result.delivered, false);
-    assert.equal(result.devCode, '123456', 'local testing needs no mail server');
+
+    // Locally the filesystem transport is on by default, so delivery succeeds
+    // with no mail server and the code still never comes back in the response.
+    assert.equal(result.delivered, true);
+    assert.equal(result.devCode, undefined, 'the code must never be returned to the caller');
+
+    const files = await fs.readdir(path.join(dir, 'mail'));
+    assert.equal(files.length, 1);
+    const body = await fs.readFile(path.join(dir, 'mail', files[0]), 'utf8');
+    assert.match(body, /123456/, 'the dropped message carries the code');
   });
 });
 

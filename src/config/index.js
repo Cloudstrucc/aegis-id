@@ -154,7 +154,22 @@ const config = {
     notificationSettings: resolveFromRoot(
       process.env.NOTIFICATION_SETTINGS_STORE_PATH,
       'data/notification-settings.json'
-    )
+    ),
+    notificationLog: resolveFromRoot(
+      process.env.NOTIFICATION_LOG_STORE_PATH,
+      'data/notification-log.json'
+    ),
+    passwordResets: resolveFromRoot(
+      process.env.PASSWORD_RESET_STORE_PATH,
+      'data/password-resets.json'
+    ),
+    signInMethods: resolveFromRoot(
+      process.env.SIGN_IN_METHOD_STORE_PATH,
+      'data/sign-in-methods.json'
+    ),
+    // Where the filesystem mail transport drops messages during local
+    // development. Outside the repo's data directory because it is not state.
+    mailDrop: resolveFromRoot(process.env.MAIL_DROP_PATH, 'artifacts/mail')
   },
   auth: {
     sessionSecret: process.env.SESSION_SECRET || 'dev-change-this-session-secret',

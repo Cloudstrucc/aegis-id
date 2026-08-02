@@ -25,6 +25,10 @@ const POLICIES = Object.freeze({
     fields: ['code', 'method']
   }),
   'auth.passkey': policy('auth.passkey', 'anonymous', 'session-passkey', 'verify'),
+  'auth.passwordReset': policy('auth.passwordReset', 'anonymous', 'password', 'reset', {
+    fields: ['email', 'password', 'confirmPassword'],
+    description: 'Request or complete a password reset. Rate limited and never reveals whether an account exists.'
+  }),
   'auth.logout': policy('auth.logout', 'authenticated', 'session', 'delete'),
   'account.view': policy('account.view', 'authenticated', 'account', 'read'),
   'subscription.create': policy('subscription.create', 'authenticated', 'subscription', 'create', {
@@ -169,6 +173,9 @@ const POLICIES = Object.freeze({
       'smsEnabled', 'smsPreset', 'smsEndpoint', 'smsAccountSid', 'smsAuthToken', 'smsFromNumber'
     ],
     description: 'Configure SMTP and SMS delivery used for wallet recovery codes.'
+  }),
+  'admin.signInMethods.manage': policy('admin.signInMethods.manage', 'adminAnyWorkspace', 'sign-in-methods', 'update', {
+    description: 'Choose which sign-in methods the platform offers and what each one counts for.'
   }),
   'wallet.recovery.approve': policy('wallet.recovery.approve', 'orgPrivilege', 'wallet-recovery', 'approve', {
     privilegeId: 'wallet.recovery.approve',

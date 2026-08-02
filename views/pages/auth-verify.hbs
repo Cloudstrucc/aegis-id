@@ -19,14 +19,15 @@
         <div class="delivery-panel">
           <span class="delivery-panel__icon">{{#if (eq delivery.method "sms")}}SMS{{else}}Email{{/if}}</span>
           <div>
-            <h2>Code sent to {{delivery.destination}}</h2>
-            <p>Enter the six-digit code to finish signing in.</p>
+            {{#if delivery.delivered}}
+              <h2>Code sent to {{delivery.destination}}</h2>
+              <p>Enter the six-digit code to finish signing in.</p>
+            {{else}}
+              <h2>We could not send your code</h2>
+              <p>Delivery is not configured, so the code could not reach {{delivery.destination}}. Ask a platform administrator to set up email or SMS delivery.</p>
+            {{/if}}
           </div>
         </div>
-
-        {{#if delivery.developmentCode}}
-          <p class="developer-code">Development code: <strong>{{delivery.developmentCode}}</strong></p>
-        {{/if}}
 
         <form class="nested-form" action="/auth/verify" method="post">
           <div class="field-group">

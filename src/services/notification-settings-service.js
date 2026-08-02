@@ -37,6 +37,15 @@ const EMAIL_PRESETS = Object.freeze({
     secure: false,
     requireTls: true,
     hint: 'Any RFC-compliant SMTP relay, including on-premises Exchange.'
+  },
+  filesystem: {
+    id: 'filesystem',
+    label: 'Local file (development only)',
+    host: '',
+    port: 0,
+    secure: false,
+    requireTls: false,
+    hint: 'Writes messages to disk instead of sending them. Nothing reaches a real inbox.'
   }
 });
 
@@ -52,14 +61,48 @@ const SMS_PRESETS = Object.freeze({
     label: 'Generic HTTP provider',
     endpoint: '',
     hint: 'Any provider that accepts a JSON POST. Use {to} and {body} placeholders.'
+  },
+  filesystem: {
+    id: 'filesystem',
+    label: 'Local file (development only)',
+    endpoint: '',
+    hint: 'Writes messages to disk instead of sending them. Nothing reaches a real handset.'
+  }
+});
+
+// Which channels each kind of message may use. Admins tune this per type
+// because the trade-offs differ: an MFA code over SMS is routine, whereas a
+// password reset link over SMS is not something every tenant wants.
+const MESSAGE_TYPES = Object.freeze({
+  'mfa-otp': {
+    id: 'mfa-otp',
+    label: 'Sign-in verification code',
+    description: 'The second factor sent when someone signs in with a password.',
+    defaults: { email: true, sms: true }
+  },
+  'password-reset': {
+    id: 'password-reset',
+    label: 'Password reset link',
+    description: 'Sent when someone asks to reset a forgotten password.',
+    defaults: { email: true, sms: false }
+  },
+  'wallet-recovery': {
+    id: 'wallet-recovery',
+    label: 'Wallet recovery code',
+    description: 'Sent when someone recovers a wallet onto a new device.',
+    defaults: { email: true, sms: true }
   }
 });
 
 function defaults() {
+  // Only `local` runs NODE_ENV=development, so this turns the filesystem
+  // transport on for localhost and leaves dev/qa/prod fail-closed until an
+  // admin configures a real channel.
+  const localDevelopment = config.app.env !== 'production';
   return {
     email: {
-      enabled: false,
-      preset: 'microsoft-exchange',
+      enabled: localDevelopment,
+      preset: localDevelopment ? 'filesystem' : 'microsoft-exchange',
       host: EMAIL_PRESETS['microsoft-exchange'].host,
       port: 587,
       secure: false,
@@ -77,6 +120,9 @@ function defaults() {
       authToken: '',
       fromNumber: ''
     },
+    messageTypes: Object.fromEntries(
+      Object.values(MESSAGE_TYPES).map((type) => [type.id, { ...type.defaults }])
+    ),
     updatedAt: null,
     updatedBy: null
   };
@@ -84,12 +130,27 @@ function defaults() {
 
 function mergeDefaults(saved = {}) {
   const base = defaults();
+  const savedTypes = saved.messageTypes || {};
   return {
     email: { ...base.email, ...(saved.email || {}) },
     sms: { ...base.sms, ...(saved.sms || {}) },
+    messageTypes: Object.fromEntries(
+      Object.values(MESSAGE_TYPES).map((type) => [
+        type.id,
+        { ...type.defaults, ...(savedTypes[type.id] || {}) }
+      ])
+    ),
     updatedAt: saved.updatedAt || null,
     updatedBy: saved.updatedBy || null
   };
+}
+
+/** Whether a message of this type is allowed out over this channel. */
+function channelAllowed(settings, messageType, channel) {
+  const matrix = settings.messageTypes || {};
+  const entry = matrix[messageType];
+  // An unknown type is not implicitly permitted — deny by default.
+  return Boolean(entry && entry[channel]);
 }
 
 async function getNotificationSettings() {
@@ -104,7 +165,12 @@ async function getNotificationSettingsForDisplay() {
     email: { ...settings.email, password: '', hasPassword: Boolean(settings.email.password) },
     sms: { ...settings.sms, authToken: '', hasAuthToken: Boolean(settings.sms.authToken) },
     emailPresets: Object.values(EMAIL_PRESETS),
-    smsPresets: Object.values(SMS_PRESETS)
+    smsPresets: Object.values(SMS_PRESETS),
+    messageTypeCatalog: Object.values(MESSAGE_TYPES).map((type) => ({
+      ...type,
+      email: Boolean(settings.messageTypes?.[type.id]?.email),
+      sms: Boolean(settings.messageTypes?.[type.id]?.sms)
+    }))
   };
 }
 
@@ -144,6 +210,15 @@ async function updateNotificationSettings(input = {}, actorEmail = null) {
       authToken: text(input.smsAuthToken, 500) || current.sms.authToken,
       fromNumber: text(input.smsFromNumber, 40)
     },
+    messageTypes: Object.fromEntries(
+      Object.values(MESSAGE_TYPES).map((type) => [
+        type.id,
+        {
+          email: booleanField(input[`type_${type.id}_email`]),
+          sms: booleanField(input[`type_${type.id}_sms`])
+        }
+      ])
+    ),
     updatedAt: new Date().toISOString(),
     updatedBy: actorEmail
   };
@@ -154,7 +229,9 @@ async function updateNotificationSettings(input = {}, actorEmail = null) {
 
 module.exports = {
   EMAIL_PRESETS,
+  MESSAGE_TYPES,
   SMS_PRESETS,
+  channelAllowed,
   getNotificationSettings,
   getNotificationSettingsForDisplay,
   updateNotificationSettings

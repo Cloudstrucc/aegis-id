@@ -57,6 +57,12 @@ document.addEventListener('click', async (event) => {
     return;
   }
 
+  const loginPasskeyButton = event.target.closest('[data-passkey-login]');
+  if (loginPasskeyButton) {
+    await handlePasskey(loginPasskeyButton, 'login');
+    return;
+  }
+
   const registerPasskeyButton = event.target.closest('[data-passkey-register]');
   if (registerPasskeyButton) {
     await handlePasskey(registerPasskeyButton, 'register');
@@ -1489,7 +1495,7 @@ function prepareCreationOptions(options) {
 }
 
 function prepareRequestOptions(options) {
-  return {
+  const prepared = {
     ...options,
     challenge: base64urlToBuffer(options.challenge),
     allowCredentials: (options.allowCredentials || []).map((credential) => ({
@@ -1497,6 +1503,14 @@ function prepareRequestOptions(options) {
       id: base64urlToBuffer(credential.id)
     }))
   };
+
+  // Usernameless sign-in sends no allow list. Omit the key rather than passing
+  // an empty array, which some browsers read as "no credential may be used".
+  if (prepared.allowCredentials.length === 0) {
+    delete prepared.allowCredentials;
+  }
+
+  return prepared;
 }
 
 function serializePublicKeyCredential(credential) {

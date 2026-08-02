@@ -1,61 +1,107 @@
-// One-time code delivery for wallet recovery.
+// Outbound message delivery for one-time codes, reset links and wallet notices.
 //
-// Production requires a configured channel: if nothing is configured the code is
-// NOT echoed back, because doing so would let anyone who can reach the API
-// recover any wallet. Outside production the code is returned so local testing
-// needs no mail server or SMS provider.
+// Every message the platform sends to a person goes through deliverMessage, so
+// there is one place that decides which channels a given kind of message may
+// use, one audit trail, and one delivery log an admin can read.
+//
+// Codes are never returned to the caller. For local development configure the
+// "filesystem" preset, which writes messages to disk instead of sending them.
 
 const config = require('../config');
-const { getNotificationSettings } = require('./notification-settings-service');
+const FileJsonStore = require('./file-json-store');
+const { channelAllowed, getNotificationSettings } = require('./notification-settings-service');
 const { sendEmail, sendSms, maskRecipient } = require('../adapters/notify/notification-adapter');
 const { writeAuditEvent } = require('./audit-service');
 
-function isProduction() {
-  return config.app.env === 'production';
-}
+const logStore = new FileJsonStore(config.paths.notificationLog, []);
+const LOG_LIMIT = 200;
 
-function buildMessage(code, walletId) {
-  const subject = 'Your Aegis ID wallet recovery code';
-  const text = [
-    `Your Aegis ID verification code is ${code}.`,
-    '',
-    `Wallet: ${walletId}`,
-    'This code expires in 10 minutes and can only be used once.',
-    '',
-    'If you did not request this, someone may be attempting to recover your wallet.',
-    'Contact your organization administrator immediately.'
-  ].join('\n');
-  return { subject, text };
+/**
+ * Message templates. Each returns { subject, text, sms } from its variables, so
+ * wording lives in one place rather than being spread across call sites.
+ */
+const TEMPLATES = {
+  'mfa-otp': ({ code }) => ({
+    subject: 'Your Aegis ID sign-in code',
+    text: [
+      `Your Aegis ID sign-in code is ${code}.`,
+      '',
+      'This code expires in 10 minutes and can only be used once.',
+      '',
+      'If you did not try to sign in, change your password immediately.'
+    ].join('\n'),
+    sms: `Aegis ID sign-in code: ${code}`
+  }),
+  'password-reset': ({ resetUrl, expiresInMinutes }) => ({
+    subject: 'Reset your Aegis ID password',
+    text: [
+      'Someone asked to reset the password on your Aegis ID account.',
+      '',
+      resetUrl,
+      '',
+      `This link expires in ${expiresInMinutes} minutes and can only be used once.`,
+      '',
+      'If this was not you, no action is needed — your password has not changed.'
+    ].join('\n'),
+    sms: `Reset your Aegis ID password: ${resetUrl}`
+  }),
+  'wallet-recovery': ({ code, walletId }) => ({
+    subject: 'Your Aegis ID wallet recovery code',
+    text: [
+      `Your Aegis ID verification code is ${code}.`,
+      '',
+      `Wallet: ${walletId}`,
+      'This code expires in 10 minutes and can only be used once.',
+      '',
+      'If you did not request this, someone may be attempting to recover your wallet.',
+      'Contact your organization administrator immediately.'
+    ].join('\n'),
+    sms: `Aegis ID verification code: ${code}`
+  })
+};
+
+async function recordDelivery(entry) {
+  const log = await logStore.read();
+  log.unshift(entry);
+  await logStore.write(log.slice(0, LOG_LIMIT));
 }
 
 /**
- * Deliver a recovery code to the wallet's registered contact.
- *
- * Returns { delivered, channels, devCode } where devCode is only ever populated
- * outside production.
+ * Send one message over every channel its type permits and that has a
+ * recipient. Returns { delivered, channels, failures } — never the message
+ * body, and never the code.
  */
-async function deliverRecoveryCode({ code, walletId, email, phone }) {
+async function deliverMessage({ type, email, phone, variables = {}, context = {} }) {
+  const template = TEMPLATES[type];
+  if (!template) {
+    throw new Error(`Unknown message type: ${type}`);
+  }
+
   const settings = await getNotificationSettings();
-  const { subject, text } = buildMessage(code, walletId);
+  const { subject, text, sms } = template(variables);
   const channels = [];
   const failures = [];
 
-  if (email) {
+  if (email && channelAllowed(settings, type, 'email')) {
     try {
       const result = await sendEmail(settings, { to: email, subject, text });
       if (result.delivered) {
         channels.push({ channel: 'email', to: result.to });
+      } else {
+        failures.push({ channel: 'email', message: result.reason });
       }
     } catch (error) {
       failures.push({ channel: 'email', message: error.message });
     }
   }
 
-  if (phone) {
+  if (phone && channelAllowed(settings, type, 'sms')) {
     try {
-      const result = await sendSms(settings, { to: phone, body: `Aegis ID verification code: ${code}` });
+      const result = await sendSms(settings, { to: phone, body: sms });
       if (result.delivered) {
         channels.push({ channel: 'sms', to: result.to });
+      } else {
+        failures.push({ channel: 'sms', message: result.reason });
       }
     } catch (error) {
       failures.push({ channel: 'sms', message: error.message });
@@ -63,17 +109,44 @@ async function deliverRecoveryCode({ code, walletId, email, phone }) {
   }
 
   const delivered = channels.length > 0;
+  const recipient = maskRecipient(email || phone || '');
 
-  await writeAuditEvent('wallet.recovery.otp.dispatched', {
-    walletId,
+  await recordDelivery({
+    at: new Date().toISOString(),
+    type,
+    delivered,
+    recipient,
+    channels: channels.map((entry) => entry.channel),
+    failures: failures.map((entry) => `${entry.channel}: ${entry.message}`),
+    ...context
+  });
+
+  await writeAuditEvent('notification.dispatched', {
+    messageType: type,
     delivered,
     channels: channels.map((entry) => entry.channel),
     failures: failures.map((entry) => `${entry.channel}: ${entry.message}`),
-    recipient: maskRecipient(email || phone || '')
+    recipient,
+    ...context
   });
 
-  if (!delivered && isProduction()) {
-    // Fail closed: never fall back to returning the code in production.
+  return { delivered, channels, failures };
+}
+
+/**
+ * Deliver a wallet recovery code. Fails closed: if nothing was sent the caller
+ * must not proceed, because the code cannot reach its owner.
+ */
+async function deliverRecoveryCode({ code, walletId, email, phone }) {
+  const result = await deliverMessage({
+    type: 'wallet-recovery',
+    email,
+    phone,
+    variables: { code, walletId },
+    context: { walletId }
+  });
+
+  if (!result.delivered) {
     const error = new Error(
       'No delivery channel is configured, so a verification code could not be sent. ' +
         'Ask a platform administrator to configure email or SMS delivery.'
@@ -83,12 +156,12 @@ async function deliverRecoveryCode({ code, walletId, email, phone }) {
     throw error;
   }
 
-  return {
-    delivered,
-    channels,
-    failures,
-    devCode: isProduction() ? undefined : code
-  };
+  return result;
 }
 
-module.exports = { deliverRecoveryCode };
+async function listDeliveryLog(limit = 50) {
+  const log = await logStore.read();
+  return log.slice(0, limit);
+}
+
+module.exports = { deliverMessage, deliverRecoveryCode, listDeliveryLog };

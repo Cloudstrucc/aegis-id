@@ -79,6 +79,27 @@ harness reads `AEGIS_URL_SCHEME` from the project rather than assuming. It also
 launches the app before deep-linking, because opening a custom scheme from the
 home screen raises an "Open in …?" prompt that nothing can dismiss.
 
+## Sign-in and delivery
+
+**Every outbound message goes through `deliverMessage` in
+`src/services/otp-delivery-service.js`** — sign-in codes, password reset links
+and wallet recovery codes. Codes and links are never returned in a response.
+Locally the `filesystem` transport writes them to `artifacts/mail/`; dev, qa and
+prod start fail-closed until an admin configures SMTP or SMS at
+`/admin/notifications`, where a per-message-type channel matrix decides what may
+go over email and what over SMS.
+
+**Which sign-in methods exist is configured, not hardcoded** —
+`src/services/sign-in-methods-service.js` and `/admin/sign-in-methods`. Two flags
+per method: `firstFactor` (may start a sign-in) and `satisfiesSecond`
+(finishing it is enough on its own). A passkey with user verification is
+possession plus inherence, so it completes a sign-in alone; a password never
+does. The service refuses to save a configuration with no enabled first factor,
+and refuses to make wallet approval the only one.
+
+**Entra sign-in links only — it must never auto-provision an account.** No
+matching Aegis account means refused, not created.
+
 ## Product identity
 
 Aegis ID is a standalone platform. It is not subordinate to Microsoft,

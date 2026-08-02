@@ -1,0 +1,68 @@
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Platform settings</p>
+    <h1>Sign-in methods</h1>
+    <p>Choose how people may sign in, and what each method counts for. At least one method must stay enabled as a first factor.</p>
+  </div>
+
+  {{#if saved}}
+    <div class="callout callout--success"><strong>Settings saved.</strong></div>
+  {{/if}}
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not saved.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+
+  <article class="blade-guidance">
+    <strong>First factor vs second factor</strong>
+    <span><em>First factor</em> means the method can start a sign-in. <em>Completes sign-in</em> means finishing it is enough on its own — no separate code is asked for. A passkey or wallet approval with biometric verification is already possession plus inherence, so an extra code adds friction without adding assurance. A password is neither, so it can never complete a sign-in by itself.</span>
+  </article>
+
+  <form class="wizard-form" action="/admin/sign-in-methods" method="post">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Enabled</th>
+          <th>First factor</th>
+          <th>Completes sign-in</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each methods}}
+          <tr>
+            <td>
+              <strong>{{this.label}}</strong>
+              <div class="table-note">{{this.description}}</div>
+              {{#unless this.implemented}}
+                <div class="table-note"><em>Not available yet.</em></div>
+              {{/unless}}
+            </td>
+            <td>
+              <input type="checkbox" name="method_{{this.id}}_enabled" value="true"
+                {{#if this.enabled}}checked{{/if}}
+                {{#unless this.implemented}}disabled{{/unless}}
+                aria-label="Enable {{this.label}}">
+            </td>
+            <td>
+              <input type="checkbox" name="method_{{this.id}}_first" value="true"
+                {{#if this.firstFactor}}checked{{/if}}
+                {{#unless this.canBeFirst}}disabled{{/unless}}
+                aria-label="{{this.label}} may start a sign-in">
+            </td>
+            <td>
+              <input type="checkbox" name="method_{{this.id}}_second" value="true"
+                {{#if this.satisfiesSecond}}checked{{/if}}
+                {{#unless this.canSatisfySecond}}disabled{{/unless}}
+                aria-label="{{this.label}} completes a sign-in on its own">
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    <div class="inline-actions">
+      <button class="button button--primary" type="submit">Save methods</button>
+      <a class="button button--ghost" href="/admin/notifications">Notification delivery</a>
+    </div>
+  </form>
+</section>

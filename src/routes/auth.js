@@ -8,12 +8,22 @@ const {
   finishPasskeyRegistration,
   getUserById,
   registerUser,
+  finishPasskeyLogin,
   startPasskeyAuthentication,
+  startPasskeyLogin,
   startPasskeyRegistration,
   validateRegistration,
   verifyOtpChallenge
 } = require('../services/auth-service');
 const { writeAuditEvent } = require('../services/audit-service');
+const {
+  TOKEN_TTL_MINUTES,
+  completePasswordReset,
+  requestPasswordReset,
+  resolveResetToken
+} = require('../services/password-reset-service');
+const rateLimit = require('../services/rate-limit-service');
+const { isFirstFactorEnabled } = require('../services/sign-in-methods-service');
 const { isLocalTestRequest } = require('../middleware/local-test-mode');
 const {
   ensureAccountAccessSubscription
@@ -67,15 +77,20 @@ router.post('/auth/register', requireAnonymous, authorize('auth.register'), asyn
   }
 });
 
-router.get('/auth/login', requireAnonymous, (req, res) => {
-  captureReturnTo(req);
-  res.render('pages/auth-login', {
-    title: 'Sign in',
-    description: 'Sign in to Vanguard Cloud Services - Aegis ID.',
-    formValues: { email: normalizeEmail(req.query.email || '') },
-    errorMessage: req.session.authError || null
-  });
-  req.session.authError = null;
+router.get('/auth/login', requireAnonymous, async (req, res, next) => {
+  try {
+    captureReturnTo(req);
+    res.render('pages/auth-login', {
+      title: 'Sign in',
+      description: 'Sign in to Vanguard Cloud Services - Aegis ID.',
+      formValues: { email: normalizeEmail(req.query.email || '') },
+      passkeyLoginEnabled: await isFirstFactorEnabled('passkey'),
+      errorMessage: req.session.authError || null
+    });
+    req.session.authError = null;
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.post('/auth/login', requireAnonymous, authorize('auth.login'), (req, res, next) => {
@@ -164,6 +179,59 @@ router.post('/auth/verify/resend', requirePendingSecondFactor, authorize('auth.s
   }
 });
 
+// --- passkey as a first factor -------------------------------------------
+//
+// These two are anonymous: nobody has identified themselves yet. The challenge
+// lives in the session rather than on a user record, because which account is
+// signing in is only known once the authenticator answers.
+
+router.post('/auth/passkeys/login/options', requireAnonymous, authorize('auth.passkey'), async (req, res, next) => {
+  try {
+    if (!(await isFirstFactorEnabled('passkey'))) {
+      return res.status(403).json({ error: 'Passkey sign-in is not enabled.' });
+    }
+
+    const attempt = rateLimit.consume(`passkey-login:ip:${req.ip}`, { limit: 20, windowMs: 15 * 60 * 1000 });
+    if (!attempt.allowed) {
+      return res.status(429).json({ error: 'Too many attempts. Try again shortly.' });
+    }
+
+    const { options, rpId, origin } = await startPasskeyLogin(getPasskeyRequestInfo(req));
+    req.session.passkeyLogin = {
+      challenge: options.challenge,
+      rpId,
+      origin,
+      createdAt: new Date().toISOString()
+    };
+    return res.json(options);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/auth/passkeys/login/verify', requireAnonymous, authorize('auth.passkey'), async (req, res, next) => {
+  try {
+    if (!(await isFirstFactorEnabled('passkey'))) {
+      return res.status(403).json({ error: 'Passkey sign-in is not enabled.' });
+    }
+
+    const challenge = req.session.passkeyLogin;
+    req.session.passkeyLogin = null; // single use, whatever the outcome
+    const user = await finishPasskeyLogin(req.body, getPasskeyRequestInfo(req), challenge);
+
+    // A verified passkey is possession plus inherence, so it completes the
+    // sign-in on its own rather than handing off to a second factor.
+    rateLimit.reset(`passkey-login:ip:${req.ip}`);
+    await writeAuditEvent('auth.login.passkey', { userId: user.id, email: user.email });
+    return await finishInteractiveLogin(req, res, user, 'passkey-login', true);
+  } catch (error) {
+    if (error.status === 422 || error.expose) {
+      return res.status(error.status || 400).json({ error: error.message });
+    }
+    return next(error);
+  }
+});
+
 router.post('/auth/passkeys/register/options', requirePendingSecondFactor, authorize('auth.passkey'), async (req, res, next) => {
   try {
     const options = await startPasskeyRegistration(req.session.pendingSecondFactorUserId, getPasskeyRequestInfo(req));
@@ -199,6 +267,102 @@ router.post('/auth/passkeys/authenticate/verify', requirePendingSecondFactor, au
     await finishInteractiveLogin(req, res, user, 'passkey-authentication', true);
   } catch (error) {
     next(error);
+  }
+});
+
+router.get('/auth/forgot', requireAnonymous, (req, res) => {
+  res.render('pages/auth-forgot', {
+    title: 'Reset your password',
+    description: 'Request a password reset link for Vanguard Aegis ID.',
+    formValues: { email: '' },
+    sent: false
+  });
+});
+
+router.post('/auth/forgot', requireAnonymous, authorize('auth.passwordReset'), async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+
+    // Throttle by address and by caller. When the budget is spent we still
+    // render the same confirmation, so a rate limit cannot be used to probe
+    // which addresses exist.
+    const byEmail = rateLimit.consume(`forgot:email:${email}`, { limit: 3, windowMs: 15 * 60 * 1000 });
+    const byIp = rateLimit.consume(`forgot:ip:${req.ip}`, { limit: 10, windowMs: 15 * 60 * 1000 });
+
+    if (byEmail.allowed && byIp.allowed) {
+      await requestPasswordReset(email, {
+        baseUrl: config.app.publicBaseUrl,
+        context: { ip: req.ip }
+      });
+    } else {
+      await writeAuditEvent('auth.password-reset.throttled', { email, ip: req.ip });
+    }
+
+    return res.render('pages/auth-forgot', {
+      title: 'Reset your password',
+      description: 'Request a password reset link for Vanguard Aegis ID.',
+      formValues: { email: '' },
+      sent: true,
+      expiresInMinutes: TOKEN_TTL_MINUTES
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/auth/reset/:token', requireAnonymous, async (req, res, next) => {
+  try {
+    const resolved = await resolveResetToken(req.params.token);
+    return res.render('pages/auth-reset', {
+      title: 'Choose a new password',
+      description: 'Set a new password for your Vanguard Aegis ID account.',
+      token: req.params.token,
+      valid: Boolean(resolved),
+      errorMessage: null
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/auth/reset/:token', requireAnonymous, authorize('auth.passwordReset'), async (req, res, next) => {
+  try {
+    const attempt = rateLimit.consume(`reset:ip:${req.ip}`, { limit: 10, windowMs: 15 * 60 * 1000 });
+    if (!attempt.allowed) {
+      return res.status(429).render('pages/auth-reset', {
+        title: 'Choose a new password',
+        description: 'Set a new password for your Vanguard Aegis ID account.',
+        token: req.params.token,
+        valid: true,
+        errorMessage: 'Too many attempts. Try again in a few minutes.'
+      });
+    }
+
+    if (String(req.body.password || '') !== String(req.body.confirmPassword || '')) {
+      return res.status(422).render('pages/auth-reset', {
+        title: 'Choose a new password',
+        description: 'Set a new password for your Vanguard Aegis ID account.',
+        token: req.params.token,
+        valid: true,
+        errorMessage: 'Passwords must match.'
+      });
+    }
+
+    await completePasswordReset(req.params.token, req.body.password, { context: { ip: req.ip } });
+    rateLimit.reset(`reset:ip:${req.ip}`);
+    req.session.authError = 'Your password has been changed. Sign in with your new password.';
+    return res.redirect(303, '/auth/login');
+  } catch (error) {
+    if (error.expose) {
+      return res.status(error.status || 400).render('pages/auth-reset', {
+        title: 'Choose a new password',
+        description: 'Set a new password for your Vanguard Aegis ID account.',
+        token: req.params.token,
+        valid: error.status !== 400,
+        errorMessage: error.message
+      });
+    }
+    return next(error);
   }
 });
 

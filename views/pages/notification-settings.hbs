@@ -2,7 +2,7 @@
   <div class="section-heading">
     <p class="eyebrow">Platform settings</p>
     <h1>Notification delivery</h1>
-    <p>Aegis ID sends one-time verification codes when a holder recovers their wallet. Configure at least one channel before going to production — without one, recovery cannot start.</p>
+    <p>Aegis ID sends sign-in codes, password reset links and wallet recovery codes. Configure at least one channel before going to production — without one, sign-in and recovery cannot complete.</p>
   </div>
 
   {{#if saved}}
@@ -20,7 +20,7 @@
 
   <article class="blade-guidance">
     <strong>Why this matters</strong>
-    <span>In production, a recovery code is never returned in the API response — it is only sent to the holder's registered email or phone. If no channel is configured, recovery fails closed rather than exposing the code.</span>
+    <span>Codes and links are never returned in an API response — they only ever reach the person over a configured channel. If nothing is configured, the platform fails closed rather than exposing them. For local development choose the <em>Local file</em> provider, which writes messages to disk instead of sending them.</span>
   </article>
 
   <form class="wizard-form" action="/admin/notifications" method="post">
@@ -129,11 +129,63 @@
       </div>
     </div>
 
+    <h2>What gets sent where</h2>
+    <p class="field-hint">Each kind of message can use email, SMS, or both. A message with no channel ticked is never sent.</p>
+    <table class="data-table">
+      <thead>
+        <tr><th>Message</th><th>Email</th><th>SMS</th></tr>
+      </thead>
+      <tbody>
+        {{#each settings.messageTypeCatalog}}
+          <tr>
+            <td>
+              <strong>{{this.label}}</strong>
+              <div class="table-note">{{this.description}}</div>
+            </td>
+            <td>
+              <input type="checkbox" name="type_{{this.id}}_email" value="true" {{#if this.email}}checked{{/if}}
+                     aria-label="Send {{this.label}} by email">
+            </td>
+            <td>
+              <input type="checkbox" name="type_{{this.id}}_sms" value="true" {{#if this.sms}}checked{{/if}}
+                     aria-label="Send {{this.label}} by SMS">
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
     <div class="modal-actions">
       <button class="button button--primary" type="submit" name="action" value="save">Save settings</button>
       <button class="button" type="submit" name="action" value="test">Save and test SMTP</button>
     </div>
   </form>
+
+  {{#if deliveryLog.length}}
+    <h2>Recent deliveries</h2>
+    <p class="field-hint">Recipients are masked. Message contents are never stored.</p>
+    <table class="data-table">
+      <thead>
+        <tr><th>When</th><th>Message</th><th>To</th><th>Result</th></tr>
+      </thead>
+      <tbody>
+        {{#each deliveryLog}}
+          <tr>
+            <td>{{this.at}}</td>
+            <td>{{this.type}}</td>
+            <td>{{this.recipient}}</td>
+            <td>
+              {{#if this.delivered}}
+                Sent via {{#each this.channels}}{{this}} {{/each}}
+              {{else}}
+                Not sent{{#if this.failures.length}} — {{#each this.failures}}{{this}} {{/each}}{{/if}}
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{/if}}
 
   {{#if settings.updatedAt}}
     <p class="muted">Last updated {{settings.updatedAt}}{{#if settings.updatedBy}} by {{settings.updatedBy}}{{/if}}.</p>

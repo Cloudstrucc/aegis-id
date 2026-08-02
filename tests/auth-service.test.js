@@ -10,6 +10,10 @@ test('auth service registers users, verifies passwords, and validates OTP challe
   const previousNodeEnv = process.env.NODE_ENV;
   const previousAppEnv = process.env.APP_ENV;
   process.env.USER_STORE_PATH = path.join(tempDir, 'users.json');
+  process.env.NOTIFICATION_SETTINGS_STORE_PATH = path.join(tempDir, 'notify.json');
+  process.env.NOTIFICATION_LOG_STORE_PATH = path.join(tempDir, 'notify-log.json');
+  process.env.AUDIT_STORE_PATH = path.join(tempDir, 'audit.json');
+  process.env.MAIL_DROP_PATH = path.join(tempDir, 'mail');
   process.env.NODE_ENV = 'test';
   process.env.APP_ENV = 'local';
   resetModules();
@@ -46,9 +50,16 @@ test('auth service registers users, verifies passwords, and validates OTP challe
   assert.equal(await verifyUserPassword('admin@vanguardcs.ca', 'wrong-password'), null);
 
   const challenge = await createOtpChallenge(user.id, 'email');
-  assert.match(challenge.developmentCode, /^[0-9]{6}$/);
+  assert.equal(challenge.delivered, true, 'the code is sent, not returned');
+
+  // Read it from the message that was actually delivered, the way the person
+  // signing in would.
+  const dropped = await fs.readdir(path.join(tempDir, 'mail'));
+  const body = await fs.readFile(path.join(tempDir, 'mail', dropped[0]), 'utf8');
+  const code = /\b(\d{6})\b/.exec(body)[1];
+
   assert.equal(await verifyOtpChallenge(user.id, '000000'), false);
-  assert.equal(await verifyOtpChallenge(user.id, challenge.developmentCode), true);
+  assert.equal(await verifyOtpChallenge(user.id, code), true);
 
   const refreshed = await getUserById(user.id);
   assert.ok(refreshed.lastSecondFactorAt);
@@ -67,7 +78,15 @@ test('auth service registers users, verifies passwords, and validates OTP challe
 });
 
 function resetModules() {
-  for (const modulePath of ['../src/config', '../src/services/auth-service']) {
+  const modules = [
+    '../src/config',
+    '../src/services/auth-service',
+    '../src/services/notification-settings-service',
+    '../src/services/otp-delivery-service',
+    '../src/services/audit-service',
+    '../src/adapters/notify/notification-adapter'
+  ];
+  for (const modulePath of modules) {
     delete require.cache[require.resolve(modulePath)];
   }
 }

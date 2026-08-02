@@ -197,10 +197,11 @@ async function startRecovery(input = {}) {
     phone: wallet.phone
   });
 
+  // The code itself is never returned — it only ever reaches the holder over a
+  // configured channel. Locally that is the filesystem transport.
   return {
     request: publicRequest(request),
-    delivery: { delivered: delivery.delivered, channels: delivery.channels },
-    otp: delivery.devCode
+    delivery: { delivered: delivery.delivered, channels: delivery.channels }
   };
 }
 

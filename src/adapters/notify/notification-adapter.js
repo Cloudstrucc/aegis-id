@@ -6,10 +6,38 @@
 // binding the platform to one vendor.
 //
 // When a channel is disabled the adapter reports `delivered: false` rather than
-// throwing, so local development keeps working with no mail server: the caller
-// falls back to returning the code in the API response (non-production only).
+// throwing, so the caller decides whether that is fatal. For local development
+// choose the "filesystem" preset, which writes messages to disk instead of
+// sending them — codes are never echoed back in a response.
 
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const nodemailer = require('nodemailer');
+
+const config = require('../../config');
+
+/**
+ * Write a message to disk instead of sending it. This is what makes local
+ * development testable without an SMTP account or an SMS provider, and it is
+ * what the end-to-end journey asserts against. Selected per channel by choosing
+ * the "filesystem" preset.
+ */
+async function dropToFilesystem(channel, message) {
+  const dir = config.paths.mailDrop;
+  await fs.mkdir(dir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const file = path.join(dir, `${stamp}-${channel}.txt`);
+  const lines = [
+    `Channel: ${channel}`,
+    `To: ${message.to}`,
+    message.subject ? `Subject: ${message.subject}` : null,
+    `Sent: ${new Date().toISOString()}`,
+    '',
+    message.text || message.body || ''
+  ].filter((line) => line !== null);
+  await fs.writeFile(file, lines.join('\n'), 'utf8');
+  return { delivered: true, channel, to: maskRecipient(message.to), file };
+}
 
 function maskRecipient(value = '') {
   const raw = String(value);
@@ -24,6 +52,9 @@ async function sendEmail(settings, { to, subject, text, html }) {
   const email = settings.email || {};
   if (!email.enabled) {
     return { delivered: false, reason: 'email-disabled' };
+  }
+  if (email.preset === 'filesystem') {
+    return dropToFilesystem('email', { to, subject, text });
   }
   if (!email.host || !email.fromAddress) {
     return { delivered: false, reason: 'email-not-configured' };
@@ -52,6 +83,9 @@ async function sendSms(settings, { to, body }) {
   const sms = settings.sms || {};
   if (!sms.enabled) {
     return { delivered: false, reason: 'sms-disabled' };
+  }
+  if (sms.preset === 'filesystem') {
+    return dropToFilesystem('sms', { to, body });
   }
   if (!sms.endpoint) {
     return { delivered: false, reason: 'sms-not-configured' };
@@ -86,6 +120,9 @@ async function sendSms(settings, { to, body }) {
 // Verify credentials without sending anything, for the "Test connection" button.
 async function verifyEmail(settings) {
   const email = settings.email || {};
+  if (email.preset === 'filesystem') {
+    return { ok: true, detail: `Messages are written to ${config.paths.mailDrop}` };
+  }
   if (!email.host) {
     throw new Error('An SMTP host is required.');
   }

@@ -13,7 +13,10 @@ const MODULES = [
   '../src/services/wallet-registry-service',
   '../src/services/wallet-recovery-service',
   '../src/services/wallet-contact-service',
-  '../src/services/audit-service'
+  '../src/services/audit-service',
+  '../src/services/notification-settings-service',
+  '../src/services/otp-delivery-service',
+  '../src/adapters/notify/notification-adapter'
 ];
 
 function resetModules() {
@@ -30,6 +33,10 @@ async function withRecovery(run) {
   process.env.WALLET_RECOVERY_REQUEST_STORE_PATH = path.join(dir, 'requests.json');
   process.env.WALLET_CONTACT_CHALLENGE_STORE_PATH = path.join(dir, 'contact.json');
   process.env.AUDIT_STORE_PATH = path.join(dir, 'audit-events.json');
+  process.env.NOTIFICATION_SETTINGS_STORE_PATH = path.join(dir, 'notify.json');
+  process.env.NOTIFICATION_LOG_STORE_PATH = path.join(dir, 'notify-log.json');
+  process.env.MAIL_DROP_PATH = path.join(dir, 'mail');
+  process.env.NODE_ENV = 'development';
   resetModules();
   try {
     await run({
@@ -43,6 +50,17 @@ async function withRecovery(run) {
     process.env = previous;
     resetModules();
   }
+}
+
+/**
+ * Read the code out of the most recent delivered message. The service no longer
+ * returns it, so a test has to collect it from the same place a holder would.
+ */
+async function latestOtp() {
+  const dir = process.env.MAIL_DROP_PATH;
+  const files = (await fs.readdir(dir)).sort();
+  const body = await fs.readFile(path.join(dir, files[files.length - 1]), 'utf8');
+  return /\b(\d{6})\b/.exec(body)[1];
 }
 
 async function setupWallet(registry, recovery, overrides = {}) {
@@ -103,7 +121,8 @@ test('TIER 1 — code plus OTP completes recovery and re-binds a new device key'
   await withRecovery(async ({ registry, recovery }) => {
     const { wallet, codes } = await setupWallet(registry, recovery);
 
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
     await recovery.redeemCodeForRequest(request.id, codes[0]);
     const result = await recovery.completeRecovery(request.id, { devicePublicKey: 'new-device-key' });
@@ -138,7 +157,8 @@ test('ATTACK — a stolen recovery code alone (no OTP) is rejected', async () =>
 test('ATTACK — a SIM-swapped OTP alone (no recovery code) cannot complete recovery', async () => {
   await withRecovery(async ({ registry, recovery }) => {
     const { wallet } = await setupWallet(registry, recovery);
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
 
     // OTP verified, but no code redeemed and no org attestation → not approved.
@@ -152,7 +172,8 @@ test('ATTACK — a SIM-swapped OTP alone (no recovery code) cannot complete reco
 test('ATTACK — a wrong recovery code is rejected and rate limited', async () => {
   await withRecovery(async ({ registry, recovery }) => {
     const { wallet } = await setupWallet(registry, recovery);
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -189,7 +210,8 @@ test('TIER 2 — org approval restores that organization only, without codes', a
       devicePublicKey: 'old-key-2'
     });
 
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
     await recovery.requestOrgAttestation(request.id, 'org-a');
     await recovery.approveOrgAttestation(request.id, {
@@ -210,7 +232,8 @@ test('TIER 2 — org approval restores that organization only, without codes', a
 test('TIER 2 — rejection terminates the request', async () => {
   await withRecovery(async ({ registry, recovery }) => {
     const wallet = await registry.registerWallet({ email: 'rej@example.com', devicePublicKey: 'k' });
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
     await recovery.requestOrgAttestation(request.id, 'org-a');
     await recovery.rejectOrgAttestation(request.id, 'Identity could not be confirmed', 'admin@org-a.gc.ca');
@@ -225,7 +248,8 @@ test('TIER 2 — rejection terminates the request', async () => {
 test('org queue lists only requests awaiting that organization', async () => {
   await withRecovery(async ({ registry, recovery }) => {
     const wallet = await registry.registerWallet({ email: 'q@example.com', devicePublicKey: 'k' });
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
     await recovery.requestOrgAttestation(request.id, 'org-a');
 
@@ -253,7 +277,8 @@ test('ATTACK — change-email-then-recover is blocked by the post-recovery conta
   await withRecovery(async ({ registry, recovery, contact }) => {
     const { wallet, codes } = await setupWallet(registry, recovery);
 
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
     await recovery.redeemCodeForRequest(request.id, codes[0]);
     await recovery.completeRecovery(request.id, { devicePublicKey: 'new-key' });
@@ -269,7 +294,8 @@ test('ATTACK — change-email-then-recover is blocked by the post-recovery conta
 test('a cancelled recovery cannot be completed', async () => {
   await withRecovery(async ({ registry, recovery }) => {
     const { wallet, codes } = await setupWallet(registry, recovery);
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
     await recovery.redeemCodeForRequest(request.id, codes[0]);
 
@@ -284,7 +310,8 @@ test('a cancelled recovery cannot be completed', async () => {
 test('completing a recovery twice is refused', async () => {
   await withRecovery(async ({ registry, recovery }) => {
     const { wallet, codes } = await setupWallet(registry, recovery);
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
     await recovery.redeemCodeForRequest(request.id, codes[0]);
     await recovery.completeRecovery(request.id, { devicePublicKey: 'new-key' });
@@ -308,7 +335,8 @@ test('starting recovery for an unknown wallet does not disclose existence', asyn
 test('the whole recovery trail is recorded and the evidence chain verifies', async () => {
   await withRecovery(async ({ registry, recovery, audit }) => {
     const { wallet, codes } = await setupWallet(registry, recovery);
-    const { request, otp } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const { request } = await recovery.startRecovery({ walletId: wallet.walletId });
+    const otp = await latestOtp();
     await recovery.verifyOtp(request.id, otp);
     await recovery.redeemCodeForRequest(request.id, codes[0]);
     await recovery.completeRecovery(request.id, { devicePublicKey: 'new-key' });
