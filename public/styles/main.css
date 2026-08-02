@@ -840,6 +840,30 @@ h3 {
   flex: none;
 }
 
+.install-steps {
+  display: grid;
+  gap: 14px;
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+
+.install-steps li {
+  padding-left: 4px;
+}
+
+.install-steps strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.install-steps em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
 .enrol-passwordless {
   display: grid;
   gap: 10px;

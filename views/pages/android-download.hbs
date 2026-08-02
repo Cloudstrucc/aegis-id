@@ -1,0 +1,103 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Mobile wallet</p>
+  <h1>Install the Aegis ID wallet on Android.</h1>
+  <p>This is a testing build, installed directly rather than through Google Play. It takes about two minutes and Android will ask you to confirm a few things along the way.</p>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      <p class="eyebrow">Before you start</p>
+      <h2>What you are installing.</h2>
+      <p>
+        The Aegis ID wallet holds the credentials your organization issues to you
+        and approves sign-in and signature requests. It is signed by Vanguard
+        Cloud Services, but it does not come from the Play Store, so Android
+        treats it as an app from an unknown source and will warn you.
+      </p>
+      <p>
+        Only install it if you were asked to by someone you know at your
+        organization, and only from this page.
+      </p>
+      {{#if androidPackageName}}
+        <p class="form-footnote">Package: <code>{{androidPackageName}}</code></p>
+      {{/if}}
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-panel__form">
+        <h2>Download</h2>
+        <p class="form-footnote">Open this page on the Android phone you want to install it on.</p>
+
+        {{#if hasAndroidDownloadUrl}}
+          <a class="button button--primary" href="{{androidDownloadUrl}}">Download the wallet (.apk)</a>
+        {{else}}
+          <p class="form-alert">A download is not published for this environment yet.</p>
+        {{/if}}
+
+        <ol class="install-steps">
+          <li>
+            <strong>Tap the download.</strong>
+            Chrome will warn that this type of file can harm your device. That
+            warning appears for every APK, not just this one. Choose
+            <em>Download anyway</em>.
+          </li>
+          <li>
+            <strong>Open the downloaded file.</strong>
+            Android will say your browser is not allowed to install unknown
+            apps. Tap <em>Settings</em>, turn on <em>Allow from this source</em>,
+            then go back.
+          </li>
+          <li>
+            <strong>Install.</strong>
+            Play Protect may say it does not recognise the developer, because the
+            app has not been through Play review. Choose <em>Install anyway</em>
+            if you were expecting this app.
+          </li>
+          <li>
+            <strong>Open the wallet and set it up.</strong>
+            You will get a Wallet ID to give to your organization administrator,
+            and ten recovery codes. Save the codes somewhere safe — they are shown
+            once and they are how you get back in if you lose the phone.
+          </li>
+        </ol>
+
+        <p class="form-footnote">
+          Turn <em>Allow from this source</em> back off afterwards if you would
+          rather not leave it enabled.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="section-heading">
+    <h2>Updating and removing it</h2>
+  </div>
+  <div class="track-grid">
+    <article class="track-card">
+      <h3>Updates</h3>
+      <p>
+        Come back to this page and install the newer file over the top. Your
+        Wallet ID, credentials and history are kept.
+      </p>
+    </article>
+    <article class="track-card">
+      <h3>Uninstalling</h3>
+      <p>
+        Removing the app deletes the wallet from the phone. The wallet itself
+        still exists, but getting back in needs one of your recovery codes, so
+        do not uninstall unless you have them.
+      </p>
+    </article>
+    <article class="track-card">
+      <h3>Trouble installing</h3>
+      <p>
+        If Android refuses with "app not installed", an older copy signed with a
+        different key is probably still present. Uninstall it first — and expect
+        to need a recovery code afterwards.
+      </p>
+    </article>
+  </div>
+</section>

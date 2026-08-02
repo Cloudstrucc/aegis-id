@@ -89,6 +89,20 @@ router.post('/admin/account-recovery', authorize('admin.accountRecovery.manage')
   }
 });
 
+// Sideloading instructions for the Android wallet. Public, because the badge
+// that links here is on the public home page — but deliberately a page rather
+// than a bare link to the .apk, so nobody meets Android's "unknown source"
+// block with no explanation of what they are installing or why.
+router.get('/downloads/android', authorize('public.home'), (req, res) => {
+  res.render('pages/android-download', {
+    title: 'Install the Aegis ID wallet on Android',
+    description: 'Download and install the Vanguard Aegis ID Android wallet for testing.',
+    androidDownloadUrl: config.app.androidTestingUrl,
+    hasAndroidDownloadUrl: Boolean(config.app.androidTestingUrl),
+    androidPackageName: config.mobileApps.androidPackageName
+  });
+});
+
 // Which sign-in methods the platform offers.
 router.get('/admin/sign-in-methods', authorize('admin.signInMethods.manage'), async (req, res, next) => {
   try {
