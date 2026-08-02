@@ -135,7 +135,6 @@ enum AppTab: String, CaseIterable, Identifiable {
     case scan
     case organizations
     case ledger
-    case connections
     case settings
 
     var id: String { rawValue }
@@ -151,8 +150,6 @@ enum AppTab: String, CaseIterable, Identifiable {
             OrganizationsView()
         case .ledger:
             LedgerView()
-        case .connections:
-            ConnectionsView()
         case .settings:
             SettingsView()
         }
@@ -169,8 +166,6 @@ enum AppTab: String, CaseIterable, Identifiable {
             Label("Orgs", systemImage: "building.2.crop.circle")
         case .ledger:
             Label("Ledger", systemImage: "list.bullet.rectangle.portrait")
-        case .connections:
-            Label("Connections", systemImage: "link")
         case .settings:
             Label("Settings", systemImage: "gearshape")
         }

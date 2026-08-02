@@ -5,6 +5,9 @@ struct HomeView: View {
     @EnvironmentObject private var store: WalletStore
     @State private var pastedInvitation = ""
     @State private var isAcceptingInvitation = false
+    // A TextEditor has no return key to dismiss with, so the keyboard needs an
+    // explicit way out or it covers the Import button and never goes away.
+    @FocusState private var invitationFieldFocused: Bool
 
     var body: some View {
         ScrollView {
@@ -16,6 +19,7 @@ struct HomeView: View {
             }
             .padding()
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(
             LinearGradient(
                 colors: [VanguardTheme.mist, .white],
@@ -126,6 +130,7 @@ struct HomeView: View {
                     .font(.headline)
 
                 TextEditor(text: $pastedInvitation)
+                    .focused($invitationFieldFocused)
                     .frame(minHeight: 92)
                     .padding(8)
                     .background(VanguardTheme.mist)
@@ -134,8 +139,15 @@ struct HomeView: View {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .stroke(VanguardTheme.line)
                     )
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") { invitationFieldFocused = false }
+                        }
+                    }
 
                 Button {
+                    invitationFieldFocused = false
                     store.importInvitation(from: pastedInvitation)
                     pastedInvitation = ""
                 } label: {

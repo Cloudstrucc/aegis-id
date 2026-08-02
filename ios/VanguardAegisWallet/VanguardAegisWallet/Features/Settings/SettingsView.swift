@@ -22,6 +22,14 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Connections") {
+                NavigationLink {
+                    ConnectionsView()
+                } label: {
+                    LabeledContent("Connections", value: "\(store.connections.count)")
+                }
+            }
+
             Section("Aegis ID service") {
                 LabeledContent("Web app", value: AegisWalletEnvironment.webAppDisplayValue)
                 LabeledContent("Lab transport", value: AegisWalletEnvironment.usesHostedWebApp ? "Hosted bridge" : "Local ACA-Py")
