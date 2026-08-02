@@ -247,11 +247,19 @@ For production, do not store keys or credentials in `UserDefaults`. Move wallet 
 
 For business-colleague testing on physical iPhones, use the TestFlight runbook in [TESTFLIGHT_RELEASE.md](TESTFLIGHT_RELEASE.md).
 
-To archive, export and upload all three environments in one command:
+To archive, export and upload, pick environments with `--env` (the same flag the
+Azure deploy scripts use). It is repeatable, and `all` means dev, qa and prod:
 
 ```bash
-scripts/release-ios.sh all
+scripts/release-ios.sh --env all
 ```
+
+```bash
+scripts/release-ios.sh --env dev --env qa
+```
+
+Bare names (`scripts/release-ios.sh dev qa prod`) still work. `--help` lists
+every flag, including `--build-number`, `--skip-upload` and `--env-file`.
 
 It reads `ASC_KEY_ID` and `ASC_ISSUER_ID` from an untracked `.env.ios` at the
 repository root — copy `.env.ios.example` and fill it in. The credentials are

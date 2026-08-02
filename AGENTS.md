@@ -81,7 +81,9 @@ home screen raises an "Open in …?" prompt that nothing can dismiss.
 
 ## iOS releases
 
-`scripts/release-ios.sh` reads `ASC_KEY_ID` and `ASC_ISSUER_ID` from an
+`scripts/release-ios.sh --env dev|qa|prod|all` archives, exports and uploads;
+`--env` is repeatable and mirrors the Azure deploy scripts, and bare
+environment names still work. It reads `ASC_KEY_ID` and `ASC_ISSUER_ID` from an
 untracked `.env.ios` at the repo root (template: `.env.ios.example`); exported
 values win, and `IOS_ENV_FILE` overrides the location. These are per Apple
 **team**, not per environment — dev, qa and prod share one App Store Connect

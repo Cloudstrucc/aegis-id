@@ -4,12 +4,16 @@ set -Eeuo pipefail
 # Archive, export and (optionally) upload the Vanguard Aegis ID wallet to
 # TestFlight for one or more environments.
 #
-# Usage:
-#   scripts/release-ios.sh dev
+# Usage (--env mirrors the Azure deploy scripts; bare names still work):
+#   scripts/release-ios.sh --env dev
+#   scripts/release-ios.sh --env dev --env qa
+#   scripts/release-ios.sh --env all
 #   scripts/release-ios.sh dev qa prod
-#   scripts/release-ios.sh all
-#   BUILD_NUMBER=7 scripts/release-ios.sh all          # pin the build number
-#   SKIP_UPLOAD=1 scripts/release-ios.sh dev           # archive + export only
+#   scripts/release-ios.sh --env all --build-number 7   # pin the build number
+#   scripts/release-ios.sh --env dev --skip-upload      # archive + export only
+#   scripts/release-ios.sh --help
+#
+# BUILD_NUMBER and SKIP_UPLOAD still work as environment variables.
 #
 # Uploading needs App Store Connect API credentials:
 #   ASC_KEY_ID, ASC_ISSUER_ID   and  ~/.appstoreconnect/private_keys/AuthKey_<ASC_KEY_ID>.p8
@@ -63,8 +67,6 @@ load_ios_env() {
   log "Loaded App Store Connect settings from ${IOS_ENV_FILE#$ROOT_DIR/}"
 }
 
-load_ios_env
-
 # environment -> scheme | configuration
 config_for() {
   case "$1" in
@@ -75,9 +77,110 @@ config_for() {
   esac
 }
 
-[[ $# -gt 0 ]] || die "Specify at least one environment: dev, qa, prod, or all"
-ENVIRONMENTS=("$@")
-[[ "${ENVIRONMENTS[0]}" == "all" ]] && ENVIRONMENTS=(dev qa prod)
+# Flags mirror the Azure deploy scripts, so --env means the same thing across
+# every release script in the repo. Bare environment names still work, because
+# that is what the existing runbooks and muscle memory use.
+ENVIRONMENTS=()
+
+add_environment() {
+  local value="$1"
+  if [[ "$value" == "all" ]]; then
+    ENVIRONMENTS+=(dev qa prod)
+    return
+  fi
+  # Validate here rather than at archive time, so a typo fails before a
+  # ten-minute build rather than after one.
+  config_for "$value" >/dev/null
+  ENVIRONMENTS+=("$value")
+}
+
+usage() {
+  cat <<'USAGE'
+Archive, export and upload the Vanguard Aegis ID wallet.
+
+Usage:
+  scripts/release-ios.sh --env dev
+  scripts/release-ios.sh --env dev --env qa
+  scripts/release-ios.sh --env all
+  scripts/release-ios.sh dev qa prod          # positional form still works
+  scripts/release-ios.sh all
+
+Options:
+  --env, -e <dev|qa|prod|all>   Environment to release. Repeatable.
+  --env=<value>                 Same, in equals form.
+  --build-number <n>            Pin the build number instead of a timestamp.
+  --skip-upload                 Archive and export only, no upload.
+  --env-file <path>             App Store Connect credentials file.
+  --help, -h                    This message.
+
+Credentials come from .env.ios at the repository root (see .env.ios.example).
+Values already exported in the shell take precedence.
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --env|-e)
+      [[ $# -ge 2 ]] || die "--env requires a value"
+      add_environment "$2"
+      shift 2
+      ;;
+    --env=*)
+      add_environment "${1#*=}"
+      shift
+      ;;
+    --build-number)
+      [[ $# -ge 2 ]] || die "--build-number requires a value"
+      BUILD_NUMBER="$2"
+      shift 2
+      ;;
+    --build-number=*)
+      BUILD_NUMBER="${1#*=}"
+      shift
+      ;;
+    --skip-upload)
+      SKIP_UPLOAD=1
+      shift
+      ;;
+    --env-file)
+      [[ $# -ge 2 ]] || die "--env-file requires a path"
+      IOS_ENV_FILE="$2"
+      shift 2
+      ;;
+    --env-file=*)
+      IOS_ENV_FILE="${1#*=}"
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    -*)
+      die "Unknown option: $1 (try --help)"
+      ;;
+    *)
+      add_environment "$1"
+      shift
+      ;;
+  esac
+done
+
+[[ ${#ENVIRONMENTS[@]} -gt 0 ]] || die "Specify at least one environment: --env dev|qa|prod|all (try --help)"
+
+# --env dev --env all, or a repeated name, should not build anything twice.
+# Written the long way because macOS ships bash 3.2, which has no mapfile.
+DEDUPED=()
+for candidate in "${ENVIRONMENTS[@]}"; do
+  already=0
+  for seen in ${DEDUPED[@]+"${DEDUPED[@]}"}; do
+    [[ "$seen" == "$candidate" ]] && already=1 && break
+  done
+  [[ $already -eq 0 ]] && DEDUPED+=("$candidate")
+done
+ENVIRONMENTS=("${DEDUPED[@]}")
+
+# After parsing, so --env-file can choose the file.
+load_ios_env
 
 command -v xcodebuild >/dev/null || die "xcodebuild not found"
 

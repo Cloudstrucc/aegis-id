@@ -187,11 +187,35 @@ mkdir -p ~/.appstoreconnect/private_keys
 mv ~/Downloads/AuthKey_<KEY_ID>.p8 ~/.appstoreconnect/private_keys/
 ```
 
-Then:
+Then release one environment, several, or all of them. `--env` mirrors the
+Azure deploy scripts, so the flag means the same thing across every release
+script in the repo:
 
 ```bash
-scripts/release-ios.sh all
+scripts/release-ios.sh --env dev
 ```
+
+```bash
+scripts/release-ios.sh --env dev --env qa
+```
+
+```bash
+scripts/release-ios.sh --env all
+```
+
+Bare environment names still work (`scripts/release-ios.sh dev qa prod`), so
+existing runbooks are unaffected. Repeats are collapsed, so `--env dev --env
+all` builds each environment once. An unknown environment fails immediately
+rather than part-way through a ten-minute archive.
+
+Other flags:
+
+| Flag | Effect |
+|---|---|
+| `--build-number <n>` | Pin the build number instead of a timestamp |
+| `--skip-upload` | Archive and export only |
+| `--env-file <path>` | Read credentials from somewhere other than `.env.ios` |
+| `--help` | Full usage |
 
 Anything already exported in the shell wins over the file, so CI can supply the
 values as secrets without one. `IOS_ENV_FILE=/path/to/file` points elsewhere.
@@ -201,7 +225,7 @@ Without credentials the script still archives and exports, and prints the
 credential is involved:
 
 ```bash
-SKIP_UPLOAD=1 scripts/release-ios.sh dev
+scripts/release-ios.sh --env dev --skip-upload
 ```
 
 ### Manual upload through Xcode
