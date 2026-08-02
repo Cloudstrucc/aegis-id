@@ -40,18 +40,30 @@ for `CFBundleVersion` does not fit. Pass `-PaegisVersionCode=` minutes since
 
 ## Emulators
 
-**Use an API 35 ARM64 AVD.** The app does not launch on the API 37.1 images:
-`am start` reports `Activity class … does not exist` even though the class is
-in the dex and registered in the activity resolver. That is the image, not the
-app — a pre-flavour APK fails there identically and the same APK launches fine
-on API 35.
+`Aegis_API35_arm64` is set up for local work. The app also runs correctly on the
+API 37.1 images — an earlier report that it did not was **a corrupted AVD
+package database**, not the image and not the app.
 
-`Aegis_API35_arm64` is set up for this. If it needs recreating, note that the
-`tools/bin` sdkmanager and avdmanager bundled here are too old: sdkmanager
-needs Java 8 (`JAVA_HOME=$(/usr/libexec/java_home -v 1.8)`) because JAXB was
-removed after that, and avdmanager cannot parse the current package metadata at
-all. Install the image with sdkmanager under Java 8, then write the AVD by
-hand — it is only two files:
+The symptom is worth recognising because it is very misleading: `am start`
+reports `Activity class … does not exist` for a newly installed app even though
+the class is present in the dex and `dumpsys package` lists its intent filters.
+The tell is that `cmd package query-activities -a android.intent.action.MAIN -c
+android.intent.category.LAUNCHER` returns only a handful of activities — 4 on
+the broken AVD versus 19 after a wipe. Fix it by wiping that AVD:
+
+```bash
+emulator -avd <name> -wipe-data
+```
+
+Do not chase this in the app. Native libraries were 16KB-aligned, the class was
+in the dex, and the same APK launched fine on a fresh AVD.
+
+If an AVD needs creating, note that the `tools/bin` sdkmanager and avdmanager
+bundled here are too old: sdkmanager needs Java 8
+(`JAVA_HOME=$(/usr/libexec/java_home -v 1.8)`) because JAXB was removed after
+that, and avdmanager cannot parse the current package metadata at all. Install
+the image with sdkmanager under Java 8, then write the AVD by hand — it is only
+two files:
 
 ```
 ~/.android/avd/<name>.ini            path, path.rel, target=android-35
