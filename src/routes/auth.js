@@ -33,6 +33,7 @@ const {
   redeemAccountRecoveryCode
 } = require('../services/account-recovery-service');
 const { confirmVerificationToken, sendVerificationEmail } = require('../services/email-verification-service');
+const { consumeGrant, resolveGrant } = require('../services/account-reenrolment-service');
 const { isLocalTestRequest } = require('../middleware/local-test-mode');
 const {
   ensureAccountAccessSubscription
@@ -303,6 +304,79 @@ router.get('/auth/verify-email/:token', async (req, res, next) => {
       email: confirmed?.email || null
     });
   } catch (error) {
+    return next(error);
+  }
+});
+
+// --- re-enrolment after an administrator's approval -----------------------
+//
+// The end of the road for someone with no authenticator and no codes left. An
+// admin has verified who they are out of band and authorised one grant; the
+// link arrived at the account's own address. They register a new passkey here
+// and get a fresh set of codes, so the admin never handles a credential.
+
+router.get('/auth/reenrol/:token', requireAnonymous, async (req, res, next) => {
+  try {
+    const resolved = await resolveGrant(req.params.token);
+    if (resolved) {
+      // Held in the session so the WebAuthn calls that follow do not put the
+      // token itself in a request body.
+      req.session.reenrolment = { grantId: resolved.grant.id, userId: resolved.user.id };
+    }
+    return res.render('pages/auth-reenrol', {
+      title: 'Set up a new passkey',
+      description: 'Register a new passkey for your Aegis ID account.',
+      valid: Boolean(resolved),
+      email: resolved?.user.email || null
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/auth/reenrol/options', requireAnonymous, authorize('auth.accountRecovery'), async (req, res, next) => {
+  try {
+    const pending = req.session.reenrolment;
+    if (!pending?.userId) {
+      return res.status(403).json({ error: 'This re-enrolment link is no longer valid.' });
+    }
+    const options = await startPasskeyRegistration(pending.userId, getPasskeyRequestInfo(req));
+    return res.json(options);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/auth/reenrol/verify', requireAnonymous, authorize('auth.accountRecovery'), async (req, res, next) => {
+  try {
+    const pending = req.session.reenrolment;
+    if (!pending?.userId) {
+      return res.status(403).json({ error: 'This re-enrolment link is no longer valid.' });
+    }
+
+    await finishPasskeyRegistration(pending.userId, req.body, getPasskeyRequestInfo(req));
+
+    // Spend the grant only once the credential is actually registered, so a
+    // failed ceremony does not burn the person's one chance.
+    await consumeGrant(pending.grantId);
+    req.session.reenrolment = null;
+
+    // The old codes are useless to them and may be in someone else's hands.
+    const codes = await generateAccountRecoveryCodes(pending.userId);
+    const user = await getUserById(pending.userId);
+
+    await writeAuditEvent('auth.account.reenrolment.completed', {
+      userId: user.id,
+      email: user.email
+    });
+
+    req.session.enrolmentRecoveryCodes = codes;
+    req.session.enrolmentUserId = user.id;
+    return res.json({ ok: true, redirectUrl: '/auth/register/recovery-codes' });
+  } catch (error) {
+    if (error.expose || error.status === 422) {
+      return res.status(error.status || 400).json({ error: error.message });
+    }
     return next(error);
   }
 });

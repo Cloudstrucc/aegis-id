@@ -60,6 +60,23 @@ const TEMPLATES = {
     ].join('\n'),
     sms: `Confirm your Aegis ID email: ${verifyUrl}`
   }),
+  'account-reenrolment': ({ reenrolUrl, expiresInMinutes, displayName }) => ({
+    subject: 'Set up a new passkey for your Aegis ID account',
+    text: [
+      `${displayName ? `Hello ${displayName},` : 'Hello,'}`,
+      '',
+      'An administrator has authorised you to register a new passkey, because',
+      'you no longer have your old one or any recovery codes.',
+      '',
+      reenrolUrl,
+      '',
+      `This link expires in ${expiresInMinutes} minutes and can only be used once.`,
+      '',
+      'If you did not ask for this, tell your administrator immediately —',
+      'someone may be trying to take over your account.'
+    ].join('\n'),
+    sms: `Set up a new Aegis ID passkey: ${reenrolUrl}`
+  }),
   'wallet-recovery': ({ code, walletId }) => ({
     subject: 'Your Aegis ID wallet recovery code',
     text: [

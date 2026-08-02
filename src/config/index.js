@@ -175,6 +175,10 @@ const config = {
       process.env.EMAIL_VERIFICATION_STORE_PATH,
       'data/email-verifications.json'
     ),
+    accountReenrolmentGrants: resolveFromRoot(
+      process.env.ACCOUNT_REENROLMENT_STORE_PATH,
+      'data/account-reenrolment-grants.json'
+    ),
     // Where the filesystem mail transport drops messages during local
     // development. Outside the repo's data directory because it is not state.
     mailDrop: resolveFromRoot(process.env.MAIL_DROP_PATH, 'artifacts/mail')

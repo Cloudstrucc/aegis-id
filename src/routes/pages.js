@@ -20,6 +20,10 @@ const {
   getSignInMethodsForDisplay,
   updateSignInMethods
 } = require('../services/sign-in-methods-service');
+const {
+  grantReenrolment,
+  listPasswordlessAccounts
+} = require('../services/account-reenrolment-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
@@ -48,6 +52,41 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
     policy: getPresentationPolicy(),
     microsoftMode: config.verifiedId.mode
   });
+});
+
+// Passwordless accounts and their remaining recovery codes. An account with
+// none left cannot get back in on its own — that hard stop is deliberate, and
+// this is where an administrator resolves it.
+router.get('/admin/account-recovery', authorize('admin.accountRecovery.manage'), async (req, res, next) => {
+  try {
+    const accounts = await listPasswordlessAccounts();
+    res.render('pages/account-recovery-admin', {
+      title: 'Account recovery',
+      description: 'Passwordless accounts, their remaining recovery codes, and re-enrolment.',
+      accounts,
+      lockedOutCount: accounts.filter((account) => account.lockedOut).length,
+      saved: req.query.saved === '1',
+      errorMessage: req.query.error || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/admin/account-recovery', authorize('admin.accountRecovery.manage'), async (req, res, next) => {
+  try {
+    await grantReenrolment(req.body.userId, {
+      actorEmail: req.user?.email,
+      baseUrl: config.app.publicBaseUrl,
+      reason: req.body.reason
+    });
+    return res.redirect(303, '/admin/account-recovery?saved=1');
+  } catch (error) {
+    if (error.expose) {
+      return res.redirect(303, `/admin/account-recovery?error=${encodeURIComponent(error.message)}`);
+    }
+    return next(error);
+  }
 });
 
 // Which sign-in methods the platform offers.

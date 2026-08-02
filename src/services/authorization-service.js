@@ -182,6 +182,10 @@ const POLICIES = Object.freeze({
     ],
     description: 'Configure SMTP and SMS delivery used for wallet recovery codes.'
   }),
+  'admin.accountRecovery.manage': policy('admin.accountRecovery.manage', 'adminAnyWorkspace', 'account-recovery', 'approve', {
+    fields: ['userId', 'reason'],
+    description: 'See which passwordless accounts are locked out and authorise a one-time re-enrolment. The administrator never sees the credential or the codes.'
+  }),
   'admin.signInMethods.manage': policy('admin.signInMethods.manage', 'adminAnyWorkspace', 'sign-in-methods', 'update', {
     description: 'Choose which sign-in methods the platform offers and what each one counts for.'
   }),

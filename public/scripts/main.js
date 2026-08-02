@@ -57,6 +57,12 @@ document.addEventListener('click', async (event) => {
     return;
   }
 
+  const reenrolPasskeyButton = event.target.closest('[data-passkey-reenrol]');
+  if (reenrolPasskeyButton) {
+    await handlePasskeyReenrolment(reenrolPasskeyButton);
+    return;
+  }
+
   const enrolPasskeyButton = event.target.closest('[data-passkey-enrol]');
   if (enrolPasskeyButton) {
     await handlePasskeyEnrolment(enrolPasskeyButton);
@@ -602,6 +608,53 @@ function applyRoleTemplate(select) {
   const adminRole = form.querySelector('input[name="adminRole"]');
   if (adminRole) {
     adminRole.checked = option.dataset.adminRole === 'true';
+  }
+}
+
+/**
+ * Register a replacement passkey after an administrator authorised it. The
+ * account is identified by the grant held in the session, so nothing about
+ * which account this is travels in the request.
+ */
+async function handlePasskeyReenrolment(button) {
+  const status = document.querySelector('[data-passkey-status]');
+
+  if (!window.PublicKeyCredential) {
+    setPasskeyStatus(status, 'This browser does not support passkeys.');
+    return;
+  }
+
+  setPasskeyStatus(status, 'Waiting for your security key or passkey.');
+
+  try {
+    const optionsResponse = await fetch('/auth/reenrol/options', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: '{}'
+    });
+    const options = await optionsResponse.json();
+    if (!optionsResponse.ok) {
+      throw new Error(options.error || 'Unable to start re-enrolment.');
+    }
+
+    const credential = await navigator.credentials.create({ publicKey: prepareCreationOptions(options) });
+
+    const verifyResponse = await fetch('/auth/reenrol/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(serializePublicKeyCredential(credential))
+    });
+    const result = await verifyResponse.json();
+    if (!verifyResponse.ok) {
+      throw new Error(result.error || 'Re-enrolment could not be completed.');
+    }
+
+    setPasskeyStatus(status, 'Passkey registered. Saving your new recovery codes...');
+    window.location.assign(result.redirectUrl || '/auth/login');
+  } catch (error) {
+    setPasskeyStatus(status, error.message || 'Re-enrolment was cancelled.');
   }
 }
 

@@ -92,6 +92,12 @@ const MESSAGE_TYPES = Object.freeze({
     description: 'Sent when someone enrols without a password, to prove they own the address.',
     defaults: { email: true, sms: false }
   },
+  'account-reenrolment': {
+    id: 'account-reenrolment',
+    label: 'Account re-enrolment link',
+    description: 'Sent when an administrator authorises a locked-out account to register a new passkey.',
+    defaults: { email: true, sms: false }
+  },
   'wallet-recovery': {
     id: 'wallet-recovery',
     label: 'Wallet recovery code',

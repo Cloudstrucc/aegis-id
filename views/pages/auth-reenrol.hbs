@@ -1,0 +1,42 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Account recovery</p>
+  {{#if valid}}
+    <h1>Set up a new passkey.</h1>
+    <p>Registering a new passkey for {{email}}. You will get a fresh set of recovery codes afterwards.</p>
+  {{else}}
+    <h1>This link is no longer valid.</h1>
+    <p>Re-enrolment links expire after an hour and can only be used once.</p>
+  {{/if}}
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      {{#if valid}}
+        <h2>One step left.</h2>
+        <p>Use the device you want to sign in with from now on — Face ID, Touch ID, Windows Hello or a security key.</p>
+        <p>Your old recovery codes stop working once this is done, so keep the new ones somewhere safe.</p>
+      {{else}}
+        <h2>Ask for a new link.</h2>
+        <p>Contact your administrator and ask them to authorise re-enrolment again.</p>
+        <p class="form-footnote"><a href="/auth/login">Back to sign in</a></p>
+      {{/if}}
+    </div>
+
+    {{#if valid}}
+      <div class="auth-panel">
+        <div class="auth-panel__form">
+          <button class="button button--primary" type="button" data-passkey-reenrol>
+            <svg class="auth-panel__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Register a new passkey
+          </button>
+          <p class="form-footnote form-footnote--centred" data-passkey-status aria-live="polite"></p>
+        </div>
+      </div>
+    {{/if}}
+  </div>
+</section>

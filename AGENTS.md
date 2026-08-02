@@ -116,6 +116,14 @@ so pairing the two keeps the assurance — the same shape as Tier-1 wallet
 recovery. Every step answers identically whether or not the account exists, and
 running out of codes is a hard stop that needs an admin.
 
+**A locked-out account is resolved at `/admin/account-recovery`**, which lists
+passwordless accounts and their remaining codes. An admin verifies the person
+out of band and authorises a one-time, hour-long re-enrolment grant; the link
+goes to the account's own address and the holder registers a new passkey and
+receives fresh codes. **The admin never sees a credential or a code** — one who
+could would make every passwordless account only as strong as its
+administrator. Who authorised it and why is on the evidence chain.
+
 ## Product identity
 
 Aegis ID is a standalone platform. It is not subordinate to Microsoft,

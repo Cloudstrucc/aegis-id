@@ -1,0 +1,82 @@
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Platform settings</p>
+    <h1>Account recovery</h1>
+    <p>Accounts that sign in with a passkey and no password. Each one holds ten single-use recovery codes; an account with none left cannot get back in on its own.</p>
+  </div>
+
+  {{#if saved}}
+    <div class="callout callout--success">
+      <strong>Re-enrolment authorised.</strong>
+      <span>A one-time link has been sent to the account holder. It expires in an hour.</span>
+    </div>
+  {{/if}}
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not authorised.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+
+  <article class="blade-guidance">
+    <strong>Verify who you are talking to first</strong>
+    <span>Authorising a re-enrolment lets whoever receives the email register a new passkey on this account. Confirm the person's identity out of band before you do it — this link is the only thing standing between a caller and someone else's account. You never see the credential or the new codes; they go to the account holder.</span>
+  </article>
+
+  {{#if lockedOutCount}}
+    <div class="callout callout--warning">
+      <strong>{{lockedOutCount}} account(s) have no recovery codes left.</strong>
+      <span>They cannot sign in without a new passkey.</span>
+    </div>
+  {{/if}}
+
+  {{#if accounts.length}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Account</th>
+          <th>Passkeys</th>
+          <th>Codes left</th>
+          <th>Email</th>
+          <th>Re-enrolment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each accounts}}
+          <tr>
+            <td>
+              <strong>{{this.displayName}}</strong>
+              <div class="table-note">{{this.email}}</div>
+            </td>
+            <td>{{this.passkeyCount}}</td>
+            <td>
+              {{#if this.lockedOut}}
+                <strong>0 — locked out</strong>
+              {{else}}
+                {{this.remainingCodes}} of 10
+              {{/if}}
+            </td>
+            <td>
+              {{#if this.emailVerifiedAt}}Confirmed{{else}}<span class="table-note">Not confirmed</span>{{/if}}
+            </td>
+            <td>
+              {{#if this.grantPending}}
+                <span class="table-note">Link sent, expires {{this.grantExpiresAt}}</span>
+              {{else}}
+                <form action="/admin/account-recovery" method="post" class="inline-form">
+                  <input type="hidden" name="userId" value="{{this.id}}">
+                  <input type="text" name="reason" placeholder="How you verified them" maxlength="300" required>
+                  <button class="button button--ghost" type="submit">Authorise re-enrolment</button>
+                </form>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="muted">No passwordless accounts yet. They appear here once someone enrols with a passkey.</p>
+  {{/if}}
+
+  <div class="inline-actions">
+    <a class="button button--ghost" href="/admin/sign-in-methods">Sign-in methods</a>
+    <a class="button button--ghost" href="/admin/notifications">Notification delivery</a>
+  </div>
+</section>
