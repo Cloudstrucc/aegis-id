@@ -19,17 +19,26 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const options = {
   headless: process.argv.includes('--headless'),
   keep: process.argv.includes('--keep'),
-  aegisPort: Number(process.env.E2E_AEGIS_PORT || 3210),
-  expensesPort: Number(process.env.E2E_EXPENSES_PORT || 4310)
+  // The wallet's Local build is compiled against the standard ports, so the
+  // journey claims those by default and the simulator can reach it. --isolated
+  // moves off them when you would rather leave your own servers running.
+  isolated: process.argv.includes('--isolated'),
+  installWallet: process.argv.includes('--install-wallet')
 };
+
+const STANDARD_PORTS = { aegis: 3000, expenses: 4300 };
+const ISOLATED_PORTS = { aegis: 3210, expenses: 4310 };
 
 const started = new Date();
 const stamp = started.toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const artifactsDir = path.join(ROOT, 'artifacts', 'e2e', stamp);
 const dataDir = path.join(artifactsDir, 'data');
 
-const AEGIS = `http://127.0.0.1:${options.aegisPort}`;
-const EXPENSES = `http://127.0.0.1:${options.expensesPort}`;
+// Filled in by resolvePorts() before anything starts.
+let ports = { aegis: 0, expenses: 0 };
+let AEGIS = '';
+let EXPENSES = '';
+let portNote = '';
 
 const processes = [];
 const runner = new Runner({ artifactsDir });
@@ -71,6 +80,58 @@ async function waitFor(description, check, { timeoutMs = 20000, intervalMs = 500
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
   throw new Error(`Timed out waiting for ${description}`);
+}
+
+/** Who, if anyone, is holding a port — used to explain a clash rather than guess. */
+async function portHolder(port) {
+  try {
+    const { stdout } = await execFileAsync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc']);
+    const pid = /^p(\d+)/m.exec(stdout)?.[1];
+    const command = /^c(.+)/m.exec(stdout)?.[1];
+    return pid ? { pid, command: command || 'unknown' } : null;
+  } catch {
+    return null; // lsof exits non-zero when nothing is listening
+  }
+}
+
+/**
+ * Claim the standard ports when they are free so the wallet's Local build can
+ * reach this run, and step aside onto the isolated ones when they are not.
+ * Nothing already running is ever stopped — that is the developer's call.
+ */
+async function resolvePorts() {
+  const wanted = options.isolated ? ISOLATED_PORTS : STANDARD_PORTS;
+  const notes = [];
+
+  // Each app moves independently, so one busy port does not cost the other its
+  // standard one — a Business Expenses instance on 4300 still leaves the wallet
+  // able to reach Aegis on 3000.
+  for (const app of ['aegis', 'expenses']) {
+    const holder = await portHolder(wanted[app]);
+    if (!holder) {
+      ports[app] = wanted[app];
+      continue;
+    }
+
+    const fallback = ISOLATED_PORTS[app];
+    if (fallback === wanted[app] || (await portHolder(fallback))) {
+      throw new Error(
+        `ports ${wanted[app]} and ${fallback} are both in use (pid ${holder.pid}, ${holder.command}) — stop one and retry`
+      );
+    }
+
+    ports[app] = fallback;
+    notes.push(`port ${wanted[app]} is in use (pid ${holder.pid}, ${holder.command}) — using ${fallback} for ${app}`);
+  }
+
+  portNote = notes.join('; ');
+  AEGIS = `http://127.0.0.1:${ports.aegis}`;
+  EXPENSES = `http://127.0.0.1:${ports.expenses}`;
+}
+
+/** The wallet's Local build is compiled against a fixed URL, so only that port works. */
+function walletCanReachAegis() {
+  return ports.aegis === STANDARD_PORTS.aegis;
 }
 
 function startServer(name, cwd, env, readyUrl) {
@@ -121,8 +182,85 @@ async function simulatorBooted() {
   }
 }
 
+// The Local scheme builds the Debug-Local configuration and shares the Dev
+// bundle id, so both appear the same to simctl. Either one satisfies the leg.
+const WALLET_BUNDLE_ID = 'ca.vanguardcs.aegisid.wallet.dev';
+const WALLET_CONFIGURATION = 'Debug-Local';
+
+/**
+ * Each configuration registers its own URL scheme (Local and Dev use
+ * aegisid-dev, prod uses aegisid), so ask the project rather than assume.
+ */
+async function walletUrlScheme() {
+  try {
+    const { stdout } = await execFileAsync('xcodebuild', [
+      '-project', path.join(ROOT, 'ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj'),
+      '-scheme', 'VanguardAegisWallet Local',
+      '-showBuildSettings'
+    ], { maxBuffer: 8 * 1024 * 1024 });
+    return /AEGIS_URL_SCHEME = (\S+)/.exec(stdout)?.[1] || 'aegisid';
+  } catch {
+    return 'aegisid';
+  }
+}
+
+async function walletInstalled() {
+  try {
+    const { stdout } = await execFileAsync('xcrun', ['simctl', 'listapps', 'booted']);
+    return stdout.includes(WALLET_BUNDLE_ID);
+  } catch {
+    return false;
+  }
+}
+
+/** Build the Local scheme and install it on the booted device. Opt-in: it is slow. */
+async function installWallet() {
+  const derived = path.join(artifactsDir, 'ios-build');
+  await execFileAsync(
+    'xcodebuild',
+    [
+      '-project', path.join(ROOT, 'ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj'),
+      '-scheme', 'VanguardAegisWallet Local',
+      '-configuration', WALLET_CONFIGURATION,
+      '-sdk', 'iphonesimulator',
+      '-derivedDataPath', derived,
+      '-destination', 'generic/platform=iOS Simulator',
+      'build'
+    ],
+    { maxBuffer: 32 * 1024 * 1024 }
+  );
+
+  const products = path.join(derived, 'Build', 'Products', `${WALLET_CONFIGURATION}-iphonesimulator`);
+  const entries = await fs.readdir(products);
+  const app = entries.find((entry) => entry.endsWith('.app'));
+  if (!app) {
+    throw new Error(`no .app produced in ${products}`);
+  }
+  await execFileAsync('xcrun', ['simctl', 'install', 'booted', path.join(products, app)]);
+  return app;
+}
+
+/**
+ * Bring the wallet to the front before deep-linking. Opening a custom scheme
+ * from the home screen makes iOS put up an "Open in …?" confirmation that
+ * nothing here can dismiss, and the link never reaches the app.
+ */
+async function launchWallet() {
+  await execFileAsync('xcrun', ['simctl', 'launch', 'booted', WALLET_BUNDLE_ID]);
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+}
+
 async function openDeepLink(url) {
-  await execFileAsync('xcrun', ['simctl', 'openurl', 'booted', url]);
+  try {
+    await execFileAsync('xcrun', ['simctl', 'openurl', 'booted', url]);
+  } catch (error) {
+    // Code 115 is "nothing on this device claims that URL scheme", which in
+    // practice always means the wallet is not installed on the booted device.
+    if (/code=115/.test(error.message)) {
+      throw new Error(`no app on the booted device claims ${new URL(url).protocol}// — re-run with --install-wallet`);
+    }
+    throw error;
+  }
 }
 
 // --- the journey ------------------------------------------------------------
@@ -138,6 +276,9 @@ async function main() {
 
   runner.info(`artifacts: ${artifactsDir}`);
   runner.info(`aegis: ${AEGIS}   business expenses: ${EXPENSES}`);
+  if (portNote) {
+    runner.info(portNote);
+  }
 
   // Every store points into this run's own directory, so nothing touches the
   // developer's working data and each run genuinely starts from scratch.
@@ -174,7 +315,7 @@ async function main() {
         APP_ENV: 'local',
         NODE_ENV: 'development',
         LOCAL_TEST_MODE: 'true',
-        PORT: String(options.aegisPort),
+        PORT: String(ports.aegis),
         PUBLIC_BASE_URL: AEGIS,
         APP_PUBLIC_BASE_URL: AEGIS,
         BUSINESS_EXPENSES_APP_URL: EXPENSES,
@@ -288,7 +429,7 @@ async function main() {
         'business-expenses',
         path.join(ROOT, 'examples', 'business-expenses'),
         {
-          PORT: String(options.expensesPort),
+          PORT: String(ports.expenses),
           APP_PUBLIC_BASE_URL: EXPENSES,
           AEGIS_ID_BASE_URL: AEGIS,
           SESSION_SECRET: `e2e-expenses-${unique}`
@@ -351,11 +492,31 @@ async function main() {
     'Drive the wallet in the iOS Simulator',
     async (record) => {
       expect(await simulatorBooted(), 'no booted simulator — open Simulator.app and boot a device');
-      await runner.simulatorShot(record, 'before-deep-link');
-      await openDeepLink(`aegisid://org-invite?invitation_id=${state.invitationId}&organization_id=${state.organizationId}&organization_name=${encodeURIComponent(orgName)}&vanguard_web_app_url=${encodeURIComponent(AEGIS)}`);
+      expect(
+        walletCanReachAegis(),
+        `the wallet's Local build points at port ${STANDARD_PORTS.aegis}, which this run could not claim — ${portNote}`
+      );
+
+      if (!(await walletInstalled())) {
+        expect(
+          options.installWallet,
+          'the wallet app is not installed on the booted simulator — re-run with --install-wallet to build and install it'
+        );
+        runner.info('building the Local wallet scheme — this takes a few minutes');
+        const app = await installWallet();
+        runner.info(`installed ${app} on the booted device`);
+      }
+
+      await launchWallet();
+      await runner.simulatorShot(record, 'wallet-launched');
+      const scheme = await walletUrlScheme();
+      await openDeepLink(`${scheme}://org-invite?invitation_id=${state.invitationId}&organization_id=${state.organizationId}&organization_name=${encodeURIComponent(orgName)}&vanguard_web_app_url=${encodeURIComponent(AEGIS)}`);
       await new Promise((resolve) => setTimeout(resolve, 2500));
       await runner.simulatorShot(record, 'after-org-invite');
-      return 'deep link delivered to the booted device';
+      // The wallet forces setup on a fresh install, so the invitation waits
+      // behind that screen. The screenshots show where it got to; finishing the
+      // flow is a human's job, since simctl cannot tap.
+      return `${scheme}:// org-invite delivered to the running wallet`;
     },
     { optional: true }
   );
@@ -387,7 +548,8 @@ function requireFresh(modulePath, env) {
   return require(modulePath);
 }
 
-main()
+resolvePorts()
+  .then(main)
   .catch((error) => {
     runner.write('fail', `journey aborted: ${error.message}`);
     runner.steps.push({ name: 'Journey aborted', status: 'fail', detail: error.message, ms: 0, screenshots: [] });

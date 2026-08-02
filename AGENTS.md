@@ -63,6 +63,22 @@ silently wiped on the next deployment.
 - If a change clearly needs a test, add it, but do not execute it unless asked.
 - If verification is requested, run the smallest targeted scope possible.
 
+### The end-to-end journey
+
+`scripts/e2e/run.sh` drives the whole holder journey and starts both Node apps
+itself — no `npm start` needed first. It claims ports **3000 and 4300** by
+default, because the wallet's Local build is compiled against
+`AEGIS_WEB_APP_BASE_URL = http://localhost:3000`; a busy port moves only that
+app to 3210/4310, and if Aegis moves the iOS leg skips. Each run writes to
+`artifacts/e2e/<timestamp>/`, with every `*_STORE_PATH` pointed inside it.
+
+The iOS leg needs the wallet installed on a booted simulator: `--install-wallet`
+builds the Local scheme and installs it. Note the Local configuration registers
+the **`aegisid-dev`** URL scheme and the `.dev` bundle id, not `aegisid` — the
+harness reads `AEGIS_URL_SCHEME` from the project rather than assuming. It also
+launches the app before deep-linking, because opening a custom scheme from the
+home screen raises an "Open in …?" prompt that nothing can dismiss.
+
 ## Product identity
 
 Aegis ID is a standalone platform. It is not subordinate to Microsoft,
