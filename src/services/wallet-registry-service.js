@@ -15,6 +15,7 @@ const crypto = require('node:crypto');
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { generateWalletId, parseWalletId } = require('./wallet-id');
+const { writeAuditEvent } = require('./audit-service');
 
 const store = new FileJsonStore(config.paths.wallets, []);
 
@@ -181,6 +182,11 @@ async function assertBinding(credential = {}, presentedWalletId) {
   if (!wallet) {
     throw validationError('This wallet is not registered.');
   }
+  if (wallet.status === 'revoked') {
+    // Enforced here rather than only in the UI: this is the path every
+    // credential acceptance goes through.
+    throw validationError('This wallet has been withdrawn from service. Contact your administrator.');
+  }
 
   const { mode, wallet: bound } = await resolveWalletForCredential(credential);
   if (!mode) {
@@ -235,8 +241,118 @@ async function listWallets() {
   return store.read();
 }
 
+
+/**
+ * Withdraw a wallet from service without erasing it.
+ *
+ * The record and its history stay, so the evidence chain still explains what
+ * that wallet did — it simply stops being usable. This is the right answer for
+ * a lost or compromised wallet: deleting it would destroy the very trail you
+ * would want afterwards.
+ */
+async function revokeWallet(walletId, { actorEmail, reason } = {}) {
+  const parsed = parseWalletId(walletId);
+  const records = await store.read();
+  const index = records.findIndex((record) => record.walletId === parsed);
+  if (index === -1) {
+    throw validationError('Wallet not found.', 404);
+  }
+  if (records[index].status === 'revoked') {
+    return records[index];
+  }
+
+  const now = new Date().toISOString();
+  records[index] = {
+    ...records[index],
+    status: 'revoked',
+    revokedAt: now,
+    revokedBy: actorEmail || null,
+    revokedReason: String(reason || '').slice(0, 300),
+    updatedAt: now
+  };
+  await store.write(records);
+
+  await writeAuditEvent('wallet.revoked', {
+    walletId: records[index].walletId,
+    revokedBy: actorEmail || null,
+    reason: records[index].revokedReason
+  });
+
+  return records[index];
+}
+
+/** Put a revoked wallet back into service. */
+async function restoreWallet(walletId, { actorEmail } = {}) {
+  const parsed = parseWalletId(walletId);
+  const records = await store.read();
+  const index = records.findIndex((record) => record.walletId === parsed);
+  if (index === -1) {
+    throw validationError('Wallet not found.', 404);
+  }
+
+  const now = new Date().toISOString();
+  records[index] = {
+    ...records[index],
+    status: 'active',
+    revokedAt: null,
+    revokedBy: null,
+    revokedReason: '',
+    updatedAt: now
+  };
+  await store.write(records);
+
+  await writeAuditEvent('wallet.restored', {
+    walletId: records[index].walletId,
+    restoredBy: actorEmail || null
+  });
+
+  return records[index];
+}
+
+/**
+ * Erase a wallet outright.
+ *
+ * Only allowed for a wallet that never did anything — no credential ever bound
+ * to it. That covers the case this exists for, clearing out test wallets, while
+ * making it impossible to delete away a wallet whose history someone may later
+ * need to account for. Anything that has been used must be revoked instead.
+ */
+async function deleteWallet(walletId, { actorEmail, reason, usageCount = 0 } = {}) {
+  const parsed = parseWalletId(walletId);
+  const records = await store.read();
+  const index = records.findIndex((record) => record.walletId === parsed);
+  if (index === -1) {
+    throw validationError('Wallet not found.', 404);
+  }
+
+  if (usageCount > 0) {
+    const error = new Error(
+      'This wallet holds credentials, so it cannot be deleted. Revoke it instead — that stops it being used while keeping its history.'
+    );
+    error.status = 409;
+    error.expose = true;
+    throw error;
+  }
+
+  const removed = records[index];
+  records.splice(index, 1);
+  await store.write(records);
+
+  await writeAuditEvent('wallet.deleted', {
+    walletId: removed.walletId,
+    email: removed.email,
+    deletedBy: actorEmail || null,
+    reason: String(reason || '').slice(0, 300)
+  });
+
+  return removed;
+}
+
 module.exports = {
   assertBinding,
+  deleteWallet,
+  restoreWallet,
+  revokeWallet,
   getWalletByEmail,
   getWalletByPhone,
   getWalletByWalletId,

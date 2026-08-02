@@ -24,6 +24,13 @@ const {
   grantReenrolment,
   listPasswordlessAccounts
 } = require('../services/account-reenrolment-service');
+const {
+  deleteWallet,
+  listWallets,
+  restoreWallet,
+  revokeWallet
+} = require('../services/wallet-registry-service');
+const { countCredentialsByWalletId } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 const router = express.Router();
@@ -52,6 +59,78 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
     policy: getPresentationPolicy(),
     microsoftMode: config.verifiedId.mode
   });
+});
+
+// Registered wallets, with the credential count that decides whether a wallet
+// may be deleted or must only be revoked.
+router.get('/admin/wallets', authorize('admin.wallets.manage'), async (req, res, next) => {
+  try {
+    const [wallets, counts] = await Promise.all([listWallets(), countCredentialsByWalletId()]);
+    const rows = wallets
+      .map((wallet) => {
+        const credentialCount = counts.get(wallet.walletId) || 0;
+        return {
+          walletId: wallet.walletId,
+          email: wallet.email,
+          phone: wallet.phone || null,
+          status: wallet.status || 'active',
+          isRevoked: wallet.status === 'revoked',
+          revokedReason: wallet.revokedReason || null,
+          revokedBy: wallet.revokedBy || null,
+          registeredAt: wallet.registeredAt || wallet.createdAt || null,
+          credentialCount,
+          // Only a wallet that never held a credential can be erased; anything
+          // else has history worth keeping.
+          canDelete: credentialCount === 0
+        };
+      })
+      .sort((left, right) => String(right.registeredAt).localeCompare(String(left.registeredAt)));
+
+    res.render('pages/wallet-admin', {
+      title: 'Registered wallets',
+      description: 'Withdraw a wallet from service, restore one, or remove a wallet that was never used.',
+      wallets: rows,
+      revokedCount: rows.filter((row) => row.isRevoked).length,
+      saved: req.query.saved || null,
+      errorMessage: req.query.error || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/admin/wallets', authorize('admin.wallets.manage'), async (req, res, next) => {
+  try {
+    const { walletId, action, reason } = req.body;
+    const actorEmail = req.user?.email;
+
+    if (action === 'revoke') {
+      await revokeWallet(walletId, { actorEmail, reason });
+      return res.redirect(303, '/admin/wallets?saved=revoked');
+    }
+    if (action === 'restore') {
+      await restoreWallet(walletId, { actorEmail });
+      return res.redirect(303, '/admin/wallets?saved=restored');
+    }
+    if (action === 'delete') {
+      // Re-count here rather than trusting the form: the page may have been
+      // open since before a credential was issued.
+      const counts = await countCredentialsByWalletId();
+      await deleteWallet(walletId, {
+        actorEmail,
+        reason,
+        usageCount: counts.get(walletId) || 0
+      });
+      return res.redirect(303, '/admin/wallets?saved=deleted');
+    }
+
+    return res.redirect(303, '/admin/wallets?error=Unknown+action');
+  } catch (error) {
+    if (error.expose || error.status === 404) {
+      return res.redirect(303, `/admin/wallets?error=${encodeURIComponent(error.message)}`);
+    }
+    return next(error);
+  }
 });
 
 // Passwordless accounts and their remaining recovery codes. An account with

@@ -1,0 +1,110 @@
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Platform settings</p>
+    <h1>Registered wallets</h1>
+    <p>Every wallet registered against this environment, newest first.</p>
+  </div>
+
+  {{#if saved}}
+    <div class="callout callout--success">
+      <strong>
+        {{#if (eq saved "revoked")}}Wallet withdrawn from service.{{/if}}
+        {{#if (eq saved "restored")}}Wallet restored.{{/if}}
+        {{#if (eq saved "deleted")}}Wallet deleted.{{/if}}
+      </strong>
+    </div>
+  {{/if}}
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not applied.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+
+  <article class="blade-guidance">
+    <strong>Revoke keeps the history; delete does not</strong>
+    <span>
+      <em>Revoke</em> stops a wallet being used — every credential acceptance is
+      refused — but keeps the record and its evidence trail. That is the right
+      action for a lost or compromised wallet, because the trail is exactly what
+      you would need afterwards. <em>Delete</em> erases the wallet outright and
+      is only offered for a wallet that never held a credential, so a wallet with
+      history can never be deleted away. Neither action touches the holder's
+      device; a revoked wallet simply stops working.
+    </span>
+  </article>
+
+  {{#if revokedCount}}
+    <div class="callout callout--warning">
+      <strong>{{revokedCount}} wallet(s) are withdrawn from service.</strong>
+      <span>Their holders cannot accept credentials until they are restored.</span>
+    </div>
+  {{/if}}
+
+  {{#if wallets.length}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Wallet ID</th>
+          <th>Contact</th>
+          <th>Credentials</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each wallets}}
+          <tr>
+            <td><code>{{this.walletId}}</code></td>
+            <td>
+              {{this.email}}
+              {{#if this.phone}}<div class="table-note">{{this.phone}}</div>{{/if}}
+              {{#if this.registeredAt}}<div class="table-note">Registered {{this.registeredAt}}</div>{{/if}}
+            </td>
+            <td>{{this.credentialCount}}</td>
+            <td>
+              {{#if this.isRevoked}}
+                <strong>Revoked</strong>
+                {{#if this.revokedReason}}<div class="table-note">{{this.revokedReason}}</div>{{/if}}
+                {{#if this.revokedBy}}<div class="table-note">by {{this.revokedBy}}</div>{{/if}}
+              {{else}}
+                Active
+              {{/if}}
+            </td>
+            <td>
+              {{#if this.isRevoked}}
+                <form action="/admin/wallets" method="post" class="inline-form">
+                  <input type="hidden" name="walletId" value="{{this.walletId}}">
+                  <input type="hidden" name="action" value="restore">
+                  <button class="button button--ghost" type="submit">Restore</button>
+                </form>
+              {{else}}
+                <form action="/admin/wallets" method="post" class="inline-form">
+                  <input type="hidden" name="walletId" value="{{this.walletId}}">
+                  <input type="hidden" name="action" value="revoke">
+                  <input type="text" name="reason" placeholder="Why" maxlength="300" required>
+                  <button class="button button--ghost" type="submit">Revoke</button>
+                </form>
+              {{/if}}
+
+              {{#if this.canDelete}}
+                <form action="/admin/wallets" method="post" class="inline-form">
+                  <input type="hidden" name="walletId" value="{{this.walletId}}">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="text" name="reason" placeholder="Why" maxlength="300" required>
+                  <button class="button button--ghost" type="submit">Delete</button>
+                </form>
+              {{else}}
+                <div class="table-note">Holds credentials — revoke only.</div>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="muted">No wallets are registered against this environment yet.</p>
+  {{/if}}
+
+  <div class="inline-actions">
+    <a class="button button--ghost" href="/admin/account-recovery">Account recovery</a>
+    <a class="button button--ghost" href="/admin/sign-in-methods">Sign-in methods</a>
+  </div>
+</section>

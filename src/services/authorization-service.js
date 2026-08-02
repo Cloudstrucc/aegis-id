@@ -182,6 +182,10 @@ const POLICIES = Object.freeze({
     ],
     description: 'Configure SMTP and SMS delivery used for wallet recovery codes.'
   }),
+  'admin.wallets.manage': policy('admin.wallets.manage', 'adminAnyWorkspace', 'wallet', 'revoke', {
+    fields: ['walletId', 'reason', 'action'],
+    description: 'Withdraw a wallet from service, restore one, or delete a wallet that never held a credential.'
+  }),
   'admin.accountRecovery.manage': policy('admin.accountRecovery.manage', 'adminAnyWorkspace', 'account-recovery', 'approve', {
     fields: ['userId', 'reason'],
     description: 'See which passwordless accounts are locked out and authorise a one-time re-enrolment. The administrator never sees the credential or the codes.'

@@ -152,6 +152,20 @@ receives fresh codes. **The admin never sees a credential or a code** — one wh
 could would make every passwordless account only as strong as its
 administrator. Who authorised it and why is on the evidence chain.
 
+## Wallet administration
+
+`/admin/wallets` lists every registered wallet. **Revoking** sets
+`status: 'revoked'` and is enforced in `assertBinding`, which every credential
+acceptance goes through — so a revoked wallet genuinely stops working rather
+than merely looking disabled. The record and its evidence stay, because a lost
+or compromised wallet is exactly the case where the trail matters.
+
+**Deleting** erases the wallet and is only offered when no credential has ever
+bound to it, so a wallet with history can never be deleted away. The count is
+re-checked server-side at delete time rather than trusted from the form. Both
+actions carry the actor and a reason onto the evidence chain; for a deletion
+that audit entry is the only remaining record the wallet existed.
+
 ## Product identity
 
 Aegis ID is a standalone platform. It is not subordinate to Microsoft,

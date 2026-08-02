@@ -2940,6 +2940,32 @@ function notFound(message) {
   return error;
 }
 
+
+/**
+ * How many credentials are bound to each Wallet ID, keyed by wallet.
+ *
+ * The wallet admin screen needs this to decide whether a wallet may be deleted
+ * or must only be revoked, so it counts every credential a wallet holds
+ * regardless of status — a revoked credential is still history.
+ */
+async function countCredentialsByWalletId() {
+  const states = await stateStore.read();
+  const counts = new Map();
+
+  for (const state of states) {
+    normalizeState(state);
+    for (const credential of state.credentials) {
+      const walletId = credential.walletId;
+      if (!walletId) {
+        continue;
+      }
+      counts.set(walletId, (counts.get(walletId) || 0) + 1);
+    }
+  }
+
+  return counts;
+}
+
 module.exports = {
   acceptCoAdminChallenge,
   assertOrgPrivilege,
