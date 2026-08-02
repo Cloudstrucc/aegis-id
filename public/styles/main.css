@@ -735,6 +735,111 @@ h3 {
   padding: 28px;
 }
 
+/* Sign-in panel.
+   Every way of signing in lives in one card. The alternatives were previously
+   a third child of .auth-grid, which is a two-column grid, so they wrapped to
+   column 1 row 2 — detached from the form they belong to. */
+.auth-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.auth-panel__form {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+}
+
+.auth-panel__links {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: -4px;
+}
+
+/* The shared button styles are built for the dark hero, so on this white card
+   they read as washed out. Rescoped here rather than changed globally. */
+.auth-panel .button {
+  width: 100%;
+  gap: 9px;
+}
+
+.auth-panel .button--primary {
+  color: #ffffff;
+  background: var(--navy-900);
+  box-shadow: none;
+}
+
+.auth-panel .button--primary:hover {
+  background: var(--green-500);
+}
+
+.auth-panel .button--ghost {
+  color: var(--navy-900);
+  background: var(--paper);
+  border-color: var(--line);
+}
+
+.auth-panel .button--ghost:hover {
+  border-color: var(--blue-600);
+  background: var(--soft-blue);
+}
+
+/* Separated by a rule rather than by distance, so it reads as another way in
+   rather than an unrelated feature. */
+.auth-panel__alternatives {
+  display: grid;
+  gap: 12px;
+  padding: 22px 28px 26px;
+  border-top: 1px solid var(--line);
+  background: var(--mist);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.auth-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.form-footnote--centred {
+  text-align: center;
+}
+
+.form-footnote--centred:empty {
+  display: none;
+}
+
+.auth-panel__icon {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
 .field-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
