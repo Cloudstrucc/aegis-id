@@ -219,7 +219,10 @@ router.get('/admin/notifications', authorize('admin.notifications.manage'), asyn
     res.render('pages/notification-settings', {
       title: 'Notification delivery',
       description: 'Configure how Aegis ID sends codes, links and notices.',
-      settings: await getNotificationSettingsForDisplay(),
+      // Deliberately not called `settings`: Express puts its own app settings
+      // in app.locals.settings, and hbs reads settings.views to find the
+      // layout. A local of that name shadows it and every render 500s.
+      notificationSettings: await getNotificationSettingsForDisplay(),
       deliveryLog: await listDeliveryLog(25),
       saved: req.query.saved === '1',
       testResult: req.query.test || null

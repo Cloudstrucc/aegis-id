@@ -351,6 +351,10 @@ function publicUser(user) {
     // Needed by deserializeUser to reject sessions that predate a password
     // reset, so it has to survive publicUser().
     sessionsValidFrom: user.sessionsValidFrom || null,
+    // The local-test sign-in bypass reads this off the object passport hands
+    // it, which is this one. Without it the flag is always undefined and the
+    // bypass silently never fires.
+    testAccount: user.testAccount === true,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };

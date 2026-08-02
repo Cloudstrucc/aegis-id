@@ -28,7 +28,7 @@
     <h2>Email (SMTP)</h2>
     <div class="field-group">
       <label class="field-checkbox">
-        <input type="checkbox" name="emailEnabled" value="true" {{#if settings.email.enabled}}checked{{/if}}>
+        <input type="checkbox" name="emailEnabled" value="true" {{#if notificationSettings.email.enabled}}checked{{/if}}>
         Send verification codes by email
       </label>
     </div>
@@ -37,33 +37,33 @@
       <div class="field-group">
         <label class="field-label" for="emailPreset">Provider</label>
         <select id="emailPreset" name="emailPreset">
-          {{#each settings.emailPresets}}
-            <option value="{{id}}" {{#if (eq id ../settings.email.preset)}}selected{{/if}}>{{label}}</option>
+          {{#each notificationSettings.emailPresets}}
+            <option value="{{id}}" {{#if (eq id ../notificationSettings.email.preset)}}selected{{/if}}>{{label}}</option>
           {{/each}}
         </select>
         <p class="field-hint">Microsoft 365 / Exchange Online and Gmail / Google Workspace are preconfigured. Choose Custom for an on-premises relay.</p>
       </div>
       <div class="field-group">
         <label class="field-label" for="emailFromAddress">From address</label>
-        <input id="emailFromAddress" name="emailFromAddress" type="email" value="{{settings.email.fromAddress}}" placeholder="no-reply@vanguardcs.ca">
+        <input id="emailFromAddress" name="emailFromAddress" type="email" value="{{notificationSettings.email.fromAddress}}" placeholder="no-reply@vanguardcs.ca">
       </div>
     </div>
 
     <div class="field-row">
       <div class="field-group">
         <label class="field-label" for="emailHost">SMTP host <span class="field-tooltip" tabindex="0" data-tooltip="Only used when the provider is Custom. Presets supply their own host.">?</span></label>
-        <input id="emailHost" name="emailHost" type="text" value="{{settings.email.host}}" placeholder="smtp.office365.com">
+        <input id="emailHost" name="emailHost" type="text" value="{{notificationSettings.email.host}}" placeholder="smtp.office365.com">
       </div>
       <div class="field-group">
         <label class="field-label" for="emailPort">Port</label>
-        <input id="emailPort" name="emailPort" type="number" value="{{settings.email.port}}" placeholder="587">
+        <input id="emailPort" name="emailPort" type="number" value="{{notificationSettings.email.port}}" placeholder="587">
         <p class="field-hint">587 with STARTTLS is correct for Exchange Online and Gmail. Use 465 with implicit TLS below.</p>
       </div>
     </div>
 
     <div class="field-group">
       <label class="field-checkbox">
-        <input type="checkbox" name="emailSecure" value="true" {{#if settings.email.secure}}checked{{/if}}>
+        <input type="checkbox" name="emailSecure" value="true" {{#if notificationSettings.email.secure}}checked{{/if}}>
         Use implicit TLS (port 465)
       </label>
     </div>
@@ -71,25 +71,25 @@
     <div class="field-row">
       <div class="field-group">
         <label class="field-label" for="emailUsername">Username</label>
-        <input id="emailUsername" name="emailUsername" type="text" value="{{settings.email.username}}" autocomplete="off">
+        <input id="emailUsername" name="emailUsername" type="text" value="{{notificationSettings.email.username}}" autocomplete="off">
       </div>
       <div class="field-group">
         <label class="field-label" for="emailPassword">Password / app password</label>
         <input id="emailPassword" name="emailPassword" type="password" autocomplete="new-password"
-               placeholder="{{#if settings.email.hasPassword}}•••••••• (unchanged){{else}}Enter password{{/if}}">
+               placeholder="{{#if notificationSettings.email.hasPassword}}•••••••• (unchanged){{else}}Enter password{{/if}}">
         <p class="field-hint">Gmail requires an App Password. Microsoft 365 needs SMTP AUTH enabled, or an app password when MFA is on. Leave blank to keep the stored value.</p>
       </div>
     </div>
 
     <div class="field-group">
       <label class="field-label" for="emailFromName">From name</label>
-      <input id="emailFromName" name="emailFromName" type="text" value="{{settings.email.fromName}}">
+      <input id="emailFromName" name="emailFromName" type="text" value="{{notificationSettings.email.fromName}}">
     </div>
 
     <h2>SMS</h2>
     <div class="field-group">
       <label class="field-checkbox">
-        <input type="checkbox" name="smsEnabled" value="true" {{#if settings.sms.enabled}}checked{{/if}}>
+        <input type="checkbox" name="smsEnabled" value="true" {{#if notificationSettings.sms.enabled}}checked{{/if}}>
         Send verification codes by SMS
       </label>
       <p class="field-hint">Only wallets with a mobile number on file can receive SMS codes.</p>
@@ -99,20 +99,20 @@
       <div class="field-group">
         <label class="field-label" for="smsPreset">Provider</label>
         <select id="smsPreset" name="smsPreset">
-          {{#each settings.smsPresets}}
-            <option value="{{id}}" {{#if (eq id ../settings.sms.preset)}}selected{{/if}}>{{label}}</option>
+          {{#each notificationSettings.smsPresets}}
+            <option value="{{id}}" {{#if (eq id ../notificationSettings.sms.preset)}}selected{{/if}}>{{label}}</option>
           {{/each}}
         </select>
       </div>
       <div class="field-group">
         <label class="field-label" for="smsFromNumber">From number</label>
-        <input id="smsFromNumber" name="smsFromNumber" type="tel" value="{{settings.sms.fromNumber}}" placeholder="+16135550100">
+        <input id="smsFromNumber" name="smsFromNumber" type="tel" value="{{notificationSettings.sms.fromNumber}}" placeholder="+16135550100">
       </div>
     </div>
 
     <div class="field-group">
       <label class="field-label" for="smsEndpoint">API endpoint</label>
-      <input id="smsEndpoint" name="smsEndpoint" type="url" value="{{settings.sms.endpoint}}"
+      <input id="smsEndpoint" name="smsEndpoint" type="url" value="{{notificationSettings.sms.endpoint}}"
              placeholder="https://api.twilio.com/2010-04-01/Accounts/{accountSid}/Messages.json">
       <p class="field-hint">Any provider accepting a JSON POST works. <code>{accountSid}</code> is substituted automatically.</p>
     </div>
@@ -120,12 +120,12 @@
     <div class="field-row">
       <div class="field-group">
         <label class="field-label" for="smsAccountSid">Account SID / key</label>
-        <input id="smsAccountSid" name="smsAccountSid" type="text" value="{{settings.sms.accountSid}}" autocomplete="off">
+        <input id="smsAccountSid" name="smsAccountSid" type="text" value="{{notificationSettings.sms.accountSid}}" autocomplete="off">
       </div>
       <div class="field-group">
         <label class="field-label" for="smsAuthToken">Auth token</label>
         <input id="smsAuthToken" name="smsAuthToken" type="password" autocomplete="new-password"
-               placeholder="{{#if settings.sms.hasAuthToken}}•••••••• (unchanged){{else}}Enter token{{/if}}">
+               placeholder="{{#if notificationSettings.sms.hasAuthToken}}•••••••• (unchanged){{else}}Enter token{{/if}}">
       </div>
     </div>
 
@@ -136,7 +136,7 @@
         <tr><th>Message</th><th>Email</th><th>SMS</th></tr>
       </thead>
       <tbody>
-        {{#each settings.messageTypeCatalog}}
+        {{#each notificationSettings.messageTypeCatalog}}
           <tr>
             <td>
               <strong>{{this.label}}</strong>
@@ -187,7 +187,7 @@
     </table>
   {{/if}}
 
-  {{#if settings.updatedAt}}
-    <p class="muted">Last updated {{settings.updatedAt}}{{#if settings.updatedBy}} by {{settings.updatedBy}}{{/if}}.</p>
+  {{#if notificationSettings.updatedAt}}
+    <p class="muted">Last updated {{notificationSettings.updatedAt}}{{#if notificationSettings.updatedBy}} by {{notificationSettings.updatedBy}}{{/if}}.</p>
   {{/if}}
 </section>

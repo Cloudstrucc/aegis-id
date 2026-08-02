@@ -2968,6 +2968,7 @@ async function countCredentialsByWalletId() {
 
 module.exports = {
   acceptCoAdminChallenge,
+  countCredentialsByWalletId,
   assertOrgPrivilege,
   createClaimDefinition,
   createOrgUnit,
