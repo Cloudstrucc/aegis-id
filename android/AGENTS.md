@@ -38,14 +38,29 @@ emulator itself. Cleartext HTTP is permitted for the `local` flavour only, via
 for `CFBundleVersion` does not fit. Pass `-PaegisVersionCode=` minutes since
 2020-01-01 instead; the build fails with an explanation if it is out of range.
 
-## Known environment issue
+## Emulators
 
-The app does not launch on the API 37 emulator images (`am start` reports
-`Activity class … does not exist` even though the class is present in the dex
-and registered in the activity resolver). **This predates the flavour work** —
-the pre-change APK fails identically — so it is not a regression, but it does
-block on-device verification, since the only ARM AVDs on the current machine
-are API 37 and the API 36 AVD is x86_64. Worth resolving before UI work.
+**Use an API 35 ARM64 AVD.** The app does not launch on the API 37.1 images:
+`am start` reports `Activity class … does not exist` even though the class is
+in the dex and registered in the activity resolver. That is the image, not the
+app — a pre-flavour APK fails there identically and the same APK launches fine
+on API 35.
+
+`Aegis_API35_arm64` is set up for this. If it needs recreating, note that the
+`tools/bin` sdkmanager and avdmanager bundled here are too old: sdkmanager
+needs Java 8 (`JAVA_HOME=$(/usr/libexec/java_home -v 1.8)`) because JAXB was
+removed after that, and avdmanager cannot parse the current package metadata at
+all. Install the image with sdkmanager under Java 8, then write the AVD by
+hand — it is only two files:
+
+```
+~/.android/avd/<name>.ini            path, path.rel, target=android-35
+~/.android/avd/<name>.avd/config.ini abi.type=arm64-v8a, hw.cpu.arch=arm64,
+                                     image.sysdir.1=system-images/android-35/google_apis/arm64-v8a/,
+                                     tag.id=google_apis
+```
+
+x86_64 images cannot run on Apple Silicon, which rules out the API 36 AVD.
 
 ## Rules
 
