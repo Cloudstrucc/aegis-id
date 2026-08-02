@@ -117,6 +117,12 @@ async function getUserById(id) {
   return user ? publicUser(user) : null;
 }
 
+/** Public view of an account by address, for flows that start from an email. */
+async function findAccountByEmail(email) {
+  const user = await findUserByEmail(email);
+  return user ? publicUser(user) : null;
+}
+
 async function findUserByEmail(email) {
   const users = await store.read();
   return users.find((candidate) => normalizeEmail(candidate.email) === normalizeEmail(email)) || null;
@@ -628,6 +634,7 @@ module.exports = {
   startPasskeyLogin,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  findAccountByEmail,
   getUserById,
   registerUser,
   startPasskeyAuthentication,

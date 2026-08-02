@@ -109,6 +109,13 @@ recovery codes at enrolment (there is no password to reset) and must confirm
 their email, since without a password registering proves nothing about the
 address.
 
+**A lost authenticator is recovered at `/auth/recover`** with a recovery code
+*plus* a code emailed to the registered address. A written-down code is only
+possession, whereas the passkey it stands in for was possession plus inherence,
+so pairing the two keeps the assurance — the same shape as Tier-1 wallet
+recovery. Every step answers identically whether or not the account exists, and
+running out of codes is a hard stop that needs an admin.
+
 ## Product identity
 
 Aegis ID is a standalone platform. It is not subordinate to Microsoft,

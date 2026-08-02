@@ -25,6 +25,10 @@ const POLICIES = Object.freeze({
     fields: ['code', 'method']
   }),
   'auth.passkey': policy('auth.passkey', 'anonymous', 'session-passkey', 'verify'),
+  'auth.accountRecovery': policy('auth.accountRecovery', 'anonymous', 'session', 'recover', {
+    fields: ['email', 'code'],
+    description: 'Sign in with a recovery code when the authenticator is lost. Rate limited, and answers identically whether or not the account exists.'
+  }),
   'auth.passwordlessEnrolment': policy('auth.passwordlessEnrolment', 'anonymous', 'user', 'create', {
     fields: ['displayName', 'email', 'saved'],
     description: 'Create an account with a passkey or security key and no password. Off unless an admin enables it.'

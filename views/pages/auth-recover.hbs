@@ -1,0 +1,69 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Account recovery</p>
+  <h1>Use a recovery code.</h1>
+  <p>For accounts with no password, these are the codes you saved when you enrolled your security key or passkey.</p>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      {{#if (eq stage "email")}}
+        <p class="eyebrow">Step 1 of 3</p>
+        <h2>Which account?</h2>
+        <p>Enter the address you sign in with.</p>
+      {{else if (eq stage "code")}}
+        <p class="eyebrow">Step 2 of 3</p>
+        <h2>Enter a recovery code.</h2>
+        <p>Each code works once. Using one here spends it permanently.</p>
+      {{else}}
+        <p class="eyebrow">Step 3 of 3</p>
+        <h2>Confirm it is you.</h2>
+        <p>A recovery code on its own is only something you have. We also send a code to your registered address, so a stolen list is not enough on its own.</p>
+      {{/if}}
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-panel__form">
+        {{#if errorMessage}}<p class="form-alert">{{errorMessage}}</p>{{/if}}
+
+        {{#if (eq stage "email")}}
+          <form action="/auth/recover" method="post" novalidate>
+            <div class="field-group">
+              <label for="email">Work email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required>
+            </div>
+            <button class="button button--primary" type="submit">Continue</button>
+          </form>
+        {{else if (eq stage "code")}}
+          <form action="/auth/recover/code" method="post" novalidate>
+            <div class="field-group">
+              <label for="code">Recovery code</label>
+              <input id="code" name="code" type="text" inputmode="text" autocomplete="one-time-code"
+                     placeholder="XXXX-XXXX" spellcheck="false" required>
+            </div>
+            <button class="button button--primary" type="submit">Use this code</button>
+          </form>
+        {{else}}
+          <form action="/auth/recover/verify" method="post" novalidate>
+            {{#if delivery}}
+              <p class="form-footnote">
+                {{#if delivery.delivered}}
+                  Code sent to {{delivery.destination}}.
+                {{else}}
+                  We could not send a code. Ask a platform administrator to configure email delivery.
+                {{/if}}
+              </p>
+            {{/if}}
+            <div class="field-group">
+              <label for="otp">Verification code</label>
+              <input id="otp" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" required>
+            </div>
+            <button class="button button--primary" type="submit">Sign in</button>
+          </form>
+        {{/if}}
+
+        <p class="form-footnote"><a href="/auth/login">Back to sign in</a></p>
+      </div>
+    </div>
+  </div>
+</section>

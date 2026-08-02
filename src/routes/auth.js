@@ -6,6 +6,7 @@ const {
   createOtpChallenge,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  findAccountByEmail,
   getUserById,
   registerUser,
   finishPasskeyLogin,
@@ -26,7 +27,11 @@ const {
 } = require('../services/password-reset-service');
 const rateLimit = require('../services/rate-limit-service');
 const { isEnrolmentEnabled, isFirstFactorEnabled } = require('../services/sign-in-methods-service');
-const { generateAccountRecoveryCodes } = require('../services/account-recovery-service');
+const {
+  generateAccountRecoveryCodes,
+  getRemainingAccountCodeCount,
+  redeemAccountRecoveryCode
+} = require('../services/account-recovery-service');
 const { confirmVerificationToken, sendVerificationEmail } = require('../services/email-verification-service');
 const { isLocalTestRequest } = require('../middleware/local-test-mode');
 const {
@@ -297,6 +302,133 @@ router.get('/auth/verify-email/:token', async (req, res, next) => {
       confirmed: Boolean(confirmed),
       email: confirmed?.email || null
     });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// --- signing in with a recovery code --------------------------------------
+//
+// For an account with no password, losing the authenticator would otherwise be
+// terminal. A recovery code on its own is only one factor — something written
+// down — whereas the passkey it stands in for was possession plus inherence.
+// So a code is paired with a code sent to the registered address, which is the
+// same shape as Tier-1 wallet recovery.
+//
+// Every step answers identically whether or not the account exists, so the flow
+// cannot be used to discover who holds an account or which are passwordless.
+
+function recoveryStageView(overrides = {}) {
+  return {
+    title: 'Use a recovery code',
+    description: 'Sign in to Aegis ID with a recovery code.',
+    stage: 'code',
+    errorMessage: null,
+    ...overrides
+  };
+}
+
+router.get('/auth/recover', requireAnonymous, (req, res) => {
+  delete req.session.accountRecovery;
+  res.render('pages/auth-recover', recoveryStageView({ stage: 'email' }));
+});
+
+router.post('/auth/recover', requireAnonymous, authorize('auth.accountRecovery'), async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const limit = rateLimit.consume(`recover:ip:${req.ip}`, { limit: 10, windowMs: 15 * 60 * 1000 });
+
+    let userId = null;
+    if (limit.allowed) {
+      const account = await findAccountByEmail(email);
+      // Only passwordless accounts recover this way; a password account has the
+      // reset link instead. Either way the response is identical.
+      if (account?.passwordless && (await getRemainingAccountCodeCount(account.id)) > 0) {
+        userId = account.id;
+      }
+    }
+
+    req.session.accountRecovery = { userId, email, stage: 'code', attempts: 0 };
+    return res.render('pages/auth-recover', recoveryStageView({ stage: 'code' }));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/auth/recover/code', requireAnonymous, authorize('auth.accountRecovery'), async (req, res, next) => {
+  try {
+    const pending = req.session.accountRecovery;
+    if (!pending || pending.stage !== 'code') {
+      return res.redirect(303, '/auth/recover');
+    }
+
+    pending.attempts = (pending.attempts || 0) + 1;
+    const limit = rateLimit.consume(`recover-code:ip:${req.ip}`, { limit: 10, windowMs: 15 * 60 * 1000 });
+
+    const accepted =
+      limit.allowed &&
+      pending.userId &&
+      (await redeemAccountRecoveryCode(pending.userId, req.body.code));
+
+    if (!accepted) {
+      await writeAuditEvent('auth.account.recovery.code-rejected', {
+        email: pending.email,
+        ip: req.ip,
+        attempt: pending.attempts
+      });
+      // Deliberately vague, and identical for an unknown account, a wrong code
+      // and a spent budget.
+      return res.status(400).render('pages/auth-recover', recoveryStageView({
+        stage: 'code',
+        errorMessage: 'That recovery code was not accepted.'
+      }));
+    }
+
+    // A code alone is not enough. Prove control of the registered address too.
+    const delivery = await createOtpChallenge(pending.userId, 'email');
+    pending.stage = 'otp';
+    req.session.secondFactorDelivery = delivery;
+
+    return res.render('pages/auth-recover', recoveryStageView({
+      stage: 'otp',
+      delivery
+    }));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/auth/recover/verify', requireAnonymous, authorize('auth.accountRecovery'), async (req, res, next) => {
+  try {
+    const pending = req.session.accountRecovery;
+    if (!pending || pending.stage !== 'otp' || !pending.userId) {
+      return res.redirect(303, '/auth/recover');
+    }
+
+    const limit = rateLimit.consume(`recover-otp:ip:${req.ip}`, { limit: 10, windowMs: 15 * 60 * 1000 });
+    const ok = limit.allowed && (await verifyOtpChallenge(pending.userId, req.body.code));
+    if (!ok) {
+      return res.status(400).render('pages/auth-recover', recoveryStageView({
+        stage: 'otp',
+        delivery: req.session.secondFactorDelivery,
+        errorMessage: 'That code was not accepted.'
+      }));
+    }
+
+    const user = await getUserById(pending.userId);
+    delete req.session.accountRecovery;
+    const remaining = await getRemainingAccountCodeCount(user.id);
+
+    await writeAuditEvent('auth.account.recovery.completed', {
+      userId: user.id,
+      email: user.email,
+      remainingCodes: remaining
+    });
+
+    // The authenticator they lost may still be registered, but they cannot use
+    // it — so land them somewhere that tells them to add a new one.
+    req.session.recoveryNotice = remaining;
+    return await finishInteractiveLogin(req, res, user, 'account-recovery-code');
   } catch (error) {
     return next(error);
   }
