@@ -45,6 +45,21 @@ const TEMPLATES = {
     ].join('\n'),
     sms: `Reset your Aegis ID password: ${resetUrl}`
   }),
+  'email-verification': ({ verifyUrl, expiresInHours, displayName }) => ({
+    subject: 'Confirm your Aegis ID email address',
+    text: [
+      `${displayName ? `Hello ${displayName},` : 'Hello,'}`,
+      '',
+      'Confirm this address to finish setting up your Aegis ID account:',
+      '',
+      verifyUrl,
+      '',
+      `This link expires in ${expiresInHours} hours and can only be used once.`,
+      '',
+      'If you did not create an account, you can ignore this message.'
+    ].join('\n'),
+    sms: `Confirm your Aegis ID email: ${verifyUrl}`
+  }),
   'wallet-recovery': ({ code, walletId }) => ({
     subject: 'Your Aegis ID wallet recovery code',
     text: [

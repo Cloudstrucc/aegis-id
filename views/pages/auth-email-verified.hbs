@@ -1,0 +1,26 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Account setup</p>
+  {{#if confirmed}}
+    <h1>Email confirmed.</h1>
+    <p>{{email}} is now verified on your Aegis ID account.</p>
+  {{else}}
+    <h1>This link is no longer valid.</h1>
+    <p>Confirmation links expire and can only be used once.</p>
+  {{/if}}
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      {{#if confirmed}}
+        <h2>You are all set.</h2>
+        <p>Sign in with your passkey whenever you need to open an organization dashboard.</p>
+        <p class="form-footnote"><a href="/auth/login">Go to sign in</a></p>
+      {{else}}
+        <h2>Ask for a new link.</h2>
+        <p>Sign in and request another confirmation email from your account page.</p>
+        <p class="form-footnote"><a href="/auth/login">Go to sign in</a></p>
+      {{/if}}
+    </div>
+  </div>
+</section>

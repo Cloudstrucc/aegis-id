@@ -101,6 +101,12 @@ async function verifyUserPassword(email, password) {
   if (!user) {
     return null;
   }
+  // A passwordless account has no hash to compare against. bcrypt.compare
+  // throws on undefined, which would turn a routine sign-in attempt into a 500
+  // and tell an attacker which addresses are passwordless. Fail closed instead.
+  if (!user.passwordHash) {
+    return null;
+  }
   const ok = await bcrypt.compare(String(password || ''), user.passwordHash);
   return ok ? publicUser(user) : null;
 }
@@ -333,6 +339,8 @@ function publicUser(user) {
     preferredMfa: user.preferredMfa || 'email',
     mfaMethods: user.mfaMethods || { email: true },
     passkeyCount: user.passkeys?.length || 0,
+    passwordless: Boolean(user.passwordless) || !user.passwordHash,
+    emailVerifiedAt: user.emailVerifiedAt || null,
     lastSecondFactorAt: user.lastSecondFactorAt,
     // Needed by deserializeUser to reject sessions that predate a password
     // reset, so it has to survive publicUser().
@@ -472,9 +480,151 @@ async function finishPasskeyLogin(response, requestInfo, challenge) {
   return publicUser(owner);
 }
 
+
+/**
+ * Begin a passwordless enrolment. No account exists yet — the caller holds the
+ * returned challenge in their session and only after the authenticator answers
+ * is a user record written, so an abandoned ceremony leaves nothing behind.
+ */
+async function startPasswordlessRegistration(input, requestInfo) {
+  const displayName = normalizeText(input.displayName, 140);
+  const email = normalizeEmail(input.email);
+
+  const errors = {};
+  if (!displayName) {
+    errors.displayName = 'Enter your name.';
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = 'Enter a valid work email.';
+  }
+  if (Object.keys(errors).length) {
+    const error = new Error('Create account form needs attention.');
+    error.status = 422;
+    error.details = { isValid: false, errors, values: { displayName, email } };
+    throw error;
+  }
+
+  const users = await store.read();
+  if (users.some((user) => normalizeEmail(user.email) === email)) {
+    const error = new Error('An account already exists for this email.');
+    error.status = 409;
+    error.expose = true;
+    throw error;
+  }
+
+  const rp = resolveRelyingParty(requestInfo);
+  // A random handle rather than the email: the user handle is stored on the
+  // authenticator and syncs to the person's other devices, so it should not
+  // carry personal data.
+  const userHandle = crypto.randomUUID();
+  const options = await generateRegistrationOptions({
+    rpName: config.auth.passkeyRpName,
+    rpID: rp.rpId,
+    userID: Buffer.from(userHandle),
+    userName: email,
+    userDisplayName: displayName,
+    attestationType: 'none',
+    authenticatorSelection: {
+      residentKey: 'required',
+      userVerification: 'required'
+    }
+  });
+
+  return {
+    options,
+    pending: {
+      displayName,
+      email,
+      userHandle,
+      challenge: options.challenge,
+      rpId: rp.rpId,
+      origin: rp.origin,
+      createdAt: new Date().toISOString()
+    }
+  };
+}
+
+/**
+ * Finish a passwordless enrolment, creating the account. The record carries no
+ * passwordHash at all — verifyUserPassword refuses such accounts outright, so
+ * the only way in is the credential just registered or a recovery code.
+ */
+async function finishPasswordlessRegistration(response, requestInfo, pending) {
+  if (!pending?.challenge) {
+    throw validationError('No enrolment challenge is active.');
+  }
+
+  const rp = resolveRelyingParty(requestInfo, pending);
+  const verification = await verifyRegistrationResponse({
+    response,
+    expectedChallenge: pending.challenge,
+    expectedOrigin: rp.origin,
+    expectedRPID: rp.rpId,
+    // Insisted on here, not merely requested in the options: without user
+    // verification the credential is possession only, and this account has no
+    // second factor behind it.
+    requireUserVerification: true
+  });
+
+  if (!verification.verified || !verification.registrationInfo) {
+    throw validationError('Passkey enrolment could not be verified.');
+  }
+
+  const users = await store.read();
+  if (users.some((user) => normalizeEmail(user.email) === normalizeEmail(pending.email))) {
+    const error = new Error('An account already exists for this email.');
+    error.status = 409;
+    error.expose = true;
+    throw error;
+  }
+
+  const credential = verification.registrationInfo.credential;
+  const now = new Date().toISOString();
+  const user = {
+    id: crypto.randomUUID(),
+    email: normalizeEmail(pending.email),
+    displayName: pending.displayName,
+    phone: '',
+    // Deliberately absent, not empty: bcrypt.compare('', '') returns false but
+    // an empty string still looks like a credential. There is no password.
+    passwordHash: null,
+    passwordless: true,
+    userHandle: pending.userHandle,
+    emailVerifiedAt: null,
+    preferredMfa: 'passkey',
+    mfaMethods: { email: true, sms: false, passkey: true },
+    passkeys: [
+      {
+        id: crypto.randomUUID(),
+        name: response.authenticatorAttachment === 'platform' ? 'Platform passkey' : 'Security key passkey',
+        credential: {
+          id: credential.id,
+          publicKey: Buffer.from(credential.publicKey).toString('base64url'),
+          counter: credential.counter,
+          transports: credential.transports || response.response?.transports || []
+        },
+        credentialDeviceType: verification.registrationInfo.credentialDeviceType,
+        credentialBackedUp: verification.registrationInfo.credentialBackedUp,
+        createdAt: now,
+        lastUsedAt: null
+      }
+    ],
+    pendingSecondFactor: null,
+    lastSecondFactorAt: now,
+    createdAt: now,
+    updatedAt: now
+  };
+
+  users.push(user);
+  await store.write(users);
+  return publicUser(user);
+}
+
 module.exports = {
   createOtpChallenge,
   finishPasskeyLogin,
+  finishPasswordlessRegistration,
+  startPasswordlessRegistration,
   startPasskeyLogin,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,

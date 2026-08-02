@@ -32,7 +32,11 @@ const CATALOG = Object.freeze({
     implemented: true,
     canBeFirst: true,
     canSatisfySecond: true,
-    defaults: { enabled: true, firstFactor: true, satisfiesSecond: true }
+    // Whether someone may create an account with only a passkey. Off by
+    // default: it changes who can obtain an account, so it is an explicit
+    // decision rather than something that arrives with an upgrade.
+    canEnrol: true,
+    defaults: { enabled: true, firstFactor: true, satisfiesSecond: true, allowEnrolment: false }
   },
   entra: {
     id: 'entra',
@@ -59,12 +63,15 @@ function mergeDefaults(saved = {}) {
     Object.values(CATALOG).map((method) => {
       const stored = saved[method.id] || {};
       const merged = { ...method.defaults, ...stored };
+      const enabled = Boolean(merged.enabled) && method.implemented;
       return [
         method.id,
         {
-          enabled: Boolean(merged.enabled) && method.implemented,
+          enabled,
           firstFactor: Boolean(merged.firstFactor) && method.canBeFirst,
-          satisfiesSecond: Boolean(merged.satisfiesSecond) && method.canSatisfySecond
+          satisfiesSecond: Boolean(merged.satisfiesSecond) && method.canSatisfySecond,
+          // Enrolment cannot outlive the method itself.
+          allowEnrolment: Boolean(merged.allowEnrolment) && Boolean(method.canEnrol) && enabled
         }
       ];
     })
@@ -79,6 +86,12 @@ async function getSignInMethods() {
 async function isFirstFactorEnabled(id) {
   const methods = await getSignInMethods();
   return Boolean(methods[id]?.enabled && methods[id]?.firstFactor);
+}
+
+/** May someone create a new account using only this method? */
+async function isEnrolmentEnabled(id) {
+  const methods = await getSignInMethods();
+  return Boolean(methods[id]?.allowEnrolment);
 }
 
 /** Does completing this method mean no separate second factor is required? */
@@ -107,7 +120,12 @@ async function updateSignInMethods(input = {}, actorEmail = null) {
       {
         enabled: booleanField(input[`method_${method.id}_enabled`]) && method.implemented,
         firstFactor: booleanField(input[`method_${method.id}_first`]) && method.canBeFirst,
-        satisfiesSecond: booleanField(input[`method_${method.id}_second`]) && method.canSatisfySecond
+        satisfiesSecond: booleanField(input[`method_${method.id}_second`]) && method.canSatisfySecond,
+        allowEnrolment:
+          booleanField(input[`method_${method.id}_enrol`]) &&
+          Boolean(method.canEnrol) &&
+          booleanField(input[`method_${method.id}_enabled`]) &&
+          method.implemented
       }
     ])
   );
@@ -149,6 +167,7 @@ module.exports = {
   CATALOG,
   getSignInMethods,
   getSignInMethodsForDisplay,
+  isEnrolmentEnabled,
   isFirstFactorEnabled,
   satisfiesSecondFactor,
   updateSignInMethods

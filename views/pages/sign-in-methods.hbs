@@ -14,7 +14,7 @@
 
   <article class="blade-guidance">
     <strong>First factor vs second factor</strong>
-    <span><em>First factor</em> means the method can start a sign-in. <em>Completes sign-in</em> means finishing it is enough on its own — no separate code is asked for. A passkey or wallet approval with biometric verification is already possession plus inherence, so an extra code adds friction without adding assurance. A password is neither, so it can never complete a sign-in by itself.</span>
+    <span><em>First factor</em> means the method can start a sign-in. <em>Completes sign-in</em> means finishing it is enough on its own — no separate code is asked for. A passkey or wallet approval with biometric verification is already possession plus inherence, so an extra code adds friction without adding assurance. A password is neither, so it can never complete a sign-in by itself. <em>New accounts</em> allows someone to enrol with only that method and no password; they receive recovery codes at enrolment and must confirm their email before the account is useful.</span>
   </article>
 
   <form class="wizard-form" action="/admin/sign-in-methods" method="post">
@@ -25,6 +25,7 @@
           <th>Enabled</th>
           <th>First factor</th>
           <th>Completes sign-in</th>
+          <th>New accounts</th>
         </tr>
       </thead>
       <tbody>
@@ -54,6 +55,15 @@
                 {{#if this.satisfiesSecond}}checked{{/if}}
                 {{#unless this.canSatisfySecond}}disabled{{/unless}}
                 aria-label="{{this.label}} completes a sign-in on its own">
+            </td>
+            <td>
+              {{#if this.canEnrol}}
+                <input type="checkbox" name="method_{{this.id}}_enrol" value="true"
+                  {{#if this.allowEnrolment}}checked{{/if}}
+                  aria-label="Allow new accounts to be created with {{this.label}}">
+              {{else}}
+                <span class="table-note">—</span>
+              {{/if}}
             </td>
           </tr>
         {{/each}}

@@ -1,0 +1,33 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Account created</p>
+  <h1>Save your recovery codes.</h1>
+  <p>Your account has no password, so these codes are how you get back in if you lose your security key or passkey.</p>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      <p class="eyebrow">Shown once</p>
+      <h2>Store these somewhere safe.</h2>
+      <p>Each code works once. We cannot show them again — they are stored only as hashes, so nobody at Vanguard can read them back to you.</p>
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-panel__form">
+        <ul class="recovery-code-list">
+          {{#each codes}}
+            <li>{{this}}</li>
+          {{/each}}
+        </ul>
+
+        <form action="/auth/register/recovery-codes" method="post">
+          <label class="field-checkbox">
+            <input type="checkbox" name="saved" value="true" required>
+            I have saved these codes somewhere safe
+          </label>
+          <button class="button button--primary" type="submit">Continue to my account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>

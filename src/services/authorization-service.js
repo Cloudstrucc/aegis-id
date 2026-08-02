@@ -25,6 +25,10 @@ const POLICIES = Object.freeze({
     fields: ['code', 'method']
   }),
   'auth.passkey': policy('auth.passkey', 'anonymous', 'session-passkey', 'verify'),
+  'auth.passwordlessEnrolment': policy('auth.passwordlessEnrolment', 'anonymous', 'user', 'create', {
+    fields: ['displayName', 'email', 'saved'],
+    description: 'Create an account with a passkey or security key and no password. Off unless an admin enables it.'
+  }),
   'auth.passwordReset': policy('auth.passwordReset', 'anonymous', 'password', 'reset', {
     fields: ['email', 'password', 'confirmPassword'],
     description: 'Request or complete a password reset. Rate limited and never reveals whether an account exists.'

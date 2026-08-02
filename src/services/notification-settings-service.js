@@ -86,6 +86,12 @@ const MESSAGE_TYPES = Object.freeze({
     description: 'Sent when someone asks to reset a forgotten password.',
     defaults: { email: true, sms: false }
   },
+  'email-verification': {
+    id: 'email-verification',
+    label: 'Email verification link',
+    description: 'Sent when someone enrols without a password, to prove they own the address.',
+    defaults: { email: true, sms: false }
+  },
   'wallet-recovery': {
     id: 'wallet-recovery',
     label: 'Wallet recovery code',

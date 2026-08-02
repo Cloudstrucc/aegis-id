@@ -167,6 +167,14 @@ const config = {
       process.env.SIGN_IN_METHOD_STORE_PATH,
       'data/sign-in-methods.json'
     ),
+    accountRecoveryCodes: resolveFromRoot(
+      process.env.ACCOUNT_RECOVERY_CODE_STORE_PATH,
+      'data/account-recovery-codes.json'
+    ),
+    emailVerifications: resolveFromRoot(
+      process.env.EMAIL_VERIFICATION_STORE_PATH,
+      'data/email-verifications.json'
+    ),
     // Where the filesystem mail transport drops messages during local
     // development. Outside the repo's data directory because it is not state.
     mailDrop: resolveFromRoot(process.env.MAIL_DROP_PATH, 'artifacts/mail')

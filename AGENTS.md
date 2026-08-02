@@ -100,6 +100,15 @@ and refuses to make wallet approval the only one.
 **Entra sign-in links only — it must never auto-provision an account.** No
 matching Aegis account means refused, not created.
 
+**Passwordless enrolment is off by default** and must be turned on per method
+under "New accounts" at `/admin/sign-in-methods` — it changes who can obtain an
+account, so it is never enabled by an upgrade. A passwordless account stores
+`passwordHash: null`; `verifyUserPassword` returns null for such accounts before
+reaching bcrypt, which throws on a null hash. Those accounts get ten single-use
+recovery codes at enrolment (there is no password to reset) and must confirm
+their email, since without a password registering proves nothing about the
+address.
+
 ## Product identity
 
 Aegis ID is a standalone platform. It is not subordinate to Microsoft,

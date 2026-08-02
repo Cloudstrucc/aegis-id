@@ -57,6 +57,12 @@ document.addEventListener('click', async (event) => {
     return;
   }
 
+  const enrolPasskeyButton = event.target.closest('[data-passkey-enrol]');
+  if (enrolPasskeyButton) {
+    await handlePasskeyEnrolment(enrolPasskeyButton);
+    return;
+  }
+
   const loginPasskeyButton = event.target.closest('[data-passkey-login]');
   if (loginPasskeyButton) {
     await handlePasskey(loginPasskeyButton, 'login');
@@ -596,6 +602,59 @@ function applyRoleTemplate(select) {
   const adminRole = form.querySelector('input[name="adminRole"]');
   if (adminRole) {
     adminRole.checked = option.dataset.adminRole === 'true';
+  }
+}
+
+/**
+ * Create an account with a passkey and no password. Separate from handlePasskey
+ * because the endpoints live under /auth/register and it posts the form fields
+ * alongside the credential.
+ */
+async function handlePasskeyEnrolment(button) {
+  const status = document.querySelector('[data-passkey-status]');
+  const form = button.closest('form') || document;
+
+  if (!window.PublicKeyCredential) {
+    setPasskeyStatus(status, 'This browser does not support passkeys.');
+    return;
+  }
+
+  const payload = {
+    displayName: form.querySelector('[name="displayName"]')?.value || '',
+    email: form.querySelector('[name="email"]')?.value || ''
+  };
+
+  setPasskeyStatus(status, 'Waiting for your security key or passkey.');
+
+  try {
+    const optionsResponse = await fetch('/auth/register/passkey/options', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload)
+    });
+    const options = await optionsResponse.json();
+    if (!optionsResponse.ok) {
+      throw new Error(options.error || 'Unable to start enrolment.');
+    }
+
+    const credential = await navigator.credentials.create({ publicKey: prepareCreationOptions(options) });
+
+    const verifyResponse = await fetch('/auth/register/passkey/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(serializePublicKeyCredential(credential))
+    });
+    const result = await verifyResponse.json();
+    if (!verifyResponse.ok) {
+      throw new Error(result.error || 'Enrolment could not be completed.');
+    }
+
+    setPasskeyStatus(status, 'Account created. Saving your recovery codes...');
+    window.location.assign(result.redirectUrl || '/auth/login');
+  } catch (error) {
+    setPasskeyStatus(status, error.message || 'Enrolment was cancelled.');
   }
 }
 

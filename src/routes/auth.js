@@ -9,6 +9,8 @@ const {
   getUserById,
   registerUser,
   finishPasskeyLogin,
+  finishPasswordlessRegistration,
+  startPasswordlessRegistration,
   startPasskeyAuthentication,
   startPasskeyLogin,
   startPasskeyRegistration,
@@ -23,7 +25,9 @@ const {
   resolveResetToken
 } = require('../services/password-reset-service');
 const rateLimit = require('../services/rate-limit-service');
-const { isFirstFactorEnabled } = require('../services/sign-in-methods-service');
+const { isEnrolmentEnabled, isFirstFactorEnabled } = require('../services/sign-in-methods-service');
+const { generateAccountRecoveryCodes } = require('../services/account-recovery-service');
+const { confirmVerificationToken, sendVerificationEmail } = require('../services/email-verification-service');
 const { isLocalTestRequest } = require('../middleware/local-test-mode');
 const {
   ensureAccountAccessSubscription
@@ -38,9 +42,13 @@ const { authorize } = require('../middleware/authorization');
 
 const router = express.Router();
 
-router.get('/auth/register', requireAnonymous, (req, res) => {
-  captureReturnTo(req);
-  res.render('pages/auth-register', buildRegisterView(req));
+router.get('/auth/register', requireAnonymous, async (req, res, next) => {
+  try {
+    captureReturnTo(req);
+    res.render('pages/auth-register', await buildRegisterView(req));
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.post('/auth/register', requireAnonymous, authorize('auth.register'), async (req, res, next) => {
@@ -67,7 +75,7 @@ router.post('/auth/register', requireAnonymous, authorize('auth.register'), asyn
   } catch (error) {
     if (error.status === 422 || error.status === 409) {
       const validation = error.details || validateRegistration(req.body);
-      return res.status(error.status).render('pages/auth-register', buildRegisterView(req, {
+      return res.status(error.status).render('pages/auth-register', await buildRegisterView(req, {
         formErrors: validation.errors,
         formValues: validation.values,
         errorMessage: error.status === 409 ? error.message : null
@@ -176,6 +184,121 @@ router.post('/auth/verify/resend', requirePendingSecondFactor, authorize('auth.s
     res.redirect(303, '/auth/verify');
   } catch (error) {
     next(error);
+  }
+});
+
+// --- passwordless enrolment ----------------------------------------------
+//
+// Creating an account with a security key or passkey and no password at all.
+// Nothing is written until the authenticator answers, so an abandoned ceremony
+// leaves no half-made account behind.
+
+router.post('/auth/register/passkey/options', requireAnonymous, authorize('auth.passwordlessEnrolment'), async (req, res, next) => {
+  try {
+    if (!(await isEnrolmentEnabled('passkey'))) {
+      return res.status(403).json({ error: 'Passwordless enrolment is not enabled.' });
+    }
+
+    const attempt = rateLimit.consume(`enrol:ip:${req.ip}`, { limit: 10, windowMs: 60 * 60 * 1000 });
+    if (!attempt.allowed) {
+      return res.status(429).json({ error: 'Too many attempts. Try again later.' });
+    }
+
+    const { options, pending } = await startPasswordlessRegistration(req.body, getPasskeyRequestInfo(req));
+    req.session.passwordlessEnrolment = pending;
+    return res.json(options);
+  } catch (error) {
+    if (error.status === 422 || error.status === 409) {
+      return res.status(error.status).json({
+        error: error.message,
+        errors: error.details?.errors || null
+      });
+    }
+    return next(error);
+  }
+});
+
+router.post('/auth/register/passkey/verify', requireAnonymous, authorize('auth.passwordlessEnrolment'), async (req, res, next) => {
+  try {
+    if (!(await isEnrolmentEnabled('passkey'))) {
+      return res.status(403).json({ error: 'Passwordless enrolment is not enabled.' });
+    }
+
+    const pending = req.session.passwordlessEnrolment;
+    req.session.passwordlessEnrolment = null; // single use, whatever the outcome
+
+    const user = await finishPasswordlessRegistration(req.body, getPasskeyRequestInfo(req), pending);
+
+    // Losing the authenticator would otherwise mean losing the account, since
+    // there is no password to reset. These are the only way back in.
+    const recoveryCodes = await generateAccountRecoveryCodes(user.id);
+
+    // With no password, registering proves nothing about the address, so it has
+    // to be confirmed before the account is much use.
+    await sendVerificationEmail(user, { baseUrl: config.app.publicBaseUrl });
+
+    await writeAuditEvent('auth.user.registered', {
+      userId: user.id,
+      email: user.email,
+      passwordless: true,
+      preferredMfa: 'passkey'
+    });
+
+    req.session.enrolmentRecoveryCodes = recoveryCodes;
+    req.session.enrolmentUserId = user.id;
+    return res.json({ ok: true, redirectUrl: '/auth/register/recovery-codes' });
+  } catch (error) {
+    if (error.status === 409 || error.status === 422 || error.expose) {
+      return res.status(error.status || 400).json({ error: error.message });
+    }
+    return next(error);
+  }
+});
+
+// Shown once, straight after enrolment. Held in the session rather than the
+// store, because the plaintext codes exist nowhere else by design.
+router.get('/auth/register/recovery-codes', requireAnonymous, (req, res) => {
+  const codes = req.session.enrolmentRecoveryCodes;
+  if (!codes?.length) {
+    return res.redirect(303, '/auth/login');
+  }
+  return res.render('pages/auth-recovery-codes', {
+    title: 'Save your recovery codes',
+    description: 'One-time codes that get you back into your Aegis ID account.',
+    codes
+  });
+});
+
+router.post('/auth/register/recovery-codes', requireAnonymous, authorize('auth.passwordlessEnrolment'), async (req, res, next) => {
+  try {
+    const userId = req.session.enrolmentUserId;
+    req.session.enrolmentRecoveryCodes = null;
+    req.session.enrolmentUserId = null;
+
+    if (!userId) {
+      return res.redirect(303, '/auth/login');
+    }
+
+    // Enrolment already proved the authenticator, so sign them in rather than
+    // asking them to do the ceremony twice.
+    const user = await getUserById(userId);
+    return await finishInteractiveLogin(req, res, user, 'passwordless-enrolment');
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/auth/verify-email/:token', async (req, res, next) => {
+  try {
+    const confirmed = await confirmVerificationToken(req.params.token);
+    return res.render('pages/auth-email-verified', {
+      title: confirmed ? 'Email confirmed' : 'Link no longer valid',
+      description: 'Confirm the email address on your Aegis ID account.',
+      confirmed: Boolean(confirmed),
+      email: confirmed?.email || null
+    });
+  } catch (error) {
+    return next(error);
   }
 });
 
@@ -421,7 +544,7 @@ function restorePostAuthState(req, postAuthState) {
   delete req.session.returnTo;
 }
 
-function buildRegisterView(req, overrides = {}) {
+async function buildRegisterView(req, overrides = {}) {
   const formValues = {
     displayName: '',
     email: normalizeEmail(req.query.email || ''),
@@ -441,6 +564,7 @@ function buildRegisterView(req, overrides = {}) {
     description: 'Create a Vanguard Cloud Services - Aegis ID account.',
     formValues,
     formErrors: overrides.formErrors || {},
+    passwordlessEnrolmentEnabled: await isEnrolmentEnabled('passkey'),
     errorMessage: overrides.errorMessage || null
   };
 }

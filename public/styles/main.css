@@ -840,6 +840,55 @@ h3 {
   flex: none;
 }
 
+.enrol-passwordless {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--mist);
+}
+
+.enrol-passwordless__lead {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.enrol-passwordless .button {
+  width: 100%;
+  gap: 9px;
+  color: var(--navy-900);
+  background: var(--paper);
+  border-color: var(--line);
+}
+
+.enrol-passwordless .button:hover {
+  border-color: var(--blue-600);
+  background: var(--soft-blue);
+}
+
+.recovery-code-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  margin: 0;
+  padding: 18px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--mist);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 620px) {
+  .recovery-code-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 .field-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
