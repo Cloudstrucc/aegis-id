@@ -5,6 +5,7 @@ const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { revokeWorkspaceMemberRole, setWorkspaceMemberRole } = require('./platform-service');
 const { assertBinding } = require('./wallet-registry-service');
+const { assertCanIssueCredential } = require('./plan-service');
 const { parseWalletId } = require('./wallet-id');
 const { listRecoveryRequestsForOrg } = require('./wallet-recovery-service');
 
@@ -501,6 +502,12 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
 async function issueCredential(workspace, subscription, input = {}) {
   await assertOrgPrivilege(workspace, subscription, 'credentials.issue');
   const state = await getOrCreateState(workspace);
+
+  // Enforced at the single point every credential passes through. Revoked
+  // credentials still count: they hold a Wallet ID binding and evidence, so
+  // they are capacity the plan is paying for.
+  assertCanIssueCredential(subscription, state.credentials.length);
+
   const roleIds = normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
   const claims = buildClaims(state.claimDefinitions, input);
   // Distinguish an email the admin actually supplied from one defaulted by the

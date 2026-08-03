@@ -152,6 +152,29 @@ receives fresh codes. **The admin never sees a credential or a code** — one wh
 could would make every passwordless account only as strong as its
 administrator. Who authorised it and why is on the evidence chain.
 
+## Subscription plans
+
+`src/services/plan-service.js` is the single catalogue of tiers, limits and
+prices. Amounts are in cents and live only there, so changing pricing is a
+one-file edit.
+
+**The plan on the record and the plan in effect are different things.** A trial
+that has expired, or a paid plan whose `billingStatus` is not `active` or
+`comped`, falls back to Trial limits — never to nothing. Existing workspaces
+and credentials keep working and only new issuance is blocked, because a
+billing event must not revoke somebody's identity credential.
+
+A subscription with **no `billingStatus` field at all** predates billing and is
+grandfathered onto its plan. Every record created since sets the field, so its
+absence is unambiguous. An explicit empty string is a real answer and is
+treated as lapsed.
+
+Limits are enforced server-side at the only two paths that mint anything:
+`registerWorkspaceForSubscription` and `issueCredential`. Metered plans have no
+credential ceiling by design — the customer pays for what they issue rather
+than being cut off. Limit failures are **402**, not 403: it is a billing limit,
+not a permission failure.
+
 ## Wallet administration
 
 `/admin/wallets` lists every registered wallet. **Revoking** sets

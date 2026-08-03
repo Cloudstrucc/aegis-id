@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
+const { assertCanAddWorkspace } = require('./plan-service');
 const VerifiedIdClient = require('./verified-id-client');
 const { buildDemoEmployeeClaims, getPresentationPolicy } = require('./credential-policy-service');
 
@@ -414,6 +415,17 @@ async function registerWorkspaceForSubscription(subscription, input = {}) {
   const existing = workspaces.find(
     (workspace) => workspaceBelongsToSubscription(workspace, subscription) && normalizeComparable(workspace.organization) === normalizeComparable(organization)
   );
+
+  // Enforced here rather than in the route: this is the only path that mints a
+  // workspace, so a plan limit cannot be sidestepped by another caller.
+  // Re-opening one that already exists is not a new workspace and is allowed
+  // even at the limit.
+  if (!existing) {
+    const owned = workspaces.filter(
+      (workspace) => workspaceBelongsToSubscription(workspace, subscription) && workspace.status !== 'deleted'
+    );
+    assertCanAddWorkspace(subscription, owned.length);
+  }
 
   if (existing) {
     const memberWorkspace = ensureMembership(existing, subscription, 'administrator');

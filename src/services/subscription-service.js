@@ -5,7 +5,12 @@ const FileJsonStore = require('./file-json-store');
 
 const store = new FileJsonStore(config.paths.subscriptions, []);
 
-const allowedPlans = new Set(['pilot', 'sandbox', 'enterprise']);
+const { DEFAULT_PLAN_ID, isKnownPlan, resolvePlan, trialEndsAt } = require('./plan-service');
+
+// The catalogue is the authority on which plans exist. The legacy values are
+// still accepted so existing records and any bookmarked form keep working;
+// resolvePlan maps them onto a catalogue plan.
+const legacyPlans = new Set(['pilot', 'sandbox']);
 const allowedInterests = new Set(['microsoft-native', 'aries-lab', 'both']);
 
 function normalizeEmail(email = '') {
@@ -19,7 +24,8 @@ function normalizeText(value = '') {
 function validateSubscription(input = {}, user = null) {
   const errors = {};
   const email = normalizeEmail(user?.email || input.email);
-  const plan = allowedPlans.has(input.plan) ? input.plan : 'pilot';
+  const requested = String(input.plan || '').toLowerCase();
+  const plan = isKnownPlan(requested) || legacyPlans.has(requested) ? requested : DEFAULT_PLAN_ID;
   const interest = allowedInterests.has(input.interest) ? input.interest : 'both';
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -53,13 +59,20 @@ async function createSubscription(input, user = null) {
     throw error;
   }
 
+  const now = new Date().toISOString();
+  const selectedPlan = resolvePlan(validation.values.plan);
   const record = {
     id: crypto.randomUUID(),
     ...validation.values,
     userId: user?.id || null,
     status: 'new',
+    // Billing state is a cache of what the payment provider says. A paid plan
+    // entitles nobody until this says so, which is what stops an unpaid
+    // checkout from granting access.
+    billingStatus: selectedPlan.requiresPayment ? 'incomplete' : 'trialing',
+    trialEndsAt: selectedPlan.requiresPayment ? null : trialEndsAt(now),
     source: user ? 'authenticated-subscription' : 'landing-page',
-    createdAt: new Date().toISOString()
+    createdAt: now
   };
 
   return store.append(record);
