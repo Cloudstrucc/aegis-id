@@ -2949,6 +2949,24 @@ function notFound(message) {
 
 
 /**
+ * How many credentials each workspace holds, keyed by workspace id.
+ *
+ * Counts every credential regardless of status: a revoked one still holds a
+ * wallet binding and evidence, so it is capacity the plan is paying for.
+ */
+async function countCredentialsByWorkspace() {
+  const states = await stateStore.read();
+  const counts = new Map();
+
+  for (const state of states) {
+    normalizeState(state);
+    counts.set(state.workspaceId, state.credentials.length);
+  }
+
+  return counts;
+}
+
+/**
  * How many credentials are bound to each Wallet ID, keyed by wallet.
  *
  * The wallet admin screen needs this to decide whether a wallet may be deleted
@@ -2976,6 +2994,7 @@ async function countCredentialsByWalletId() {
 module.exports = {
   acceptCoAdminChallenge,
   countCredentialsByWalletId,
+  countCredentialsByWorkspace,
   assertOrgPrivilege,
   createClaimDefinition,
   createOrgUnit,
