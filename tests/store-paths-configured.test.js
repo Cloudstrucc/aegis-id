@@ -33,6 +33,69 @@ test('every store path the code reads is forwarded by the deploy script', () => 
   );
 });
 
+// The same trap, one level wider.
+//
+// A store path that is not forwarded loses data. Any *other* setting that is
+// not forwarded is just as invisible: the code reads it, the local run works,
+// and the hosted environment silently behaves as though it were never set.
+// That happened to the Stripe keys — they were added to .env.example and to
+// the code, and nowhere else, so payment would have been quietly off on every
+// deployed environment.
+//
+// Settings that are genuinely local-only, or that Azure provides itself, are
+// listed here with the reason.
+const NOT_DEPLOYED = new Map([
+  ['NODE_ENV', 'set by App Service itself'],
+  ['PORT', 'set by App Service itself'],
+  ['WEBSITE_HOSTNAME', 'provided by App Service'],
+  ['LOCAL_TEST_MODE', 'localhost-only affordance; deliberately never deployed'],
+  ['MAIL_DROP_PATH', 'filesystem transport is local-only'],
+  ['APP_ENV', 'set per environment by the deploy script itself'],
+  ['DEPLOY_ENV', 'set per environment by the deploy script itself'],
+  ['IOS_ENV_FILE', 'release tooling, not the web app'],
+
+  // Aries lab only. AGENTS.md is explicit that the lab is never on the product
+  // path, so these are correctly absent from a product deployment.
+  ['LEDGER_NETWORK', 'aries-lab only'],
+  ['LEDGER_GENESIS_URL', 'aries-lab only'],
+  ['LEDGER_TAA_ACCEPT', 'aries-lab only'],
+  ['LEDGER_TAA_MECHANISM', 'aries-lab only'],
+  ['LEDGER_TAA_TEXT_SHA256', 'aries-lab only'],
+  ['LEDGER_ENDORSER_DID', 'aries-lab only'],
+  ['TAILS_SERVER_BASE_URL', 'aries-lab only'],
+  ['AEGIS_INDY_DID_NAMESPACE', 'aries-lab only'],
+  ['ISSUER_WALLET_DB_URL', 'aries-lab only'],
+  ['AEGIS_ISSUER_DID_METHOD', "aries-lab only; product path defaults to 'web'"],
+
+  // Pre-existing gaps, allowlisted so this guard can start protecting new
+  // settings today rather than waiting on unrelated work. Each falls back to a
+  // usable default, so nothing is broken — but none of them can be configured
+  // per environment either, which is not obviously intended.
+  //   IOS_APP_BUNDLE_IDS           - defaults cover the three shipped bundles
+  //   DIGITAL_SIGNATURE_APP_URL    - derived from BUSINESS_EXPENSES_APP_URL
+  //   AUDIT_SIGNING_LOCAL_KEY_PATH - only read in local-key signing mode, and
+  //                                  its default sits in wwwroot
+  //   AUDIT_ANCHOR_DIR             - same, defaults to data/audit-heads
+  ['IOS_APP_BUNDLE_IDS', 'pre-existing gap; safe default'],
+  ['DIGITAL_SIGNATURE_APP_URL', 'pre-existing gap; derived default'],
+  ['AUDIT_SIGNING_LOCAL_KEY_PATH', 'pre-existing gap; local-key signing only'],
+  ['AUDIT_ANCHOR_DIR', 'pre-existing gap; local-key signing only']
+]);
+
+test('every setting the code reads is forwarded by the deploy script', () => {
+  const source = fs.readFileSync(path.join(ROOT, 'src/config/index.js'), 'utf8');
+  const script = fs.readFileSync(path.join(ROOT, 'scripts/deploy-azure-webapp.sh'), 'utf8');
+
+  const declared = [...new Set((source.match(/process\.env\.(\w+)/g) || []).map((entry) => entry.replace('process.env.', '')))];
+  const missing = declared.filter((name) => !NOT_DEPLOYED.has(name) && !script.includes(name));
+
+  assert.deepEqual(
+    missing,
+    [],
+    `read by src/config but never sent to Azure, so they are unset on every hosted environment: ${missing.join(', ')}`
+  );
+});
+
 test('every store path has a value in each hosted environment file', () => {
   const declared = declaredStorePaths();
   const problems = [];
