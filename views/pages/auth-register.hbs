@@ -24,24 +24,26 @@
         </article>
         <input type="hidden" name="planId" value="{{chosenPlan.id}}">
       {{else}}
-        <fieldset class="field-group plan-picker">
+        <fieldset class="plan-picker">
           <legend>Choose your plan</legend>
           <p class="table-note">
             A trial needs no card. Choosing a paid plan takes you to checkout
             after you verify your email — nothing is charged before that.
           </p>
-          {{#each planChoices}}
-            <label class="plan-option">
-              <input type="radio" name="planId" value="{{this.id}}" {{#if this.isSelected}}checked{{/if}}>
-              <span class="plan-option__body">
-                <span class="plan-option__name">{{this.label}} — {{this.price}}</span>
-                <span class="plan-option__blurb">{{this.blurb}}</span>
-                <span class="plan-option__limits">
-                  {{#each this.limits}}{{this}}{{#unless @last}} · {{/unless}}{{/each}}
+          <div class="plan-picker__options">
+            {{#each planChoices}}
+              <label class="plan-option">
+                <input type="radio" name="planId" value="{{this.id}}" {{#if this.isSelected}}checked{{/if}}>
+                <span class="plan-option__body">
+                  <span class="plan-option__name">{{this.label}}</span>
+                  <span class="plan-option__price">{{this.price}}</span>
+                  <span class="plan-option__limits">
+                    {{#each this.limits}}{{this}}{{#unless @last}} · {{/unless}}{{/each}}
+                  </span>
                 </span>
-              </span>
-            </label>
-          {{/each}}
+              </label>
+            {{/each}}
+          </div>
         </fieldset>
 
         <div class="field-group">

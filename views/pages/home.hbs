@@ -90,7 +90,7 @@
         <form action="/plans" method="post">
           <input type="hidden" name="planId" value="{{this.id}}">
           <button
-            class="button {{#if this.isRecommended}}button--primary{{else}}button--ghost{{/if}}"
+            class="button {{#if this.isRecommended}}button--primary button--blue{{else}}button--ghost{{/if}}"
             type="submit"
           >
             {{#if this.requiresPayment}}Choose {{this.label}}{{else}}Start free trial{{/if}}

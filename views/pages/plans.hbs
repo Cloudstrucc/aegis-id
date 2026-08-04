@@ -19,16 +19,16 @@
         <ul class="plan-choice__limits">
           {{#each this.limits}}<li>{{this}}</li>{{/each}}
         </ul>
+        {{#if (eq ../selectedPlanId this.id)}}<p class="table-note">Currently selected</p>{{/if}}
         <form action="/plans" method="post">
           <input type="hidden" name="planId" value="{{this.id}}">
           <button
-            class="button {{#if this.isRecommended}}button--primary{{else}}button--ghost{{/if}}"
+            class="button {{#if this.isRecommended}}button--primary button--blue{{else}}button--ghost{{/if}}"
             type="submit"
           >
             {{#if this.requiresPayment}}Choose {{this.label}}{{else}}Start free trial{{/if}}
           </button>
         </form>
-        {{#if (eq ../selectedPlanId this.id)}}<p class="table-note">Currently selected</p>{{/if}}
       </article>
     {{/each}}
   </div>

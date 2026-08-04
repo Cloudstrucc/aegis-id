@@ -6944,7 +6944,11 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 .checkbox-row input {
+  width: 18px;
+  min-height: 18px;
   margin-top: 3px;
+  padding: 0;
+  flex: 0 0 18px;
 }
 
 .checkbox-row .table-note {
@@ -7132,7 +7136,9 @@ body:has(.workspace-blade) .site-footer div span {
 /* Choosing a plan inside the account form. A radio list rather than cards,
    because it sits among ordinary form fields and should read as one of them. */
 .plan-picker {
-  margin: 0 0 20px;
+  display: grid;
+  gap: 8px;
+  margin: 0;
   padding: 16px 18px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -7145,12 +7151,20 @@ body:has(.workspace-blade) .site-footer div span {
   font-weight: 900;
 }
 
+/* Two across where there is room. Five stacked rows made the form roughly
+   three times the height of the column beside it. */
+.plan-picker__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+}
+
 .plan-option {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: flex-start;
-  margin: 10px 0 0;
-  padding: 12px;
+  margin: 0;
+  padding: 10px 12px;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -7162,9 +7176,14 @@ body:has(.workspace-blade) .site-footer div span {
   box-shadow: inset 0 0 0 1px var(--blue-600);
 }
 
+/* The global input rule sets width:100% and min-height:44px, which turns a
+   radio into a block the size of the row. Same override as .checkline. */
 .plan-option input {
-  margin-top: 4px;
-  flex: 0 0 auto;
+  width: 18px;
+  min-height: 18px;
+  margin-top: 2px;
+  padding: 0;
+  flex: 0 0 18px;
 }
 
 .plan-option__body {
@@ -7179,8 +7198,14 @@ body:has(.workspace-blade) .site-footer div span {
   font-weight: 900;
 }
 
-.plan-option__blurb,
+.plan-option__price {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .plan-option__limits {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.35;
 }
