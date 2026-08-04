@@ -475,7 +475,15 @@ somebody's identity credential. The account page says which of these applies
 rather than leaving the customer to guess why issuing failed.
 
 **Payment** goes through Stripe's hosted Checkout, so card details never touch
-Aegis ID. Apple Pay and Google Pay appear automatically on supported devices —
+Aegis ID.
+
+**Test mode and live mode are chosen by the key, not by the environment name.**
+That is deliberate: an environment used to show the product to prospective
+customers wants a *test* key, so nobody can be charged by accident, even though
+it is called prod. When a test key is in use, the checkout page says so and
+names the card to use, and the application logs a banner at startup. The
+expensive mistake is the mirror image — a test key still in place once real
+money is expected — so neither state is left for somebody to go and check. Apple Pay and Google Pay appear automatically on supported devices —
 they are payment methods within Checkout, not separate integrations.
 
 Where no Stripe key is configured, the checkout page says so and a paid plan

@@ -223,6 +223,13 @@ verbatim rather than translated, because a second vocabulary would only be a
 second thing to keep in step. `trialing` therefore entitles in full — it is a
 paid plan inside its trial window, not a free one.
 
+**Test or live is decided by the key, never by the environment name.**
+`config.billing.isTestMode` reads the `sk_test_`/`rk_test_` prefix, because the
+two can legitimately disagree — a pre-production environment shown to
+prospective customers runs a test key while being called `prod`. The dangerous
+case is the reverse, so a test key announces itself on the checkout page and in
+a startup banner rather than being inferred.
+
 Checkout is **hosted**, so card details never reach this application and it
 stays out of PCI scope. Line items are built inline from the plan catalogue
 rather than from Stripe Price IDs, so pricing stays a one-file edit in

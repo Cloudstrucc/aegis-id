@@ -9,6 +9,18 @@
     <div class="callout callout--warning"><strong>Not accepted.</strong> <span>{{errorMessage}}</span></div>
   {{/if}}
 
+  {{#if testMode}}
+    <div class="callout callout--warning">
+      <strong>Test mode — no real payment is taken.</strong>
+      <span>
+        This environment is connected to a payment provider in test mode, so a
+        real card will be declined. Use card number
+        <code>4242 4242 4242 4242</code> with any future expiry date, any CVC
+        and any postcode. The subscription that results is fully functional.
+      </span>
+    </div>
+  {{/if}}
+
   <div class="checkout-layout">
     <aside class="checkout-summary">
       <h2>What you get</h2>

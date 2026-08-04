@@ -177,7 +177,8 @@ router.get('/checkout/return', authorize('public.plans'), async (req, res, next)
       description: 'Finishing your subscription.',
       paid,
       plan: intendedPlan(req.session).label,
-      nextStep: nextStepAfterCheckout(req)
+      nextStep: nextStepAfterCheckout(req),
+      testMode: config.billing.checkoutEnabled && config.billing.isTestMode
     });
   } catch (error) {
     return next(error);
@@ -212,6 +213,10 @@ function buildCheckoutView(req, overrides = {}) {
     // Saying "not connected here" is better than a card form that cannot take
     // a card. Derived from the Stripe key, so it cannot claim otherwise.
     checkoutEnabled: config.billing.checkoutEnabled,
+    // A test key takes test cards only. Somebody being shown the product needs
+    // to know that before they reach for a real card, and needs to be told
+    // which card does work.
+    testMode: config.billing.checkoutEnabled && config.billing.isTestMode,
     errorMessage: overrides.errorMessage || req.query.error || null
   };
 }

@@ -340,6 +340,47 @@ async function reconcileSubscription(subscription) {
   return updated;
 }
 
+/**
+ * What mode payment is running in, printed once at startup.
+ *
+ * A test key on a hosted environment is a legitimate choice — a pre-production
+ * environment shown to prospective customers wants one, so nobody can be
+ * charged by accident. The danger is the mirror image: real money is expected
+ * and a test key is quietly still in place, so every payment appears to
+ * succeed and none of it is collected. Neither state should be something you
+ * have to go and check.
+ */
+function logBillingModeBanner(log = console.warn) {
+  if (!isConfigured()) {
+    log(`Billing: card checkout is OFF (no STRIPE_SECRET_KEY on ${config.app.deployEnv}).`);
+    return;
+  }
+
+  if (!config.billing.stripeWebhookSecret) {
+    // The signature check is the endpoint's entire security boundary, so with
+    // no secret every webhook is refused — the first payment lands and nothing
+    // after it ever updates.
+    log(
+      `Billing: STRIPE_SECRET_KEY is set on ${config.app.deployEnv} but STRIPE_WEBHOOK_SECRET is not. ` +
+        'Every webhook will be rejected, so no subscription will change state after checkout.'
+    );
+  }
+
+  if (config.billing.isTestMode) {
+    log(
+      '\n' +
+        '  ┌───────────────────────────────────────────────────────────────┐\n' +
+        '  │  STRIPE IS IN TEST MODE                                       │\n' +
+        `  │  Environment: ${config.app.deployEnv.padEnd(48)}│\n` +
+        '  │  Test cards only. No money is collected.                      │\n' +
+        '  └───────────────────────────────────────────────────────────────┘\n'
+    );
+    return;
+  }
+
+  log(`Billing: Stripe is in LIVE mode on ${config.app.deployEnv}. Real cards will be charged.`);
+}
+
 module.exports = {
   billingStatusFromStripe,
   claimCheckout,
@@ -347,6 +388,7 @@ module.exports = {
   getCheckout,
   handleWebhook,
   isConfigured,
+  logBillingModeBanner,
   reconcileSubscription,
   setStripeClientForTesting,
   startCheckout

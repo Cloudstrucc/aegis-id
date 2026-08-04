@@ -633,6 +633,14 @@ add one new persistent store and one optional payment setting.
 Only needed where card payment should work. Test-mode keys for dev and qa, live
 keys for prod; the two are entirely separate, including the webhook secret.
 
+> **Using a test key on prod is supported.** If prod is really a
+> pre-production environment for prospective customers, put a `sk_test_` key
+> there: nobody can be charged, the checkout page says "Test mode" and names
+> the test card, and the app logs a banner at startup naming the environment.
+> Create that environment's webhook endpoint in **test mode** — a live-mode
+> endpoint's secret will not verify test-mode events. When you do go live,
+> swap both the key and the webhook secret together.
+
 1. In the Stripe dashboard, copy the **secret key** into `STRIPE_SECRET_KEY`
    for that environment's env file. There is nothing else to set up — plans,
    prices and intervals are built from `src/services/plan-service.js` at

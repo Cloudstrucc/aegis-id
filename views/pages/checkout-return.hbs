@@ -14,8 +14,15 @@
 <section class="band band--white">
   {{#if paid}}
     <div class="callout callout--success">
-      <strong>Nothing else to pay.</strong>
-      <span>The next step sets up the organization that owns this subscription.</span>
+      <strong>{{#if testMode}}Test payment accepted.{{else}}Nothing else to pay.{{/if}}</strong>
+      <span>
+        {{#if testMode}}
+          No money changed hands — this environment runs in test mode. The
+          subscription is otherwise real and works in full.
+        {{else}}
+          The next step sets up the organization that owns this subscription.
+        {{/if}}
+      </span>
     </div>
     <div class="inline-actions">
       <a class="button button--primary button--blue" href="{{nextStep}}">Continue</a>

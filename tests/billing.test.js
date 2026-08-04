@@ -29,10 +29,10 @@ function resetModules() {
   }
 }
 
-async function withEnv(run, { stripeKey = 'sk_test_suite' } = {}) {
+async function withEnv(run, { stripeKey = 'sk_test_suite', deployEnv = 'dev' } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'aegis-billing-'));
   const previous = { ...process.env };
-  process.env.APP_ENV = 'dev';
+  process.env.APP_ENV = deployEnv;
   process.env.STRIPE_SECRET_KEY = stripeKey;
   process.env.STRIPE_WEBHOOK_SECRET = WEBHOOK_SECRET;
   process.env.CHECKOUT_SESSION_STORE_PATH = path.join(dir, 'checkouts.json');
@@ -429,6 +429,91 @@ test('a paid checkout can only be claimed once', async () => {
     assert.equal(await billing.claimCheckout('handle-1', 'sub-record-2'), null);
     assert.equal((await billing.getCheckout('handle-1')).claimedBySubscriptionId, 'sub-record-1');
   });
+});
+
+test('the Stripe mode comes from the key, not from the environment name', async () => {
+  // A pre-production environment shown to prospective customers legitimately
+  // runs a test key on `prod`, so the mode must be read from the key itself.
+  await withEnv(
+    async ({ billing }) => {
+      assert.equal(require('../src/config').billing.isTestMode, true);
+      assert.equal(billing.isConfigured(), true);
+    },
+    { stripeKey: 'sk_test_abc123' }
+  );
+
+  await withEnv(
+    async () => {
+      assert.equal(require('../src/config').billing.isTestMode, false);
+    },
+    { stripeKey: 'sk_live_abc123' }
+  );
+
+  // Restricted keys carry the same marker.
+  await withEnv(
+    async () => {
+      assert.equal(require('../src/config').billing.isTestMode, true);
+    },
+    { stripeKey: 'rk_test_abc123' }
+  );
+});
+
+test('startup says which mode billing is in, and never stays silent', async () => {
+  const lines = [];
+  const capture = (line) => lines.push(String(line));
+
+  // A test key on prod is allowed, but it is announced — the expensive mistake
+  // is a test key still being there when real money is expected.
+  await withEnv(
+    async ({ billing }) => {
+      billing.logBillingModeBanner(capture);
+      assert.match(lines.join('\n'), /STRIPE IS IN TEST MODE/);
+      assert.match(lines.join('\n'), /prod/, 'and names the environment it is on');
+    },
+    { stripeKey: 'sk_test_abc123', deployEnv: 'prod' }
+  );
+
+  lines.length = 0;
+  await withEnv(
+    async ({ billing }) => {
+      billing.logBillingModeBanner(capture);
+      assert.match(lines.join('\n'), /LIVE mode/);
+    },
+    { stripeKey: 'sk_live_abc123' }
+  );
+
+  lines.length = 0;
+  await withEnv(
+    async ({ billing }) => {
+      billing.logBillingModeBanner(capture);
+      assert.match(lines.join('\n'), /checkout is OFF/);
+    },
+    { stripeKey: '' }
+  );
+});
+
+test('a key with no webhook secret is called out at startup', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'aegis-billing-'));
+  const previous = { ...process.env };
+  process.env.APP_ENV = 'prod';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_abc123';
+  // Empty rather than deleted: dotenv fills in anything undefined from the
+  // developer's own .env, which would make this test pass or fail depending
+  // on whose machine it runs on.
+  process.env.STRIPE_WEBHOOK_SECRET = '';
+  process.env.CHECKOUT_SESSION_STORE_PATH = path.join(dir, 'checkouts.json');
+  resetModules();
+  try {
+    const lines = [];
+    require('../src/services/billing-service').logBillingModeBanner((line) => lines.push(String(line)));
+    // Without a secret every webhook is rejected, so the first payment lands
+    // and nothing after it ever updates. That must not be silent.
+    assert.match(lines.join('\n'), /STRIPE_WEBHOOK_SECRET is not/);
+    assert.match(lines.join('\n'), /no subscription will change state/);
+  } finally {
+    process.env = previous;
+    resetModules();
+  }
 });
 
 test('nothing is chargeable when no payment provider is configured', async () => {

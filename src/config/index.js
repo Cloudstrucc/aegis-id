@@ -123,10 +123,17 @@ const config = {
         : 'http://localhost:4300')
   },
   billing: {
-    // Card checkout is off until a payment provider is configured (Phase 5).
-    // Kept as a derived flag rather than its own switch, so it can never be on
-    // while there is nothing behind it to take a payment.
+    // Card checkout is off until a payment provider is configured. Kept as a
+    // derived flag rather than its own switch, so it can never be on while
+    // there is nothing behind it to take a payment.
     checkoutEnabled: Boolean(process.env.STRIPE_SECRET_KEY),
+    // Which Stripe mode the key selects. Read from the key itself rather than
+    // from the environment name, because those two can legitimately disagree:
+    // a pre-production environment shown to prospective customers wants a test
+    // key so nobody can be charged. What must never happen is a test key being
+    // in place *unnoticed* once real money is expected, so this is surfaced on
+    // the checkout page and in the startup log instead of being inferred.
+    isTestMode: /^(sk|rk)_test_/.test(process.env.STRIPE_SECRET_KEY || ''),
     stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
