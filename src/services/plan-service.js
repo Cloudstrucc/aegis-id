@@ -296,11 +296,25 @@ function describeLimits(plan) {
   const credentials =
     plan.maxCredentialsPerWorkspace === null
       ? plan.includedCredentials
-        ? `${plan.includedCredentials} credentials included, then pay per credential`
+        ? `${plan.includedCredentials} credentials included, then $${(plan.perCredentialCents / 100).toFixed(0)} each`
         : 'Unlimited credentials'
       : `${plan.maxCredentialsPerWorkspace} credentials per organization`;
 
   return [organizations, credentials];
+}
+
+/**
+ * The headline figure on its own.
+ *
+ * `describePrice` spells out the metered component too, which is right for a
+ * pricing page but too long to sit beside a plan name in a compact list — the
+ * per-credential rate is already in the limits there.
+ */
+function describeHeadlinePrice(plan) {
+  if (!plan.requiresPayment) {
+    return `Free for ${plan.trialDays} days`;
+  }
+  return `$${(plan.priceCents / 100).toFixed(0)}/${plan.interval}`;
 }
 
 /**
@@ -314,6 +328,7 @@ function listPublicPlans() {
     label: plan.label,
     blurb: plan.blurb,
     price: describePrice(plan),
+    headlinePrice: describeHeadlinePrice(plan),
     limits: describeLimits(plan),
     requiresPayment: plan.requiresPayment,
     // Trial is the honest recommendation for a first-time visitor.
@@ -327,6 +342,7 @@ module.exports = {
   TRIAL_DAYS,
   assertCanAddWorkspace,
   assertCanIssueCredential,
+  describeHeadlinePrice,
   describeLimits,
   describePrice,
   effectiveEntitlement,

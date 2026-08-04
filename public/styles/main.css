@@ -7133,47 +7133,60 @@ body:has(.workspace-blade) .site-footer div span {
   border: 0;
 }
 
-/* Choosing a plan inside the account form. A radio list rather than cards,
-   because it sits among ordinary form fields and should read as one of them. */
+/* Choosing a plan inside the account form.
+   A plain list rather than a boxed panel, so the plan column and the account
+   column start on the same line and read as one form. */
 .plan-picker {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   margin: 0;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--mist);
+  padding: 0;
+  border: 0;
 }
 
 .plan-picker legend {
-  padding: 0 6px;
+  padding: 0;
   color: var(--navy-900);
-  font-weight: 900;
+  font-size: 14px;
+  font-weight: 800;
 }
 
-/* Two across where there is room. Five stacked rows made the form roughly
-   three times the height of the column beside it. */
+.plan-picker__note {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .plan-picker__options {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 .plan-option {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
   margin: 0;
-  padding: 10px 12px;
+  padding: 14px 16px;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
 }
 
+.plan-option:hover {
+  border-color: #9dc2ec;
+}
+
+/* The chosen plan should be unmistakable — it is the most consequential
+   choice on this form. */
 .plan-option:has(input:checked) {
+  background: var(--soft-blue);
   border-color: var(--blue-600);
-  box-shadow: inset 0 0 0 1px var(--blue-600);
+  box-shadow: inset 3px 0 0 var(--blue-600);
 }
 
 /* The global input rule sets width:100% and min-height:44px, which turns a
@@ -7181,31 +7194,87 @@ body:has(.workspace-blade) .site-footer div span {
 .plan-option input {
   width: 18px;
   min-height: 18px;
-  margin-top: 2px;
+  margin: 3px 0 0;
   padding: 0;
-  flex: 0 0 18px;
 }
 
 .plan-option__body {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 2px;
   min-width: 0;
 }
 
+.plan-option__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .plan-option__name {
   color: var(--navy-900);
+  font-size: 15px;
   font-weight: 900;
 }
 
+.plan-option__flag {
+  padding: 2px 7px;
+  color: var(--blue-600);
+  background: #e4f0fe;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .plan-option__price {
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 800;
+  color: var(--blue-600);
+  font-size: 15px;
+  font-weight: 900;
 }
 
 .plan-option__limits {
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+/* Registration layout.
+   The intro spans the width, then the plan choice and the account fields sit
+   side by side — the two halves of one decision, rather than a form with a
+   tall preamble bolted on top of it. */
+.register-layout {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.register-layout__full {
+  grid-column: 1 / -1;
+}
+
+.register-layout__plan,
+.register-layout__account {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  /* Without this a grid column refuses to shrink below its content, and the
+     wider field rows push the whole card sideways. */
+  min-width: 0;
+}
+
+/* A hairline between the two halves, so they read as one form split in two
+   rather than two cards that happen to be adjacent. */
+@media (min-width: 901px) {
+  .register-layout__plan {
+    padding-right: 28px;
+    border-right: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 900px) {
+  .register-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

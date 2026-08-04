@@ -5,16 +5,16 @@
 </section>
 
 <section class="band band--white">
-  <div class="auth-grid">
-    <div class="section-heading">
-      <p class="eyebrow">Secure signup</p>
-      <h2>Start with a verified user account.</h2>
-      <p>Vanguard Cloud Services uses Passport.js sessions with a second factor before organization access, subscription, and administration are available.</p>
-    </div>
+  <div class="section-heading">
+    <p class="eyebrow">Secure signup</p>
+    <h2>Start with a verified user account.</h2>
+    <p>Vanguard Cloud Services uses Passport.js sessions with a second factor before organization access, subscription, and administration are available.</p>
+  </div>
 
-    <form class="subscribe-form" action="/auth/register" method="post" novalidate>
-      {{#if errorMessage}}<p class="form-alert">{{errorMessage}}</p>{{/if}}
+  <form class="subscribe-form register-layout" action="/auth/register" method="post" novalidate>
+    {{#if errorMessage}}<p class="form-alert register-layout__full">{{errorMessage}}</p>{{/if}}
 
+    <div class="register-layout__plan">
       {{#if chosenPlan.isSettled}}
         <article class="chosen-plan">
           <p class="eyebrow">Your plan</p>
@@ -26,17 +26,20 @@
       {{else}}
         <fieldset class="plan-picker">
           <legend>Choose your plan</legend>
-          <p class="table-note">
-            A trial needs no card. Choosing a paid plan takes you to checkout
-            after you verify your email — nothing is charged before that.
+          <p class="plan-picker__note">
+            A trial needs no card. A paid plan takes you to checkout after you
+            verify your email — nothing is charged before that.
           </p>
           <div class="plan-picker__options">
             {{#each planChoices}}
               <label class="plan-option">
                 <input type="radio" name="planId" value="{{this.id}}" {{#if this.isSelected}}checked{{/if}}>
                 <span class="plan-option__body">
-                  <span class="plan-option__name">{{this.label}}</span>
-                  <span class="plan-option__price">{{this.price}}</span>
+                  <span class="plan-option__head">
+                    <span class="plan-option__name">{{this.label}}</span>
+                    {{#if this.isRecommended}}<span class="plan-option__flag">Most chosen</span>{{/if}}
+                  </span>
+                  <span class="plan-option__price">{{this.headlinePrice}}</span>
                   <span class="plan-option__limits">
                     {{#each this.limits}}{{this}}{{#unless @last}} · {{/unless}}{{/each}}
                   </span>
@@ -65,7 +68,9 @@
           </p>
         </div>
       {{/if}}
+    </div>
 
+    <div class="register-layout__account">
       <div class="field-row">
         <div class="field-group">
           <label for="displayName">Full name</label>
@@ -122,7 +127,7 @@
         </select>
       </div>
 
-      <button class="button button--primary" type="submit">Create account</button>
+      <button class="button button--primary button--blue" type="submit">Create account</button>
 
       {{#if passwordlessEnrolmentEnabled}}
         <div class="enrol-passwordless">
@@ -140,6 +145,6 @@
         </div>
       {{/if}}
       <p class="form-footnote">Already registered? <a href="/auth/login">Sign in</a>.</p>
-    </form>
-  </div>
+    </div>
+  </form>
 </section>
