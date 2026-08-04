@@ -207,6 +207,10 @@ const POLICIES = Object.freeze({
   'admin.signInMethods.manage': policy('admin.signInMethods.manage', 'adminAnyWorkspace', 'sign-in-methods', 'update', {
     description: 'Choose which sign-in methods the platform offers and what each one counts for.'
   }),
+  'admin.dashboard.view': policy('admin.dashboard.view', 'adminAnyWorkspace', 'admin-dashboard', 'read', {
+    description:
+      'The platform administration index. Same gate as every area it links to, so it cannot become a way to discover settings you may not open.'
+  }),
   'admin.registrationCodes.manage': policy(
     'admin.registrationCodes.manage',
     'adminAnyWorkspace',

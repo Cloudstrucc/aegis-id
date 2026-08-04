@@ -274,6 +274,21 @@ minted. Spending it earlier would burn a redemption for anyone
 who abandoned the last form. A redeemed code sets `billingStatus: 'comped'`,
 which entitles exactly as much as paying does.
 
+## Platform administration
+
+`/admin` is the index for every platform-wide setting — sign-in methods,
+notification delivery, wallet administration, registration codes, account
+recovery. Before it existed those pages were reachable only by typing the URL,
+which is how two of them shipped broken.
+
+**It is for subscribers, not for everyone who can sign in.** Two populations
+have accounts: people who bought a plan and administer their own organizations,
+and credential holders who exist only because an organization invited them. The
+second group gets a `portal-account` subscription so they have somewhere to
+land; `admin-access-service` filters those records out before looking at
+workspaces, so an invited holder can never reach settings that decide how
+everybody signs in.
+
 ## Wallet administration
 
 `/admin/wallets` lists every registered wallet. **Revoking** sets

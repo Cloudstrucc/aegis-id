@@ -3,7 +3,7 @@
   <h1>{{#if paid}}Payment received.{{else}}Confirming your payment.{{/if}}</h1>
   <p>
     {{#if paid}}
-      Your {{plan}} subscription is set up. Create your account to finish.
+      Your {{plan}} subscription is set up. One more step to finish.
     {{else}}
       Your bank has not confirmed the payment yet. This usually takes a few
       seconds.
@@ -12,34 +12,35 @@
 </section>
 
 <section class="band band--white">
-  {{#if paid}}
-    <div class="callout callout--success">
-      <strong>{{#if testMode}}Test payment accepted.{{else}}Nothing else to pay.{{/if}}</strong>
-      <span>
+  <article class="outcome-card">
+    {{#if paid}}
+      <span class="outcome-card__mark outcome-card__mark--good" aria-hidden="true">✓</span>
+      <h2>{{#if testMode}}Test payment accepted{{else}}Nothing else to pay{{/if}}</h2>
+      <p>
         {{#if testMode}}
           No money changed hands — this environment runs in test mode. The
           subscription is otherwise real and works in full.
         {{else}}
-          The next step sets up the organization that owns this subscription.
+          Your subscription is active. The next step sets up the organization
+          that owns it.
         {{/if}}
-      </span>
-    </div>
-    <div class="inline-actions">
-      <a class="button button--primary button--blue" href="{{nextStep}}">Continue</a>
-    </div>
-  {{else}}
-    <article class="blade-guidance">
-      <strong>Your payment is safe either way</strong>
-      <span>
-        We confirm payment with our payment provider rather than assuming it
-        from this page, so refreshing is the right thing to do. If it still says
-        this in a minute, nothing has been charged twice — start again from
-        <a href="/plans">plans</a> and your bank will release any hold.
-      </span>
-    </article>
-    <div class="inline-actions">
-      <a class="button button--primary button--blue" href="/checkout/return">Check again</a>
-      <a class="button button--ghost" href="/plans">Start over</a>
-    </div>
-  {{/if}}
+      </p>
+      <div class="outcome-card__actions">
+        <a class="button button--primary button--blue" href="{{nextStep}}">Continue</a>
+      </div>
+    {{else}}
+      <span class="outcome-card__mark outcome-card__mark--wait" aria-hidden="true">…</span>
+      <h2>Waiting on your payment provider</h2>
+      <p>
+        We confirm payment with the provider rather than assuming it from this
+        page, so checking again is the right thing to do. If it still says this
+        in a minute, nothing has been charged twice — start again and your bank
+        will release any hold.
+      </p>
+      <div class="outcome-card__actions">
+        <a class="button button--primary button--blue" href="/checkout/return">Check again</a>
+        <a class="button button--ghost" href="/plans">Start over</a>
+      </div>
+    {{/if}}
+  </article>
 </section>

@@ -2,6 +2,7 @@ const express = require('express');
 
 const { requireAuthenticated } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
+const { summarizeUsage } = require('../services/subscription-usage-service');
 const { getSubscriptionForUser } = require('../services/subscription-service');
 const {
   deleteWorkspaceForSubscription,
@@ -30,6 +31,11 @@ router.get('/organizations/:subscriptionId', authorize('workspace.view'), async 
       subscription
     );
 
+    // What the plan allows decides whether another organization can be added at
+    // all, so the form is offered or withheld on the same basis the server
+    // enforces rather than being permanently open.
+    const usage = await summarizeUsage(subscription);
+
     res.render('pages/organizations', {
       title: 'Organizations',
       description: 'Choose an organization workspace for Vanguard Cloud Services - Aegis ID.',
@@ -37,8 +43,18 @@ router.get('/organizations/:subscriptionId', authorize('workspace.view'), async 
       organizations,
       hasOrganizations: organizations.length > 0,
       welcome: req.query.welcome === '1',
+      // Opened by the "Add organization" button, or automatically when there is
+      // nothing to choose from yet.
+      showRegisterForm: organizations.length === 0 || req.query.add === '1',
+      canAddWorkspace: usage.canAddWorkspace,
+      workspacesUsed: usage.workspacesUsed,
+      workspaceLimit: usage.workspaceLimit,
+      planLabel: usage.plan.label,
       formValues: {
-        organization: subscription.organization || '',
+        // Deliberately blank. Prefilling the subscription's own organization
+        // name made this look like it would edit the organization you already
+        // have; it would not — registering the same name just re-opens it.
+        organization: '',
         role: 'administrator'
       }
     });

@@ -88,6 +88,91 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
   });
 });
 
+// The platform administration index.
+//
+// Everything here was previously reachable only by typing the URL, which is how
+// two broken pages went unnoticed for a release. Each card carries a live count
+// so the page is worth opening rather than being a list of links.
+router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) => {
+  try {
+    const [wallets, codes, passwordlessAccounts, methods, notificationSettings] =
+      await Promise.all([
+        listWallets(),
+        listRegistrationCodes(),
+        listPasswordlessAccounts(),
+        getSignInMethodsForDisplay(),
+        getNotificationSettingsForDisplay()
+      ]);
+
+    const revokedWallets = wallets.filter((wallet) => wallet.status === 'revoked').length;
+    const usableCodes = codes.filter((code) => code.isUsable).length;
+    const exhausted = passwordlessAccounts.filter((account) => account.remainingCodes === 0).length;
+    const enabledMethods = methods.filter((method) => method.firstFactor || method.satisfiesSecond).length;
+
+    res.render('pages/admin-dashboard', {
+      title: 'Administration',
+      description: 'Platform settings for Aegis ID.',
+      environment: currentEnvironment(),
+      isNonProd: config.app.deployEnv !== 'prod',
+      billing: {
+        checkoutEnabled: config.billing.checkoutEnabled,
+        isTestMode: config.billing.isTestMode
+      },
+      cards: [
+        {
+          href: '/admin/wallets',
+          title: 'Registered wallets',
+          summary: 'Withdraw a wallet from service, restore one, or remove one that was never used.',
+          stat: wallets.length,
+          statLabel: wallets.length === 1 ? 'wallet' : 'wallets',
+          note: revokedWallets ? `${revokedWallets} withdrawn from service` : null,
+          isWarning: revokedWallets > 0
+        },
+        {
+          href: '/admin/registration-codes',
+          title: 'Registration codes',
+          summary: 'Grant a paid plan without payment, for testers and comped pilots.',
+          stat: usableCodes,
+          statLabel: usableCodes === 1 ? 'usable code' : 'usable codes',
+          note: codes.length ? `${codes.length} issued in total` : 'None issued yet'
+        },
+        {
+          href: '/admin/sign-in-methods',
+          title: 'Sign-in methods',
+          summary: 'Choose how people may sign in, and what each method counts for.',
+          stat: enabledMethods,
+          statLabel: enabledMethods === 1 ? 'method enabled' : 'methods enabled'
+        },
+        {
+          href: '/admin/notifications',
+          title: 'Notification delivery',
+          summary: 'How codes, links and notices are sent by email and SMS.',
+          stat: deliveryChannelCount(notificationSettings),
+          statLabel: 'channels configured',
+          note: deliveryChannelCount(notificationSettings) ? null : 'Recovery will fail closed',
+          isWarning: deliveryChannelCount(notificationSettings) === 0
+        },
+        {
+          href: '/admin/account-recovery',
+          title: 'Account recovery',
+          summary: 'Passwordless accounts and their remaining recovery codes.',
+          stat: passwordlessAccounts.length,
+          statLabel: passwordlessAccounts.length === 1 ? 'passwordless account' : 'passwordless accounts',
+          note: exhausted ? `${exhausted} out of codes` : null,
+          isWarning: exhausted > 0
+        }
+      ]
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/** How many delivery channels are actually switched on. */
+function deliveryChannelCount(settings) {
+  return [settings?.email?.enabled, settings?.sms?.enabled].filter(Boolean).length;
+}
+
 // Registered wallets, with the credential count that decides whether a wallet
 // may be deleted or must only be revoked.
 router.get('/admin/wallets', authorize('admin.wallets.manage'), async (req, res, next) => {

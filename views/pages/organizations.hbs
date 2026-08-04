@@ -54,27 +54,54 @@
       <p>No Aegis ID organization workspaces are associated with this subscriber yet. Create one, then you can open the dashboard and start the setup wizards.</p>
     </article>
   {{/if}}
+
+  {{#unless showRegisterForm}}
+    <div class="inline-actions">
+      {{#if canAddWorkspace}}
+        <a class="button button--primary button--blue" href="/organizations/{{subscription.id}}?add=1">Add organization</a>
+        <span class="table-note">
+          {{#if workspaceLimit}}
+            Using {{workspacesUsed}} of {{workspaceLimit}} on {{planLabel}}.
+          {{else}}
+            {{planLabel}} includes unlimited organizations.
+          {{/if}}
+        </span>
+      {{else}}
+        <a class="button button--ghost" href="/plans">Upgrade to add another</a>
+        <span class="table-note">
+          {{planLabel}} includes {{workspaceLimit}} organization{{#unless (eq workspaceLimit 1)}}s{{/unless}},
+          and you are using {{workspacesUsed}}.
+        </span>
+      {{/if}}
+    </div>
+  {{/unless}}
 </section>
 
-<section class="band band--light">
-  <div class="subscription-layout">
+{{#if showRegisterForm}}
+  <section class="band band--light">
     <div class="section-heading">
-      <p class="eyebrow">Register Organization</p>
-      <h2>Create a workspace for Verified ID and wallet testing.</h2>
-      <p>The verified subscriber who registers an organization is recorded as the first administrator. Co-administrators can be added later through dual wallet challenges.</p>
+      <p class="eyebrow">Add an organization</p>
+      <h2>Create another workspace.</h2>
+      <p>Each organization is a separate workspace with its own credentials, roles, claims and branding. Whoever registers one is recorded as its first administrator; co-administrators can be added later through dual wallet challenges.</p>
     </div>
 
-    <form class="subscribe-form" action="/organizations/{{subscription.id}}" method="post">
+    <form class="subscribe-form subscribe-form--narrow" action="/organizations/{{subscription.id}}" method="post">
       <div class="field-group">
         <label for="organization">Organization name</label>
-        <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization" required>
+        <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization" placeholder="e.g. Contoso Legal" required>
+        <p class="table-note">A new name creates a new workspace. Entering the name of one you already have simply reopens it.</p>
       </div>
       <input type="hidden" name="role" value="administrator">
       <div class="note-panel">
-        <strong>Role</strong>
-        <span>You will be recorded as the organization administrator for this workspace.</span>
+        <strong>Your role here</strong>
+        <span>Administrator. Whoever registers an organization administers it.</span>
       </div>
-      <button class="button button--primary button--blue" type="submit">Register Organization</button>
+      <div class="inline-actions">
+        <button class="button button--primary button--blue" type="submit">Register organization</button>
+        {{#if hasOrganizations}}
+          <a class="button button--ghost" href="/organizations/{{subscription.id}}">Cancel</a>
+        {{/if}}
+      </div>
     </form>
-  </div>
-</section>
+  </section>
+{{/if}}

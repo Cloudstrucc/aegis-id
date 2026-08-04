@@ -1,0 +1,41 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Platform settings</p>
+  <h1>Administration.</h1>
+  <p>Settings that apply across every organization on this deployment — who may sign in, how messages are delivered, which wallets are in service, and which registration codes exist.</p>
+</section>
+
+<section class="band band--white">
+  <div class="admin-status">
+    <span class="admin-status__pill">Environment: <strong>{{environment}}</strong></span>
+    {{#if billing.checkoutEnabled}}
+      {{#if billing.isTestMode}}
+        <span class="admin-status__pill admin-status__pill--warn">Stripe: test mode — no money is collected</span>
+      {{else}}
+        <span class="admin-status__pill admin-status__pill--live">Stripe: live — real cards are charged</span>
+      {{/if}}
+    {{else}}
+      <span class="admin-status__pill">Card payment: off</span>
+    {{/if}}
+  </div>
+
+  <div class="admin-grid">
+    {{#each cards}}
+      <a class="admin-card {{#if this.isWarning}}admin-card--attention{{/if}}" href="{{this.href}}">
+        <span class="admin-card__stat">{{this.stat}}</span>
+        <span class="admin-card__statlabel">{{this.statLabel}}</span>
+        <h2>{{this.title}}</h2>
+        <p>{{this.summary}}</p>
+        {{#if this.note}}<p class="admin-card__note">{{this.note}}</p>{{/if}}
+      </a>
+    {{/each}}
+  </div>
+
+  <article class="blade-guidance">
+    <strong>These settings are platform-wide</strong>
+    <span>
+      Everything here applies to every organization on this deployment, not only
+      to yours — which is why it is limited to subscribers who administer their
+      own organization. Somebody invited to hold a credential never sees it.
+    </span>
+  </article>
+</section>

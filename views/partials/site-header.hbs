@@ -68,6 +68,9 @@
         </article>
       </div>
       <div class="modal-actions modal-actions--profile">
+        {{#if canViewHealth}}
+          <a class="button button--secondary button--dark-text" href="/admin">Administration</a>
+        {{/if}}
         <form action="/auth/logout" method="post">
           <button class="button" type="submit">Sign out</button>
         </form>

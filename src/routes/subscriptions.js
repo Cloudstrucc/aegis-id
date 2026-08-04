@@ -129,6 +129,39 @@ router.post('/subscribe', requireAuthenticated, authorize('subscription.create')
   }
 });
 
+/**
+ * Job titles offered on the subscription form.
+ *
+ * Deliberately *not* the Aegis role. Whoever creates an organization is its
+ * administrator — that is fixed, because an organization nobody can administer
+ * could never issue a credential — so a role chooser here would be offering a
+ * choice that does not exist. This field is contact metadata, alongside
+ * `interest` and `notes`, and the old free-text box invited people to type
+ * "Admin" and believe they had set something.
+ */
+const JOB_TITLES = [
+  'IT / Infrastructure',
+  'Security',
+  'Identity / IAM',
+  'Compliance / Risk',
+  'Engineering',
+  'Product',
+  'Executive / Founder',
+  'Other'
+];
+
+function roleChoices(selected) {
+  const current = String(selected || '').trim();
+  const known = JOB_TITLES.includes(current);
+  return JOB_TITLES.map((label) => ({
+    value: label,
+    label,
+    // An older record may carry free text from before this was a list; keep it
+    // selected rather than silently relabelling somebody.
+    isSelected: known ? label === current : label === 'Identity / IAM'
+  }));
+}
+
 function buildSubscribeView(req, overrides = {}) {
   const draft = req.session.subscriptionDraft || {};
   const plan = intendedPlan(req.session);
@@ -139,6 +172,7 @@ function buildSubscribeView(req, overrides = {}) {
     description: 'Subscribe an organization to Vanguard Cloud Services - Aegis ID.',
     formErrors: overrides.formErrors || {},
     errorMessage: overrides.errorMessage || null,
+    roleChoices: roleChoices(draft.role || overrides.formValues?.role),
     // Shown, not editable: the plan was settled before the account existed.
     chosenPlan: {
       id: plan.id,
@@ -151,7 +185,6 @@ function buildSubscribeView(req, overrides = {}) {
     formValues: {
       email: req.user.email,
       organization: '',
-      role: 'administrator',
       interest: 'both',
       notes: '',
       ...draft,

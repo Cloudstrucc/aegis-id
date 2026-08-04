@@ -7278,3 +7278,271 @@ body:has(.workspace-blade) .site-footer div span {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* A single outcome, centred and self-contained: payment confirmed, or waiting
+   on the provider. Narrow on purpose — a full-width band for one sentence and
+   one button reads as a layout accident. */
+.outcome-card {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 34px 32px;
+  text-align: center;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.outcome-card__mark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.outcome-card__mark--good {
+  color: #0b7a52;
+  background: #e3f8ee;
+}
+
+.outcome-card__mark--wait {
+  color: #8a6212;
+  background: #fdf3dd;
+}
+
+.outcome-card h2 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 21px;
+}
+
+.outcome-card p {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.outcome-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* Sized to its label rather than to the container, so one button does not
+   stretch across the whole card. */
+.outcome-card__actions .button {
+  min-width: 160px;
+}
+
+
+/* Subscribing an organization: the form leads, the plan sits beside it.
+   Previously the heading, the plan card and the form were three children of a
+   two-column grid, so they landed in whichever cell came next and the page
+   read as three unrelated fragments. */
+.subscribe-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.subscribe-aside {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  min-width: 0;
+}
+
+.subscribe-aside .chosen-plan {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .subscribe-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The add-organization form is one short field; it does not need the full
+   width of the band. */
+.subscribe-form--narrow {
+  max-width: 620px;
+}
+
+/* Administration index. */
+.admin-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.admin-status__pill {
+  padding: 6px 12px;
+  color: var(--ink);
+  background: var(--mist);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-status__pill--warn {
+  color: #8a6212;
+  background: #fdf3dd;
+  border-color: #f0ce8c;
+}
+
+.admin-status__pill--live {
+  color: #0b7a52;
+  background: #e3f8ee;
+  border-color: #9fdcc2;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 0 0 26px;
+}
+
+.admin-card {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 22px;
+  color: inherit;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.admin-card:hover {
+  border-color: var(--blue-600);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.admin-card__stat {
+  color: var(--navy-900);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.admin-card__statlabel {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-card h2 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 17px;
+}
+
+.admin-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+/* Something needs a look — a revoked wallet, an account out of recovery codes,
+   no delivery channel at all. */
+.admin-card--attention {
+  border-left: 4px solid var(--amber-400);
+}
+
+.admin-card__note {
+  margin-top: 6px;
+  color: #8a6212;
+  font-weight: 800;
+}
+
+/* Callouts.
+   These had no styles at all — every "Copy this code now", every validation
+   message and every test-mode notice was rendering as bare paragraph text,
+   which is the one thing a callout must not do. */
+.callout {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  background: var(--mist);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--muted);
+  border-radius: 8px;
+}
+
+.callout strong {
+  color: var(--navy-900);
+  font-size: 15px;
+}
+
+.callout span,
+.callout p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.callout code {
+  padding: 1px 5px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.callout--warning {
+  background: #fff8e8;
+  border-color: #f0ce8c;
+  border-left-color: var(--amber-400);
+}
+
+.callout--warning strong {
+  color: #684b14;
+}
+
+.callout--success {
+  background: #ecfff6;
+  border-color: #9fdcc2;
+  border-left-color: var(--green-500);
+}
+
+.callout--success strong {
+  color: #075f3f;
+}
+
+/* Used for "No registration codes have been issued." and similar. */
+.muted {
+  color: var(--muted);
+}
+
+/* A field with a help note under it is taller than one without, and a stretched
+   grid row pushes the shorter field's control down to match. Align to the top
+   so the two controls sit on the same line. */
+.subscribe-layout .field-row,
+.register-layout .field-row {
+  align-items: start;
+}

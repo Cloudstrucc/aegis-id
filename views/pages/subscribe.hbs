@@ -5,48 +5,36 @@
 </section>
 
 <section class="band band--white">
-  <div class="subscription-layout">
-    <div class="section-heading">
-      <p class="eyebrow">Admin owner</p>
-      <h2>{{formValues.email}}</h2>
-      <p>This account becomes the first organization administrator. Co-administrators can be promoted later through dual wallet challenges.</p>
+  <div class="section-heading">
+    <p class="eyebrow">Admin owner</p>
+    <h2>{{formValues.email}}</h2>
+    <p>This account becomes the first organization administrator. Co-administrators can be promoted later through dual wallet challenges.</p>
+  </div>
+
+  {{#if errorMessage}}
+    <div class="callout callout--warning">
+      <strong>Not subscribed.</strong> <span>{{errorMessage}}</span>
+      <p><a class="button button--ghost" href="/plans">Choose a plan</a></p>
     </div>
+  {{/if}}
 
-    {{#if errorMessage}}
-      <div class="callout callout--warning">
-        <strong>Not subscribed.</strong> <span>{{errorMessage}}</span>
-        <p><a class="button button--ghost" href="/plans">Choose a plan</a></p>
-      </div>
-    {{/if}}
-
-    <article class="chosen-plan">
-      <p class="eyebrow">Your plan</p>
-      <h3>{{chosenPlan.label}} — {{chosenPlan.price}}</h3>
-      {{#if (eq chosenPlan.settledBy "code")}}
-        <p>Covered by a registration code. You will not be charged.</p>
-      {{else if (eq chosenPlan.settledBy "payment")}}
-        <p>Paid. Your subscription starts as soon as this organization is created.</p>
-      {{else if chosenPlan.requiresPayment}}
-        <p>Payment is not set up yet, so trial limits apply until it is. Everything you issue keeps working.</p>
-      {{else}}
-        <p>Your trial runs for 30 days. No card required.</p>
-      {{/if}}
-      <p class="table-note"><a href="/plans">Change plan</a></p>
-    </article>
-
+  <div class="subscribe-layout">
     <form class="subscribe-form" action="/subscribe" method="post" novalidate>
-      <div class="field-row">
-        <div class="field-group">
-          <label for="organization">Organization</label>
-          <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization" required>
-        </div>
-        <div class="field-group">
-          <label for="role">Your role</label>
-          <input id="role" name="role" type="text" value="{{formValues.role}}">
-        </div>
+      <div class="field-group">
+        <label for="organization">Organization</label>
+        <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization" required>
       </div>
 
       <div class="field-row">
+        <div class="field-group">
+          <label for="role">Your job title</label>
+          <select id="role" name="role">
+            {{#each roleChoices}}
+              <option value="{{this.value}}" {{#if this.isSelected}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+          <p class="table-note">For our records only — it does not affect your access.</p>
+        </div>
         <div class="field-group">
           <label for="interest">Identity track</label>
           <select id="interest" name="interest">
@@ -69,7 +57,33 @@
       {{#if formErrors.email}}<p class="field-error">{{formErrors.email}}</p>{{/if}}
       {{#if formErrors.consent}}<p class="field-error">{{formErrors.consent}}</p>{{/if}}
 
-      <button class="button button--primary" type="submit">Subscribe organization</button>
+      <button class="button button--primary button--blue" type="submit">Subscribe organization</button>
     </form>
+
+    <aside class="subscribe-aside">
+      <article class="chosen-plan">
+        <p class="eyebrow">Your plan</p>
+        <h3>{{chosenPlan.label}} — {{chosenPlan.price}}</h3>
+        {{#if (eq chosenPlan.settledBy "code")}}
+          <p>Covered by a registration code. You will not be charged.</p>
+        {{else if (eq chosenPlan.settledBy "payment")}}
+          <p>Paid. Your subscription starts as soon as this organization is created.</p>
+        {{else if chosenPlan.requiresPayment}}
+          <p>Payment is not set up yet, so trial limits apply until it is. Everything you issue keeps working.</p>
+        {{else}}
+          <p>Your trial runs for 30 days. No card required.</p>
+        {{/if}}
+        <p class="table-note"><a href="/plans">Change plan</a></p>
+      </article>
+
+      <div class="note-panel">
+        <strong>Your Aegis role</strong>
+        <span>
+          Administrator. Whoever creates an organization administers it — that
+          is not a choice, because an organization nobody can administer could
+          never issue a credential.
+        </span>
+      </div>
+    </aside>
   </div>
 </section>
