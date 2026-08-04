@@ -18,8 +18,10 @@ const {
   choosePlan,
   getIntent,
   grantFor,
-  intendedPlan
+  intendedPlan,
+  setSettledPlan
 } = require('../services/signup-intent-service');
+const { confirmCheckout, startCheckout } = require('../services/billing-service');
 const { previewRegistrationCode } = require('../services/registration-code-service');
 const { writeAuditEvent } = require('../services/audit-service');
 const config = require('../config');
@@ -99,10 +101,10 @@ router.post('/checkout/code', authorize('public.plans'), async (req, res, next) 
 /**
  * The card path.
  *
- * Phase 5 replaces this with a Stripe Checkout session and confirms payment
- * from the webhook, which is the only source of truth. Until then the account
- * can still be created — it simply starts unpaid, and plan-service already
- * gives an unpaid paid-plan Trial limits rather than everything or nothing.
+ * Sends the customer to Stripe's hosted Checkout, so card details never reach
+ * this application. Where no payment provider is configured the account can
+ * still be created — it simply starts unpaid, and plan-service gives an unpaid
+ * paid-plan Trial limits rather than everything or nothing.
  */
 router.post('/checkout/pay', authorize('public.plans'), async (req, res, next) => {
   try {
@@ -120,8 +122,62 @@ router.post('/checkout/pay', authorize('public.plans'), async (req, res, next) =
       return res.redirect(303, '/auth/register');
     }
 
-    // Phase 5 lands here.
-    return res.redirect(303, '/checkout?error=Card+payment+is+not+available+yet.');
+    const checkout = await startCheckout({
+      planId: intent.planId,
+      returnBaseUrl: config.app.publicBaseUrl
+    });
+    // Only the handle is kept. It identifies the checkout to us and is worth
+    // nothing anywhere else.
+    attachPaymentGrant(req.session, { reference: checkout.handle });
+    return res.redirect(303, checkout.url);
+  } catch (error) {
+    if (error.expose) {
+      return res.redirect(303, `/checkout?error=${encodeURIComponent(error.message)}`);
+    }
+    return next(error);
+  }
+});
+
+/**
+ * Where Stripe sends the customer back.
+ *
+ * The redirect itself proves nothing — anyone can visit this URL — so payment
+ * is confirmed against Stripe rather than against the fact that we were asked
+ * for this page. If the webhook has not landed yet, `confirmCheckout` reads the
+ * session back from Stripe instead of making the customer wait for it.
+ */
+router.get('/checkout/return', authorize('public.plans'), async (req, res, next) => {
+  try {
+    const grant = grantFor(req.session);
+    // The session's own handle, not the query string: a handle in a URL somebody
+    // else sent you must not attach their payment to your signup.
+    const handle = grant?.via === 'payment' ? grant.reference : null;
+    if (!handle) {
+      return res.redirect(303, '/plans');
+    }
+
+    const checkout = await confirmCheckout(handle);
+    const paid = checkout?.status === 'paid';
+
+    if (paid) {
+      attachPaymentGrant(req.session, {
+        reference: handle,
+        confirmed: true,
+        stripeCustomerId: checkout.stripeCustomerId || null,
+        stripeSubscriptionId: checkout.stripeSubscriptionId || null
+      });
+      if (checkout.planId) {
+        // Whatever was actually bought decides the plan.
+        setSettledPlan(req.session, checkout.planId);
+      }
+    }
+
+    return res.render('pages/checkout-return', {
+      title: paid ? 'Payment received' : 'Confirming payment',
+      description: 'Finishing your subscription.',
+      paid,
+      plan: intendedPlan(req.session).label
+    });
   } catch (error) {
     return next(error);
   }
@@ -140,8 +196,8 @@ function buildCheckoutView(req, overrides = {}) {
       limits: describeLimits(plan)
     },
     hasGrant: Boolean(grantFor(req.session)),
-    // Off until Stripe is wired up in Phase 5. Saying so is better than a card
-    // form that cannot take a card.
+    // Saying "not connected here" is better than a card form that cannot take
+    // a card. Derived from the Stripe key, so it cannot claim otherwise.
     checkoutEnabled: config.billing.checkoutEnabled,
     errorMessage: overrides.errorMessage || req.query.error || null
   };

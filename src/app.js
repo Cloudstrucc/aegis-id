@@ -14,6 +14,7 @@ const accountRoutes = require('./routes/account');
 const pageRoutes = require('./routes/pages');
 const subscriptionRoutes = require('./routes/subscriptions');
 const planRoutes = require('./routes/plans');
+const billingWebhookRoutes = require('./routes/billing-webhook');
 const organizationRoutes = require('./routes/organizations');
 const dashboardRoutes = require('./routes/dashboard');
 const orgAdminRoutes = require('./routes/org-admin');
@@ -333,6 +334,9 @@ function createApp() {
     })
   );
   app.use(morgan(config.app.env === 'production' ? 'combined' : 'dev'));
+  // Before the body parsers on purpose: the Stripe signature is computed over
+  // the exact bytes sent, and a parsed-then-restringified body will not match.
+  app.use('/', billingWebhookRoutes);
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
   app.use(express.json({ limit: '2mb' }));
   app.use('/', didWebRoutes);

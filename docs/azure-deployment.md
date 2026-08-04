@@ -608,22 +608,58 @@ add one new persistent store and one optional payment setting.
 
 ### Before deploying
 
-1. **Add the new store path to each env file** — `.env.dev`, `.env.qa`, `.env`:
+1. **Add the new store paths to each env file** — `.env.dev`, `.env.qa`, `.env`:
 
    ```
    REGISTRATION_CODE_STORE_PATH=/home/data/aegis-id/<env>/registration-codes.json
+   CHECKOUT_SESSION_STORE_PATH=/home/data/aegis-id/<env>/checkout-sessions.json
    ```
 
-   It must live under `/home`, not `wwwroot`, or the next deployment wipes it.
-   `scripts/deploy-azure-webapp.sh` already forwards the key, but the deploy
-   script skips variables with no value, so a listed-but-blank entry is never
-   applied.
+   They must live under `/home`, not `wwwroot`, or the next deployment wipes
+   them. `scripts/deploy-azure-webapp.sh` already forwards both keys, but the
+   deploy script skips variables with no value, so a listed-but-blank entry is
+   never applied.
 
-2. **Leave `STRIPE_SECRET_KEY` unset.** Card checkout is derived from it, so
-   an unset key means checkout is off and the page says so instead of showing a
-   card form that cannot take a card.
+2. **Decide whether card payment is on for this environment.** Leaving
+   `STRIPE_SECRET_KEY` unset keeps checkout off; the page says so and registration
+   codes remain the way to grant a paid plan. To turn it on, see *Configuring
+   Stripe* below. Never point dev or qa at live Stripe keys — use test-mode
+   keys, which have their own webhook secret.
 
 3. Run the tests: `npm test`.
+
+### Configuring Stripe
+
+Only needed where card payment should work. Test-mode keys for dev and qa, live
+keys for prod; the two are entirely separate, including the webhook secret.
+
+1. In the Stripe dashboard, copy the **secret key** into `STRIPE_SECRET_KEY`
+   for that environment's env file. There is nothing else to set up — plans,
+   prices and intervals are built from `src/services/plan-service.js` at
+   checkout time, so no Products or Prices need creating in the dashboard.
+
+2. Add a **webhook endpoint** pointing at:
+
+   ```
+   https://<your-app>.azurewebsites.net/billing/webhook
+   ```
+
+   Subscribe it to: `checkout.session.completed`,
+   `checkout.session.async_payment_succeeded`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted`,
+   `invoice.paid`, `invoice.payment_failed`.
+
+3. Copy that endpoint's **signing secret** into `STRIPE_WEBHOOK_SECRET`. This
+   is the only thing standing between the platform and somebody claiming they
+   paid, so an environment with a secret key and no webhook secret will reject
+   every webhook — set both or neither.
+
+4. Set `PUBLIC_BASE_URL` to the environment's real URL. Stripe redirects the
+   customer back to it, so a wrong value strands them after payment.
+
+5. Redeploy, then send a test webhook from the Stripe dashboard. A **200** means
+   the signature verified. A **400** means the secret is wrong; a **503** means
+   `STRIPE_SECRET_KEY` did not apply.
 
 ### After deploying, per environment
 
@@ -641,11 +677,20 @@ add one new persistent store and one optional payment setting.
    confirm the plan shown is the plan they had.
 5. Confirm limits bite: on a Basic or Pro workspace, issuing past the credential
    ceiling returns **402**, and the message names the plan.
+6. **If Stripe is configured**, pay once with a test card (`4242 4242 4242 4242`,
+   any future expiry, any CVC) and check three things: the subscription reads
+   `billingStatus: active`, it carries a `stripeSubscriptionId`, and cancelling
+   that subscription in the Stripe dashboard flips the record to `canceled`
+   within seconds. If it does not, the webhook is not reaching the app — check
+   the endpoint's delivery log in Stripe.
 
 ### Rollback
 
 Nothing in this work migrates existing records, so rolling back the deployment
-is enough. `registration-codes.json` is additive and can be left in place.
+is enough. `registration-codes.json` and `checkout-sessions.json` are additive
+and can be left in place. If Stripe was configured, disable the webhook endpoint
+in the dashboard as well, or its retries will keep failing against a build that
+no longer has the route.
 
 ## Live Verified ID Settings
 

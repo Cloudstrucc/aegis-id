@@ -1,0 +1,38 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Checkout</p>
+  <h1>{{#if paid}}Payment received.{{else}}Confirming your payment.{{/if}}</h1>
+  <p>
+    {{#if paid}}
+      Your {{plan}} subscription is set up. Create your account to finish.
+    {{else}}
+      Your bank has not confirmed the payment yet. This usually takes a few
+      seconds.
+    {{/if}}
+  </p>
+</section>
+
+<section class="band band--white">
+  {{#if paid}}
+    <div class="callout callout--success">
+      <strong>Nothing else to pay.</strong>
+      <span>The next step creates the account that owns this subscription.</span>
+    </div>
+    <div class="inline-actions">
+      <a class="button button--primary" href="/auth/register">Create your account</a>
+    </div>
+  {{else}}
+    <article class="blade-guidance">
+      <strong>Your payment is safe either way</strong>
+      <span>
+        We confirm payment with our payment provider rather than assuming it
+        from this page, so refreshing is the right thing to do. If it still says
+        this in a minute, nothing has been charged twice — start again from
+        <a href="/plans">plans</a> and your bank will release any hold.
+      </span>
+    </article>
+    <div class="inline-actions">
+      <a class="button button--primary" href="/checkout/return">Check again</a>
+      <a class="button button--ghost" href="/plans">Start over</a>
+    </div>
+  {{/if}}
+</section>

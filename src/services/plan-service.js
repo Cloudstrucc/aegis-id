@@ -160,8 +160,11 @@ function effectiveEntitlement(subscription = {}) {
 
   // Otherwise a paid plan only entitles the customer while billing is in good
   // standing. Anything else falls back to Trial limits rather than to nothing.
+  // `trialing` is Stripe's word for a paid plan inside its trial window, which
+  // entitles in full — the customer has committed, they are simply not billed
+  // yet. Free-plan trials never reach here; they return above.
   const billing = String(subscription.billingStatus).toLowerCase();
-  const inGoodStanding = billing === 'active' || billing === 'comped';
+  const inGoodStanding = billing === 'active' || billing === 'comped' || billing === 'trialing';
   if (!inGoodStanding) {
     return {
       plan: PLANS.trial,

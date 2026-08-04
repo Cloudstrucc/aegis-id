@@ -7,6 +7,7 @@ const { requireAuthenticated } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
 const { describePrice } = require('../services/plan-service');
 const { redeemRegistrationCode } = require('../services/registration-code-service');
+const { claimCheckout, confirmCheckout } = require('../services/billing-service');
 const {
   clearIntent,
   getIntent,
@@ -39,12 +40,35 @@ router.post('/subscribe', requireAuthenticated, authorize('subscription.create')
       grant = { via: 'code', codeId: redeemed.codeId };
     }
 
+    // A payment is only worth anything if the provider says so. The session
+    // flag is re-checked against the stored checkout rather than believed.
+    if (grant?.via === 'payment' && grant.reference) {
+      const checkout = await confirmCheckout(grant.reference);
+      grant =
+        checkout?.status === 'paid' && !checkout.claimedBySubscriptionId
+          ? {
+              via: 'payment',
+              confirmed: true,
+              reference: grant.reference,
+              stripeCustomerId: checkout.stripeCustomerId || null,
+              stripeSubscriptionId: checkout.stripeSubscriptionId || null
+            }
+          : { via: 'payment', confirmed: false, reference: grant.reference };
+    }
+
     const record = await createSubscription(
       // The plan is the session's, whatever the form says.
       { ...req.body, plan: planId },
       req.user,
       grant
     );
+
+    if (grant?.confirmed && grant.reference) {
+      // Ties the payment to this subscription so the same checkout cannot be
+      // spent twice, and so later webhooks can find the record to update.
+      await claimCheckout(grant.reference, record.id);
+    }
+
     delete req.session.subscriptionDraft;
     clearIntent(req.session);
 
@@ -55,6 +79,7 @@ router.post('/subscribe', requireAuthenticated, authorize('subscription.create')
       plan: record.plan,
       billingStatus: record.billingStatus,
       settledBy: grant?.via || 'none',
+      stripeSubscriptionId: record.stripeSubscriptionId || null,
       interest: record.interest
     });
 

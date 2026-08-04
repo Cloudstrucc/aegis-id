@@ -189,6 +189,10 @@ const config = {
       process.env.EMAIL_VERIFICATION_STORE_PATH,
       'data/email-verifications.json'
     ),
+    checkoutSessions: resolveFromRoot(
+      process.env.CHECKOUT_SESSION_STORE_PATH,
+      'data/checkout-sessions.json'
+    ),
     registrationCodes: resolveFromRoot(
       process.env.REGISTRATION_CODE_STORE_PATH,
       'data/registration-codes.json'

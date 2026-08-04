@@ -24,6 +24,8 @@
       <h3>{{chosenPlan.label}} — {{chosenPlan.price}}</h3>
       {{#if (eq chosenPlan.settledBy "code")}}
         <p>Covered by a registration code. You will not be charged.</p>
+      {{else if (eq chosenPlan.settledBy "payment")}}
+        <p>Paid. Your subscription starts as soon as this organization is created.</p>
       {{else if chosenPlan.requiresPayment}}
         <p>Payment is not set up yet, so trial limits apply until it is. Everything you issue keeps working.</p>
       {{else}}

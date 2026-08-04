@@ -82,6 +82,14 @@ async function createSubscription(input, user = null, grant = null) {
     record.compedCodeId = grant.codeId || null;
   }
 
+  if (grant?.via === 'payment') {
+    // The provider's own identifiers, which is how a later webhook finds this
+    // record. Without them a cancellation at Stripe would never reach us.
+    record.stripeCustomerId = grant.stripeCustomerId || null;
+    record.stripeSubscriptionId = grant.stripeSubscriptionId || null;
+    record.billingUpdatedAt = now;
+  }
+
   return store.append(record);
 }
 
@@ -145,6 +153,49 @@ async function listSubscriptions() {
   return store.read();
 }
 
+/**
+ * Apply a billing change from the payment provider.
+ *
+ * Stripe is the source of truth for billing, so this writes what it says
+ * rather than deciding anything. `occurredAt` is the provider's own timestamp
+ * for the event: webhooks can arrive out of order, and applying a stale event
+ * after a newer one would flip a paying customer back to unpaid.
+ */
+/**
+ * Is this event older than what has already been applied?
+ *
+ * Compared at whole-second resolution because Stripe timestamps events to the
+ * second. Comparing milliseconds would discard a legitimate event that happened
+ * to land in the same second as the record it updates — which is the common
+ * case immediately after checkout, not a rare one.
+ */
+function isStale(occurredAt, appliedAt) {
+  const second = (value) => Math.floor(new Date(value).getTime() / 1000);
+  return second(occurredAt) < second(appliedAt);
+}
+
+async function applyBillingUpdate(predicate, patch, occurredAt = null) {
+  const subscriptions = await listSubscriptions();
+  const index = subscriptions.findIndex(predicate);
+  if (index === -1) {
+    return null;
+  }
+
+  const current = subscriptions[index];
+  if (occurredAt && current.billingUpdatedAt && isStale(occurredAt, current.billingUpdatedAt)) {
+    return current;
+  }
+
+  subscriptions[index] = {
+    ...current,
+    ...patch,
+    billingUpdatedAt: occurredAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  await store.write(subscriptions);
+  return subscriptions[index];
+}
+
 async function getSubscription(id) {
   const subscriptions = await listSubscriptions();
   return subscriptions.find((subscription) => subscription.id === id) || null;
@@ -176,6 +227,7 @@ function isAccountAccessSubscription(subscription = {}) {
 }
 
 module.exports = {
+  applyBillingUpdate,
   createSubscription,
   ensureAccountAccessSubscription,
   getSubscription,

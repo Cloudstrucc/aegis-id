@@ -469,9 +469,23 @@ working and only new issuance stops, because a billing event must not revoke
 somebody's identity credential. The account page says which of these applies
 rather than leaving the customer to guess why issuing failed.
 
-Card payment is connected in a later phase. Until it is, choosing a paid plan
+**Payment** goes through Stripe's hosted Checkout, so card details never touch
+Aegis ID. Apple Pay and Google Pay appear automatically on supported devices —
+they are payment methods within Checkout, not separate integrations.
+
+Where no Stripe key is configured, the checkout page says so and a paid plan
 still creates the account — the subscription simply starts unpaid, so trial
 limits apply until payment is set up, and nothing already issued is affected.
+
+Billing state always comes from Stripe, never from the browser. The page a
+customer lands on after paying confirms with Stripe before it says anything,
+and a cancellation, failed renewal or upgrade made in Stripe reaches the
+subscription within seconds by webhook. If a webhook is ever missed, an
+administrator can re-read the true state from Stripe rather than the record
+being stuck.
+
+Metered plans currently bill their monthly base through Stripe; per-credential
+overage is reported on the account page but not yet charged automatically.
 
 ## Registration Codes
 

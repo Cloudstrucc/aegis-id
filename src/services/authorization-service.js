@@ -160,6 +160,10 @@ const POLICIES = Object.freeze({
   'api.verifiedId.callback': policy('api.verifiedId.callback', 'external', 'verified-id-callback', 'update', {
     description: 'Callback guarded by VID_CALLBACK_API_KEY when configured.'
   }),
+  'api.billing.webhook': policy('api.billing.webhook', 'external', 'billing-event', 'update', {
+    description:
+      'Stripe webhook. Authorization is the request signature, verified against STRIPE_WEBHOOK_SECRET before the body is looked at — there is no session to authorize against, and an unverified body is an attacker telling us who has paid.'
+  }),
   'api.aries.lab': policy('api.aries.lab', 'external', 'aries-lab', 'execute', {
     description: 'Lab-only ACA-Py integration surface.'
   }),

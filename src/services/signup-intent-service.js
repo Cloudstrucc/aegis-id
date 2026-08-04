@@ -39,6 +39,25 @@ function choosePlan(session, planId) {
   return plan;
 }
 
+/**
+ * Set the plan from something authoritative — a redeemed code, or what Stripe
+ * says was actually bought — without discarding the grant that proved it.
+ *
+ * Deliberately separate from `choosePlan`, which always clears the grant. That
+ * clearing is what stops a code or a payment for one plan being carried onto
+ * another, so it must not be weakened for the visitor-facing path.
+ */
+function setSettledPlan(session, planId) {
+  const plan = getPlan(planId);
+  const intent = getIntent(session);
+  if (!plan || !intent) {
+    throw validationError('Choose a plan first.');
+  }
+  intent.planId = plan.id;
+  session[SESSION_KEY] = intent;
+  return plan;
+}
+
 function getIntent(session) {
   const intent = session?.[SESSION_KEY];
   if (!intent || !getPlan(intent.planId)) {
@@ -109,5 +128,6 @@ module.exports = {
   getIntent,
   grantFor,
   intendedPlan,
-  isSettled
+  isSettled,
+  setSettledPlan
 };

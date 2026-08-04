@@ -203,6 +203,37 @@ Card checkout is gated on `config.billing.checkoutEnabled`, derived from
 `STRIPE_SECRET_KEY` rather than being its own switch, so it can never be on
 while there is nothing behind it to take a payment.
 
+## Billing
+
+**Stripe is the source of truth.** `billingStatus` on our record is a cache of
+what Stripe says, written only by a signature-verified webhook or by reading
+the API back (`reconcileSubscription`). Stripe's own status values are stored
+verbatim rather than translated, because a second vocabulary would only be a
+second thing to keep in step. `trialing` therefore entitles in full — it is a
+paid plan inside its trial window, not a free one.
+
+Checkout is **hosted**, so card details never reach this application and it
+stays out of PCI scope. Line items are built inline from the plan catalogue
+rather than from Stripe Price IDs, so pricing stays a one-file edit in
+`plan-service.js` with no dashboard state to drift.
+
+**The webhook route is mounted before the body parsers** in `app.js`. The
+signature is computed over the exact bytes Stripe sent, so a parsed-then-
+restringified body will not verify. That endpoint is public by necessity, and
+the signature check is its entire security boundary: an unverified body is an
+attacker telling us who has paid.
+
+Payment happens *before* the account exists, so a paid checkout is parked in
+`checkoutSessions` under a handle the browser carries, then claimed once — a
+second subscription cannot spend the same payment. The return from Stripe is a
+navigation hint, never evidence; `confirmCheckout` reads the session back from
+Stripe when the webhook has not landed yet, which is the common case.
+
+Webhooks arrive out of order and are retried. `applyBillingUpdate` ignores an
+event older than the last one applied, compared **at whole-second resolution**
+because Stripe timestamps to the second — comparing milliseconds discards
+legitimate events that land in the same second as the record they update.
+
 ## Registration codes
 
 `/admin/registration-codes` issues a code that grants a paid plan without
