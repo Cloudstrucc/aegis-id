@@ -184,10 +184,21 @@ The order is `/plans` → checkout (paid only) → `/auth/register` → `/subscr
 Somebody who picks Enterprise finds that out at the pricing page rather than
 after filling in a registration form.
 
-**The chosen plan is never read from a form field.** It lives in the session
-(`src/services/signup-intent-service.js`) and every route passes the session's
-plan to `createSubscription`, overriding whatever the request carried. A signup
-form with `plan=enterprise` in it is a form anyone can edit.
+The plan can be chosen on the pricing page or on the registration form itself,
+which offers the whole catalogue and defaults to Trial, plus a box for a
+registration code.
+
+**A form asks for a plan; it never grants one.** The selection is validated
+against the catalogue by `choosePlan` and kept in the session
+(`src/services/signup-intent-service.js`); every route then passes the
+*session's* plan to `createSubscription`, overriding whatever the request
+carried. Picking a paid plan on the registration form routes to `/checkout`
+after second-factor verification rather than to `/subscribe`, so it still has
+to be paid for or comped.
+
+A code entered on the registration form is checked **before** `registerUser`,
+so an invalid one re-renders the form rather than leaving a half-made account
+that cannot have what it asked for.
 
 Choosing a plan afresh clears any grant attached to the old one, so a code for
 Basic cannot be carried sideways onto Enterprise. Redemption independently
@@ -250,8 +261,9 @@ Rejection is deliberately uniform — unknown, expired, spent, revoked and
 wrong-environment all answer "not valid" — so the signup form cannot be used to
 discover which codes exist.
 
-A code is **checked at checkout but spent at `/subscribe`**, the only place a
-subscription is minted. Spending it earlier would burn a redemption for anyone
+A code can be entered at checkout or on the registration form. Either way it is
+**checked there but spent at `/subscribe`**, the only place a subscription is
+minted. Spending it earlier would burn a redemption for anyone
 who abandoned the last form. A redeemed code sets `billingStatus: 'comped'`,
 which entitles exactly as much as paying does.
 

@@ -47,12 +47,16 @@ const {
 const { authorize } = require('../middleware/authorization');
 const {
   SESSION_KEY: SIGNUP_INTENT_KEY,
+  attachCodeGrant,
+  choosePlan,
   clearIntent,
   getIntent,
   grantFor,
-  intendedPlan
+  intendedPlan,
+  isSettled
 } = require('../services/signup-intent-service');
-const { describePrice } = require('../services/plan-service');
+const { DEFAULT_PLAN_ID, describePrice, listPublicPlans } = require('../services/plan-service');
+const { previewRegistrationCode } = require('../services/registration-code-service');
 
 const router = express.Router();
 
@@ -67,6 +71,16 @@ router.get('/auth/register', requireAnonymous, async (req, res, next) => {
 
 router.post('/auth/register', requireAnonymous, authorize('auth.register'), async (req, res, next) => {
   try {
+    // Settle the plan before creating anything. A bad code has to fail here,
+    // not after an account exists that cannot be given what it asked for.
+    const settled = await settleSignupFromForm(req);
+    if (settled.codeError) {
+      return res.status(422).render('pages/auth-register', await buildRegisterView(req, {
+        formValues: req.body,
+        codeError: settled.codeError
+      }));
+    }
+
     const user = await registerUser(req.body);
     req.session.pendingSecondFactorUserId = user.id;
     req.session.pendingSecondFactorMethod = user.preferredMfa;
@@ -739,7 +753,14 @@ async function getPostAuthState(req, user) {
     };
   }
 
-  const redirectUrl = req.session.returnTo || (req.session.subscriptionDraft ? '/subscribe' : '/');
+  // A paid plan that nothing has settled goes to checkout rather than to the
+  // organization form: choosing Pro on the registration form is a request, not
+  // a payment, and /subscribe would otherwise create it unpaid without ever
+  // offering the card.
+  const needsCheckout = Boolean(getIntent(req.session)) && !isSettled(req.session);
+  const redirectUrl =
+    req.session.returnTo ||
+    (needsCheckout ? '/checkout' : req.session.subscriptionDraft ? '/subscribe' : '/');
   return {
     redirectUrl,
     subscriptionDraft: req.session.subscriptionDraft || null,
@@ -768,8 +789,45 @@ function restorePostAuthState(req, postAuthState) {
   delete req.session.returnTo;
 }
 
+/**
+ * Apply the plan and registration code chosen on the registration form.
+ *
+ * The form asks for a plan, it does not grant one: `choosePlan` validates
+ * against the catalogue, and a paid plan still has to reach checkout before it
+ * entitles anything. A code is only *checked* here — it is spent once, at
+ * /subscribe — so abandoning the form does not burn a redemption.
+ */
+async function settleSignupFromForm(req) {
+  const candidate = String(req.body.code || '').trim();
+
+  if (candidate) {
+    const preview = await previewRegistrationCode(candidate);
+    if (!preview) {
+      // One message for every failure, so this form cannot be used to discover
+      // which codes exist.
+      return { codeError: 'That registration code is not valid.' };
+    }
+    // The code decides the plan, whatever the dropdown said.
+    choosePlan(req.session, preview.planId);
+    attachCodeGrant(req.session, candidate);
+    return { codeError: null };
+  }
+
+  // No code. An explicit choice replaces whatever was chosen earlier — and
+  // clears any grant attached to it, which is what stops a code for one plan
+  // being carried onto another.
+  if (req.body.planId && req.body.planId !== getIntent(req.session)?.planId) {
+    choosePlan(req.session, req.body.planId);
+  } else if (!getIntent(req.session)) {
+    choosePlan(req.session, req.body.planId || DEFAULT_PLAN_ID);
+  }
+
+  return { codeError: null };
+}
+
 async function buildRegisterView(req, overrides = {}) {
   const plan = intendedPlan(req.session);
+  const selectedPlanId = overrides.formValues?.planId || plan.id;
   const formValues = {
     displayName: '',
     email: normalizeEmail(req.query.email || ''),
@@ -779,19 +837,28 @@ async function buildRegisterView(req, overrides = {}) {
     preferredMfa: config.auth.defaultMfaMethod,
     ...(req.session?.subscriptionDraft || {}),
     ...(overrides.formValues || {}),
-    // The plan comes from the session, never from the form — see
-    // signup-intent-service. It is shown so the visitor knows what they are
-    // signing up for, but there is no field to change it here.
-    plan: plan.id
+    // What the form offers is a *request* for a plan, validated against the
+    // catalogue before it becomes one. Picking a paid plan here still leads to
+    // checkout — it never grants anything on its own.
+    planId: selectedPlanId,
+    plan: selectedPlanId
   };
   delete formValues.password;
   delete formValues.confirmPassword;
+  delete formValues.code;
 
   return {
     title: 'Create account',
     description: 'Create a Vanguard Cloud Services - Aegis ID account.',
     formValues,
     formErrors: overrides.formErrors || {},
+    planChoices: listPublicPlans().map((choice) => ({
+      ...choice,
+      isSelected: choice.id === selectedPlanId
+    })),
+    // A code already applied at checkout should not be asked for again.
+    hasCode: grantFor(req.session)?.via === 'code',
+    codeError: overrides.codeError || null,
     chosenPlan: {
       id: plan.id,
       label: plan.label,

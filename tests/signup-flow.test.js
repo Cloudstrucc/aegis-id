@@ -253,6 +253,77 @@ test('with no intent at all, signup falls back to trial rather than to nothing',
   });
 });
 
+test('the registration form asks for a plan, it does not grant one', async () => {
+  await withEnv(async ({ intent, subscriptions }) => {
+    const { effectiveEntitlement } = require('../src/services/plan-service');
+    const session = {};
+
+    // Someone picks Enterprise on the account form and submits. That is a
+    // request: the plan is recorded, but nothing has paid for it.
+    intent.choosePlan(session, 'enterprise');
+    assert.equal(intent.isSettled(session), false, 'so the flow must route to checkout');
+
+    const record = await subscriptions.createSubscription(
+      { ...subscriptionForm(), plan: intent.intendedPlan(session).id },
+      USER,
+      intent.grantFor(session)
+    );
+    assert.equal(record.billingStatus, 'incomplete');
+    assert.equal(effectiveEntitlement(record).plan.id, 'trial');
+  });
+});
+
+test('a plan chosen on the registration form must exist', async () => {
+  await withEnv(async ({ intent }) => {
+    const session = {};
+    // The radio list is client-side; the value that comes back is not trusted.
+    assert.throws(() => intent.choosePlan(session, 'enterprise-unlimited'), /available plans/);
+    assert.throws(() => intent.choosePlan(session, '../../admin'), /available plans/);
+  });
+});
+
+test('a code entered on the registration form beats the plan picked beside it', async () => {
+  await withEnv(async ({ intent, codes }) => {
+    const { code } = await codes.createRegistrationCode({ planId: 'basic', environments: ['dev'] });
+    const session = {};
+
+    // Enterprise selected in the radio list, but the code is for Basic.
+    intent.choosePlan(session, 'enterprise');
+    const preview = await codes.previewRegistrationCode(code);
+    intent.choosePlan(session, preview.planId);
+    intent.attachCodeGrant(session, code);
+
+    assert.equal(intent.intendedPlan(session).id, 'basic');
+    assert.equal(intent.isSettled(session), true);
+    // And still unspent — the form has not been submitted successfully yet.
+    assert.equal((await codes.listRegistrationCodes())[0].redemptionCount, 0);
+  });
+});
+
+test('a bad code on the registration form settles nothing', async () => {
+  await withEnv(async ({ intent, codes }) => {
+    const session = {};
+    intent.choosePlan(session, 'pro');
+
+    assert.equal(await codes.previewRegistrationCode('ZZZZ-ZZZZ-ZZZZ'), null);
+    // The route re-renders instead of registering, so no grant is attached and
+    // no half-made account is left behind.
+    assert.equal(intent.grantFor(session), null);
+    assert.equal(intent.isSettled(session), false);
+  });
+});
+
+test('trial is the default when the form says nothing about a plan', async () => {
+  await withEnv(async ({ intent }) => {
+    const { DEFAULT_PLAN_ID } = require('../src/services/plan-service');
+    const session = {};
+    intent.choosePlan(session, DEFAULT_PLAN_ID);
+
+    assert.equal(intent.intendedPlan(session).id, 'trial');
+    assert.equal(intent.isSettled(session), true, 'so it goes straight to the organization form');
+  });
+});
+
 test('the public catalogue describes every plan the server enforces', async () => {
   await withEnv(async () => {
     const { PLANS, listPublicPlans } = require('../src/services/plan-service');

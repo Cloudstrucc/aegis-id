@@ -69,6 +69,44 @@
   </div>
 </section>
 
+{{#unless isAuthenticated}}
+<section class="band band--white" id="signup">
+  <div class="section-heading">
+    <p class="eyebrow">Get started</p>
+    <h2>Choose a plan, then create your account.</h2>
+    <p>Your plan decides how many organizations you can run and how many credentials each can issue, so it comes first. A trial needs no card, and you can change your mind on the next page. If you were given a registration code, there is a box for it on the account form.</p>
+  </div>
+
+  <div class="plan-choices">
+    {{#each plans}}
+      <article class="plan-choice {{#if this.isRecommended}}plan-choice--featured{{/if}}">
+        {{#if this.isRecommended}}<p class="plan-choice__flag">Most chosen</p>{{/if}}
+        <h3>{{this.label}}</h3>
+        <p class="plan-choice__price">{{this.price}}</p>
+        <p class="plan-choice__blurb">{{this.blurb}}</p>
+        <ul class="plan-choice__limits">
+          {{#each this.limits}}<li>{{this}}</li>{{/each}}
+        </ul>
+        <form action="/plans" method="post">
+          <input type="hidden" name="planId" value="{{this.id}}">
+          <button
+            class="button {{#if this.isRecommended}}button--primary{{else}}button--ghost{{/if}}"
+            type="submit"
+          >
+            {{#if this.requiresPayment}}Choose {{this.label}}{{else}}Start free trial{{/if}}
+          </button>
+        </form>
+      </article>
+    {{/each}}
+  </div>
+
+  <p class="form-footnote">
+    Already registered? <a href="/auth/login">Sign in</a>. Comparing options?
+    <a href="/plans">See all plans</a>.
+  </p>
+</section>
+{{/unless}}
+
 <section class="band band--white" id="setup-video">
   <div class="video-layout">
     <div class="section-heading">
@@ -194,42 +232,6 @@
         {{/each}}
       </div>
     </div>
-  </section>
-
-  <section class="band band--white" id="signup">
-    <div class="section-heading">
-      <p class="eyebrow">Get started</p>
-      <h2>Choose a plan, then create your account.</h2>
-      <p>Your plan decides how many organizations you can run and how many credentials each can issue, so it comes first. A trial needs no card. If you were given a registration code, you enter it at checkout.</p>
-    </div>
-
-    <div class="plan-choices">
-      {{#each plans}}
-        <article class="plan-choice {{#if this.isRecommended}}plan-choice--featured{{/if}}">
-          {{#if this.isRecommended}}<p class="plan-choice__flag">Most chosen</p>{{/if}}
-          <h3>{{this.label}}</h3>
-          <p class="plan-choice__price">{{this.price}}</p>
-          <p class="plan-choice__blurb">{{this.blurb}}</p>
-          <ul class="plan-choice__limits">
-            {{#each this.limits}}<li>{{this}}</li>{{/each}}
-          </ul>
-          <form action="/plans" method="post">
-            <input type="hidden" name="planId" value="{{this.id}}">
-            <button
-              class="button {{#if this.isRecommended}}button--primary{{else}}button--ghost{{/if}}"
-              type="submit"
-            >
-              {{#if this.requiresPayment}}Choose {{this.label}}{{else}}Start free trial{{/if}}
-            </button>
-          </form>
-        </article>
-      {{/each}}
-    </div>
-
-    <p class="form-footnote">
-      Already registered? <a href="/auth/login">Sign in</a>. Comparing options?
-      <a href="/plans">See all plans</a>.
-    </p>
   </section>
 
 {{/unless}}

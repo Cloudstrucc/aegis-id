@@ -442,9 +442,14 @@ Full detail: [Wallet Identity, Wallet ID and Recovery](../wallet-and-passkeys/wa
 ## Plans And Signup
 
 Signup goes **plan first, account second**: `/plans` → checkout (paid plans
-only) → create account → subscribe the organization. Somebody who picks
-Enterprise finds that out on the pricing page rather than after filling in a
-registration form.
+only) → create account → subscribe the organization. The account form also
+offers the full plan list, defaulting to Trial, for anyone who reaches it
+directly — choosing a paid plan there simply routes to checkout after email
+verification.
+
+A **registration code** can be entered in either place: at checkout, or in the
+optional box on the account form. The code decides the plan, whichever one was
+selected beside it.
 
 | Plan | Price | Organizations | Credentials |
 |---|---|---|---|

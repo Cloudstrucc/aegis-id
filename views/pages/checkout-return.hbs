@@ -15,10 +15,10 @@
   {{#if paid}}
     <div class="callout callout--success">
       <strong>Nothing else to pay.</strong>
-      <span>The next step creates the account that owns this subscription.</span>
+      <span>The next step sets up the organization that owns this subscription.</span>
     </div>
     <div class="inline-actions">
-      <a class="button button--primary" href="/auth/register">Create your account</a>
+      <a class="button button--primary" href="{{nextStep}}">Continue</a>
     </div>
   {{else}}
     <article class="blade-guidance">

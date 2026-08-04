@@ -92,7 +92,7 @@ router.post('/checkout/code', authorize('public.plans'), async (req, res, next) 
     choosePlan(req.session, preview.planId);
     attachCodeGrant(req.session, candidate);
 
-    return res.redirect(303, '/auth/register');
+    return res.redirect(303, nextStepAfterCheckout(req));
   } catch (error) {
     return next(error);
   }
@@ -119,7 +119,7 @@ router.post('/checkout/pay', authorize('public.plans'), async (req, res, next) =
         planId: intent.planId,
         reason: 'payment-provider-not-configured'
       });
-      return res.redirect(303, '/auth/register');
+      return res.redirect(303, nextStepAfterCheckout(req));
     }
 
     const checkout = await startCheckout({
@@ -176,12 +176,25 @@ router.get('/checkout/return', authorize('public.plans'), async (req, res, next)
       title: paid ? 'Payment received' : 'Confirming payment',
       description: 'Finishing your subscription.',
       paid,
-      plan: intendedPlan(req.session).label
+      plan: intendedPlan(req.session).label,
+      nextStep: nextStepAfterCheckout(req)
     });
   } catch (error) {
     return next(error);
   }
 });
+
+/**
+ * Where a settled signup goes next.
+ *
+ * Somebody can reach checkout either before they have an account or after —
+ * choosing a paid plan on the registration form sends them here once they are
+ * already signed in. /auth/register refuses an authenticated visitor, so the
+ * next step is not the same in both cases.
+ */
+function nextStepAfterCheckout(req) {
+  return req.isAuthenticated?.() && req.user ? '/subscribe' : '/auth/register';
+}
 
 function buildCheckoutView(req, overrides = {}) {
   const plan = intendedPlan(req.session);

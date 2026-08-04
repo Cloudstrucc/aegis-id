@@ -12,25 +12,57 @@
       <p>Vanguard Cloud Services uses Passport.js sessions with a second factor before organization access, subscription, and administration are available.</p>
     </div>
 
-    {{#if chosenPlan.wasChosen}}
-      <article class="chosen-plan">
-        <p class="eyebrow">Your plan</p>
-        <h3>{{chosenPlan.label}} — {{chosenPlan.price}}</h3>
-        {{#if chosenPlan.isSettled}}
-          <p>Covered by a registration code. You will not be charged.</p>
-        {{else if chosenPlan.requiresPayment}}
-          <p>Payment is not set up yet, so trial limits apply until it is.</p>
-        {{else}}
-          <p>30 days, no card required.</p>
-        {{/if}}
-        <p class="table-note"><a href="/plans">Change plan</a></p>
-      </article>
-    {{else}}
-      <p class="form-footnote">Not sure which plan you need? <a href="/plans">Compare plans</a>.</p>
-    {{/if}}
-
     <form class="subscribe-form" action="/auth/register" method="post" novalidate>
       {{#if errorMessage}}<p class="form-alert">{{errorMessage}}</p>{{/if}}
+
+      {{#if chosenPlan.isSettled}}
+        <article class="chosen-plan">
+          <p class="eyebrow">Your plan</p>
+          <h3>{{chosenPlan.label}} — {{chosenPlan.price}}</h3>
+          <p>Covered by a registration code. You will not be charged.</p>
+          <p class="table-note"><a href="/plans">Change plan</a></p>
+        </article>
+        <input type="hidden" name="planId" value="{{chosenPlan.id}}">
+      {{else}}
+        <fieldset class="field-group plan-picker">
+          <legend>Choose your plan</legend>
+          <p class="table-note">
+            A trial needs no card. Choosing a paid plan takes you to checkout
+            after you verify your email — nothing is charged before that.
+          </p>
+          {{#each planChoices}}
+            <label class="plan-option">
+              <input type="radio" name="planId" value="{{this.id}}" {{#if this.isSelected}}checked{{/if}}>
+              <span class="plan-option__body">
+                <span class="plan-option__name">{{this.label}} — {{this.price}}</span>
+                <span class="plan-option__blurb">{{this.blurb}}</span>
+                <span class="plan-option__limits">
+                  {{#each this.limits}}{{this}}{{#unless @last}} · {{/unless}}{{/each}}
+                </span>
+              </span>
+            </label>
+          {{/each}}
+        </fieldset>
+
+        <div class="field-group">
+          <label for="code">Registration code (optional)</label>
+          <input
+            id="code"
+            name="code"
+            type="text"
+            value=""
+            placeholder="XXXX-XXXX-XXXX"
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="20"
+          >
+          {{#if codeError}}<p class="field-error">{{codeError}}</p>{{/if}}
+          <p class="table-note">
+            If your Vanguard contact gave you a code, enter it here and it will
+            cover the plan it was issued for — whichever one is chosen above.
+          </p>
+        </div>
+      {{/if}}
 
       <div class="field-row">
         <div class="field-group">

@@ -21,7 +21,12 @@ const POLICIES = Object.freeze({
     description: 'Human-readable service health dashboard for organization administrators.'
   }),
   'auth.register': policy('auth.register', 'anonymous', 'user', 'create', {
-    fields: ['displayName', 'email', 'phone', 'organization', 'plan', 'interest', 'preferredMfa']
+    fields: [
+      'displayName', 'email', 'phone', 'organization', 'planId', 'interest',
+      'preferredMfa', 'code'
+    ],
+    description:
+      'Create an account, choosing a plan and optionally applying a registration code. The plan is validated against the catalogue and a paid one still has to reach checkout, so choosing it here grants nothing.'
   }),
   'auth.login': policy('auth.login', 'anonymous', 'session', 'create', {
     fields: ['email', 'password']
