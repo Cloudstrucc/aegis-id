@@ -22,6 +22,12 @@ directory-scoped guidance.
   the next deployment wipes it.
 - **`issuerConnectionId` means "connected via ACA-Py", not "connected".**
   Branching on it silently excludes wallets connected the product way.
+- **The signup plan comes from the session, never the form.** `/subscribe`
+  overrides `req.body.plan` with the session's intent. Reading the plan from
+  the request would let anyone post `plan=enterprise`.
+- **A 401 proves nothing about whether a page renders.** `authorize()` returns
+  before `res.render`, so an unauthenticated check cannot tell you the page
+  works. Two admin pages shipped broken that way. Sign in and load it.
 
 ## Claude-specific note
 

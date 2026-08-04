@@ -12,6 +12,26 @@
       <p>This account becomes the first organization administrator. Co-administrators can be promoted later through dual wallet challenges.</p>
     </div>
 
+    {{#if errorMessage}}
+      <div class="callout callout--warning">
+        <strong>Not subscribed.</strong> <span>{{errorMessage}}</span>
+        <p><a class="button button--ghost" href="/plans">Choose a plan</a></p>
+      </div>
+    {{/if}}
+
+    <article class="chosen-plan">
+      <p class="eyebrow">Your plan</p>
+      <h3>{{chosenPlan.label}} — {{chosenPlan.price}}</h3>
+      {{#if (eq chosenPlan.settledBy "code")}}
+        <p>Covered by a registration code. You will not be charged.</p>
+      {{else if chosenPlan.requiresPayment}}
+        <p>Payment is not set up yet, so trial limits apply until it is. Everything you issue keeps working.</p>
+      {{else}}
+        <p>Your trial runs for 30 days. No card required.</p>
+      {{/if}}
+      <p class="table-note"><a href="/plans">Change plan</a></p>
+    </article>
+
     <form class="subscribe-form" action="/subscribe" method="post" novalidate>
       <div class="field-row">
         <div class="field-group">
@@ -25,14 +45,6 @@
       </div>
 
       <div class="field-row">
-        <div class="field-group">
-          <label for="plan">Plan</label>
-          <select id="plan" name="plan">
-            <option value="pilot" {{#if (eq formValues.plan "pilot")}}selected{{/if}}>Pilot</option>
-            <option value="sandbox" {{#if (eq formValues.plan "sandbox")}}selected{{/if}}>Sandbox</option>
-            <option value="enterprise" {{#if (eq formValues.plan "enterprise")}}selected{{/if}}>Enterprise</option>
-          </select>
-        </div>
         <div class="field-group">
           <label for="interest">Identity track</label>
           <select id="interest" name="interest">

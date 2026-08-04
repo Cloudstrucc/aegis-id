@@ -50,7 +50,7 @@ function validateSubscription(input = {}, user = null) {
   };
 }
 
-async function createSubscription(input, user = null) {
+async function createSubscription(input, user = null, grant = null) {
   const validation = validateSubscription(input, user);
   if (!validation.isValid) {
     const error = new Error('Subscription form needs attention.');
@@ -69,13 +69,41 @@ async function createSubscription(input, user = null) {
     // Billing state is a cache of what the payment provider says. A paid plan
     // entitles nobody until this says so, which is what stops an unpaid
     // checkout from granting access.
-    billingStatus: selectedPlan.requiresPayment ? 'incomplete' : 'trialing',
+    billingStatus: billingStatusFor(selectedPlan, grant),
     trialEndsAt: selectedPlan.requiresPayment ? null : trialEndsAt(now),
     source: user ? 'authenticated-subscription' : 'landing-page',
     createdAt: now
   };
 
+  if (grant?.via === 'code') {
+    // Kept so an audit can answer "why is this customer not being charged?"
+    // without the code itself, which is a secret.
+    record.compedBy = 'registration-code';
+    record.compedCodeId = grant.codeId || null;
+  }
+
   return store.append(record);
+}
+
+/**
+ * The billing state a new subscription starts in.
+ *
+ * A redeemed registration code produces `comped`, which entitles exactly as
+ * much as paying does — that is the whole point of a code. Anything else on a
+ * paid plan starts `incomplete`, so choosing Enterprise and walking away from
+ * the card form grants nothing.
+ */
+function billingStatusFor(plan, grant) {
+  if (!plan.requiresPayment) {
+    return 'trialing';
+  }
+  if (grant?.via === 'code') {
+    return 'comped';
+  }
+  if (grant?.via === 'payment' && grant.confirmed) {
+    return 'active';
+  }
+  return 'incomplete';
 }
 
 async function ensureAccountAccessSubscription(user) {

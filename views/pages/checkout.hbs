@@ -1,0 +1,66 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Checkout</p>
+  <h1>{{plan.label}}</h1>
+  <p>{{plan.price}} — {{plan.blurb}}</p>
+</section>
+
+<section class="band band--white">
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not accepted.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+
+  <div class="checkout-layout">
+    <aside class="checkout-summary">
+      <h2>What you get</h2>
+      <ul class="plan-choice__limits">
+        {{#each plan.limits}}<li>{{this}}</li>{{/each}}
+      </ul>
+      <p class="table-note"><a href="/plans">Choose a different plan</a></p>
+    </aside>
+
+    <div class="checkout-options">
+      <section class="checkout-option">
+        <h2>Pay by card</h2>
+        {{#if checkoutEnabled}}
+          <p>You will be taken to our payment provider to complete the subscription.</p>
+          <form action="/checkout/pay" method="post">
+            <button class="button button--primary" type="submit">Continue to payment</button>
+          </form>
+        {{else}}
+          <p>
+            Card payment is not connected on this environment yet. You can still
+            create your account and organization now — the subscription starts
+            unpaid, which means trial limits apply until payment is set up.
+            Nothing you issue is lost when it is.
+          </p>
+          <form action="/checkout/pay" method="post">
+            <button class="button button--ghost" type="submit">Create the account and pay later</button>
+          </form>
+        {{/if}}
+      </section>
+
+      <section class="checkout-option">
+        <h2>I have a registration code</h2>
+        <p>
+          A code from your Vanguard contact gives you this plan without payment.
+          It is checked now and used when your account is created, so leaving
+          this page does not spend it.
+        </p>
+        <form action="/checkout/code" method="post" class="inline-form">
+          <label class="sr-only" for="code">Registration code</label>
+          <input
+            id="code"
+            name="code"
+            type="text"
+            placeholder="XXXX-XXXX-XXXX"
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="20"
+            required
+          >
+          <button class="button button--primary" type="submit">Apply code</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</section>

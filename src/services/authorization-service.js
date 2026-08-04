@@ -12,6 +12,11 @@ const POLICIES = Object.freeze({
   'public.home': policy('public.home', 'public', 'page', 'read', {
     description: 'Anonymous landing page and static product content.'
   }),
+  'public.plans': policy('public.plans', 'public', 'plan', 'read', {
+    fields: ['planId', 'code'],
+    description:
+      'Choose a plan and settle it before an account exists. Public by necessity — this is the path to becoming a customer — but the chosen plan is held in the session, never taken from the request.'
+  }),
   'admin.health.view': policy('admin.health.view', 'adminAnyWorkspace', 'health', 'read', {
     description: 'Human-readable service health dashboard for organization administrators.'
   }),

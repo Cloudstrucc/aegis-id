@@ -122,6 +122,15 @@ const config = {
         ? 'https://vanguard-business-expenses-65067d.azurewebsites.net'
         : 'http://localhost:4300')
   },
+  billing: {
+    // Card checkout is off until a payment provider is configured (Phase 5).
+    // Kept as a derived flag rather than its own switch, so it can never be on
+    // while there is nothing behind it to take a payment.
+    checkoutEnabled: Boolean(process.env.STRIPE_SECRET_KEY),
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
+    stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
+  },
   paths: {
     root: rootDir,
     public: path.join(rootDir, 'public'),

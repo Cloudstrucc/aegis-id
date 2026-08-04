@@ -5,7 +5,7 @@
     <h1>Vanguard Cloud Services - Aegis ID</h1>
     <p class="hero__lead">A secure identity assurance service for portable credentials, passkeys, wallet challenges, OIDC/SAML integrations, and cross-organization trust testing.</p>
     <div class="hero__actions">
-      <a class="button button--primary" href="#signup">Create account</a>
+      <a class="button button--primary" href="#signup">Choose a plan</a>
       <a class="button button--secondary" href="/docs/tutorial/get-started-guide.html">Get Started Guide</a>
     </div>
   </div>
@@ -197,96 +197,39 @@
   </section>
 
   <section class="band band--white" id="signup">
-    <div class="subscription-layout">
-      <div class="section-heading">
-        <p class="eyebrow">Subscriber account</p>
-        <h2>Create your account before subscribing an organization.</h2>
-        <p>After sign-up, Vanguard Cloud Services - Aegis ID requires email, SMS, or passkey verification before you can subscribe organizations, issue credentials, or open setup wizards.</p>
-      </div>
-
-      <form class="subscribe-form" action="/auth/register" method="post" novalidate>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="displayName">Full name</label>
-            <input id="displayName" name="displayName" type="text" value="{{formValues.displayName}}" autocomplete="name" required>
-            {{#if formErrors.displayName}}<p class="field-error">{{formErrors.displayName}}</p>{{/if}}
-          </div>
-          <div class="field-group">
-            <label for="email">Work email</label>
-            <input id="email" name="email" type="email" value="{{formValues.email}}" autocomplete="email" required>
-            {{#if formErrors.email}}<p class="field-error">{{formErrors.email}}</p>{{/if}}
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" autocomplete="new-password" required>
-            {{#if formErrors.password}}<p class="field-error">{{formErrors.password}}</p>{{/if}}
-          </div>
-          <div class="field-group">
-            <label for="confirmPassword">Confirm password</label>
-            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
-            {{#if formErrors.confirmPassword}}<p class="field-error">{{formErrors.confirmPassword}}</p>{{/if}}
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="organization">Organization</label>
-            <input id="organization" name="organization" type="text" value="{{formValues.organization}}" autocomplete="organization">
-          </div>
-          <div class="field-group">
-            <label for="role">Role</label>
-            <input id="role" name="role" type="text" value="{{formValues.role}}">
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="phone">Mobile phone</label>
-            <input id="phone" name="phone" type="tel" value="{{formValues.phone}}" autocomplete="tel">
-            {{#if formErrors.phone}}<p class="field-error">{{formErrors.phone}}</p>{{/if}}
-          </div>
-          <div class="field-group">
-            <label for="preferredMfa">Second factor</label>
-            <select id="preferredMfa" name="preferredMfa">
-              <option value="email" {{#if (eq formValues.preferredMfa "email")}}selected{{/if}}>Email code</option>
-              <option value="sms" {{#if (eq formValues.preferredMfa "sms")}}selected{{/if}}>SMS code</option>
-              <option value="passkey" {{#if (eq formValues.preferredMfa "passkey")}}selected{{/if}}>Passkey</option>
-            </select>
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="plan">Plan</label>
-            <select id="plan" name="plan">
-              <option value="pilot" {{#if (eq formValues.plan "pilot")}}selected{{/if}}>Pilot</option>
-              <option value="sandbox" {{#if (eq formValues.plan "sandbox")}}selected{{/if}}>Sandbox</option>
-              <option value="enterprise" {{#if (eq formValues.plan "enterprise")}}selected{{/if}}>Enterprise</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label for="interest">Interest</label>
-            <select id="interest" name="interest">
-              <option value="both" {{#if (eq formValues.interest "both")}}selected{{/if}}>Both tracks</option>
-          <option value="microsoft-native" {{#if (eq formValues.interest "microsoft-native")}}selected{{/if}}>Verified credential integrations</option>
-              <option value="aries-lab" {{#if (eq formValues.interest "aries-lab")}}selected{{/if}}>Aries lab</option>
-            </select>
-          </div>
-        </div>
-        <button class="button button--primary" type="submit">Create account</button>
-        <p class="form-footnote">Already registered? <a href="/auth/login">Sign in</a>.</p>
-      </form>
+    <div class="section-heading">
+      <p class="eyebrow">Get started</p>
+      <h2>Choose a plan, then create your account.</h2>
+      <p>Your plan decides how many organizations you can run and how many credentials each can issue, so it comes first. A trial needs no card. If you were given a registration code, you enter it at checkout.</p>
     </div>
-  </section>
 
-  <section class="band band--light">
-    <div class="plan-grid">
+    <div class="plan-choices">
       {{#each plans}}
-        <article class="plan-card">
-          <span>{{price}}</span>
-          <h3>{{name}}</h3>
-          <p>{{summary}}</p>
+        <article class="plan-choice {{#if this.isRecommended}}plan-choice--featured{{/if}}">
+          {{#if this.isRecommended}}<p class="plan-choice__flag">Most chosen</p>{{/if}}
+          <h3>{{this.label}}</h3>
+          <p class="plan-choice__price">{{this.price}}</p>
+          <p class="plan-choice__blurb">{{this.blurb}}</p>
+          <ul class="plan-choice__limits">
+            {{#each this.limits}}<li>{{this}}</li>{{/each}}
+          </ul>
+          <form action="/plans" method="post">
+            <input type="hidden" name="planId" value="{{this.id}}">
+            <button
+              class="button {{#if this.isRecommended}}button--primary{{else}}button--ghost{{/if}}"
+              type="submit"
+            >
+              {{#if this.requiresPayment}}Choose {{this.label}}{{else}}Start free trial{{/if}}
+            </button>
+          </form>
         </article>
       {{/each}}
     </div>
+
+    <p class="form-footnote">
+      Already registered? <a href="/auth/login">Sign in</a>. Comparing options?
+      <a href="/plans">See all plans</a>.
+    </p>
   </section>
+
 {{/unless}}

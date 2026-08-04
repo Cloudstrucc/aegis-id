@@ -439,6 +439,40 @@ is configured.
 
 Full detail: [Wallet Identity, Wallet ID and Recovery](../wallet-and-passkeys/wallet-identity-and-recovery.md).
 
+## Plans And Signup
+
+Signup goes **plan first, account second**: `/plans` → checkout (paid plans
+only) → create account → subscribe the organization. Somebody who picks
+Enterprise finds that out on the pricing page rather than after filling in a
+registration form.
+
+| Plan | Price | Organizations | Credentials |
+|---|---|---|---|
+| Trial | Free for 30 days | 1 | 5 |
+| Basic | $49/month | 1 | 20 per organization |
+| Pro | $149/month | 2 | 20 per organization |
+| Pay per credential | $19/month | 1 | 3 included, then $5 each |
+| Enterprise | $499/month | Unlimited | 100 included, then $3 each |
+
+Prices and limits live in one file, `src/services/plan-service.js`, so changing
+pricing is a one-file edit.
+
+**What a plan is worth is enforced on the server**, at the only two paths that
+mint anything — registering an organization and issuing a credential. Hitting a
+limit returns **402 Payment Required**, not 403: it is a billing limit, not a
+permission failure.
+
+**The plan on the record and the plan in effect are different things.** A trial
+that has run out, or a paid plan that is unpaid, past due or cancelled, falls
+back to Trial limits — never to nothing. Everything already issued keeps
+working and only new issuance stops, because a billing event must not revoke
+somebody's identity credential. The account page says which of these applies
+rather than leaving the customer to guess why issuing failed.
+
+Card payment is connected in a later phase. Until it is, choosing a paid plan
+still creates the account — the subscription simply starts unpaid, so trial
+limits apply until payment is set up, and nothing already issued is affected.
+
 ## Registration Codes
 
 A registration code grants a **paid plan without payment**. It exists so testers

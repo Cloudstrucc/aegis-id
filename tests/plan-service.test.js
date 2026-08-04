@@ -62,6 +62,19 @@ test('a past-due plan is distinguished from a cancelled one', () => {
   assert.equal(effectiveEntitlement({ plan: 'basic', billingStatus: 'canceled' }).standing, 'lapsed');
 });
 
+test('a subscription that was never paid for has not "lapsed"', () => {
+  // A brand-new signup that has not reached the card form yet. Telling that
+  // customer their plan has lapsed would be plainly wrong — it never started.
+  const fresh = effectiveEntitlement({ plan: 'pro', billingStatus: 'incomplete' });
+  assert.equal(fresh.standing, 'unpaid');
+  assert.equal(fresh.limits.maxWorkspaces, 1, 'and it still entitles only trial limits');
+
+  assert.throws(
+    () => assertCanIssueCredential({ plan: 'pro', billingStatus: 'incomplete' }, 5),
+    /not paid for yet/
+  );
+});
+
 test('a subscription predating billing is grandfathered, not downgraded', () => {
   // Records created before this feature have no billingStatus at all. Judging
   // them by it would drop working customers to trial limits on deploy day.

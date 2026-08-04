@@ -13,6 +13,7 @@ const authRoutes = require('./routes/auth');
 const accountRoutes = require('./routes/account');
 const pageRoutes = require('./routes/pages');
 const subscriptionRoutes = require('./routes/subscriptions');
+const planRoutes = require('./routes/plans');
 const organizationRoutes = require('./routes/organizations');
 const dashboardRoutes = require('./routes/dashboard');
 const orgAdminRoutes = require('./routes/org-admin');
@@ -470,6 +471,7 @@ function createApp() {
   app.use('/', authRoutes);
   app.use('/', accountRoutes);
   app.use('/', pageRoutes);
+  app.use('/', planRoutes);
   app.use('/', subscriptionRoutes);
   app.use('/', organizationRoutes);
   app.use('/', dashboardRoutes);

@@ -257,7 +257,7 @@ async function redeemRegistrationCode(candidate, { email, actorEmail } = {}) {
     remaining: Math.max(0, record.maxRedemptions - record.redemptions.length)
   });
 
-  return { planId: record.planId, plan: resolvePlan(record.planId) };
+  return { codeId: record.id, planId: record.planId, plan: resolvePlan(record.planId) };
 }
 
 /** Stop a code being redeemed again, without erasing what it already granted. */

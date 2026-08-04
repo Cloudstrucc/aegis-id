@@ -1,0 +1,47 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Plans</p>
+  <h1>Choose a plan.</h1>
+  <p>Pick the plan for your organization first. A trial takes you straight to the account form; a paid plan goes through checkout, where you can pay or enter a registration code.</p>
+</section>
+
+<section class="band band--white">
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not selected.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+
+  <div class="plan-choices">
+    {{#each plans}}
+      <article class="plan-choice {{#if this.isRecommended}}plan-choice--featured{{/if}}">
+        {{#if this.isRecommended}}<p class="plan-choice__flag">Most chosen</p>{{/if}}
+        <h2>{{this.label}}</h2>
+        <p class="plan-choice__price">{{this.price}}</p>
+        <p class="plan-choice__blurb">{{this.blurb}}</p>
+        <ul class="plan-choice__limits">
+          {{#each this.limits}}<li>{{this}}</li>{{/each}}
+        </ul>
+        <form action="/plans" method="post">
+          <input type="hidden" name="planId" value="{{this.id}}">
+          <button
+            class="button {{#if this.isRecommended}}button--primary{{else}}button--ghost{{/if}}"
+            type="submit"
+          >
+            {{#if this.requiresPayment}}Choose {{this.label}}{{else}}Start free trial{{/if}}
+          </button>
+        </form>
+        {{#if (eq ../selectedPlanId this.id)}}<p class="table-note">Currently selected</p>{{/if}}
+      </article>
+    {{/each}}
+  </div>
+
+  <article class="blade-guidance">
+    <strong>Changing your mind later is fine</strong>
+    <span>
+      Your plan sets how many organizations you can run and how many credentials
+      each can issue. If a plan lapses you keep everything you have already
+      issued — only new issuance stops — because a billing event should never
+      revoke somebody's identity credential.
+    </span>
+  </article>
+
+  <p class="form-footnote">Already have an account? <a href="/auth/login">Sign in</a>.</p>
+</section>

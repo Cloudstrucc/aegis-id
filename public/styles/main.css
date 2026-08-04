@@ -6977,3 +6977,154 @@ body:has(.workspace-blade) .site-footer div span {
     overflow-x: auto;
   }
 }
+
+/* Choosing a plan.
+   Used on the landing page and on /plans, which show the same catalogue. */
+.plan-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  margin: 0 0 26px;
+  align-items: stretch;
+}
+
+.plan-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.plan-choice--featured {
+  border-color: var(--blue-600);
+  border-width: 2px;
+}
+
+.plan-choice h2,
+.plan-choice h3 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 20px;
+}
+
+.plan-choice__flag {
+  margin: 0;
+  color: var(--blue-600);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.plan-choice__price {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.plan-choice__blurb {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.plan-choice__limits {
+  margin: 0;
+  padding: 0 0 0 18px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.plan-choice__limits li {
+  margin-bottom: 4px;
+}
+
+/* The button sits at the bottom whatever the card's height, so a row of cards
+   reads as one row rather than a staircase. */
+.plan-choice form {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.plan-choice form .button {
+  width: 100%;
+}
+
+/* Checkout. */
+.checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.checkout-summary,
+.checkout-option {
+  padding: 22px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.checkout-summary h2,
+.checkout-option h2 {
+  margin: 0 0 10px;
+  color: var(--navy-900);
+  font-size: 18px;
+}
+
+.checkout-options {
+  display: grid;
+  gap: 18px;
+}
+
+.checkout-option p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (max-width: 860px) {
+  .checkout-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The plan a signup is already committed to, shown but not editable. */
+.chosen-plan {
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  background: var(--soft-blue);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--blue-600);
+  border-radius: 8px;
+}
+
+.chosen-plan h3 {
+  margin: 4px 0 6px;
+  color: var(--navy-900);
+  font-size: 17px;
+}
+
+.chosen-plan p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

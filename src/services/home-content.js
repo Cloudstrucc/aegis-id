@@ -1,4 +1,5 @@
 const config = require('../config');
+const { listPublicPlans } = require('./plan-service');
 
 // Demo and test applications, surfaced on the authenticated Testing page.
 function getTestingApps() {
@@ -93,26 +94,9 @@ function getHomeContent(overrides = {}) {
         summary: 'The Aegis ID mobile app records approval, consent, revocation, and high-value decision challenges.'
       }
     ],
-    plans: [
-      {
-        id: 'pilot',
-        name: 'Pilot',
-        price: 'Free-tier fit',
-        summary: 'Landing page, subscription capture, mock Verified ID flows, organization workspaces, and local Aries lab.'
-      },
-      {
-        id: 'sandbox',
-        name: 'Sandbox',
-        price: 'Tenant-connected',
-        summary: 'Azure App Service plus Entra app registration, Verified ID tenant setup, and callback testing.'
-      },
-      {
-        id: 'enterprise',
-        name: 'Enterprise',
-        price: 'Production governed',
-        summary: 'Key Vault, monitoring, custom domains, hardened storage, and policy-controlled issuance.'
-      }
-    ],
+    // The real catalogue, so the landing page cannot drift from what is sold
+    // and enforced. plan-service is the single source for both.
+    plans: listPublicPlans(),
     tracks: [
       {
         label: 'Production Track',
@@ -146,17 +130,6 @@ function getHomeContent(overrides = {}) {
         summary: 'Capture approval, consent, revocation, promotion, and high-value decision evidence across web apps and portals.'
       }
     ],
-    formValues: {
-      displayName: '',
-      email: '',
-      phone: '',
-      organization: '',
-      role: '',
-      plan: 'pilot',
-      interest: 'both',
-      preferredMfa: config.auth.defaultMfaMethod
-    },
-    formErrors: {},
     ...overrides
   };
 }

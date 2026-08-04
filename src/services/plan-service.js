@@ -166,13 +166,31 @@ function effectiveEntitlement(subscription = {}) {
     return {
       plan: PLANS.trial,
       signedUpFor: plan,
-      standing: billing === 'past_due' ? 'past-due' : 'lapsed',
+      standing: describeStanding(billing),
       limits: limitsFor(PLANS.trial),
       endsAt: null
     };
   }
 
   return { plan, signedUpFor: plan, standing: 'active', limits: limitsFor(plan), endsAt: null };
+}
+
+/**
+ * Why a paid plan is not in effect.
+ *
+ * Kept apart from `lapsed` because they mean different things to the customer:
+ * a subscription that was never paid for has not stopped working, it has not
+ * started, and telling somebody their brand-new signup has "lapsed" is simply
+ * wrong.
+ */
+function describeStanding(billingStatus) {
+  if (billingStatus === 'past_due') {
+    return 'past-due';
+  }
+  if (billingStatus === 'incomplete' || billingStatus === 'incomplete_expired') {
+    return 'unpaid';
+  }
+  return 'lapsed';
 }
 
 function limitsFor(plan) {
@@ -210,7 +228,7 @@ function assertCanAddWorkspace(subscription, currentCount) {
   const suffix =
     standing === 'active' || standing === 'trialing' || standing === 'grandfathered'
       ? `The ${plan.label} plan includes ${limits.maxWorkspaces} organization${limits.maxWorkspaces === 1 ? '' : 's'}.`
-      : `Your ${signedUpFor.label} plan is ${standing === 'past-due' ? 'past due' : 'not active'}, so ${plan.label} limits apply.`;
+      : `Your ${signedUpFor.label} plan is ${standingPhrase(standing)}, so ${plan.label} limits apply.`;
 
   throw limitError(`You have reached your organization limit. ${suffix}`);
 }
@@ -234,9 +252,20 @@ function assertCanIssueCredential(subscription, currentCount) {
   const suffix =
     standing === 'active' || standing === 'trialing' || standing === 'grandfathered'
       ? `The ${plan.label} plan includes ${limits.maxCredentialsPerWorkspace} credentials per organization.`
-      : `Your ${signedUpFor.label} plan is ${standing === 'past-due' ? 'past due' : 'not active'}, so ${plan.label} limits apply. Existing credentials keep working.`;
+      : `Your ${signedUpFor.label} plan is ${standingPhrase(standing)}, so ${plan.label} limits apply. Existing credentials keep working.`;
 
   throw limitError(`You have reached your credential limit for this organization. ${suffix}`);
+}
+
+/** The same standing, in a sentence a customer reads. */
+function standingPhrase(standing) {
+  if (standing === 'past-due') {
+    return 'past due';
+  }
+  if (standing === 'unpaid') {
+    return 'not paid for yet';
+  }
+  return 'not active';
 }
 
 /** What a plan costs to display, including its metered component. */
@@ -254,17 +283,54 @@ function describePrice(plan) {
     : `${base} plus ${rate}`;
 }
 
+/** What a plan allows, in the words a buyer uses rather than field names. */
+function describeLimits(plan) {
+  const organizations =
+    plan.maxWorkspaces === null
+      ? 'Unlimited organizations'
+      : `${plan.maxWorkspaces} organization${plan.maxWorkspaces === 1 ? '' : 's'}`;
+
+  const credentials =
+    plan.maxCredentialsPerWorkspace === null
+      ? plan.includedCredentials
+        ? `${plan.includedCredentials} credentials included, then pay per credential`
+        : 'Unlimited credentials'
+      : `${plan.maxCredentialsPerWorkspace} credentials per organization`;
+
+  return [organizations, credentials];
+}
+
+/**
+ * The catalogue as the pricing page shows it: everything a visitor needs to
+ * choose, and nothing the server relies on. The chosen plan is still read from
+ * the session rather than from whatever comes back in the form.
+ */
+function listPublicPlans() {
+  return listPlans().map((plan) => ({
+    id: plan.id,
+    label: plan.label,
+    blurb: plan.blurb,
+    price: describePrice(plan),
+    limits: describeLimits(plan),
+    requiresPayment: plan.requiresPayment,
+    // Trial is the honest recommendation for a first-time visitor.
+    isRecommended: plan.id === 'pro'
+  }));
+}
+
 module.exports = {
   DEFAULT_PLAN_ID,
   PLANS,
   TRIAL_DAYS,
   assertCanAddWorkspace,
   assertCanIssueCredential,
+  describeLimits,
   describePrice,
   effectiveEntitlement,
   getPlan,
   isKnownPlan,
   listPlans,
+  listPublicPlans,
   resolvePlan,
   trialEndsAt
 };

@@ -175,6 +175,55 @@ credential ceiling by design — the customer pays for what they issue rather
 than being cut off. Limit failures are **402**, not 403: it is a billing limit,
 not a permission failure.
 
+`standing` distinguishes `unpaid` (never started) from `lapsed` (stopped
+working). Telling a brand-new signup their plan has "lapsed" would be wrong.
+
+## Signup: plan first, account second
+
+The order is `/plans` → checkout (paid only) → `/auth/register` → `/subscribe`.
+Somebody who picks Enterprise finds that out at the pricing page rather than
+after filling in a registration form.
+
+**The chosen plan is never read from a form field.** It lives in the session
+(`src/services/signup-intent-service.js`) and every route passes the session's
+plan to `createSubscription`, overriding whatever the request carried. A signup
+form with `plan=enterprise` in it is a form anyone can edit.
+
+Choosing a plan afresh clears any grant attached to the old one, so a code for
+Basic cannot be carried sideways onto Enterprise. Redemption independently
+returns the code's own plan, so even a tampered session cannot buy more than
+the code is worth.
+
+A paid plan with nothing settling it still creates the account — it simply
+starts `incomplete`, which entitles Trial limits. Choosing Enterprise and
+walking away from the card form must grant nothing, but it must not dead-end
+either.
+
+Card checkout is gated on `config.billing.checkoutEnabled`, derived from
+`STRIPE_SECRET_KEY` rather than being its own switch, so it can never be on
+while there is nothing behind it to take a payment.
+
+## Registration codes
+
+`/admin/registration-codes` issues a code that grants a paid plan without
+payment — for testers, and for a comped pilot. A code is worth what the plan is
+worth, so it is handled like a credential:
+
+- **hash only**, shown once at issue and never again
+- **scoped to named environments** — a dev code is refused on prod, so leaking
+  the test codes cannot cost revenue. `all` is rejected outright.
+- limited redemptions, an expiry, and revocation that keeps prior history
+- every issue, redemption, rejection and revocation on the evidence chain
+
+Rejection is deliberately uniform — unknown, expired, spent, revoked and
+wrong-environment all answer "not valid" — so the signup form cannot be used to
+discover which codes exist.
+
+A code is **checked at checkout but spent at `/subscribe`**, the only place a
+subscription is minted. Spending it earlier would burn a redemption for anyone
+who abandoned the last form. A redeemed code sets `billingStatus: 'comped'`,
+which entitles exactly as much as paying does.
+
 ## Wallet administration
 
 `/admin/wallets` lists every registered wallet. **Revoking** sets

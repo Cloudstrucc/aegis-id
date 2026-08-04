@@ -601,6 +601,52 @@ bash scripts/deploy-azure-business-expenses.sh --env qa
     --yes
   ```
 
+## Deploying The Subscription Work
+
+The subscription phases (plans, usage, registration codes, plan-first signup)
+add one new persistent store and one optional payment setting.
+
+### Before deploying
+
+1. **Add the new store path to each env file** — `.env.dev`, `.env.qa`, `.env`:
+
+   ```
+   REGISTRATION_CODE_STORE_PATH=/home/data/aegis-id/<env>/registration-codes.json
+   ```
+
+   It must live under `/home`, not `wwwroot`, or the next deployment wipes it.
+   `scripts/deploy-azure-webapp.sh` already forwards the key, but the deploy
+   script skips variables with no value, so a listed-but-blank entry is never
+   applied.
+
+2. **Leave `STRIPE_SECRET_KEY` unset.** Card checkout is derived from it, so
+   an unset key means checkout is off and the page says so instead of showing a
+   card form that cannot take a card.
+
+3. Run the tests: `npm test`.
+
+### After deploying, per environment
+
+1. Sign in as an organization administrator and load
+   **/admin/registration-codes**. A 403 means the account administers no
+   workspace; a 500 means the store path did not apply.
+2. Issue a code scoped to **that environment only** — a dev code is refused on
+   qa and prod by design. Copy it at once; it is never shown again.
+3. Walk the signup path in an incognito window: `/plans` → choose a paid plan →
+   checkout → apply the code → create the account → subscribe. The stored
+   subscription should read `billingStatus: comped` on the code's plan.
+4. Check an existing customer is unharmed. Subscriptions created before this
+   work have no `billingStatus` field and are **grandfathered** onto their plan;
+   they must not drop to trial limits. Load `/organizations/<id>` for one and
+   confirm the plan shown is the plan they had.
+5. Confirm limits bite: on a Basic or Pro workspace, issuing past the credential
+   ceiling returns **402**, and the message names the plan.
+
+### Rollback
+
+Nothing in this work migrates existing records, so rolling back the deployment
+is enough. `registration-codes.json` is additive and can be left in place.
+
 ## Live Verified ID Settings
 
 Set these App Service configuration values after the Entra app registration and Verified ID setup are complete:

@@ -45,6 +45,14 @@ const {
   requirePendingSecondFactor
 } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
+const {
+  SESSION_KEY: SIGNUP_INTENT_KEY,
+  clearIntent,
+  getIntent,
+  grantFor,
+  intendedPlan
+} = require('../services/signup-intent-service');
+const { describePrice } = require('../services/plan-service');
 
 const router = express.Router();
 
@@ -62,8 +70,8 @@ router.post('/auth/register', requireAnonymous, authorize('auth.register'), asyn
     const user = await registerUser(req.body);
     req.session.pendingSecondFactorUserId = user.id;
     req.session.pendingSecondFactorMethod = user.preferredMfa;
-    if (shouldCreateSubscriptionDraft(req.body)) {
-      req.session.subscriptionDraft = buildSubscriptionDraft(req.body, user);
+    if (shouldCreateSubscriptionDraft(req)) {
+      req.session.subscriptionDraft = buildSubscriptionDraft(req.body, user, intendedPlan(req.session));
     } else {
       delete req.session.subscriptionDraft;
     }
@@ -734,7 +742,11 @@ async function getPostAuthState(req, user) {
   const redirectUrl = req.session.returnTo || (req.session.subscriptionDraft ? '/subscribe' : '/');
   return {
     redirectUrl,
-    subscriptionDraft: req.session.subscriptionDraft || null
+    subscriptionDraft: req.session.subscriptionDraft || null,
+    // Carried across login for the same reason as the draft: logging in
+    // regenerates the session, and losing this would silently drop the plan
+    // the visitor chose — and any registration code they applied.
+    signupIntent: getIntent(req.session)
   };
 }
 
@@ -744,6 +756,12 @@ function restorePostAuthState(req, postAuthState) {
   } else {
     delete req.session.subscriptionDraft;
   }
+
+  if (postAuthState.signupIntent) {
+    req.session[SIGNUP_INTENT_KEY] = postAuthState.signupIntent;
+  } else {
+    clearIntent(req.session);
+  }
   delete req.session.pendingSecondFactorUserId;
   delete req.session.pendingSecondFactorMethod;
   delete req.session.secondFactorDelivery;
@@ -751,16 +769,20 @@ function restorePostAuthState(req, postAuthState) {
 }
 
 async function buildRegisterView(req, overrides = {}) {
+  const plan = intendedPlan(req.session);
   const formValues = {
     displayName: '',
     email: normalizeEmail(req.query.email || ''),
     phone: '',
     organization: '',
-    plan: 'pilot',
     interest: 'both',
     preferredMfa: config.auth.defaultMfaMethod,
     ...(req.session?.subscriptionDraft || {}),
-    ...(overrides.formValues || {})
+    ...(overrides.formValues || {}),
+    // The plan comes from the session, never from the form — see
+    // signup-intent-service. It is shown so the visitor knows what they are
+    // signing up for, but there is no field to change it here.
+    plan: plan.id
   };
   delete formValues.password;
   delete formValues.confirmPassword;
@@ -770,13 +792,25 @@ async function buildRegisterView(req, overrides = {}) {
     description: 'Create a Vanguard Cloud Services - Aegis ID account.',
     formValues,
     formErrors: overrides.formErrors || {},
+    chosenPlan: {
+      id: plan.id,
+      label: plan.label,
+      price: describePrice(plan),
+      requiresPayment: plan.requiresPayment,
+      // A code or a payment has already settled this signup.
+      isSettled: Boolean(grantFor(req.session)),
+      wasChosen: Boolean(getIntent(req.session))
+    },
     passwordlessEnrolmentEnabled: await isEnrolmentEnabled('passkey'),
     errorMessage: overrides.errorMessage || null
   };
 }
 
-function shouldCreateSubscriptionDraft(input = {}) {
-  return Boolean(String(input.organization || '').trim());
+function shouldCreateSubscriptionDraft(req) {
+  // An organization name, or a plan deliberately chosen on the way in. The
+  // second is what carries somebody from the pricing page through to
+  // /subscribe without re-asking which plan they picked.
+  return Boolean(String(req.body.organization || '').trim()) || Boolean(getIntent(req.session));
 }
 
 function captureReturnTo(req) {
@@ -816,11 +850,11 @@ function buildVerifyView(req, user, method, overrides = {}) {
   };
 }
 
-function buildSubscriptionDraft(input, user) {
+function buildSubscriptionDraft(input, user, plan) {
   return {
     email: user.email,
     organization: input.organization || '',
-    plan: input.plan || 'pilot',
+    plan: plan.id,
     interest: input.interest || 'both',
     role: input.role || '',
     notes: input.notes || ''
