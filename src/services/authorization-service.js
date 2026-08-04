@@ -193,6 +193,17 @@ const POLICIES = Object.freeze({
   'admin.signInMethods.manage': policy('admin.signInMethods.manage', 'adminAnyWorkspace', 'sign-in-methods', 'update', {
     description: 'Choose which sign-in methods the platform offers and what each one counts for.'
   }),
+  'admin.registrationCodes.manage': policy(
+    'admin.registrationCodes.manage',
+    'adminAnyWorkspace',
+    'registration-code',
+    'issue',
+    {
+      fields: ['planId', 'environments', 'maxRedemptions', 'expiresInDays', 'note', 'codeId', 'action'],
+      description:
+        'Issue and revoke registration codes, which grant a paid plan without payment. Scoped to named environments so a test code cannot be redeemed against prod.'
+    }
+  ),
   'wallet.recovery.approve': policy('wallet.recovery.approve', 'orgPrivilege', 'wallet-recovery', 'approve', {
     privilegeId: 'wallet.recovery.approve',
     description:

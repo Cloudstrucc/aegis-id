@@ -31,7 +31,34 @@ const {
   revokeWallet
 } = require('../services/wallet-registry-service');
 const { countCredentialsByWalletId } = require('../services/org-admin-service');
+const {
+  createRegistrationCode,
+  currentEnvironment,
+  listRegistrationCodes,
+  revokeRegistrationCode
+} = require('../services/registration-code-service');
+const { PLANS, describePrice } = require('../services/plan-service');
 const { writeAuditEvent } = require('../services/audit-service');
+
+// The environments a code may be scoped to. Deliberately an explicit list
+// rather than free text, so a typo produces a code that works nowhere instead
+// of one that quietly works everywhere.
+const CODE_ENVIRONMENTS = ['local', 'dev', 'qa', 'prod'];
+
+function registrationCodeFormOptions() {
+  return {
+    planChoices: Object.values(PLANS)
+      .filter((plan) => plan.requiresPayment)
+      .map((plan) => ({ id: plan.id, label: plan.label, price: describePrice(plan) })),
+    environmentChoices: CODE_ENVIRONMENTS.map((name) => ({
+      name,
+      isCurrent: name === currentEnvironment(),
+      // Naming prod is a free paid subscription, so the form says so.
+      isProduction: name === 'prod'
+    })),
+    environment: currentEnvironment()
+  };
+}
 
 const router = express.Router();
 
@@ -208,6 +235,62 @@ router.post('/admin/sign-in-methods', authorize('admin.signInMethods.manage'), a
   } catch (error) {
     if (error.expose) {
       return res.redirect(303, `/admin/sign-in-methods?error=${encodeURIComponent(error.message)}`);
+    }
+    return next(error);
+  }
+});
+
+// Registration codes: a paid plan without payment, for testers and comped
+// pilots.
+router.get('/admin/registration-codes', authorize('admin.registrationCodes.manage'), async (req, res, next) => {
+  try {
+    res.render('pages/registration-codes', {
+      title: 'Registration codes',
+      description: 'Issue a code that grants a paid plan without payment.',
+      codes: await listRegistrationCodes(),
+      ...registrationCodeFormOptions(),
+      issued: null,
+      errorMessage: req.query.error || null,
+      saved: req.query.saved || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/admin/registration-codes', authorize('admin.registrationCodes.manage'), async (req, res, next) => {
+  try {
+    if (req.body.action === 'revoke') {
+      await revokeRegistrationCode(req.body.codeId, { actorEmail: req.user?.email });
+      return res.redirect(303, '/admin/registration-codes?saved=revoked');
+    }
+
+    // A checkbox group arrives as a string when one box is ticked.
+    const environments = [].concat(req.body.environments || []);
+    const { code, record } = await createRegistrationCode({
+      planId: req.body.planId,
+      environments,
+      maxRedemptions: req.body.maxRedemptions,
+      expiresInDays: req.body.expiresInDays,
+      note: req.body.note,
+      actorEmail: req.user?.email
+    });
+
+    // Rendered rather than redirected: the plaintext code exists only in this
+    // response, and a redirect would put it in the URL, the browser history and
+    // every access log between here and the admin.
+    return res.render('pages/registration-codes', {
+      title: 'Registration codes',
+      description: 'Issue a code that grants a paid plan without payment.',
+      codes: await listRegistrationCodes(),
+      ...registrationCodeFormOptions(),
+      issued: { code, record },
+      errorMessage: null,
+      saved: null
+    });
+  } catch (error) {
+    if (error.expose || error.status === 404) {
+      return res.redirect(303, `/admin/registration-codes?error=${encodeURIComponent(error.message)}`);
     }
     return next(error);
   }

@@ -1,0 +1,138 @@
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Platform settings</p>
+    <h1>Registration codes</h1>
+    <p>Grant a paid plan without payment — for testers, and for a pilot you have agreed to comp.</p>
+  </div>
+
+  {{#if saved}}
+    <div class="callout callout--success">
+      <strong>{{#if (eq saved "revoked")}}Code revoked. It can no longer be redeemed.{{/if}}</strong>
+    </div>
+  {{/if}}
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not issued.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+
+  {{#if issued}}
+    <div class="callout callout--success">
+      <strong>Copy this code now — it is not stored and cannot be shown again.</strong>
+      <p class="code-reveal"><code>{{issued.code}}</code></p>
+      <span>
+        {{issued.record.planLabel}}, valid in
+        {{#each issued.record.environments}}<strong>{{this}}</strong>{{#unless @last}}, {{/unless}}{{/each}},
+        {{issued.record.maxRedemptions}} redemption(s), expires {{issued.record.expiresAt}}.
+      </span>
+    </div>
+  {{/if}}
+
+  <article class="blade-guidance">
+    <strong>A code is worth what the plan is worth</strong>
+    <span>
+      Only a hash is kept, so the plaintext is shown once and never again — if it
+      is lost, issue another and revoke the old one. Each code names the
+      environments it works in, so a code handed to a tester on
+      <em>dev</em> cannot be redeemed against <em>prod</em>. This deployment is
+      <strong>{{environment}}</strong>, so only codes naming {{environment}} can
+      be redeemed here.
+    </span>
+  </article>
+
+  <form class="wizard-form" action="/admin/registration-codes" method="post">
+    <h2>Issue a code</h2>
+
+    <label for="planId">Plan this code grants</label>
+    <select id="planId" name="planId" required>
+      {{#each planChoices}}
+        <option value="{{this.id}}">{{this.label}} — {{this.price}}</option>
+      {{/each}}
+    </select>
+
+    <fieldset class="field-group">
+      <legend>Environments it may be redeemed in</legend>
+      {{#each environmentChoices}}
+        <label class="checkbox-row">
+          <input type="checkbox" name="environments" value="{{this.name}}" {{#if this.isCurrent}}checked{{/if}}>
+          <span>
+            {{this.name}}
+            {{#if this.isCurrent}}<span class="table-note">this deployment</span>{{/if}}
+            {{#if this.isProduction}}<span class="table-note">a real subscription, given away</span>{{/if}}
+          </span>
+        </label>
+      {{/each}}
+    </fieldset>
+
+    <label for="maxRedemptions">How many times it may be redeemed</label>
+    <input id="maxRedemptions" name="maxRedemptions" type="number" min="1" max="500" value="1" required>
+
+    <label for="expiresInDays">Expires after (days)</label>
+    <input id="expiresInDays" name="expiresInDays" type="number" min="1" max="365" value="30" required>
+
+    <label for="note">What it is for</label>
+    <input id="note" name="note" type="text" maxlength="300" placeholder="e.g. Android testers, Q3">
+
+    <div class="inline-actions">
+      <button class="button button--primary" type="submit">Issue code</button>
+    </div>
+  </form>
+
+  <h2>Issued codes</h2>
+  {{#if codes.length}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Plan</th>
+          <th>Environments</th>
+          <th>Used</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each codes}}
+          <tr>
+            <td>
+              <code>{{this.hint}}-····-····</code>
+              {{#if this.note}}<div class="table-note">{{this.note}}</div>{{/if}}
+              {{#if this.createdBy}}<div class="table-note">by {{this.createdBy}}</div>{{/if}}
+            </td>
+            <td>{{this.planLabel}}</td>
+            <td>{{#each this.environments}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</td>
+            <td>{{this.redemptionCount}} of {{this.maxRedemptions}}</td>
+            <td>
+              {{#if this.isUsable}}
+                Usable
+                <div class="table-note">Expires {{this.expiresAt}}</div>
+              {{else if this.isRevoked}}
+                <strong>Revoked</strong>
+              {{else if this.isSpent}}
+                <strong>Fully redeemed</strong>
+              {{else}}
+                <strong>Expired</strong>
+              {{/if}}
+            </td>
+            <td>
+              {{#if this.isUsable}}
+                <form action="/admin/registration-codes" method="post" class="inline-form">
+                  <input type="hidden" name="codeId" value="{{this.id}}">
+                  <input type="hidden" name="action" value="revoke">
+                  <button class="button button--ghost" type="submit">Revoke</button>
+                </form>
+              {{else}}
+                <div class="table-note">Nothing left to revoke.</div>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="muted">No registration codes have been issued.</p>
+  {{/if}}
+
+  <div class="inline-actions">
+    <a class="button button--ghost" href="/admin/wallets">Registered wallets</a>
+    <a class="button button--ghost" href="/admin/sign-in-methods">Sign-in methods</a>
+  </div>
+</section>

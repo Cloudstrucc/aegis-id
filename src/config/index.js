@@ -180,6 +180,10 @@ const config = {
       process.env.EMAIL_VERIFICATION_STORE_PATH,
       'data/email-verifications.json'
     ),
+    registrationCodes: resolveFromRoot(
+      process.env.REGISTRATION_CODE_STORE_PATH,
+      'data/registration-codes.json'
+    ),
     accountReenrolmentGrants: resolveFromRoot(
       process.env.ACCOUNT_REENROLMENT_STORE_PATH,
       'data/account-reenrolment-grants.json'

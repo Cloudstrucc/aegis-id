@@ -439,6 +439,36 @@ is configured.
 
 Full detail: [Wallet Identity, Wallet ID and Recovery](wallet-identity-and-recovery.md).
 
+## Registration Codes
+
+A registration code grants a **paid plan without payment**. It exists so testers
+on dev and qa can sign up without a card, and so a pilot customer can be comped
+without a finance conversation. Issue and revoke them at
+**/admin/registration-codes**.
+
+**A code is worth what the plan is worth**, so it is handled like a credential
+rather than a coupon:
+
+- Only a hash is stored. The plaintext is shown **once**, on the page that
+  issues it, and can never be shown again — if it is lost, revoke it and issue
+  another.
+- Each code names the environments it may be redeemed in. A code handed out on
+  **dev** is refused on **prod**, so leaking the test codes cannot cost revenue.
+  Naming `prod` is giving away a real subscription; the form makes you tick it
+  deliberately rather than letting a blank field mean "everywhere".
+- Codes carry a redemption count and an expiry, and can be revoked at any time.
+  Revoking stops further redemptions without erasing what the code already
+  granted.
+- Every issue, redemption, rejection and revocation is on the evidence chain.
+
+A rejected code always gives the same answer — "That registration code is not
+valid" — whether it is unknown, expired, spent, revoked, or simply meant for a
+different environment. Distinguishing those would turn the signup form into a
+way of discovering which codes exist.
+
+Free plans cannot have codes: there is nothing to bypass, since anyone can start
+a trial without one.
+
 ## Aries Interoperability Lab
 
 The Aries lab is intentionally separate from the Microsoft production path.

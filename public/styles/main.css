@@ -6871,3 +6871,109 @@ body:has(.workspace-blade) .site-footer div span {
   font-size: clamp(30px, 3.4vw, 52px);
   line-height: 1.08;
 }
+
+/* Admin tables.
+   Used by the wallet, account-recovery and registration-code screens. The
+   wrapper scrolls rather than the page, so a wide table never pushes the whole
+   layout sideways. */
+.data-table {
+  width: 100%;
+  margin: 0 0 22px;
+  border-collapse: collapse;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.data-table th {
+  color: var(--navy-900);
+  background: var(--mist);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table code {
+  word-break: break-all;
+}
+
+.table-note {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 8px;
+}
+
+.inline-form input[type='text'] {
+  min-width: 0;
+  flex: 1 1 140px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.checkbox-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.checkbox-row input {
+  margin-top: 3px;
+}
+
+.checkbox-row .table-note {
+  display: block;
+  margin-top: 0;
+}
+
+/* A secret shown once. Large and selectable, because the only chance to copy it
+   is right now. */
+.code-reveal {
+  margin: 10px 0;
+}
+
+.code-reveal code {
+  display: inline-block;
+  padding: 10px 16px;
+  color: var(--navy-900);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  user-select: all;
+}
+
+@media (max-width: 720px) {
+  .data-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
