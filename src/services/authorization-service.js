@@ -67,6 +67,16 @@ const POLICIES = Object.freeze({
     description:
       'Nominate and withdraw the wallets that can recover control of an organization. Nominating does not confirm — the wallet has to present the token it was sent.'
   }),
+  'workspace.breakGlass.manage': policy('workspace.breakGlass.manage', 'subscription', 'break-glass-code', 'manage', {
+    fields: ['action', 'codeId'],
+    description:
+      'Generate or revoke the organization\'s break-glass code. It is inert until a root wallet authorises it, so generating one grants nobody anything.'
+  }),
+  'admin.breakGlass.redeem': policy('admin.breakGlass.redeem', 'adminAnyWorkspace', 'break-glass-code', 'approve', {
+    fields: ['code', 'ticketReference'],
+    description:
+      'Redeem a break-glass code a customer has sent in. Useless without the code, which only the customer holds, and without a root wallet having authorised it in advance — so this is not a path into a customer organization on its own.'
+  }),
   'api.rootWallet.confirm': policy('api.rootWallet.confirm', 'external', 'root-wallet', 'approve', {
     description:
       'A wallet confirming its own nomination. Authorization is the confirmation token, which only the nominated device receives.'

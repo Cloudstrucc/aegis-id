@@ -32,6 +32,12 @@ const {
   removeRootWallet,
   summarizeRootWallets
 } = require('../services/root-wallet-service');
+const {
+  authoriseBreakGlassCode,
+  issueBreakGlassCode,
+  listBreakGlassCodes,
+  revokeBreakGlassCode
+} = require('../services/break-glass-service');
 
 const router = express.Router();
 
@@ -162,6 +168,9 @@ router.get(
       const summary = await summarizeRootWallets(workspace.id);
       const nominated = req.session.lastRootWalletNomination || null;
       delete req.session.lastRootWalletNomination;
+      const breakGlassIssued = req.session.lastBreakGlassCode || null;
+      delete req.session.lastBreakGlassCode;
+      const breakGlassCodes = await listBreakGlassCodes(workspace.id);
 
       res.render('pages/root-wallets', {
         title: 'Root wallets',
@@ -175,6 +184,9 @@ router.get(
         // the QR the wallet scans, not in a field anybody can read off a
         // screenshot later.
         nominated,
+        breakGlassIssued,
+        breakGlassCodes,
+        liveBreakGlass: breakGlassCodes.find((entry) => entry.isActive || entry.isAwaitingAuthorisation) || null,
         errorMessage: req.query.error || null,
         saved: req.query.saved || null
       });
@@ -243,6 +255,72 @@ router.get('/api/root-wallets/confirm', authorize('api.rootWallet.confirm'), asy
       return res.status(error.status || 400).render('pages/root-wallet-confirmed', {
         title: 'Confirmation failed',
         description: 'This nomination could not be confirmed.',
+        errorMessage: error.message
+      });
+    }
+    return next(error);
+  }
+});
+
+// --- break glass ------------------------------------------------------------
+
+router.post(
+  '/organizations/:subscriptionId/:workspaceId/break-glass',
+  requireAuthenticated,
+  authorize('workspace.breakGlass.manage'),
+  async (req, res, next) => {
+    const back = `/organizations/${req.params.subscriptionId}/${req.params.workspaceId}/root-wallets`;
+    try {
+      const workspace = await loadWorkspace(req);
+      const actorEmail = req.user?.email;
+
+      if (req.body.action === 'revoke') {
+        await revokeBreakGlassCode(workspace.id, req.body.codeId, { actorEmail });
+        return res.redirect(303, `${back}?saved=glass-revoked`);
+      }
+
+      const { code, authorisationToken } = await issueBreakGlassCode(workspace, { actorEmail });
+      const authoriseUrl = `${config.app.publicBaseUrl}/api/break-glass/authorise?token=${encodeURIComponent(
+        authorisationToken
+      )}`;
+
+      // Shown once. The code goes to the customer and nowhere else — we keep
+      // only a hash — and the QR is how a root wallet grants the standing
+      // permission that makes it usable later.
+      req.session.lastBreakGlassCode = {
+        code,
+        qrCodeDataUrl: await QRCode.toDataURL(authoriseUrl, { margin: 1, width: 360 })
+      };
+      return res.redirect(303, back);
+    } catch (error) {
+      if (error.expose) {
+        return res.redirect(303, `${back}?error=${encodeURIComponent(error.message)}`);
+      }
+      return next(error);
+    }
+  }
+);
+
+/**
+ * A root wallet granting the standing permission.
+ *
+ * The wallet identifies itself with its own Wallet ID; the token proves this is
+ * the code being authorised. Both are required, and the wallet must already be
+ * a confirmed root wallet of that organization.
+ */
+router.get('/api/break-glass/authorise', authorize('api.rootWallet.confirm'), async (req, res, next) => {
+  try {
+    const record = await authoriseBreakGlassCode(req.query.wallet_id, req.query.token);
+    return res.render('pages/root-wallet-confirmed', {
+      title: 'Break-glass code authorised',
+      description: 'The organization can now be recovered with this code if every root wallet is lost.',
+      breakGlass: record
+    });
+  } catch (error) {
+    if (error.expose) {
+      return res.status(error.status || 400).render('pages/root-wallet-confirmed', {
+        title: 'Authorisation failed',
+        description: 'This code could not be authorised.',
         errorMessage: error.message
       });
     }

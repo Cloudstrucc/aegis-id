@@ -166,30 +166,54 @@ test('the same wallet cannot fill more than one slot', async () => {
   });
 });
 
-test('the minimum is three, and it is counted in confirmations', async () => {
+test('one root wallet is the bar to operate; three is the bar to be safe', async () => {
   await withEnv(async ({ roots, registry }) => {
-    assert.equal(roots.MINIMUM_ROOT_WALLETS, 3);
-
-    await confirmedRootWallets(roots, registry, 2);
-    let summary = await roots.summarizeRootWallets(WORKSPACE);
-    assert.equal(summary.meetsMinimum, false);
-    assert.equal(summary.remaining, 1);
+    assert.equal(roots.MINIMUM_ROOT_WALLETS, 1);
+    assert.equal(roots.RECOMMENDED_ROOT_WALLETS, 3);
 
     await confirmedRootWallets(roots, registry, 1);
+    let summary = await roots.summarizeRootWallets(WORKSPACE);
+    // Allowed to operate...
+    assert.equal(summary.meetsMinimum, true);
+    // ...but one lost device from being stranded, which is what the danger
+    // banner exists to say.
+    assert.equal(summary.isAtRisk, true);
+    assert.equal(summary.meetsRecommended, false);
+    assert.equal(summary.shortOfRecommended, 2);
+
+    await confirmedRootWallets(roots, registry, 2);
     summary = await roots.summarizeRootWallets(WORKSPACE);
     assert.equal(summary.confirmedCount, 3);
-    assert.equal(summary.meetsMinimum, true);
-    assert.equal(summary.remaining, 0);
+    assert.equal(summary.meetsRecommended, true);
+    assert.equal(summary.isAtRisk, false, 'no longer a single point of failure');
   });
 });
 
-test('an organization below the minimum cannot issue credentials', async () => {
+test('an organization is capped at ten root wallets', async () => {
+  await withEnv(async ({ roots, registry }) => {
+    await confirmedRootWallets(roots, registry, roots.MAXIMUM_ROOT_WALLETS);
+    const extra = await registry.registerWallet({
+      email: 'eleventh@example.com',
+      phone: '',
+      devicePublicKey: 'device-eleventh'
+    });
+
+    // Past a point, another root wallet is another device that can recover the
+    // organization — more attack surface, not more safety.
+    await assert.rejects(
+      () => roots.nominateRootWallet(WORKSPACE, extra.walletId, {}),
+      /at most 10 root wallets/
+    );
+  });
+});
+
+test('an organization with no root wallet cannot issue credentials', async () => {
   await withEnv(async ({ roots, registry }) => {
     // This is what makes the feature a guardrail rather than a form field.
     await assert.rejects(
       () => roots.assertRootWalletPolicy(WORKSPACE),
       (error) => {
-        assert.match(error.message, /0 of 3 root wallets confirmed/);
+        assert.match(error.message, /no confirmed root wallet/);
         assert.match(error.message, /how administrative control is recovered/);
         assert.equal(error.status, 409);
         assert.equal(error.expose, true);
@@ -197,7 +221,7 @@ test('an organization below the minimum cannot issue credentials', async () => {
       }
     );
 
-    await confirmedRootWallets(roots, registry, 3);
+    await confirmedRootWallets(roots, registry, 1);
     const summary = await roots.assertRootWalletPolicy(WORKSPACE);
     assert.equal(summary.meetsMinimum, true);
   });
@@ -211,7 +235,7 @@ test('pending nominations do not satisfy the minimum', async () => {
     }
 
     // Three nominations, no devices agreed. That is not a recovery path.
-    await assert.rejects(() => roots.assertRootWalletPolicy(WORKSPACE), /0 of 3/);
+    await assert.rejects(() => roots.assertRootWalletPolicy(WORKSPACE), /no confirmed root wallet/);
   });
 });
 
@@ -248,8 +272,9 @@ test('a compromised device can be removed even below the minimum', async () => {
 
     const summary = await roots.summarizeRootWallets(WORKSPACE);
     assert.equal(summary.confirmedCount, 2);
-    assert.equal(summary.meetsMinimum, false);
-    await assert.rejects(() => roots.assertRootWalletPolicy(WORKSPACE), /2 of 3/);
+    // Still able to operate on one wallet, but back in the danger zone.
+    assert.equal(summary.meetsMinimum, true);
+    assert.equal(summary.isAtRisk, true);
   });
 });
 
@@ -260,7 +285,7 @@ test('root wallets are scoped to one organization', async () => {
     // Another organization's roots are its own problem.
     const other = await roots.summarizeRootWallets('ws-2');
     assert.equal(other.confirmedCount, 0);
-    await assert.rejects(() => roots.assertRootWalletPolicy('ws-2'), /0 of 3/);
+    await assert.rejects(() => roots.assertRootWalletPolicy('ws-2'), /no confirmed root wallet/);
   });
 });
 

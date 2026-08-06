@@ -205,6 +205,7 @@ const config = {
       'data/email-verifications.json'
     ),
     rootWallets: resolveFromRoot(process.env.ROOT_WALLET_STORE_PATH, 'data/root-wallets.json'),
+    breakGlassCodes: resolveFromRoot(process.env.BREAK_GLASS_STORE_PATH, 'data/break-glass-codes.json'),
     organizationIdentities: resolveFromRoot(
       process.env.ORGANIZATION_IDENTITY_STORE_PATH,
       'data/organization-identities.json'

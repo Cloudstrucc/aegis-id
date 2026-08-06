@@ -28,8 +28,17 @@ const { getWalletByWalletId } = require('./wallet-registry-service');
 
 const store = new FileJsonStore(config.paths.rootWallets, []);
 
-/** Three, so that losing one device does not strand an organization. */
-const MINIMUM_ROOT_WALLETS = 3;
+// One is the bar to issue at all: an organization with no root wallet has no
+// recovery path that does not run through the platform, and should not be
+// minting identity credentials. Three is the number that actually protects the
+// customer — losing one device then strands nobody — so the gap between the two
+// is where the danger banner lives rather than a block.
+const MINIMUM_ROOT_WALLETS = 1;
+const RECOMMENDED_ROOT_WALLETS = 3;
+// A ceiling because every root wallet is another device that can recover the
+// organization: past a point, more wallets is more attack surface, not more
+// safety.
+const MAXIMUM_ROOT_WALLETS = 10;
 const CONFIRMATION_TTL_HOURS = 72;
 
 function validationError(message, status = 400) {
@@ -99,6 +108,14 @@ async function nominateRootWallet(workspaceId, walletIdInput, { actorEmail, labe
   if (existing) {
     // The same wallet three times is one point of failure wearing a disguise.
     throw validationError('That wallet is already a root wallet for this organization.', 409);
+  }
+
+  const live = records.filter((record) => record.workspaceId === workspaceId && !isExpired(record));
+  if (live.length >= MAXIMUM_ROOT_WALLETS) {
+    throw validationError(
+      `An organization may have at most ${MAXIMUM_ROOT_WALLETS} root wallets. Withdraw one before adding another.`,
+      409
+    );
   }
 
   const now = new Date();
@@ -223,9 +240,17 @@ async function summarizeRootWallets(workspaceId) {
     confirmedCount: confirmed.length,
     pendingCount: wallets.filter((wallet) => wallet.isPending).length,
     minimum: MINIMUM_ROOT_WALLETS,
+    recommended: RECOMMENDED_ROOT_WALLETS,
+    maximum: MAXIMUM_ROOT_WALLETS,
     enforced: config.rootWallets.enforced,
     meetsMinimum: confirmed.length >= MINIMUM_ROOT_WALLETS,
-    remaining: Math.max(0, MINIMUM_ROOT_WALLETS - confirmed.length)
+    // The state the danger banner exists for: allowed to operate, but one lost
+    // device away from being stranded.
+    meetsRecommended: confirmed.length >= RECOMMENDED_ROOT_WALLETS,
+    isAtRisk: confirmed.length > 0 && confirmed.length < RECOMMENDED_ROOT_WALLETS,
+    remaining: Math.max(0, MINIMUM_ROOT_WALLETS - confirmed.length),
+    shortOfRecommended: Math.max(0, RECOMMENDED_ROOT_WALLETS - confirmed.length),
+    canAddMore: confirmed.length + wallets.filter((wallet) => wallet.isPending).length < MAXIMUM_ROOT_WALLETS
   };
 }
 
@@ -252,9 +277,9 @@ async function assertRootWalletPolicy(workspaceId) {
   }
 
   const error = new Error(
-    `This organization has ${summary.confirmedCount} of ${summary.minimum} root wallets confirmed. ` +
-      'Add and confirm the rest before issuing credentials — a root wallet is how administrative ' +
-      'control is recovered if an administrator loses their device.'
+    'This organization has no confirmed root wallet. Nominate one and have it confirm before ' +
+      'issuing credentials — a root wallet is how administrative control is recovered if an ' +
+      'administrator loses their device.'
   );
   error.status = 409;
   error.expose = true;
@@ -262,7 +287,9 @@ async function assertRootWalletPolicy(workspaceId) {
 }
 
 module.exports = {
+  MAXIMUM_ROOT_WALLETS,
   MINIMUM_ROOT_WALLETS,
+  RECOMMENDED_ROOT_WALLETS,
   assertRootWalletPolicy,
   confirmRootWallet,
   listRootWallets,

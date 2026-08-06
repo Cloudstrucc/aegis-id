@@ -319,19 +319,37 @@ presents the confirmation token from the QR, compared in constant time. Only
 confirmed wallets count. The token is single-use, expires in 72 hours, and is
 discarded once spent.
 
-**Three is the minimum**, because one is a single point of failure. Withdrawing
-is allowed below the minimum on purpose: a stolen device has to be removable at
-once, so issuance stops rather than the removal being blocked.
+**One is the bar to operate; three is the bar to be safe.** An organization with
+no confirmed root wallet cannot issue credentials. One to three is allowed but
+raises a danger banner, because a single root wallet means one lost device
+strands the organization. Ten is the ceiling — past a point another root wallet
+is another device that can recover the organization, which is attack surface
+rather than safety. Withdrawing is allowed at any count on purpose: a stolen
+device has to be removable at once.
 
-**Enforcement is off by default** (`ROOT_WALLET_POLICY_ENFORCED`). Switching it
-on blocks credential issuance for every organization below the minimum,
-*including every one that already exists* — that is an operator decision per
-environment after giving customers notice, not something a deployment does to
-them. With it off the page advises instead of blocking.
+`ROOT_WALLET_POLICY_ENFORCED` gates the block. **On in `.env`, `.env.dev` and
+`.env.qa`; off in `.env.local`**, so the suite runs against the unenforced
+default and enforcement is tested explicitly. Turning it on stops issuance for
+organizations with no root wallet, existing ones included.
 
-The remaining piece is the payoff: root wallets as m-of-n approvers for
-org-admin recovery, replacing the email-based path. Until that exists the
-guardrail is real but the recovery it guards is still the old one.
+## Break-glass recovery
+
+The one way back for an organization that has lost every root wallet, in
+`break-glass-service` and redeemed at `/admin/break-glass`.
+
+Built so it can never become a master key. **The customer generates the code and
+keeps it** — only a scrypt hash is stored, so nobody here holds it. **It is
+inert until a root wallet authorises it**, which happens while wallets still
+exist: that is the explicit permission, given in advance, because at the moment
+of use there is no wallet left to ask. **Redeeming needs both the code and a
+platform administrator**, plus a mandatory ticket reference.
+
+The property this buys: *no administrator here can reach a customer's
+organization on their own* — by construction, not by policy. There is no path
+from an admin session to organization control that does not pass through a code
+the customer holds and a permission their root wallet already gave. An attempt
+with an unauthorised code is refused and recorded, and the redemption record
+names the wallet whose authority it acted on.
 
 ## Platform administration
 

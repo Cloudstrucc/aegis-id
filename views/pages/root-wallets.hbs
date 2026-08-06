@@ -29,25 +29,28 @@
   </div>
 
   {{#unless meetsMinimum}}
-    <div class="callout callout--warning">
-      {{#if enforced}}
-        <strong>Credential issuance is blocked until {{minimum}} wallets are confirmed.</strong>
-        <span>
-          An organization with no recovery path should not be minting identity
-          credentials — losing its only administrator would strand every holder
-          it had issued to. {{remaining}} more to go.
-        </span>
-      {{else}}
-        <strong>{{remaining}} more root wallet(s) recommended.</strong>
-        <span>
-          This deployment does not yet block issuance below {{minimum}}, but it
-          is the level at which losing one device cannot strand the
-          organization. Getting there now means nothing changes for you when it
-          is enforced.
-        </span>
-      {{/if}}
+    <div class="callout callout--danger">
+      <strong>This organization has no root wallet.</strong>
+      <span>
+        {{#if enforced}}Credential issuance is blocked until one is confirmed.{{else}}Issuance is not blocked on this deployment yet, but it will be.{{/if}}
+        Without one, there is no way to recover administrative control that does
+        not run through Vanguard.
+      </span>
     </div>
   {{/unless}}
+
+  {{#if isAtRisk}}
+    <div class="callout callout--danger">
+      <strong>Add {{shortOfRecommended}} more root wallet(s) — you are one lost device from being locked out.</strong>
+      <span>
+        You have {{confirmedCount}} of the {{recommended}} recommended. With a
+        single root wallet, losing that device means the only way back is a
+        break-glass code and a support ticket. With {{recommended}} held by
+        different people, no single loss strands the organization. Nominate
+        another below — your existing root wallet does not need to approve it.
+      </span>
+    </div>
+  {{/if}}
 
   <div class="identity-layout">
     <div>
@@ -112,6 +115,51 @@
       </article>
     </div>
 
+    <article class="identity-step">
+      <h2>Break-glass code</h2>
+      <p>
+        For the one case root wallets cannot cover: losing every one of them.
+        You generate the code and keep it — we store only a hash and never see
+        it. It does nothing until one of your root wallets authorises it, so
+        generating it now is what makes recovery possible later.
+      </p>
+
+      {{#if breakGlassIssued}}
+        <div class="callout callout--success">
+          <strong>Copy this code now — it is not stored and cannot be shown again.</strong>
+          <p class="code-reveal"><code>{{breakGlassIssued.code}}</code></p>
+          <span>Keep it somewhere you would still reach if every wallet were lost. Then have a root wallet scan this to authorise it:</span>
+          <p><img class="rootwallet-qr" src="{{breakGlassIssued.qrCodeDataUrl}}" alt="QR code for a root wallet to authorise the break-glass code"></p>
+        </div>
+      {{/if}}
+
+      {{#if liveBreakGlass}}
+        <table class="data-table">
+          <tbody>
+            <tr><th>Code</th><td><code>{{liveBreakGlass.hint}}-·····</code></td></tr>
+            <tr><th>Status</th><td>
+              {{#if liveBreakGlass.isActive}}
+                <span class="pill pill--ok">Authorised and usable</span>
+                <div class="table-note">Authorised by <code>{{liveBreakGlass.authorisedByWalletId}}</code></div>
+              {{else}}
+                <span class="pill pill--wait">Awaiting a root wallet</span>
+                <div class="table-note">Until a root wallet authorises it, this code does nothing — including for us.</div>
+              {{/if}}
+            </td></tr>
+          </tbody>
+        </table>
+        <form action="/organizations/{{subscriptionId}}/{{workspace.id}}/break-glass" method="post" class="inline-form">
+          <input type="hidden" name="action" value="revoke">
+          <input type="hidden" name="codeId" value="{{liveBreakGlass.id}}">
+          <button class="button button--ghost" type="submit">Revoke and generate a new one</button>
+        </form>
+      {{else}}
+        <form action="/organizations/{{subscriptionId}}/{{workspace.id}}/break-glass" method="post">
+          <button class="button button--primary button--blue" type="submit">Generate a break-glass code</button>
+        </form>
+      {{/if}}
+    </article>
+
     <aside class="identity-aside">
       <div class="note-panel">
         <strong>Why three</strong>
@@ -120,6 +168,10 @@
       <div class="note-panel">
         <strong>Nominating is not confirming</strong>
         <span>A Wallet ID is an identifier, not a secret — knowing one proves nothing. A nomination stays pending until the wallet presents the token from the QR, so nobody becomes a root wallet without their device agreeing.</span>
+      </div>
+      <div class="note-panel">
+        <strong>We cannot get in without you</strong>
+        <span>A break-glass code is yours: we hold only a hash, and it is inert until one of your root wallets authorises it. Nobody here can reach your organization without a code you sent and a permission your wallet gave.</span>
       </div>
       <div class="note-panel">
         <strong>Withdrawing is always allowed</strong>

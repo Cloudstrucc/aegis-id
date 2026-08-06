@@ -39,6 +39,7 @@ const {
 } = require('../services/registration-code-service');
 const { PLANS, describePrice } = require('../services/plan-service');
 const { listIdentities, revokeVerification } = require('../services/organization-identity-service');
+const { listBreakGlassCodes, redeemBreakGlassCode } = require('../services/break-glass-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 // The environments a code may be scoped to. Deliberately an explicit list
@@ -96,14 +97,15 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
 // so the page is worth opening rather than being a list of links.
 router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) => {
   try {
-    const [wallets, codes, passwordlessAccounts, methods, notificationSettings, identities] =
+    const [wallets, codes, passwordlessAccounts, methods, notificationSettings, identities, glassCodes] =
       await Promise.all([
         listWallets(),
         listRegistrationCodes(),
         listPasswordlessAccounts(),
         getSignInMethodsForDisplay(),
         getNotificationSettingsForDisplay(),
-        listIdentities()
+        listIdentities(),
+        listBreakGlassCodes()
       ]);
 
     const revokedWallets = wallets.filter((wallet) => wallet.status === 'revoked').length;
@@ -112,6 +114,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
     const enabledMethods = methods.filter((method) => method.firstFactor || method.satisfiesSecond).length;
     const verifiedDomains = identities.filter((entry) => entry.isVerified).length;
     const unverifiedDomains = identities.length - verifiedDomains;
+    const breakGlassRedeemed = glassCodes.filter((entry) => entry.isRedeemed).length;
 
     res.render('pages/admin-dashboard', {
       title: 'Administration',
@@ -164,6 +167,14 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
           statLabel: verifiedDomains === 1 ? 'verified domain' : 'verified domains',
           note: unverifiedDomains ? `${unverifiedDomains} unverified` : null,
           isWarning: unverifiedDomains > 0
+        },
+        {
+          href: '/admin/break-glass',
+          title: 'Break-glass recovery',
+          summary: 'Recover an organization that has lost every root wallet. Needs their code and their root wallet\'s prior authorisation.',
+          stat: breakGlassRedeemed,
+          statLabel: breakGlassRedeemed === 1 ? 'code redeemed' : 'codes redeemed',
+          note: breakGlassRedeemed ? 'Every use is on the evidence chain' : null
         },
         {
           href: '/admin/account-recovery',
@@ -220,6 +231,41 @@ router.post('/admin/domains', authorize('admin.domains.manage'), async (req, res
   } catch (error) {
     if (error.expose) {
       return res.redirect(303, `/admin/domains?error=${encodeURIComponent(error.message)}`);
+    }
+    return next(error);
+  }
+});
+
+// Redeeming a break-glass code a customer has sent in.
+//
+// This is the only path from an administrator here into a customer
+// organization, and it is deliberately not a path anybody here can walk alone:
+// it needs the code, which only the customer holds, and that code is inert
+// unless one of their root wallets authorised it in advance.
+router.get('/admin/break-glass', authorize('admin.breakGlass.redeem'), async (req, res, next) => {
+  try {
+    res.render('pages/break-glass-admin', {
+      title: 'Break-glass recovery',
+      description: 'Recover an organization that has lost every root wallet.',
+      history: (await listBreakGlassCodes()).filter((entry) => entry.isRedeemed),
+      redeemed: req.query.organization || null,
+      errorMessage: req.query.error || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/admin/break-glass', authorize('admin.breakGlass.redeem'), async (req, res, next) => {
+  try {
+    const result = await redeemBreakGlassCode(req.body.code, {
+      actorEmail: req.user?.email,
+      ticketReference: req.body.ticketReference
+    });
+    return res.redirect(303, `/admin/break-glass?organization=${encodeURIComponent(result.organization)}`);
+  } catch (error) {
+    if (error.expose) {
+      return res.redirect(303, `/admin/break-glass?error=${encodeURIComponent(error.message)}`);
     }
     return next(error);
   }

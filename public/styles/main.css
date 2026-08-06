@@ -7579,3 +7579,14 @@ body:has(.workspace-blade) .site-footer div span {
 
 .rootwallet-qr{display:block;width:220px;height:220px;margin:12px 0 0;background:#fff;padding:8px;
   border:1px solid var(--line);border-radius:10px}
+
+/* Louder than a warning: something is one failure away from going wrong. */
+.callout--danger {
+  background: #fdecea;
+  border-color: #f0b3ab;
+  border-left-color: #c0392b;
+}
+
+.callout--danger strong {
+  color: #8c2d22;
+}
