@@ -7808,3 +7808,61 @@ body:has(.workspace-blade) .site-footer div span {
   color: #a3382b;
   border-color: #e0b4ac;
 }
+
+/* Bootstrap-5 outline variants.
+   The tile actions were five near-identical white buttons, so nothing carried
+   meaning. Colour is the meaning now: the primary action stays filled, the
+   rest are outlined in their semantic colour, and hover fills them so the
+   target is unambiguous. Text colours are the darker Bootstrap variants where
+   the base hue is too light to read on white. */
+.button--outline-secondary,
+.button--outline-info,
+.button--outline-success,
+.button--outline-warning,
+.button--outline-danger {
+  background: #fff;
+  border-width: 1px;
+  border-style: solid;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+
+.button--outline-secondary { color: #6c757d; border-color: #6c757d; }
+.button--outline-secondary:hover { color: #fff; background: #6c757d; border-color: #6c757d; }
+
+.button--outline-info { color: #087990; border-color: #6edff6; }
+.button--outline-info:hover { color: #000; background: #0dcaf0; border-color: #0dcaf0; }
+
+.button--outline-success { color: #198754; border-color: #198754; }
+.button--outline-success:hover { color: #fff; background: #198754; border-color: #198754; }
+
+.button--outline-warning { color: #997404; border-color: #ffc107; }
+.button--outline-warning:hover { color: #000; background: #ffc107; border-color: #ffc107; }
+
+.button--outline-danger { color: #dc3545; border-color: #dc3545; }
+.button--outline-danger:hover { color: #fff; background: #dc3545; border-color: #dc3545; }
+
+/* Keep the focus ring visible on every variant — colour alone must not be the
+   only thing distinguishing them. */
+.button--outline-secondary:focus-visible,
+.button--outline-info:focus-visible,
+.button--outline-success:focus-visible,
+.button--outline-warning:focus-visible,
+.button--outline-danger:focus-visible {
+  outline: 2px solid var(--navy-900);
+  outline-offset: 2px;
+}
+
+/* The earlier rule greyed every ghost in a tile; these variants own their
+   colour, so scope that back to actual ghosts. */
+.organization-tile__actions .button--outline-info,
+.organization-tile__actions .button--outline-success,
+.organization-tile__actions .button--outline-warning,
+.organization-tile__actions .button--outline-danger,
+.organization-tile__actions .button--outline-secondary {
+  background: #fff;
+}
+
+/* The capacity bar now leads the section rather than trailing it. */
+.capacity-bar {
+  margin: 0 0 22px;
+}

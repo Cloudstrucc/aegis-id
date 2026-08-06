@@ -11,54 +11,6 @@
     <p>Aegis ID workspaces are scoped by organization so administrators and contributors can manage the right Verified ID, OIDC, SAML, and wallet challenge configuration.</p>
   </div>
 
-  {{#if hasOrganizations}}
-    <div class="organization-grid">
-      {{#each organizations}}
-        <article class="organization-tile {{#if isDisabled}}organization-tile--disabled{{/if}}">
-          <div class="organization-tile__mark" style="--org-primary: {{brandPrimaryColor}}; --org-accent: {{brandAccentColor}};" aria-hidden="true">
-            {{#if brandLogoDataUrl}}
-              <img src="{{brandLogoDataUrl}}" alt="">
-            {{else}}
-              {{brandInitial}}
-            {{/if}}
-          </div>
-          <div class="organization-tile__body">
-            <span class="track-label">{{roleLabel}} / {{statusLabel}}</span>
-            <h3>{{organization}}</h3>
-            <p>{{#if updatedAt}}Updated {{updatedAt}}{{else}}Ready to configure{{/if}}</p>
-          </div>
-          <div class="organization-tile__actions">
-            <a class="button button--blue" href="{{openPath}}">{{#if requiresWalletSetup}}Set up wallet{{else}}Open{{/if}}</a>
-            <a class="button button--ghost" href="/organizations/{{subscriptionId}}/{{id}}/domain">
-              {{#if identity.isVerified}}✓ {{identity.domain}}{{else}}Verify domain{{/if}}
-            </a>
-            <a class="button button--ghost" href="/organizations/{{subscriptionId}}/{{id}}/root-wallets">Root wallets</a>
-            {{#if canManageWorkspace}}
-              {{#if isDisabled}}
-                <form action="/organizations/{{subscriptionId}}/{{id}}/enable" method="post">
-                  <button class="button button--ghost" type="submit">Enable</button>
-                </form>
-              {{else}}
-                <form action="/organizations/{{subscriptionId}}/{{id}}/disable" method="post">
-                  <button class="button button--ghost" type="submit">Disable</button>
-                </form>
-              {{/if}}
-              <form action="/organizations/{{subscriptionId}}/{{id}}/delete" method="post" data-confirm-message="Delete this organization workspace from your list? Audit history is retained.">
-                <button class="button button--ghost" type="submit">Delete</button>
-              </form>
-            {{/if}}
-          </div>
-        </article>
-      {{/each}}
-    </div>
-  {{else}}
-    <article class="empty-state-panel">
-      <span class="platform-icon">ID</span>
-      <h2>Register your organization to continue.</h2>
-      <p>No Aegis ID organization workspaces are associated with this subscriber yet. Create one, then you can open the dashboard and start the setup wizards.</p>
-    </article>
-  {{/if}}
-
   {{#unless showRegisterForm}}
     <aside class="capacity-bar {{#unless canAddWorkspace}}capacity-bar--full{{/unless}}">
       <div class="capacity-bar__text">
@@ -84,6 +36,56 @@
       {{/if}}
     </aside>
   {{/unless}}
+
+  {{#if hasOrganizations}}
+    <div class="organization-grid">
+      {{#each organizations}}
+        <article class="organization-tile {{#if isDisabled}}organization-tile--disabled{{/if}}">
+          <div class="organization-tile__mark" style="--org-primary: {{brandPrimaryColor}}; --org-accent: {{brandAccentColor}};" aria-hidden="true">
+            {{#if brandLogoDataUrl}}
+              <img src="{{brandLogoDataUrl}}" alt="">
+            {{else}}
+              {{brandInitial}}
+            {{/if}}
+          </div>
+          <div class="organization-tile__body">
+            <span class="track-label">{{roleLabel}} / {{statusLabel}}</span>
+            <h3>{{organization}}</h3>
+            <p>{{#if updatedAt}}Updated {{updatedAt}}{{else}}Ready to configure{{/if}}</p>
+          </div>
+          <div class="organization-tile__actions">
+            <a class="button button--blue" href="{{openPath}}">{{#if requiresWalletSetup}}Set up wallet{{else}}Open{{/if}}</a>
+            <a class="button button--outline-info" href="/organizations/{{subscriptionId}}/{{id}}/domain">
+              {{#if identity.isVerified}}✓ {{identity.domain}}{{else}}Verify domain{{/if}}
+            </a>
+            <a class="button button--outline-success" href="/organizations/{{subscriptionId}}/{{id}}/root-wallets">Root wallets</a>
+            {{#if canManageWorkspace}}
+              {{#if isDisabled}}
+                <form action="/organizations/{{subscriptionId}}/{{id}}/enable" method="post">
+                  <button class="button button--outline-secondary" type="submit">Enable</button>
+                </form>
+              {{else}}
+                <form action="/organizations/{{subscriptionId}}/{{id}}/disable" method="post">
+                  <button class="button button--outline-warning" type="submit">Disable</button>
+                </form>
+              {{/if}}
+              <form action="/organizations/{{subscriptionId}}/{{id}}/delete" method="post" data-confirm-message="Delete this organization workspace from your list? Audit history is retained.">
+                <button class="button button--outline-danger" type="submit">Delete</button>
+              </form>
+            {{/if}}
+          </div>
+        </article>
+      {{/each}}
+    </div>
+  {{else}}
+    <article class="empty-state-panel">
+      <span class="platform-icon">ID</span>
+      <h2>Register your organization to continue.</h2>
+      <p>No Aegis ID organization workspaces are associated with this subscriber yet. Create one, then you can open the dashboard and start the setup wizards.</p>
+    </article>
+  {{/if}}
+
+
 </section>
 
 {{#if showRegisterForm}}

@@ -190,11 +190,19 @@ async function acceptOrganizationInvitation(invitationId, input = {}) {
     try {
       await adoptFirstRootWallet(records[index].organizationId, records[index].walletId);
     } catch (error) {
-      await writeAuditEvent('organization.rootWallet.adoptFailed', {
-        workspaceId: records[index].organizationId,
-        walletId: records[index].walletId,
-        reason: error.message
-      });
+      // The invitation is already accepted and written at this point, so
+      // nothing here may surface as a failure to the wallet — it would report
+      // an error for something that actually succeeded. Even the audit write is
+      // guarded, because it can throw too.
+      try {
+        await writeAuditEvent('organization.rootWallet.adoptFailed', {
+          workspaceId: records[index].organizationId,
+          walletId: records[index].walletId,
+          reason: error.message
+        });
+      } catch (auditError) {
+        console.error('Root wallet adoption audit failed:', auditError.message);
+      }
     }
   }
 
