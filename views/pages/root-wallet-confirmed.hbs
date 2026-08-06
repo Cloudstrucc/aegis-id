@@ -1,0 +1,15 @@
+<section class="band band--white">
+  <article class="outcome-card">
+    {{#if errorMessage}}
+      <span class="outcome-card__mark outcome-card__mark--wait" aria-hidden="true">!</span>
+      <h2>Could not confirm</h2>
+      <p>{{errorMessage}}</p>
+      <p class="table-note">Confirmation codes are single use and expire after 72 hours. Ask the administrator to nominate again.</p>
+    {{else}}
+      <span class="outcome-card__mark outcome-card__mark--good" aria-hidden="true">✓</span>
+      <h2>Root wallet confirmed</h2>
+      <p><code>{{walletId}}</code> can now help recover administrative control of this organization.</p>
+      <p class="table-note">Keep this wallet safe. It is one of the keys to the organization.</p>
+    {{/if}}
+  </article>
+</section>

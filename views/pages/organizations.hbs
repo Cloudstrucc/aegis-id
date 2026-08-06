@@ -32,6 +32,7 @@
             <a class="button button--ghost" href="/organizations/{{subscriptionId}}/{{id}}/domain">
               {{#if identity.isVerified}}✓ {{identity.domain}}{{else}}Verify domain{{/if}}
             </a>
+            <a class="button button--ghost" href="/organizations/{{subscriptionId}}/{{id}}/root-wallets">Root wallets</a>
             {{#if canManageWorkspace}}
               {{#if isDisabled}}
                 <form action="/organizations/{{subscriptionId}}/{{id}}/enable" method="post">

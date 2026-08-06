@@ -62,6 +62,15 @@ const POLICIES = Object.freeze({
     description:
       "Claim and verify the domain an organization is known by. Proving control of DNS is what lets a holder tell a real organization from one that typed the same name."
   }),
+  'workspace.rootWallets.manage': policy('workspace.rootWallets.manage', 'subscription', 'root-wallet', 'manage', {
+    fields: ['walletId', 'label', 'rootWalletId', 'reason', 'action'],
+    description:
+      'Nominate and withdraw the wallets that can recover control of an organization. Nominating does not confirm — the wallet has to present the token it was sent.'
+  }),
+  'api.rootWallet.confirm': policy('api.rootWallet.confirm', 'external', 'root-wallet', 'approve', {
+    description:
+      'A wallet confirming its own nomination. Authorization is the confirmation token, which only the nominated device receives.'
+  }),
   'public.organization': policy('public.organization', 'public', 'organization-profile', 'read', {
     description:
       'The canonical page for an organization handle. Public by necessity — a holder checking who invited them has no account here.'

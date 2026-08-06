@@ -3,7 +3,7 @@ const crypto = require('node:crypto');
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { assertCanAddWorkspace } = require('./plan-service');
-const { ensureIdentity } = require('./organization-identity-service');
+const { ensureIdentity, getIdentity } = require('./organization-identity-service');
 const VerifiedIdClient = require('./verified-id-client');
 const { buildDemoEmployeeClaims, getPresentationPolicy } = require('./credential-policy-service');
 
@@ -456,6 +456,32 @@ async function registerWorkspaceForSubscription(subscription, input = {}) {
   await ensureIdentity(workspace);
 
   return decorateWorkspaceForSubscription(workspace, subscription);
+}
+
+/**
+ * Give every existing workspace an identity.
+ *
+ * Handles are assigned at creation, so organizations that predate that code
+ * have none until something happens to touch them — which means they are
+ * missing from the admin list and have no public page, silently. Run once at
+ * startup. Idempotent: ensureIdentity returns the existing record untouched.
+ */
+async function backfillOrganizationIdentities() {
+  const workspaces = await store.read();
+  let created = 0;
+
+  for (const workspace of workspaces) {
+    if (workspace.status === 'deleted') {
+      continue;
+    }
+    const before = await getIdentity(workspace.id);
+    if (!before) {
+      await ensureIdentity(workspace);
+      created += 1;
+    }
+  }
+
+  return { scanned: workspaces.length, created };
 }
 
 async function listWorkspacesForSubscription(subscription, options = {}) {
@@ -1184,6 +1210,7 @@ function notFound(message) {
 }
 
 module.exports = {
+  backfillOrganizationIdentities,
   buildDashboardView,
   buildMetadataUrl,
   buildWizardView,

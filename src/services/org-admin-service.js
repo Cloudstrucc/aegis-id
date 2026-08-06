@@ -500,6 +500,7 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
 }
 
 async function issueCredential(workspace, subscription, input = {}) {
+  const { assertRootWalletPolicy } = require('./root-wallet-service');
   await assertOrgPrivilege(workspace, subscription, 'credentials.issue');
   const state = await getOrCreateState(workspace);
 
@@ -507,6 +508,12 @@ async function issueCredential(workspace, subscription, input = {}) {
   // credentials still count: they hold a Wallet ID binding and evidence, so
   // they are capacity the plan is paying for.
   assertCanIssueCredential(subscription, state.credentials.length);
+
+  // And the organization must have a way back. An organization with no root
+  // wallets has no recovery path that does not run through the platform
+  // administrator, so losing its single admin would strand every holder it had
+  // issued to. Enforced here, at the same single point, rather than in the form.
+  await assertRootWalletPolicy(workspace.id);
 
   const roleIds = normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
   const claims = buildClaims(state.claimDefinitions, input);

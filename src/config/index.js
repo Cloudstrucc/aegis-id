@@ -138,6 +138,14 @@ const config = {
     stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
   },
+  rootWallets: {
+    // Blocking issuance is the whole point of root wallets, but switching it on
+    // stops every organization below the minimum — including every one that
+    // already exists — so it is a deliberate act per environment rather than
+    // something a deploy does to a live customer. Off until an operator has
+    // given their organizations time to nominate.
+    enforced: booleanFlag(process.env.ROOT_WALLET_POLICY_ENFORCED, false)
+  },
   paths: {
     root: rootDir,
     public: path.join(rootDir, 'public'),
@@ -196,6 +204,7 @@ const config = {
       process.env.EMAIL_VERIFICATION_STORE_PATH,
       'data/email-verifications.json'
     ),
+    rootWallets: resolveFromRoot(process.env.ROOT_WALLET_STORE_PATH, 'data/root-wallets.json'),
     organizationIdentities: resolveFromRoot(
       process.env.ORGANIZATION_IDENTITY_STORE_PATH,
       'data/organization-identities.json'

@@ -305,6 +305,34 @@ subdomain because **App Service serves only its own hostname** —
 `<app>.azurewebsites.net/orgs/<handle>` does, and is a valid did:web path form
 for when per-organization keys exist.
 
+## Root wallets
+
+`root-wallet-service` holds the wallets that can recover administrative control
+of an organization. They exist because control today is ultimately tied to an
+email address and recovery runs through the platform administrator — meaning
+Vanguard can restore access to a customer's organization, and so can anyone who
+takes over their email.
+
+**Nominating is not confirming.** A Wallet ID is an identifier, not a secret —
+`wallet-id.js` says so — so a nomination stays `pending` until the wallet
+presents the confirmation token from the QR, compared in constant time. Only
+confirmed wallets count. The token is single-use, expires in 72 hours, and is
+discarded once spent.
+
+**Three is the minimum**, because one is a single point of failure. Withdrawing
+is allowed below the minimum on purpose: a stolen device has to be removable at
+once, so issuance stops rather than the removal being blocked.
+
+**Enforcement is off by default** (`ROOT_WALLET_POLICY_ENFORCED`). Switching it
+on blocks credential issuance for every organization below the minimum,
+*including every one that already exists* — that is an operator decision per
+environment after giving customers notice, not something a deployment does to
+them. With it off the page advises instead of blocking.
+
+The remaining piece is the payoff: root wallets as m-of-n approvers for
+org-admin recovery, replacing the email-based path. Until that exists the
+guardrail is real but the recovery it guards is still the old one.
+
 ## Platform administration
 
 `/admin` is the index for every platform-wide setting — sign-in methods,

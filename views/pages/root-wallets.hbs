@@ -1,0 +1,130 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">{{workspace.organization}}</p>
+  <h1>Root wallets.</h1>
+  <p>The wallets that can recover administrative control of this organization. Three is the minimum, because one is a single point of failure.</p>
+</section>
+
+<section class="band band--white">
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not accepted.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+  {{#if (eq saved "removed")}}
+    <div class="callout callout--success"><strong>Root wallet withdrawn.</strong> <span>It can no longer act for this organization.</span></div>
+  {{/if}}
+
+  {{#if nominated}}
+    <div class="callout callout--success">
+      <strong>Nominated — now have the holder scan this.</strong>
+      <span>
+        <code>{{nominated.walletId}}</code> does not count until its wallet confirms.
+        This code is shown once; if it is missed, withdraw the nomination and start again.
+      </span>
+      <p><img class="rootwallet-qr" src="{{nominated.qrCodeDataUrl}}" alt="QR code for the holder's wallet to scan"></p>
+    </div>
+  {{/if}}
+
+  <div class="meter">
+    <div class="meter__bar"><div class="meter__fill" style="width: {{meterPercent}}%"></div></div>
+    <span class="meter__label">{{confirmedCount}} of {{minimum}} confirmed</span>
+  </div>
+
+  {{#unless meetsMinimum}}
+    <div class="callout callout--warning">
+      {{#if enforced}}
+        <strong>Credential issuance is blocked until {{minimum}} wallets are confirmed.</strong>
+        <span>
+          An organization with no recovery path should not be minting identity
+          credentials — losing its only administrator would strand every holder
+          it had issued to. {{remaining}} more to go.
+        </span>
+      {{else}}
+        <strong>{{remaining}} more root wallet(s) recommended.</strong>
+        <span>
+          This deployment does not yet block issuance below {{minimum}}, but it
+          is the level at which losing one device cannot strand the
+          organization. Getting there now means nothing changes for you when it
+          is enforced.
+        </span>
+      {{/if}}
+    </div>
+  {{/unless}}
+
+  <div class="identity-layout">
+    <div>
+      {{#if wallets.length}}
+        <table class="data-table">
+          <thead>
+            <tr><th>Wallet</th><th>Held by</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {{#each wallets}}
+              <tr>
+                <td><code>{{this.walletId}}</code></td>
+                <td>{{#if this.label}}{{this.label}}{{else}}<span class="muted">Not recorded</span>{{/if}}
+                  {{#if this.nominatedBy}}<div class="table-note">Nominated by {{this.nominatedBy}}</div>{{/if}}
+                </td>
+                <td>
+                  {{#if this.isConfirmed}}
+                    <span class="pill pill--ok">Root</span>
+                    <div class="table-note">Confirmed {{this.confirmedAt}}</div>
+                  {{else if this.isPending}}
+                    <span class="pill pill--wait">Awaiting wallet</span>
+                    <div class="table-note">Expires {{this.expiresAt}}</div>
+                  {{else}}
+                    <span class="pill pill--muted">Expired</span>
+                  {{/if}}
+                </td>
+                <td>
+                  <form action="/organizations/{{../subscriptionId}}/{{../workspace.id}}/root-wallets" method="post" class="inline-form">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="rootWalletId" value="{{this.id}}">
+                    <input type="text" name="reason" placeholder="Why" maxlength="300" required>
+                    <button class="button button--ghost" type="submit">Withdraw</button>
+                  </form>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      {{else}}
+        <p class="muted">No wallets have been nominated yet.</p>
+      {{/if}}
+
+      <article class="identity-step">
+        <h2>Nominate a wallet</h2>
+        <p>The holder needs a registered Aegis wallet. After nominating, they scan the code we show you — the wallet has to agree before it counts.</p>
+        <form class="subscribe-form subscribe-form--narrow" action="/organizations/{{subscriptionId}}/{{workspace.id}}/root-wallets" method="post">
+          <div class="field-row">
+            <div class="field-group">
+              <label for="walletId">Wallet ID</label>
+              <input id="walletId" name="walletId" type="text" placeholder="AEG-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" required>
+              <p class="table-note">Mistyped IDs are rejected — the last character is a check symbol.</p>
+            </div>
+            <div class="field-group">
+              <label for="label">Who holds it</label>
+              <input id="label" name="label" type="text" placeholder="e.g. Dana, Head of Security" maxlength="120">
+            </div>
+          </div>
+          <div class="inline-actions">
+            <button class="button button--primary button--blue" type="submit">Nominate</button>
+          </div>
+        </form>
+      </article>
+    </div>
+
+    <aside class="identity-aside">
+      <div class="note-panel">
+        <strong>Why three</strong>
+        <span>A root wallet is how administrative control comes back when an administrator loses their device or leaves. With one, that loss strands the organization. With three held by different people, no single loss and no single person can lock everyone else out.</span>
+      </div>
+      <div class="note-panel">
+        <strong>Nominating is not confirming</strong>
+        <span>A Wallet ID is an identifier, not a secret — knowing one proves nothing. A nomination stays pending until the wallet presents the token from the QR, so nobody becomes a root wallet without their device agreeing.</span>
+      </div>
+      <div class="note-panel">
+        <strong>Withdrawing is always allowed</strong>
+        <span>Even below the minimum. A stolen device has to be removable at once; issuance stops until you are back to {{minimum}} rather than the removal being blocked.</span>
+      </div>
+    </aside>
+  </div>
+</section>

@@ -11,6 +11,7 @@
 // exactly the moment they most need to.
 
 const express = require('express');
+const QRCode = require('qrcode');
 
 const config = require('../config');
 const { authorize } = require('../middleware/authorization');
@@ -25,6 +26,12 @@ const {
   verifyDomain
 } = require('../services/organization-identity-service');
 const { DNS_PROVIDERS } = require('../services/dns-provider-guides');
+const {
+  confirmRootWallet,
+  nominateRootWallet,
+  removeRootWallet,
+  summarizeRootWallets
+} = require('../services/root-wallet-service');
 
 const router = express.Router();
 
@@ -141,6 +148,106 @@ router.get('/help/domain-verification', authorize('public.help'), (req, res) => 
     exampleValue: 'aegis-domain-verification=EXAMPLE-TOKEN',
     platformHost: String(config.app.publicBaseUrl || '').replace(/^https?:\/\//, '')
   });
+});
+
+// --- root wallets -----------------------------------------------------------
+
+router.get(
+  '/organizations/:subscriptionId/:workspaceId/root-wallets',
+  requireAuthenticated,
+  authorize('workspace.rootWallets.manage'),
+  async (req, res, next) => {
+    try {
+      const workspace = await loadWorkspace(req);
+      const summary = await summarizeRootWallets(workspace.id);
+      const nominated = req.session.lastRootWalletNomination || null;
+      delete req.session.lastRootWalletNomination;
+
+      res.render('pages/root-wallets', {
+        title: 'Root wallets',
+        description: 'Wallets that can recover control of this organization.',
+        workspace,
+        subscriptionId: req.params.subscriptionId,
+        ...summary,
+        // Handlebars has no arithmetic, so the bar width is computed here.
+        meterPercent: Math.round((Math.min(summary.confirmedCount, summary.minimum) / summary.minimum) * 100),
+        // Shown once, on the page that follows nomination. The token travels in
+        // the QR the wallet scans, not in a field anybody can read off a
+        // screenshot later.
+        nominated,
+        errorMessage: req.query.error || null,
+        saved: req.query.saved || null
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/organizations/:subscriptionId/:workspaceId/root-wallets',
+  requireAuthenticated,
+  authorize('workspace.rootWallets.manage'),
+  async (req, res, next) => {
+    const back = `/organizations/${req.params.subscriptionId}/${req.params.workspaceId}/root-wallets`;
+    try {
+      const workspace = await loadWorkspace(req);
+      const actorEmail = req.user?.email;
+
+      if (req.body.action === 'remove') {
+        await removeRootWallet(workspace.id, req.body.rootWalletId, { actorEmail, reason: req.body.reason });
+        return res.redirect(303, `${back}?saved=removed`);
+      }
+
+      const { record, confirmationToken } = await nominateRootWallet(workspace.id, req.body.walletId, {
+        actorEmail,
+        label: req.body.label
+      });
+
+      // The wallet scans this. Everything it needs to confirm is in the link,
+      // and the link is the only place the token appears.
+      const confirmUrl = `${config.app.publicBaseUrl}/api/root-wallets/confirm?wallet_id=${encodeURIComponent(
+        record.walletId
+      )}&token=${encodeURIComponent(confirmationToken)}`;
+
+      req.session.lastRootWalletNomination = {
+        walletId: record.walletId,
+        qrCodeDataUrl: await QRCode.toDataURL(confirmUrl, { margin: 1, width: 360 })
+      };
+      return res.redirect(303, back);
+    } catch (error) {
+      if (error.expose) {
+        return res.redirect(303, `${back}?error=${encodeURIComponent(error.message)}`);
+      }
+      return next(error);
+    }
+  }
+);
+
+/**
+ * The wallet confirming its own nomination.
+ *
+ * Public by necessity — the wallet has no browser session — and the token is
+ * the whole authorization, which is why nominating alone grants nothing.
+ */
+router.get('/api/root-wallets/confirm', authorize('api.rootWallet.confirm'), async (req, res, next) => {
+  try {
+    const record = await confirmRootWallet(req.query.wallet_id, req.query.token);
+    return res.render('pages/root-wallet-confirmed', {
+      title: 'Root wallet confirmed',
+      description: 'This wallet can now recover control of the organization.',
+      walletId: record.walletId
+    });
+  } catch (error) {
+    if (error.expose) {
+      return res.status(error.status || 400).render('pages/root-wallet-confirmed', {
+        title: 'Confirmation failed',
+        description: 'This nomination could not be confirmed.',
+        errorMessage: error.message
+      });
+    }
+    return next(error);
+  }
 });
 
 module.exports = router;
