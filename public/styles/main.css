@@ -7590,3 +7590,221 @@ body:has(.workspace-blade) .site-footer div span {
 .callout--danger strong {
   color: #8c2d22;
 }
+
+/* ---------------------------------------------------------------------------
+   Organization setup wizard.
+   The two steps were a full-bleed hero over a two-column band, so the stepper
+   floated a long way from the cards it described and the panels had wildly
+   different heights. Constrained, centred, and the two steps now the same
+   shape as each other.
+   --------------------------------------------------------------------------- */
+.onboarding-shell {
+  padding-bottom: 18px;
+}
+
+.onboarding-shell .section-heading {
+  max-width: 720px;
+}
+
+.onboarding-shell .section-heading h1 {
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1.12;
+}
+
+.auth-stepper {
+  display: grid;
+  grid-template-columns: repeat(var(--step-count, 2), minmax(0, 1fr));
+  gap: 10px;
+  max-width: 720px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auth-stepper__item {
+  position: relative;
+  padding: 13px 16px 13px 42px;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* A numbered disc rather than a coloured bar: it says which step you are on
+   without needing the colour to be read. */
+.auth-stepper__item::before {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #e7eef7;
+  color: var(--muted);
+  content: counter(list-item);
+  font-size: 11px;
+  font-weight: 900;
+  transform: translateY(-50%);
+}
+
+.auth-stepper__item--complete {
+  color: #0b7a52;
+  background: #f2fdf8;
+  border-color: #9fdcc2;
+}
+
+.auth-stepper__item--complete::before {
+  background: #0b7a52;
+  color: #fff;
+  content: '✓';
+}
+
+.auth-stepper__item--current {
+  color: var(--navy-900);
+  background: var(--soft-blue);
+  border-color: var(--blue-600);
+  box-shadow: inset 2px 0 0 var(--blue-600);
+}
+
+.auth-stepper__item--current::before {
+  background: var(--blue-600);
+  color: #fff;
+}
+
+.issuer-org-layout--onboarding {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 22px;
+  align-items: stretch;
+}
+
+/* Both steps the same shape, so neither reads as more important than the
+   sequence says it is. */
+.issuer-org-layout--onboarding > * {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 26px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.issuer-org-layout--onboarding .onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.demo-qr-card--onboarding img,
+.demo-qr-card--onboarding canvas {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  margin: 16px auto 0;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.store-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+/* Capacity and its action, in one bar.
+   These were a bare button with a loose sentence floating to its right, which
+   read as two unrelated things. Now the count leads, the action sits at the
+   end where the eye finishes, and the whole row is one object. */
+.capacity-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 22px 0 0;
+  padding: 16px 20px;
+  background: var(--mist);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.capacity-bar--full {
+  background: #fff8e8;
+  border-color: #f0ce8c;
+}
+
+.capacity-bar__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.capacity-bar__text strong {
+  color: var(--navy-900);
+  font-size: 15px;
+}
+
+.capacity-bar__text span {
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+/* Organization tile actions.
+   One primary action, the rest quiet — previously five buttons of near-equal
+   weight, so nothing said where to go next. */
+.organization-tile__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.organization-tile__actions .button {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 13.5px;
+}
+
+/* The one thing to do next. */
+.organization-tile__actions > .button--blue:first-child {
+  min-height: 42px;
+  padding: 0 20px;
+  font-size: 14px;
+}
+
+/* Everything else recedes, and destructive actions further still. */
+.organization-tile__actions .button--ghost {
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--line);
+}
+
+.organization-tile__actions .button--ghost:hover {
+  color: var(--navy-900);
+  background: var(--paper);
+  border-color: var(--blue-600);
+}
+
+/* A hairline before the destructive pair, so Delete is never a slip away from
+   the action beside it. */
+.organization-tile__actions form:last-of-type {
+  margin-left: auto;
+}
+
+.organization-tile__actions form:last-of-type .button--ghost:hover {
+  color: #a3382b;
+  border-color: #e0b4ac;
+}

@@ -338,3 +338,33 @@ test('with enforcement off the policy advises rather than blocks', async () => {
     { enforced: false }
   );
 });
+
+test('the wallet connected during onboarding becomes the first root wallet', async () => {
+  await withEnv(async ({ dir, roots, registry }) => {
+    process.env.ISSUER_ORG_STORE_PATH = path.join(dir, 'issuers.json');
+    delete require.cache[require.resolve('../src/services/issuer-organization-service')];
+    const issuers = require('../src/services/issuer-organization-service');
+
+    const wallet = await seedWallet(registry, 'onboarding@example.com');
+    const invitation = await issuers.createIssuerOrganizationInvitation(
+      { id: 'sub-1', email: 'owner@example.com' },
+      { id: WORKSPACE, organization: 'Contoso' }
+    );
+
+    // Before: an administrator finishing onboarding would reasonably think the
+    // wallet they just connected was the root of the organization. It was not.
+    assert.equal((await roots.summarizeRootWallets(WORKSPACE)).confirmedCount, 0);
+
+    await issuers.acceptOrganizationInvitation(invitation.id, { walletId: wallet.walletId });
+
+    // Accepting on the device is the possession proof, so it counts as
+    // confirmed rather than leaving a pending nomination nobody would finish.
+    const summary = await roots.summarizeRootWallets(WORKSPACE);
+    assert.equal(summary.confirmedCount, 1);
+    assert.equal(summary.wallets[0].walletId, wallet.walletId);
+    assert.equal(summary.meetsMinimum, true);
+    assert.equal(summary.isAtRisk, true, 'one is still a single point of failure');
+
+    delete require.cache[require.resolve('../src/services/issuer-organization-service')];
+  });
+});

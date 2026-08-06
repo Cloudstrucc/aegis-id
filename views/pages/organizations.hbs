@@ -60,24 +60,29 @@
   {{/if}}
 
   {{#unless showRegisterForm}}
-    <div class="inline-actions">
-      {{#if canAddWorkspace}}
-        <a class="button button--primary button--blue" href="/organizations/{{subscription.id}}?add=1">Add organization</a>
-        <span class="table-note">
+    <aside class="capacity-bar {{#unless canAddWorkspace}}capacity-bar--full{{/unless}}">
+      <div class="capacity-bar__text">
+        <strong>
           {{#if workspaceLimit}}
-            Using {{workspacesUsed}} of {{workspaceLimit}} on {{planLabel}}.
+            Using {{workspacesUsed}} of {{workspaceLimit}} organization{{#unless (eq workspaceLimit 1)}}s{{/unless}}
           {{else}}
-            {{planLabel}} includes unlimited organizations.
+            {{workspacesUsed}} organization{{#unless (eq workspacesUsed 1)}}s{{/unless}}
+          {{/if}}
+        </strong>
+        <span>
+          {{#if canAddWorkspace}}
+            Included in {{planLabel}}.
+          {{else}}
+            {{planLabel}} includes {{workspaceLimit}}. A larger plan adds more.
           {{/if}}
         </span>
+      </div>
+      {{#if canAddWorkspace}}
+        <a class="button button--primary button--blue" href="/organizations/{{subscription.id}}?add=1">Add organization</a>
       {{else}}
-        <a class="button button--ghost" href="/plans">Upgrade to add another</a>
-        <span class="table-note">
-          {{planLabel}} includes {{workspaceLimit}} organization{{#unless (eq workspaceLimit 1)}}s{{/unless}},
-          and you are using {{workspacesUsed}}.
-        </span>
+        <a class="button button--primary button--blue" href="/plans">Upgrade plan</a>
       {{/if}}
-    </div>
+    </aside>
   {{/unless}}
 </section>
 

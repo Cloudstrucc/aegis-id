@@ -5,6 +5,8 @@ const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { createIosWalletDeepLink, createOutOfBandInvitation } = require('../adapters/aries/aries-lab-adapter');
 
+const { writeAuditEvent } = require('./audit-service');
+
 const store = new FileJsonStore(config.paths.issuerOrganizations, []);
 
 // Product path (default): a self-contained `aegisid://org-invite` deep link that
@@ -171,7 +173,53 @@ async function acceptOrganizationInvitation(invitationId, input = {}) {
     updatedAt: now
   };
   await store.write(records);
+
+  // The wallet that accepted this invitation becomes the organization's first
+  // root wallet, if it has none yet.
+  //
+  // This *is* a confirmation in the sense root-wallet-service means: the wallet
+  // scanned the QR and accepted on the device, which is the possession proof
+  // the nominate/confirm dance exists to obtain. Doing it here closes a gap
+  // that would otherwise be invisible — an administrator finishing onboarding
+  // would reasonably believe the wallet they just connected was the root of the
+  // organization, and until now it was not.
+  //
+  // Never fatal: a failure must not undo an accepted invitation, and the
+  // administrator can always nominate manually.
+  if (records[index].walletId && records[index].organizationId) {
+    try {
+      await adoptFirstRootWallet(records[index].organizationId, records[index].walletId);
+    } catch (error) {
+      await writeAuditEvent('organization.rootWallet.adoptFailed', {
+        workspaceId: records[index].organizationId,
+        walletId: records[index].walletId,
+        reason: error.message
+      });
+    }
+  }
+
   return records[index];
+}
+
+/**
+ * Make the onboarding wallet the organization's first root wallet.
+ *
+ * Only the first: once an organization has root wallets, adding more is a
+ * deliberate act by an administrator, not a side effect of somebody connecting
+ * a wallet.
+ */
+async function adoptFirstRootWallet(workspaceId, walletId) {
+  const roots = require('./root-wallet-service');
+  const summary = await roots.summarizeRootWallets(workspaceId);
+  if (summary.wallets.length > 0) {
+    return null;
+  }
+
+  const { confirmationToken } = await roots.nominateRootWallet(workspaceId, walletId, {
+    actorEmail: null,
+    label: 'Connected during organization setup'
+  });
+  return roots.confirmRootWallet(walletId, confirmationToken);
 }
 
 function normalizeWalletId(value) {
