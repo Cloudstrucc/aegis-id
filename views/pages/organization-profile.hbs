@@ -1,0 +1,31 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Organization</p>
+  <h1>{{identity.organization}}</h1>
+  <p>{{#if identity.isVerified}}This organization has proven control of its domain.{{else}}This organization has not proven a domain.{{/if}}</p>
+</section>
+
+<section class="band band--white">
+  <article class="outcome-card">
+    {{#if identity.isVerified}}
+      <span class="outcome-card__mark outcome-card__mark--good" aria-hidden="true">✓</span>
+      <h2>{{identity.domain}}</h2>
+      <p>
+        <strong>{{identity.organization}}</strong> proved control of the DNS for
+        <strong>{{identity.domain}}</strong> on {{identity.verifiedAt}}. An invitation
+        naming this domain came from whoever runs that domain.
+      </p>
+    {{else}}
+      <span class="outcome-card__mark outcome-card__mark--wait" aria-hidden="true">!</span>
+      <h2>Domain not verified</h2>
+      <p>
+        <strong>{{identity.organization}}</strong> has not proven control of a domain.
+        The name above is self-declared — anybody can choose it. Treat an invitation
+        from this organization with the care you would treat an unexpected email.
+      </p>
+    {{/if}}
+    <dl class="identity-facts">
+      <dt>Handle</dt><dd><code>{{identity.handle}}</code></dd>
+      <dt>Identifier</dt><dd><code>{{identity.didWeb}}</code></dd>
+    </dl>
+  </article>
+</section>

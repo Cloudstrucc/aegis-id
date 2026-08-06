@@ -57,6 +57,23 @@ const POLICIES = Object.freeze({
     fields: ['organization', 'role']
   }),
   'workspace.manage': policy('workspace.manage', 'subscription', 'workspace', 'update'),
+  'workspace.domain.manage': policy('workspace.domain.manage', 'subscription', 'organization-domain', 'update', {
+    fields: ['domain', 'action'],
+    description:
+      "Claim and verify the domain an organization is known by. Proving control of DNS is what lets a holder tell a real organization from one that typed the same name."
+  }),
+  'public.organization': policy('public.organization', 'public', 'organization-profile', 'read', {
+    description:
+      'The canonical page for an organization handle. Public by necessity — a holder checking who invited them has no account here.'
+  }),
+  'public.help': policy('public.help', 'public', 'help-page', 'read', {
+    description: 'Setup guidance that has to be readable before somebody is signed in.'
+  }),
+  'admin.domains.manage': policy('admin.domains.manage', 'adminAnyWorkspace', 'organization-domain', 'manage', {
+    fields: ['workspaceId', 'reason'],
+    description:
+      'See every organization identity on the deployment and withdraw a verification when a domain changes hands.'
+  }),
   'platform.view': policy('platform.view', 'orgPrivilege', 'integration', 'read', {
     privilegeId: 'integrations.view'
   }),

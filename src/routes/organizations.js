@@ -3,6 +3,7 @@ const express = require('express');
 const { requireAuthenticated } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
 const { summarizeUsage } = require('../services/subscription-usage-service');
+const { listIdentities } = require('../services/organization-identity-service');
 const { getSubscriptionForUser } = require('../services/subscription-service');
 const {
   deleteWorkspaceForSubscription,
@@ -35,6 +36,13 @@ router.get('/organizations/:subscriptionId', authorize('workspace.view'), async 
     // all, so the form is offered or withheld on the same basis the server
     // enforces rather than being permanently open.
     const usage = await summarizeUsage(subscription);
+    // The identity beside each organization, so an unproven domain is visible
+    // from the list rather than only from inside the organization.
+    const identities = await listIdentities();
+    const identityByWorkspace = new Map(identities.map((entry) => [entry.workspaceId, entry]));
+    for (const organization of organizations) {
+      organization.identity = identityByWorkspace.get(organization.id) || null;
+    }
 
     res.render('pages/organizations', {
       title: 'Organizations',

@@ -3,6 +3,7 @@ const crypto = require('node:crypto');
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { assertCanAddWorkspace } = require('./plan-service');
+const { ensureIdentity } = require('./organization-identity-service');
 const VerifiedIdClient = require('./verified-id-client');
 const { buildDemoEmployeeClaims, getPresentationPolicy } = require('./credential-policy-service');
 
@@ -448,6 +449,12 @@ async function registerWorkspaceForSubscription(subscription, input = {}) {
 
   workspaces.unshift(workspace);
   await store.write(workspaces);
+
+  // Assigned here rather than in a route because this is the only path that
+  // mints a workspace: an organization without a handle would have nothing
+  // unique to show a holder beside its freely-chosen name.
+  await ensureIdentity(workspace);
+
   return decorateWorkspaceForSubscription(workspace, subscription);
 }
 

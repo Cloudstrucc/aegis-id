@@ -274,6 +274,37 @@ minted. Spending it earlier would burn a redemption for anyone
 who abandoned the last form. A redeemed code sets `billingStatus: 'comped'`,
 which entitles exactly as much as paying does.
 
+## Organization identity
+
+An organization's **name is a label, not an identity**. Names are free text and
+scoped per subscription — `registerWorkspaceForSubscription` matches on name
+only within your own subscription — so two subscribers can both be
+"Cloudstrucc", and they always will be able to. Global uniqueness would be a
+land grab, and real companies do share names.
+
+Identity lives in two other things, in `organization-identity-service`:
+
+- a **handle** (`cloudstrucc-a7f3`), assigned at workspace creation, globally
+  unique, never reused. Assigned inside `registerWorkspaceForSubscription`
+  because that is the only path that mints a workspace.
+- an optional **verified domain**, proven by a TXT record at
+  `_aegis-challenge.<domain>`. DNS rather than a file upload: publishing in the
+  zone requires control of the zone, whereas a file only proves control of one
+  web server.
+
+Claiming is not owning. Two organizations may both have a *pending* claim on the
+same domain — only publishing the record decides it — but a domain already
+verified elsewhere is refused. A used token is discarded, and re-claiming issues
+a fresh one so an abandoned claim cannot be completed by somebody who saw the
+old value.
+
+Unverified is not anonymous: every organization has `/orgs/<handle>`, a public
+page that says plainly whether the domain is proven. Path-based rather than a
+subdomain because **App Service serves only its own hostname** —
+`<handle>.<app>.azurewebsites.net` would never resolve, while
+`<app>.azurewebsites.net/orgs/<handle>` does, and is a valid did:web path form
+for when per-organization keys exist.
+
 ## Platform administration
 
 `/admin` is the index for every platform-wide setting — sign-in methods,

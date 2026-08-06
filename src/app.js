@@ -14,6 +14,7 @@ const accountRoutes = require('./routes/account');
 const pageRoutes = require('./routes/pages');
 const subscriptionRoutes = require('./routes/subscriptions');
 const planRoutes = require('./routes/plans');
+const organizationIdentityRoutes = require('./routes/organization-identity');
 const billingWebhookRoutes = require('./routes/billing-webhook');
 const organizationRoutes = require('./routes/organizations');
 const dashboardRoutes = require('./routes/dashboard');
@@ -476,6 +477,7 @@ function createApp() {
   app.use('/', accountRoutes);
   app.use('/', pageRoutes);
   app.use('/', planRoutes);
+  app.use('/', organizationIdentityRoutes);
   app.use('/', subscriptionRoutes);
   app.use('/', organizationRoutes);
   app.use('/', dashboardRoutes);

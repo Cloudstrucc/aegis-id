@@ -38,6 +38,7 @@ const {
   revokeRegistrationCode
 } = require('../services/registration-code-service');
 const { PLANS, describePrice } = require('../services/plan-service');
+const { listIdentities, revokeVerification } = require('../services/organization-identity-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 // The environments a code may be scoped to. Deliberately an explicit list
@@ -95,19 +96,22 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
 // so the page is worth opening rather than being a list of links.
 router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) => {
   try {
-    const [wallets, codes, passwordlessAccounts, methods, notificationSettings] =
+    const [wallets, codes, passwordlessAccounts, methods, notificationSettings, identities] =
       await Promise.all([
         listWallets(),
         listRegistrationCodes(),
         listPasswordlessAccounts(),
         getSignInMethodsForDisplay(),
-        getNotificationSettingsForDisplay()
+        getNotificationSettingsForDisplay(),
+        listIdentities()
       ]);
 
     const revokedWallets = wallets.filter((wallet) => wallet.status === 'revoked').length;
     const usableCodes = codes.filter((code) => code.isUsable).length;
     const exhausted = passwordlessAccounts.filter((account) => account.remainingCodes === 0).length;
     const enabledMethods = methods.filter((method) => method.firstFactor || method.satisfiesSecond).length;
+    const verifiedDomains = identities.filter((entry) => entry.isVerified).length;
+    const unverifiedDomains = identities.length - verifiedDomains;
 
     res.render('pages/admin-dashboard', {
       title: 'Administration',
@@ -153,6 +157,15 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
           isWarning: deliveryChannelCount(notificationSettings) === 0
         },
         {
+          href: '/admin/domains',
+          title: 'Organization domains',
+          summary: 'Which organizations have proven the domain they claim, and which are still self-declared.',
+          stat: verifiedDomains,
+          statLabel: verifiedDomains === 1 ? 'verified domain' : 'verified domains',
+          note: unverifiedDomains ? `${unverifiedDomains} unverified` : null,
+          isWarning: unverifiedDomains > 0
+        },
+        {
           href: '/admin/account-recovery',
           title: 'Account recovery',
           summary: 'Passwordless accounts and their remaining recovery codes.',
@@ -172,6 +185,45 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
 function deliveryChannelCount(settings) {
   return [settings?.email?.enabled, settings?.sms?.enabled].filter(Boolean).length;
 }
+
+// Every organization identity on the deployment, and the ability to withdraw a
+// verification when a domain changes hands.
+router.get('/admin/domains', authorize('admin.domains.manage'), async (req, res, next) => {
+  try {
+    const identities = await listIdentities();
+    res.render('pages/domain-admin', {
+      title: 'Organization domains',
+      description: 'Which organizations have proven the domain they claim.',
+      identities: identities.sort((left, right) => {
+        // Unverified first: those are the ones a holder cannot check.
+        if (left.isVerified !== right.isVerified) {
+          return left.isVerified ? 1 : -1;
+        }
+        return String(left.organization).localeCompare(String(right.organization));
+      }),
+      verifiedCount: identities.filter((entry) => entry.isVerified).length,
+      saved: req.query.saved || null,
+      errorMessage: req.query.error || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/admin/domains', authorize('admin.domains.manage'), async (req, res, next) => {
+  try {
+    await revokeVerification(req.body.workspaceId, {
+      actorEmail: req.user?.email,
+      reason: req.body.reason
+    });
+    return res.redirect(303, '/admin/domains?saved=revoked');
+  } catch (error) {
+    if (error.expose) {
+      return res.redirect(303, `/admin/domains?error=${encodeURIComponent(error.message)}`);
+    }
+    return next(error);
+  }
+});
 
 // Registered wallets, with the credential count that decides whether a wallet
 // may be deleted or must only be revoked.

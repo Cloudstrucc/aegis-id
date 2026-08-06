@@ -7546,3 +7546,33 @@ body:has(.workspace-blade) .site-footer div span {
 .register-layout .field-row {
   align-items: start;
 }
+
+/* Organization identity. */
+.identity-layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:26px;align-items:start}
+.identity-aside{display:grid;gap:14px;align-content:start;min-width:0}
+@media (max-width:900px){.identity-layout{grid-template-columns:minmax(0,1fr)}}
+
+.identity-state,
+.identity-step{padding:24px;margin:0 0 20px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+.identity-state--verified{background:#f4fdf8;border-color:#9fdcc2}
+.identity-state h2{margin:4px 0 10px;font-size:22px;color:var(--navy-900);word-break:break-all}
+.identity-step h2{margin:0 0 8px;font-size:18px;color:var(--navy-900)}
+
+.identity-facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 16px;margin:16px 0 0;font-size:13.5px}
+.identity-facts dt{color:var(--muted);font-weight:800}
+.identity-facts dd{margin:0;min-width:0;word-break:break-all}
+
+.pill--muted{background:var(--mist);color:var(--muted);border:1px solid var(--line)}
+.wrap-anywhere{overflow-wrap:anywhere;word-break:break-all;white-space:normal}
+
+/* Help page. */
+.provider-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.provider-card{padding:22px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+.provider-card h3{margin:0 0 6px;font-size:17px;color:var(--navy-900)}
+.provider-steps{margin:12px 0 0;padding-left:20px;font-size:14px;line-height:1.6}
+.provider-steps li{margin-bottom:6px}
+.provider-cli{margin:6px 0 0;padding:12px;background:var(--navy-950);color:#dbeafe;border-radius:8px;
+  font-size:12.5px;line-height:1.5;overflow-x:auto}
+.provider-cli code{white-space:pre}
+.help-list{margin:0;padding-left:20px;font-size:14.5px;line-height:1.65}
+.help-list li{margin-bottom:10px}

@@ -196,6 +196,10 @@ const config = {
       process.env.EMAIL_VERIFICATION_STORE_PATH,
       'data/email-verifications.json'
     ),
+    organizationIdentities: resolveFromRoot(
+      process.env.ORGANIZATION_IDENTITY_STORE_PATH,
+      'data/organization-identities.json'
+    ),
     checkoutSessions: resolveFromRoot(
       process.env.CHECKOUT_SESSION_STORE_PATH,
       'data/checkout-sessions.json'

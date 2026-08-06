@@ -500,6 +500,35 @@ being stuck.
 Metered plans currently bill their monthly base through Stripe; per-credential
 overage is reported on the account page but not yet charged automatically.
 
+## Organization Domains
+
+An organization's name is free text, and two subscribers can legitimately choose
+the same one. A **verified domain** is what lets a credential holder tell a real
+organization from one that typed the same name.
+
+Every organization gets a **handle** the moment it is created —
+`cloudstrucc-a7f3` — globally unique and permanent. It is shown at
+`/orgs/<handle>`, a public page a holder can check before accepting an
+invitation. Unverified organizations are labelled as such there, in plain words.
+
+**Verifying a domain** takes one DNS record. From the organization list choose
+**Verify domain**, enter the domain, and publish the TXT record shown at
+`_aegis-challenge.<your-domain>`. Then choose **Check DNS now**. The in-app
+guide at `/help/domain-verification` has step-by-step instructions for GoDaddy,
+Namecheap, Cloudflare, Squarespace, Azure DNS and AWS Route 53, plus the fix for
+the mistake that catches most people — the host field usually wants only
+`_aegis-challenge`, not the full name.
+
+Checks are rate limited to ten per ten minutes, because DNS propagation makes
+people click. A claim expires after 14 days; start it again for a fresh record.
+
+**Administrators see every organization identity at `/admin/domains`** and can
+**withdraw** a verification. Domains get sold, lapse and change hands — when
+that happens the organization that used to hold it must stop being able to point
+at it. The handle survives, so the organization keeps its identity and loses
+only the claim. Every claim, check, success, failure and withdrawal is on the
+evidence chain.
+
 ## Registration Codes
 
 A registration code grants a **paid plan without payment**. It exists so testers

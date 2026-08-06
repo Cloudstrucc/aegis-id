@@ -1,0 +1,84 @@
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Platform settings</p>
+    <h1>Organization domains</h1>
+    <p>Which organizations have proven the domain they claim, and which are still going by a name anyone could type.</p>
+  </div>
+
+  {{#if saved}}
+    <div class="callout callout--success">
+      <strong>{{#if (eq saved "revoked")}}Verification withdrawn. Holders now see the organization as unverified.{{/if}}</strong>
+    </div>
+  {{/if}}
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not applied.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+
+  <article class="blade-guidance">
+    <strong>Withdraw a verification when a domain changes hands</strong>
+    <span>
+      A verified domain vouches for an organization to every holder it invites.
+      Domains get sold, lapse, and get taken over — when that happens the old
+      organization must stop being able to point at it. The handle survives, so
+      the organization keeps its identity and only loses the claim.
+    </span>
+  </article>
+
+  {{#if identities.length}}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Organization</th>
+          <th>Handle</th>
+          <th>Domain</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each identities}}
+          <tr>
+            <td>
+              {{this.organization}}
+              <div class="table-note"><a href="{{this.canonicalUrl}}">public page</a></div>
+            </td>
+            <td><code>{{this.handle}}</code></td>
+            <td>
+              {{#if this.domain}}<code>{{this.domain}}</code>{{else}}<span class="muted">None claimed</span>{{/if}}
+              {{#if this.revokedReason}}<div class="table-note">Last withdrawn: {{this.revokedReason}}</div>{{/if}}
+            </td>
+            <td>
+              {{#if this.isVerified}}
+                <span class="pill pill--ok">Verified</span>
+                <div class="table-note">{{this.verifiedAt}}</div>
+              {{else if this.isPending}}
+                <span class="pill pill--wait">Awaiting DNS</span>
+                {{#if this.challenge.lastResult}}<div class="table-note">Last check: {{this.challenge.lastResult}}</div>{{/if}}
+              {{else}}
+                <span class="pill pill--muted">Unverified</span>
+              {{/if}}
+            </td>
+            <td>
+              {{#if this.isVerified}}
+                <form action="/admin/domains" method="post" class="inline-form">
+                  <input type="hidden" name="workspaceId" value="{{this.workspaceId}}">
+                  <input type="text" name="reason" placeholder="Why" maxlength="300" required>
+                  <button class="button button--ghost" type="submit">Withdraw</button>
+                </form>
+              {{else}}
+                <div class="table-note">Nothing to withdraw.</div>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="muted">No organizations exist on this deployment yet.</p>
+  {{/if}}
+
+  <div class="inline-actions">
+    <a class="button button--ghost" href="/admin">All settings</a>
+    <a class="button button--ghost" href="/help/domain-verification" target="_blank" rel="noopener">Setup guide ↗</a>
+  </div>
+</section>

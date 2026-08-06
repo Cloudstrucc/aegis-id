@@ -1,0 +1,104 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">{{workspace.organization}}</p>
+  <h1>Organization identity.</h1>
+  <p>Anyone can name an organization anything. A verified domain is what lets a credential holder tell yours from somebody who typed the same name.</p>
+</section>
+
+<section class="band band--white">
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not accepted.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+  {{#if (eq checked "verified")}}
+    <div class="callout callout--success"><strong>Domain verified.</strong> <span>Holders now see <strong>{{identity.domain}}</strong> beside your name.</span></div>
+  {{/if}}
+  {{#if (eq checked "failed")}}
+    <div class="callout callout--warning">
+      <strong>Not found yet.</strong>
+      <span>
+        {{#if (eq reason "no-record")}}No TXT record exists at that name yet. DNS changes can take anywhere from a minute to a few hours to propagate.{{/if}}
+        {{#if (eq reason "mismatch")}}A TXT record exists but its value does not match. Check for a stray space or a truncated paste.{{/if}}
+        {{#if (eq reason "lookup-failed")}}The lookup itself failed. That usually means the domain has no nameservers responding.{{/if}}
+      </span>
+    </div>
+  {{/if}}
+
+  <div class="identity-layout">
+    <div>
+      <article class="identity-state {{#if identity.isVerified}}identity-state--verified{{/if}}">
+        <p class="eyebrow">Current identity</p>
+        <h2>{{identity.displayIdentity}}</h2>
+        {{#if identity.isVerified}}
+          <span class="pill pill--ok">Verified domain</span>
+          <p>Proven on {{identity.verifiedAt}}. This is what holders see.</p>
+        {{else}}
+          <span class="pill pill--muted">Unverified — system handle</span>
+          <p>Your organization has a unique handle so it can always be identified, but holders are told the domain is unproven.</p>
+        {{/if}}
+        <dl class="identity-facts">
+          <dt>Handle</dt><dd><code>{{identity.handle}}</code></dd>
+          <dt>Public page</dt><dd><a href="{{identity.canonicalUrl}}">{{identity.canonicalUrl}}</a></dd>
+          <dt>Identifier</dt><dd><code>{{identity.didWeb}}</code></dd>
+        </dl>
+      </article>
+
+      {{#if identity.isPending}}
+        <article class="identity-step">
+          <h2>Publish this record</h2>
+          <p>Add one TXT record to the DNS for <strong>{{identity.domain}}</strong>, then come back and check.</p>
+          <table class="data-table">
+            <tbody>
+              <tr><th>Type</th><td><code>TXT</code></td></tr>
+              <tr><th>Name / Host</th><td><code>{{identity.challenge.recordName}}</code><div class="table-note">Most providers add your domain automatically. The full name is <code>{{identity.challenge.fullRecordName}}</code>.</div></td></tr>
+              <tr><th>Value</th><td><code class="wrap-anywhere">{{identity.challenge.value}}</code></td></tr>
+              <tr><th>TTL</th><td>Lowest your provider allows, while testing</td></tr>
+            </tbody>
+          </table>
+          <p class="table-note">Expires {{identity.challenge.expiresAt}}. {{#if identity.challenge.lastCheckedAt}}Last checked {{identity.challenge.lastCheckedAt}}.{{/if}}</p>
+
+          <div class="inline-actions">
+            <form action="/organizations/{{subscriptionId}}/{{workspace.id}}/domain" method="post">
+              <input type="hidden" name="action" value="verify">
+              <button class="button button--primary button--blue" type="submit">Check DNS now</button>
+            </form>
+            <a class="button button--ghost" href="/help/domain-verification" target="_blank" rel="noopener">How do I add this? ↗</a>
+            <form action="/organizations/{{subscriptionId}}/{{workspace.id}}/domain" method="post">
+              <input type="hidden" name="action" value="cancel">
+              <button class="button button--ghost" type="submit">Cancel claim</button>
+            </form>
+          </div>
+        </article>
+      {{else}}
+        <article class="identity-step">
+          <h2>{{#if identity.isVerified}}Claim a different domain{{else}}Claim your domain{{/if}}</h2>
+          <p>Enter the domain your organization is known by. We will give you one DNS record to publish.</p>
+          <form class="subscribe-form subscribe-form--narrow" action="/organizations/{{subscriptionId}}/{{workspace.id}}/domain" method="post">
+            <div class="field-group">
+              <label for="domain">Domain</label>
+              <input id="domain" name="domain" type="text" placeholder="contoso.com" autocomplete="off" spellcheck="false" required>
+              <p class="table-note">Just the domain — no <code>https://</code>, no path.</p>
+            </div>
+            <div class="inline-actions">
+              <button class="button button--primary button--blue" type="submit">Get my DNS record</button>
+              <a class="button button--ghost" href="/help/domain-verification" target="_blank" rel="noopener">Setup guide ↗</a>
+            </div>
+          </form>
+        </article>
+      {{/if}}
+    </div>
+
+    <aside class="identity-aside">
+      <div class="note-panel">
+        <strong>Why this matters</strong>
+        <span>Organization names are free text, and two subscribers can legitimately use the same one. Without a proven domain, a holder receiving an invitation has no way to distinguish you from somebody who typed your name.</span>
+      </div>
+      <div class="note-panel">
+        <strong>DNS only, never a file upload</strong>
+        <span>Publishing under your domain's zone requires control of the zone. That is the thing worth proving — a file on a web server only proves control of that server.</span>
+      </div>
+      <div class="note-panel">
+        <strong>Your handle does not change</strong>
+        <span><code>{{identity.handle}}</code> is yours whether or not a domain is verified, and it survives a domain changing hands.</span>
+      </div>
+    </aside>
+  </div>
+</section>
