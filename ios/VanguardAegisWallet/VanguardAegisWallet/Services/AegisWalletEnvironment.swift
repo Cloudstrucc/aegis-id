@@ -3,7 +3,7 @@ import Foundation
 enum AegisWalletEnvironment {
     static let webAppURL = configuredURL(
         infoKey: "AEGIS_WEB_APP_BASE_URL",
-        fallback: "https://vanguard-aegis-id-65067d.azurewebsites.net"
+        fallback: "https://vanguard-aegis-id-0e75d1.azurewebsites.net"
     )
     static let holderAdminURL = URL(string: "http://localhost:6011")!
     static let issuerAdminURL = URL(string: "http://localhost:4011")!

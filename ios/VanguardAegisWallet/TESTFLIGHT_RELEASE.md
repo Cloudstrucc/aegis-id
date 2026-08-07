@@ -82,7 +82,7 @@ Environment mapping:
 
 | Environment | Scheme | Bundle ID | Default web app |
 | --- | --- | --- | --- |
-| Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `vanguard-aegis-id-65067d.azurewebsites.net` |
+| Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `vanguard-aegis-id-0e75d1.azurewebsites.net` |
 | Dev | `VanguardAegisWallet Dev` | `ca.vanguardcs.aegisid.wallet.dev` | `vanguard-aegis-id-dev-0e75d1.azurewebsites.net` |
 | QA | `VanguardAegisWallet QA` | `ca.vanguardcs.aegisid.wallet.qa` | `vanguard-aegis-id-qa-0e75d1.azurewebsites.net` |
 
@@ -311,7 +311,7 @@ Production:
 ```bash
 az webapp config appsettings set \
   --resource-group rg-vanguard-aegis-id \
-  --name vanguard-aegis-id-65067d \
+  --name vanguard-aegis-id-0e75d1 \
   --settings IOS_TESTFLIGHT_PUBLIC_URL="https://testflight.apple.com/join/REPLACE_ME"
 ```
 

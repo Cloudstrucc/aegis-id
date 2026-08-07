@@ -46,16 +46,16 @@ The project has separate shared schemes and bundle identifiers so production, de
 
 | Environment | Xcode scheme | Bundle ID | Display name | Aegis web app |
 | --- | --- | --- | --- | --- |
-| Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `Aegis ID` | `https://vanguard-aegis-id-65067d.azurewebsites.net` |
+| Production | `VanguardAegisWallet` | `ca.vanguardcs.aegisid.wallet` | `Aegis ID` | `https://vanguard-aegis-id-0e75d1.azurewebsites.net` |
 | Dev | `VanguardAegisWallet Dev` | `ca.vanguardcs.aegisid.wallet.dev` | `Aegis ID Dev` | `https://vanguard-aegis-id-dev-0e75d1.azurewebsites.net` |
 | QA | `VanguardAegisWallet QA` | `ca.vanguardcs.aegisid.wallet.qa` | `Aegis ID QA` | `https://vanguard-aegis-id-qa-0e75d1.azurewebsites.net` |
 
 Each wallet entitlement can list multiple associated domains. The project keeps the same domain set in the production, dev, and QA entitlement files so a TestFlight build can handle links and wallet passkeys while you move between tenants or environments:
 
 ```text
-vanguard-aegis-id-65067d.azurewebsites.net
-vanguard-aegis-id-dev-65067d.azurewebsites.net
-vanguard-aegis-id-qa-65067d.azurewebsites.net
+vanguard-aegis-id-0e75d1.azurewebsites.net
+vanguard-aegis-id-dev-0e75d1.azurewebsites.net
+vanguard-aegis-id-qa-0e75d1.azurewebsites.net
 vanguard-aegis-id-0e75d1.azurewebsites.net
 vanguard-aegis-id-dev-0e75d1.azurewebsites.net
 vanguard-aegis-id-qa-0e75d1.azurewebsites.net
@@ -64,7 +64,7 @@ vanguard-aegis-id-qa-0e75d1.azurewebsites.net
 Before testing wallet passkeys or universal links, deploy the matching Aegis ID web apps so each domain returns an Apple association document:
 
 ```text
-https://vanguard-aegis-id-65067d.azurewebsites.net/.well-known/apple-app-site-association
+https://vanguard-aegis-id-0e75d1.azurewebsites.net/.well-known/apple-app-site-association
 https://vanguard-aegis-id-dev-0e75d1.azurewebsites.net/.well-known/apple-app-site-association
 https://vanguard-aegis-id-qa-0e75d1.azurewebsites.net/.well-known/apple-app-site-association
 ```
@@ -187,7 +187,7 @@ After OIDC login succeeds in the browser:
 The production wallet uses the hosted Aegis ID web app by default:
 
 ```text
-https://vanguard-aegis-id-65067d.azurewebsites.net
+https://vanguard-aegis-id-0e75d1.azurewebsites.net
 ```
 
 That value is supplied by the selected Xcode build configuration as `AEGIS_WEB_APP_BASE_URL`; do not edit `Info.plist` directly for environment switching.
@@ -202,14 +202,14 @@ Wallet passkeys are optional. Use them only when an organization requires extra 
 2. Confirm the web app serves:
 
    ```text
-   https://vanguard-aegis-id-65067d.azurewebsites.net/.well-known/apple-app-site-association
+   https://vanguard-aegis-id-0e75d1.azurewebsites.net/.well-known/apple-app-site-association
    ```
 
 3. In Xcode, keep the app bundle ID and associated domain entitlement aligned:
 
    ```text
    ca.vanguardcs.aegisid.wallet
-   webcredentials:vanguard-aegis-id-65067d.azurewebsites.net
+   webcredentials:vanguard-aegis-id-0e75d1.azurewebsites.net
    ```
 
 4. In the iOS wallet, open **Settings > Wallet passkey assurance**.

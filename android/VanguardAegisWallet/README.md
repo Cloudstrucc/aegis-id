@@ -27,7 +27,7 @@ OpenID4VP support is intentionally limited to parsing, storing, and ledger-track
 - Min SDK: 26
 - Target SDK: 35
 - UI: Kotlin + Jetpack Compose + Material 3
-- Hosted bridge: `https://vanguard-aegis-id-65067d.azurewebsites.net`
+- Hosted bridge: `https://vanguard-aegis-id-0e75d1.azurewebsites.net`
 
 ## Build Locally
 
@@ -62,7 +62,7 @@ Wallet passkeys are optional. Use them when an organization requires phishing-re
    ```bash
    az webapp config appsettings set \
      --resource-group rg-vanguard-aegis-id \
-     --name vanguard-aegis-id-65067d \
+     --name vanguard-aegis-id-0e75d1 \
      --settings \
        ANDROID_APP_PACKAGE_NAME=ca.vanguardcs.aegisid.wallet \
        ANDROID_SHA256_CERT_FINGERPRINTS="<sha256-fingerprint>"
@@ -71,7 +71,7 @@ Wallet passkeys are optional. Use them when an organization requires phishing-re
 4. Redeploy or restart Aegis ID and confirm:
 
    ```text
-   https://vanguard-aegis-id-65067d.azurewebsites.net/.well-known/assetlinks.json
+   https://vanguard-aegis-id-0e75d1.azurewebsites.net/.well-known/assetlinks.json
    ```
 
 5. In the Android wallet, open **Settings > Wallet passkey assurance**.
@@ -97,7 +97,7 @@ High-level flow:
 ```bash
 az webapp config appsettings set \
   --resource-group rg-vanguard-aegis-id \
-  --name vanguard-aegis-id-65067d \
+  --name vanguard-aegis-id-0e75d1 \
   --settings ANDROID_TESTING_URL="https://play.google.com/apps/test/your-link"
 ```
 
