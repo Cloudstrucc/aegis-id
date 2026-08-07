@@ -662,52 +662,197 @@ h3 {
   text-transform: uppercase;
 }
 
-.architecture-strip {
-  display: grid;
-  grid-template-columns: auto 1fr auto 1fr auto;
-  align-items: center;
-  gap: 14px;
-  max-width: 1120px;
-  margin: 0 auto;
-}
-
-.flow-break {
-  display: none;
-}
-
-.flow-node {
-  min-width: 148px;
-  padding: 16px 18px;
-  text-align: center;
+/* Architecture on the home page.
+ *
+ * Read left to right: prove who you are, Aegis decides, applications act on
+ * it. The middle column is deliberately the loudest — it is the only part that
+ * is the product rather than an integration. The lab sits underneath, quieter
+ * and fenced off, because it is never on the product path. */
+.section-heading--inverse h2 {
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
+}
+
+.section-heading--inverse p {
+  color: rgba(226, 238, 250, 0.78);
+}
+
+.arch-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+  margin-top: 32px;
+}
+
+.arch-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+/* The step marker doubles as the connector: an arrow from each column into the
+ * next, rather than a line between boxes that implied a sequence that was not
+ * real. */
+.arch-col + .arch-col::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -13px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid rgba(255, 255, 255, 0.28);
+  border-right: 2px solid rgba(255, 255, 255, 0.28);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.arch-col__head h3 {
+  margin: 10px 0 8px;
+  color: #ffffff;
+  font-size: 1.22rem;
+  line-height: 1.25;
+}
+
+.arch-col__head p {
+  margin: 0;
+  color: rgba(214, 229, 245, 0.72);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.arch-col__kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--navy-950);
+  font-size: 0.72rem;
   font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.flow-node--blue {
-  background: rgba(23, 105, 224, 0.28);
+.arch-col__list {
+  display: grid;
+  gap: 10px;
+  margin: auto 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.flow-node--cyan {
-  background: rgba(0, 183, 199, 0.24);
+.arch-col__list li {
+  display: grid;
+  gap: 2px;
+  padding: 11px 14px;
+  border-left: 3px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0 8px 8px 0;
+  background: rgba(6, 22, 37, 0.55);
 }
 
-.flow-node--green {
-  background: rgba(25, 185, 122, 0.24);
+.arch-col__list strong {
+  color: #ffffff;
+  font-size: 0.94rem;
+  font-weight: 800;
 }
 
-.flow-node--lab {
-  background: rgba(247, 185, 85, 0.18);
+.arch-col__list span {
+  color: rgba(200, 218, 236, 0.72);
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 
-.flow-line {
-  height: 2px;
-  background: linear-gradient(90deg, var(--blue-600), var(--cyan-500));
+.arch-col--blue .arch-col__kicker {
+  background: var(--blue-600);
+  color: #ffffff;
 }
 
-.flow-line--lab {
-  background: linear-gradient(90deg, var(--amber-400), var(--green-500));
+.arch-col--blue .arch-col__list li {
+  border-left-color: var(--blue-600);
+}
+
+.arch-col--cyan {
+  border-color: rgba(0, 183, 199, 0.45);
+  background: rgba(0, 183, 199, 0.09);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+.arch-col--cyan .arch-col__kicker {
+  background: var(--cyan-500);
+}
+
+.arch-col--cyan .arch-col__list li {
+  border-left-color: var(--cyan-500);
+}
+
+.arch-col--green .arch-col__kicker {
+  background: var(--green-500);
+  color: #04241a;
+}
+
+.arch-col--green .arch-col__list li {
+  border-left-color: var(--green-500);
+}
+
+.arch-lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 26px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 22px 24px;
+  border: 1px dashed rgba(247, 185, 85, 0.38);
+  border-radius: 14px;
+  background: rgba(247, 185, 85, 0.05);
+}
+
+.arch-lab__label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(247, 185, 85, 0.16);
+  color: var(--amber-400);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.arch-lab__copy h3 {
+  margin: 10px 0 6px;
+  color: #ffffff;
+  font-size: 1.08rem;
+}
+
+.arch-lab__copy p {
+  margin: 0;
+  color: rgba(214, 229, 245, 0.7);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.arch-lab__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arch-lab__list li {
+  padding: 7px 12px;
+  border: 1px solid rgba(247, 185, 85, 0.24);
+  border-radius: 999px;
+  color: rgba(233, 224, 208, 0.88);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .subscription-layout {
@@ -3920,14 +4065,20 @@ body.document-page .embedded-document {
     position: static;
   }
 
-  .architecture-strip {
+  .arch-flow {
     grid-template-columns: 1fr;
   }
 
-  .flow-line {
-    width: 2px;
-    height: 28px;
-    justify-self: center;
+  /* Stacked, the connector has to point down rather than across. */
+  .arch-col + .arch-col::before {
+    top: -13px;
+    left: 50%;
+    transform: translateX(-50%) rotate(135deg);
+  }
+
+  .arch-lab {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 }
 

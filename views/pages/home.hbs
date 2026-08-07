@@ -164,20 +164,45 @@
   </div>
 </section>
 
-<section class="band band--ink">
-  <div class="architecture-strip" aria-label="Architecture flow">
-    <div class="flow-node flow-node--blue">YubiKey</div>
-    <div class="flow-line"></div>
-    <div class="flow-node flow-node--cyan">Entra ID</div>
-    <div class="flow-line"></div>
-    <div class="flow-node flow-node--green">Verified ID</div>
-    <div class="flow-break"></div>
-    <div class="flow-node flow-node--lab">ACA-Py</div>
-    <div class="flow-line flow-line--lab"></div>
-    <div class="flow-node flow-node--lab">Aegis ID mobile app</div>
-    <div class="flow-line flow-line--lab"></div>
-    <div class="flow-node flow-node--lab">VON Dev Ledger</div>
+<section class="band band--ink" id="architecture">
+  <div class="section-heading section-heading--inverse">
+    <p class="eyebrow">{{architecture.eyebrow}}</p>
+    <h2>{{architecture.title}}</h2>
+    <p>{{architecture.lead}}</p>
   </div>
+
+  <div class="arch-flow">
+    {{#each architecture.columns}}
+      <article class="arch-col arch-col--{{tone}}">
+        <header class="arch-col__head">
+          <span class="arch-col__kicker">{{kicker}}</span>
+          <h3>{{title}}</h3>
+          <p>{{summary}}</p>
+        </header>
+        <ul class="arch-col__list">
+          {{#each items}}
+            <li>
+              <strong>{{name}}</strong>
+              <span>{{detail}}</span>
+            </li>
+          {{/each}}
+        </ul>
+      </article>
+    {{/each}}
+  </div>
+
+  <aside class="arch-lab">
+    <div class="arch-lab__copy">
+      <span class="arch-lab__label">{{architecture.lab.label}}</span>
+      <h3>{{architecture.lab.title}}</h3>
+      <p>{{architecture.lab.summary}}</p>
+    </div>
+    <ul class="arch-lab__list">
+      {{#each architecture.lab.items}}
+        <li>{{this}}</li>
+      {{/each}}
+    </ul>
+  </aside>
 </section>
 
 <section class="band band--white" id="assurance">

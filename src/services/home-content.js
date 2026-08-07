@@ -113,6 +113,70 @@ function getHomeContent(overrides = {}) {
         markers: ['DIDComm', 'AnonCreds', 'Mediator testing', 'Wallet interop']
       }
     ],
+    // The architecture picture, read left to right: how somebody proves who
+    // they are, what Aegis decides, and what consumes the decision.
+    //
+    // The old strip was six unlabelled boxes joined by lines, which implied a
+    // pipeline that does not exist — YubiKey does not flow into Entra ID. It
+    // also put the Aegis wallet in the lab lane beside ACA-Py and left Aegis
+    // itself out of its own architecture, which reads as though the product is
+    // a set of somebody else's tools. Aegis is the policy decision point; the
+    // rest are adapters.
+    architecture: {
+      eyebrow: 'How it fits together',
+      title: 'Aegis ID decides. Everything else is an adapter.',
+      lead:
+        'Identity can be proven in several ways and consumed by any number of applications. What stays constant is the middle: one place that holds the policy, makes the call, and records the evidence.',
+      columns: [
+        {
+          id: 'inbound',
+          tone: 'blue',
+          kicker: 'Step 1',
+          title: 'Prove who you are',
+          summary: 'Any of these, alone or combined, depending on what the moment is worth.',
+          items: [
+            { name: 'Passkeys and YubiKey', detail: 'Phishing-resistant, hardware-backed' },
+            { name: 'Aegis wallet approval', detail: 'Approve or decline from your own device' },
+            { name: 'Microsoft Entra ID', detail: 'Links to an existing account, never creates one' },
+            { name: 'Verified ID', detail: 'A portable credential presented from Authenticator' },
+            { name: 'Password and a code', detail: 'The baseline, never enough on its own' }
+          ]
+        },
+        {
+          id: 'core',
+          tone: 'cyan',
+          kicker: 'Step 2',
+          title: 'Aegis ID decides',
+          summary: 'Deny by default, enforced server-side, and written down whichever way it goes.',
+          items: [
+            { name: 'Authorization and policy', detail: 'One decision point, not per-application rules' },
+            { name: 'Credential issuance', detail: 'Bound to a wallet, revocable, consent recorded' },
+            { name: 'Root wallets and recovery', detail: 'The organization can recover itself' },
+            { name: 'Evidence ledger', detail: 'Hash-chained and append only' }
+          ]
+        },
+        {
+          id: 'outbound',
+          tone: 'green',
+          kicker: 'Step 3',
+          title: 'Applications act on it',
+          summary: 'They ask Aegis rather than keeping their own copy of who may do what.',
+          items: [
+            { name: 'Connected apps', detail: 'Aegis-issued OIDC and OAuth' },
+            { name: 'Business Expenses', detail: 'Wallet-signed approvals' },
+            { name: 'Digital signature', detail: 'Envelope signing with wallet consent' },
+            { name: 'Your own applications', detail: 'Any OIDC or SAML relying party' }
+          ]
+        }
+      ],
+      lab: {
+        label: 'Interoperability lab',
+        title: 'Kept off the product path on purpose.',
+        summary:
+          'ACA-Py agents and a VON dev ledger run in their own boundary for Aries interoperability testing. Nothing on the path above depends on them, which is why the product works on deployments where the lab is not running at all.',
+        items: ['ACA-Py issuer, verifier, mediator', 'VON / Indy dev ledger', 'DIDComm and AnonCreds']
+      }
+    },
     assuranceModes: [
       {
         icon: 'VID',
