@@ -250,3 +250,94 @@ private fun WalletStore.registerProductOrganizationConnection(invite: Organizati
         )
     )
 }
+
+// --- Root wallets and break glass --------------------------------------------
+
+/**
+ * Confirm this wallet's nomination as a root wallet of an organization.
+ *
+ * A Wallet ID is an identifier, not a secret, so a nomination on its own grants
+ * nothing: the token in the QR is what proves the nominated device is the one
+ * holding the link. A nomination naming a different wallet is refused here, so
+ * the holder gets an immediate explanation rather than a server-side
+ * "not valid" that reads like a fault.
+ */
+suspend fun WalletStore.confirmRootWalletNomination(confirmation: RootWalletConfirmation) {
+    val id = walletId
+    if (id == null) {
+        setImportResult(error = "Finish setting up your wallet before confirming a root wallet nomination.")
+        return
+    }
+
+    if (!WalletIdFormat.matches(confirmation.walletId, id)) {
+        setImportResult(error = "This nomination is for wallet ${confirmation.walletId}, not this one.")
+        return
+    }
+
+    try {
+        val message = registrationClientRef.confirmRootWallet(
+            walletId = id,
+            token = confirmation.token,
+            sourceWebAppUrl = confirmation.sourceWebAppUrl
+        )
+        setImportResult(message = message)
+    } catch (error: Exception) {
+        setImportResult(error = error.message ?: "That nomination could not be confirmed.")
+    }
+}
+
+/**
+ * Grant the standing permission that makes a break-glass code usable.
+ *
+ * The link carries only the token. **This wallet supplies its own Wallet ID** —
+ * never one from the link — because any of the organization's confirmed root
+ * wallets may authorise, and it is the server's check that this wallet is one of
+ * them that gives the authorisation its meaning.
+ */
+suspend fun WalletStore.authoriseBreakGlassCode(authorisation: BreakGlassAuthorisation) {
+    val id = walletId
+    if (id == null) {
+        setImportResult(error = "Finish setting up your wallet before authorising a break-glass code.")
+        return
+    }
+
+    try {
+        val message = registrationClientRef.authoriseBreakGlass(
+            walletId = id,
+            token = authorisation.token,
+            sourceWebAppUrl = authorisation.sourceWebAppUrl
+        )
+        setImportResult(message = message)
+    } catch (error: Exception) {
+        setImportResult(error = error.message ?: "That code could not be authorised.")
+    }
+}
+
+/**
+ * Approve an organization administrator's recovery.
+ *
+ * This wallet is one of the organization's root wallets, and two of them have to
+ * agree before the administrator is re-enrolled. The link reached this holder's
+ * own address rather than the person recovering, which is what keeps a stolen
+ * inbox from approving itself; this wallet still supplies its own Wallet ID, so
+ * the approval names a device.
+ */
+suspend fun WalletStore.approveAccountRecovery(approval: RecoveryApproval) {
+    val id = walletId
+    if (id == null) {
+        setImportResult(error = "Finish setting up your wallet before approving a recovery.")
+        return
+    }
+
+    try {
+        val message = registrationClientRef.approveAccountRecovery(
+            walletId = id,
+            requestId = approval.requestId,
+            token = approval.token,
+            sourceWebAppUrl = approval.sourceWebAppUrl
+        )
+        setImportResult(message = message)
+    } catch (error: Exception) {
+        setImportResult(error = error.message ?: "That recovery could not be approved.")
+    }
+}

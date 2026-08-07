@@ -90,6 +90,27 @@ final class WalletStore: ObservableObject {
                 return
             }
 
+            // Root wallet confirmation and break-glass authorisation. Checked
+            // before the credential parsers because both are plain aegisid://
+            // links and only the host tells them apart.
+            if AegisRootWalletLinkParser.canParseConfirmation(rawText) {
+                let confirmation = try AegisRootWalletLinkParser.parseConfirmation(rawText)
+                Task { await confirmRootWalletNomination(confirmation) }
+                return
+            }
+
+            if AegisRootWalletLinkParser.canParseBreakGlass(rawText) {
+                let authorisation = try AegisRootWalletLinkParser.parseBreakGlass(rawText)
+                Task { await authoriseBreakGlassCode(authorisation) }
+                return
+            }
+
+            if AegisRootWalletLinkParser.canParseRecoveryApproval(rawText) {
+                let approval = try AegisRootWalletLinkParser.parseRecoveryApproval(rawText)
+                Task { await approveAccountRecovery(approval) }
+                return
+            }
+
             if AegisCredentialInviteParser.canParse(rawText) {
                 let credentialInvite = try AegisCredentialInviteParser.parse(rawText)
                 // Fail fast and explain when the invite belongs to another wallet.

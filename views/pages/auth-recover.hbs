@@ -62,6 +62,14 @@
           </form>
         {{/if}}
 
+        {{#if (eq stage "email")}}
+          <p class="form-footnote">
+            If your organization has root wallets, they can approve your recovery instead —
+            and once it has three confirmed, that is the only way.
+            <a href="/auth/recover/approvals">Recover with your root wallets</a>.
+          </p>
+        {{/if}}
+
         <p class="form-footnote"><a href="/auth/login">Back to sign in</a></p>
       </div>
     </div>

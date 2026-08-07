@@ -7,6 +7,7 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 
 /**
  * Product-path client for wallet identity, contact changes, recovery, and
@@ -105,6 +106,76 @@ class WalletRegistrationClient(
         )
     }
 
+    // --- Root wallets and break glass ----------------------------------------
+
+    /**
+     * Confirm this device's nomination as a root wallet.
+     *
+     * Both values come from the link: the organization nominated a specific
+     * Wallet ID, and the token bound to it is the whole authorization — which
+     * is why nominating alone grants nothing.
+     */
+    suspend fun confirmRootWallet(
+        walletId: String,
+        token: String,
+        sourceWebAppUrl: String? = null
+    ): String {
+        val response = get(
+            "/api/root-wallets/confirm",
+            mapOf("wallet_id" to walletId, "token" to token),
+            sourceWebAppUrl
+        )
+        return response.optString("message").ifBlank {
+            "This wallet can now recover control of the organization."
+        }
+    }
+
+    /**
+     * Authorise a break-glass code as a root wallet of the organization.
+     *
+     * [walletId] is **this device's own**, never one carried in the link. Any of
+     * the organization's confirmed root wallets may authorise, so the link
+     * cannot name one; supplying our own is what makes the authorisation
+     * evidence that a root wallet agreed rather than that somebody had a URL.
+     */
+    suspend fun authoriseBreakGlass(
+        walletId: String,
+        token: String,
+        sourceWebAppUrl: String? = null
+    ): String {
+        val response = get(
+            "/api/break-glass/authorise",
+            mapOf("wallet_id" to walletId, "token" to token),
+            sourceWebAppUrl
+        )
+        return response.optString("message").ifBlank {
+            "The organization can now be recovered with this code if every root wallet is lost."
+        }
+    }
+
+    /**
+     * Approve an administrator's recovery as a root wallet.
+     *
+     * Same shape as break-glass: the token says which request, and [walletId] —
+     * **this device's own** — says who approved. The token was minted for this
+     * wallet alone, so two approvals genuinely mean two devices.
+     */
+    suspend fun approveAccountRecovery(
+        walletId: String,
+        requestId: String,
+        token: String,
+        sourceWebAppUrl: String? = null
+    ): String {
+        val response = get(
+            "/api/account-recovery/approve",
+            mapOf("wallet_id" to walletId, "request_id" to requestId, "token" to token),
+            sourceWebAppUrl
+        )
+        return response.optString("message").ifBlank {
+            "Approved. ${response.optInt("approvalCount")} of ${response.optInt("approvalsRequired")} approvals."
+        }
+    }
+
     // --- Contact changes (challenge gated) -----------------------------------
 
     suspend fun startContactChange(walletId: String, field: String, value: String): String =
@@ -197,6 +268,17 @@ class WalletRegistrationClient(
 
     private suspend fun get(path: String, sourceWebAppUrl: String? = null): JSONObject =
         request("GET", path, null, sourceWebAppUrl)
+
+    private suspend fun get(
+        path: String,
+        query: Map<String, String>,
+        sourceWebAppUrl: String? = null
+    ): JSONObject {
+        val encoded = query.entries.joinToString("&") { (name, value) ->
+            "${URLEncoder.encode(name, "UTF-8")}=${URLEncoder.encode(value, "UTF-8")}"
+        }
+        return request("GET", if (encoded.isEmpty()) path else "$path?$encoded", null, sourceWebAppUrl)
+    }
 
     private suspend fun post(path: String, body: JSONObject, sourceWebAppUrl: String? = null): JSONObject =
         request("POST", path, body, sourceWebAppUrl)

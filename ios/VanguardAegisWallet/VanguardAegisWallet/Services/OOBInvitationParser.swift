@@ -55,7 +55,10 @@ enum AegisCredentialInviteParser {
     }
 
     private static func isCredentialInvite(_ components: URLComponents) -> Bool {
-        if components.scheme == "aegisid", components.host == "credential-invite" {
+        // Any Aegis scheme, not just the production one — each build registers
+        // its own, so a literal match dropped every dev and qa invite.
+        if AegisWalletEnvironment.isAegisScheme(components.scheme),
+           components.host?.lowercased() == "credential-invite" {
             return true
         }
 
@@ -403,10 +406,12 @@ enum AegisOrganizationInviteParser {
     }
 
     private static func isOrganizationInvite(_ components: URLComponents) -> Bool {
-        let scheme = components.scheme?.lowercased()
         let host = components.host?.lowercased()
         let path = components.path.lowercased()
-        return scheme == "aegisid" && (host == "org-invite" || path.contains("org-invite"))
+        // Not a literal "aegisid": each build registers its own scheme, so
+        // matching the production one dropped every dev and qa link.
+        return AegisWalletEnvironment.isAegisScheme(components.scheme)
+            && (host == "org-invite" || path.contains("org-invite"))
     }
 
     private static func value(_ names: [String], in items: [URLQueryItem]) -> String? {
@@ -428,6 +433,159 @@ enum AegisOrganizationInviteParser {
                 return "That QR code is not an Aegis organization invitation."
             case .missingRequiredFields:
                 return "This organization invitation is missing required details."
+            }
+        }
+    }
+}
+
+// MARK: - Root wallet confirmation and break-glass authorisation
+
+/// `aegisid://root-wallet-confirm?wallet_id=…&token=…`
+///
+/// An organization has nominated this wallet as one that can recover
+/// administrative control. Nominating alone grants nothing — the token in this
+/// link is what turns a nomination into a confirmed root wallet, which is why
+/// it travels in the QR and appears nowhere on the page that produced it.
+struct AegisRootWalletConfirmation: Equatable, Hashable {
+    /// The wallet the organization nominated, taken from the link. Unlike the
+    /// break-glass case this is knowable in advance, so the server binds the
+    /// token to it and the app can say plainly when it is a different device.
+    var walletId: String
+    var token: String
+    var sourceWebAppURL: String?
+    var rawURL: String
+}
+
+/// `aegisid://break-glass-authorise?token=…`
+///
+/// A root wallet granting the standing permission that makes a break-glass code
+/// usable. The link deliberately carries no Wallet ID: *any* of the
+/// organization's confirmed root wallets may authorise, so the scanning wallet
+/// supplies its own. That is what makes the authorisation mean "a root wallet
+/// of this organization agreed" rather than "somebody had this link".
+struct AegisBreakGlassAuthorisation: Equatable, Hashable {
+    var token: String
+    var sourceWebAppURL: String?
+    var rawURL: String
+}
+
+/// `aegisid://recovery-approve?request_id=…&token=…`
+///
+/// An administrator of an organization this wallet is a root wallet of has lost
+/// their device. Two root wallets have to approve before they are re-enrolled.
+///
+/// The token names *this* wallet and was sent to its holder's own address,
+/// never to the person recovering — which is what stops a stolen inbox from
+/// approving its own recovery. The wallet still supplies its own Wallet ID.
+struct AegisRecoveryApproval: Equatable, Hashable {
+    var requestId: String
+    var token: String
+    var sourceWebAppURL: String?
+    var rawURL: String
+}
+
+enum AegisRootWalletLinkParser {
+    static func canParseConfirmation(_ rawText: String) -> Bool {
+        components(rawText).map { isHost($0, "root-wallet-confirm") } ?? false
+    }
+
+    static func canParseBreakGlass(_ rawText: String) -> Bool {
+        components(rawText).map { isHost($0, "break-glass-authorise") } ?? false
+    }
+
+    static func canParseRecoveryApproval(_ rawText: String) -> Bool {
+        components(rawText).map { isHost($0, "recovery-approve") } ?? false
+    }
+
+    static func parseRecoveryApproval(_ rawText: String) throws -> AegisRecoveryApproval {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let parts = components(trimmed), isHost(parts, "recovery-approve") else {
+            throw ParserError.invalidLink
+        }
+
+        let items = parts.queryItems ?? []
+        guard let requestId = value(["request_id", "requestId"], in: items),
+              let token = value(["token"], in: items)
+        else {
+            throw ParserError.missingRequiredFields
+        }
+
+        return AegisRecoveryApproval(
+            requestId: requestId,
+            token: token,
+            sourceWebAppURL: value(["vanguard_web_app_url"], in: items),
+            rawURL: trimmed
+        )
+    }
+
+    static func parseConfirmation(_ rawText: String) throws -> AegisRootWalletConfirmation {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let parts = components(trimmed), isHost(parts, "root-wallet-confirm") else {
+            throw ParserError.invalidLink
+        }
+
+        let items = parts.queryItems ?? []
+        guard let walletId = value(["wallet_id", "walletId"], in: items),
+              let token = value(["token"], in: items)
+        else {
+            throw ParserError.missingRequiredFields
+        }
+
+        return AegisRootWalletConfirmation(
+            walletId: walletId,
+            token: token,
+            sourceWebAppURL: value(["vanguard_web_app_url"], in: items),
+            rawURL: trimmed
+        )
+    }
+
+    static func parseBreakGlass(_ rawText: String) throws -> AegisBreakGlassAuthorisation {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let parts = components(trimmed), isHost(parts, "break-glass-authorise") else {
+            throw ParserError.invalidLink
+        }
+
+        guard let token = value(["token"], in: parts.queryItems ?? []) else {
+            throw ParserError.missingRequiredFields
+        }
+
+        return AegisBreakGlassAuthorisation(
+            token: token,
+            sourceWebAppURL: value(["vanguard_web_app_url"], in: parts.queryItems ?? []),
+            rawURL: trimmed
+        )
+    }
+
+    private static func components(_ rawText: String) -> URLComponents? {
+        URLComponents(string: rawText.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    private static func isHost(_ parts: URLComponents, _ host: String) -> Bool {
+        guard AegisWalletEnvironment.isAegisScheme(parts.scheme) else {
+            return false
+        }
+        return parts.host?.lowercased() == host || parts.path.lowercased().contains(host)
+    }
+
+    private static func value(_ names: [String], in items: [URLQueryItem]) -> String? {
+        for name in names {
+            if let found = items.first(where: { $0.name == name })?.value, !found.isEmpty {
+                return found
+            }
+        }
+        return nil
+    }
+
+    enum ParserError: LocalizedError {
+        case invalidLink
+        case missingRequiredFields
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidLink:
+                return "That QR code is not an Aegis root wallet link."
+            case .missingRequiredFields:
+                return "This root wallet link is missing its confirmation token."
             }
         }
     }

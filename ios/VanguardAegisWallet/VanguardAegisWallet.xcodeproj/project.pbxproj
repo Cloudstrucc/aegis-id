@@ -1039,7 +1039,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				AEGIS_APP_DISPLAY_NAME = "Aegis ID Dev";
-				AEGIS_URL_SCHEME = "aegisid-dev";
+				AEGIS_URL_SCHEME = "aegisid-local";
 				AEGIS_WEB_APP_BASE_URL = "http://localhost:3000";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;

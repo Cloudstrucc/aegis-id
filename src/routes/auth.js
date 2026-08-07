@@ -34,6 +34,13 @@ const {
 } = require('../services/account-recovery-service');
 const { confirmVerificationToken, sendVerificationEmail } = require('../services/email-verification-service');
 const { consumeGrant, resolveGrant } = require('../services/account-reenrolment-service');
+const {
+  APPROVALS_REQUIRED,
+  claimApproverRecovery,
+  requiresApproverRecovery,
+  resolveStatusLink,
+  startApproverRecovery
+} = require('../services/approver-recovery-service');
 const { isLocalTestRequest } = require('../middleware/local-test-mode');
 const {
   ensureAccountAccessSubscription
@@ -439,7 +446,18 @@ router.post('/auth/recover', requireAnonymous, authorize('auth.accountRecovery')
       const account = await findAccountByEmail(email);
       // Only passwordless accounts recover this way; a password account has the
       // reset link instead. Either way the response is identical.
-      if (account?.passwordless && (await getRemainingAccountCodeCount(account.id)) > 0) {
+      //
+      // An account whose organization has the recommended three confirmed root
+      // wallets is withheld here too: a code plus an emailed code is weaker
+      // than two root wallets, and leaving it in place would just be the way
+      // in. The page says so to everybody rather than only to them, because
+      // answering differently would turn this form into a way to discover
+      // which organizations have how many root wallets.
+      if (
+        account?.passwordless &&
+        (await getRemainingAccountCodeCount(account.id)) > 0 &&
+        !(await requiresApproverRecovery(account))
+      ) {
         userId = account.id;
       }
     }
@@ -529,6 +547,96 @@ router.post('/auth/recover/verify', requireAnonymous, authorize('auth.accountRec
     return next(error);
   }
 });
+
+// --- recovery approved by the organization's own root wallets ---------------
+//
+// The routine case root wallets were always meant to cover: an administrator
+// who has lost their authenticator, recovered by their organization rather than
+// by us. Two of its confirmed root wallets approve from their own devices, and
+// the re-enrolment grant follows with no platform administrator anywhere in it.
+//
+// Every response here is identical whether or not the address is known and
+// whether or not its organization has approvers. Varying it would turn this
+// form into a way to enumerate accounts and to count somebody's root wallets.
+
+function approverRecoveryView(overrides = {}) {
+  return {
+    title: 'Recover with your root wallets',
+    description: "Ask your organization's root wallets to approve.",
+    approvalsRequired: APPROVALS_REQUIRED,
+    stage: 'email',
+    errorMessage: null,
+    ...overrides
+  };
+}
+
+router.get('/auth/recover/approvals', requireAnonymous, (req, res) => {
+  res.render('pages/auth-recover-approvals', approverRecoveryView());
+});
+
+router.post('/auth/recover/approvals', requireAnonymous, authorize('auth.accountRecovery'), async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const limit = rateLimit.consume(`recover-approvals:ip:${req.ip}`, { limit: 10, windowMs: 15 * 60 * 1000 });
+
+    if (limit.allowed) {
+      await startApproverRecovery(email, {
+        baseUrl: `${req.protocol}://${req.get('host')}`,
+        context: { ip: req.ip }
+      });
+    }
+
+    // The same answer either way, including when the rate limit refused it.
+    return res.render('pages/auth-recover-approvals', approverRecoveryView({ stage: 'sent' }));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/auth/recover/approvals/:token', requireAnonymous, async (req, res, next) => {
+  try {
+    const request = await resolveStatusLink(req.params.token);
+    if (!request) {
+      return res.status(404).render('pages/auth-recover-approvals', approverRecoveryView({
+        stage: 'expired'
+      }));
+    }
+    return res.render('pages/auth-recover-approvals', approverRecoveryView({
+      stage: 'status',
+      statusToken: req.params.token,
+      request
+    }));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post(
+  '/auth/recover/approvals/:token/claim',
+  requireAnonymous,
+  authorize('auth.accountRecovery'),
+  async (req, res, next) => {
+    try {
+      await claimApproverRecovery(req.params.token, {
+        baseUrl: `${req.protocol}://${req.get('host')}`
+      });
+      // The re-enrolment link goes to the account's own address, exactly as it
+      // does when an administrator authorises one. Nothing is shown here.
+      return res.render('pages/auth-recover-approvals', approverRecoveryView({ stage: 'granted' }));
+    } catch (error) {
+      if (error.expose) {
+        const request = await resolveStatusLink(req.params.token);
+        return res.status(error.status || 400).render('pages/auth-recover-approvals', approverRecoveryView({
+          stage: request ? 'status' : 'expired',
+          statusToken: req.params.token,
+          request,
+          errorMessage: error.message
+        }));
+      }
+      return next(error);
+    }
+  }
+);
 
 // --- passkey as a first factor -------------------------------------------
 //

@@ -98,6 +98,20 @@ const MESSAGE_TYPES = Object.freeze({
     description: 'Sent when an administrator authorises a locked-out account to register a new passkey.',
     defaults: { email: true, sms: false }
   },
+  'approver-recovery': {
+    id: 'approver-recovery',
+    label: 'Root wallet approval request',
+    description:
+      'Sent to each root wallet holder when an administrator asks their organization to approve a recovery. It goes to the holders, never to the person recovering.',
+    defaults: { email: true, sms: true }
+  },
+  'approver-recovery-status': {
+    id: 'approver-recovery-status',
+    label: 'Recovery approval progress',
+    description:
+      'Sent to the person recovering so they can watch the approvals arrive. It carries no approval token and grants nothing.',
+    defaults: { email: true, sms: false }
+  },
   'wallet-recovery': {
     id: 'wallet-recovery',
     label: 'Wallet recovery code',

@@ -81,6 +81,10 @@ const POLICIES = Object.freeze({
     description:
       'A wallet confirming its own nomination. Authorization is the confirmation token, which only the nominated device receives.'
   }),
+  'api.rootWallet.approveRecovery': policy('api.rootWallet.approveRecovery', 'external', 'account-recovery', 'approve', {
+    description:
+      "A root wallet approving an administrator's recovery. Authorization is a token minted for that one wallet and sent to its own holder, so the person recovering never holds it."
+  }),
   'public.organization': policy('public.organization', 'public', 'organization-profile', 'read', {
     description:
       'The canonical page for an organization handle. Public by necessity — a holder checking who invited them has no account here.'

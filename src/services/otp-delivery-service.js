@@ -77,6 +77,44 @@ const TEMPLATES = {
     ].join('\n'),
     sms: `Set up a new Aegis ID passkey: ${reenrolUrl}`
   }),
+  'approver-recovery': ({ approvalUrl, expiresInHours, organizationName, requesterEmail }) => ({
+    subject: `Approve a recovery for ${organizationName || 'your organization'}`,
+    text: [
+      'Hello,',
+      '',
+      `Your wallet is a root wallet of ${organizationName || 'an Aegis ID organization'}.`,
+      `${requesterEmail || 'An administrator'} has asked to recover their access,`,
+      'and two root wallets have to approve before anything is issued.',
+      '',
+      'Open this on the device holding that wallet:',
+      approvalUrl,
+      '',
+      `This link expires in ${expiresInHours} hours and works only with your wallet.`,
+      '',
+      'If you were not expecting this, do not approve it. Someone may be trying',
+      'to take over that account — tell the other root wallet holders.'
+    ].join('\n'),
+    sms: `Approve an Aegis ID recovery for ${organizationName || 'your organization'}: ${approvalUrl}`
+  }),
+  'approver-recovery-status': ({ statusUrl, expiresInHours, organizationName, approvalsRequired }) => ({
+    subject: 'Your Aegis ID recovery is waiting on your root wallets',
+    text: [
+      'Hello,',
+      '',
+      `You asked to recover your access to ${organizationName || 'your organization'}.`,
+      `${approvalsRequired} of your organization's root wallet holders have been asked to`,
+      'approve from their own wallets. You can watch the progress here:',
+      '',
+      statusUrl,
+      '',
+      `This page expires in ${expiresInHours} hours.`,
+      '',
+      'This link grants nothing on its own — the approvals were sent to the',
+      'wallet holders, not to you. If you did not ask for this, no action is',
+      'needed; nothing can be issued without those approvals.'
+    ].join('\n'),
+    sms: `Your Aegis ID recovery is waiting on root wallet approvals: ${statusUrl}`
+  }),
   'wallet-recovery': ({ code, walletId }) => ({
     subject: 'Your Aegis ID wallet recovery code',
     text: [

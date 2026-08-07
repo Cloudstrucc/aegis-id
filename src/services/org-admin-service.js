@@ -2443,7 +2443,7 @@ async function buildCredentialInvitation(workspace, credential, options = {}) {
   if (credential.bindingMode) {
     walletParams.set('binding_mode', credential.bindingMode);
   }
-  const inviteUrl = `aegisid://credential-invite?${walletParams.toString()}`;
+  const inviteUrl = `${config.app.walletUrlScheme}://credential-invite?${walletParams.toString()}`;
   const webInviteUrl = `${publicBaseUrl}/wallet/credential-invitations/${encodeURIComponent(credential.id)}?organizationId=${encodeURIComponent(workspace.id)}`;
   const invitePayload = {
     credentialId: credential.id,

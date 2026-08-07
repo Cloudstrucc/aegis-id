@@ -74,7 +74,7 @@ app to 3210/4310, and if Aegis moves the iOS leg skips. Each run writes to
 
 The iOS leg needs the wallet installed on a booted simulator: `--install-wallet`
 builds the Local scheme and installs it. Note the Local configuration registers
-the **`aegisid-dev`** URL scheme and the `.dev` bundle id, not `aegisid` — the
+the **`aegisid-local`** URL scheme and the `.dev` bundle id, not `aegisid` — the
 harness reads `AEGIS_URL_SCHEME` from the project rather than assuming. It also
 launches the app before deep-linking, because opening a custom scheme from the
 home screen raises an "Open in …?" prompt that nothing can dismiss.
@@ -331,6 +331,46 @@ device has to be removable at once.
 `.env.qa`; off in `.env.local`**, so the suite runs against the unenforced
 default and enforcement is tested explicitly. Turning it on stops issuance for
 organizations with no root wallet, existing ones included.
+
+**Every wallet deep link carries the environment's own scheme.** A dev build
+registers `aegisid-dev`, so the bare `aegisid` the server used to emit opened
+the production build — or, on iOS where a scheme is claimed exclusively,
+nothing at all. `config.app.walletUrlScheme` maps `local`/`dev`/`qa`/`prod` to
+`aegisid-local`/`aegisid-dev`/`aegisid-qa`/`aegisid`, overridable with
+`WALLET_URL_SCHEME`, and every emitted link uses it. Keep it in step with
+`aegisEnvironment(...)` in the Gradle build and `AEGIS_URL_SCHEME` in the iOS
+project. Both wallets match *any* `aegisid*` scheme on the way in, so a link
+pasted from another environment is still understood rather than rejected as
+"not an Aegis link".
+
+The wallet-facing endpoints (`/api/root-wallets/confirm`,
+`/api/break-glass/authorise`, `/api/account-recovery/approve`) answer a browser
+with a page and a wallet with JSON, chosen by `Accept`. Both wallet clients send
+`Accept: application/json`; without that they were parsing HTML for a yes or no.
+
+## Routine recovery, approved by root wallets
+
+`approver-recovery-service`, at `/auth/recover/approvals`. The case break-glass
+does not cover: an administrator who has lost their authenticator while the
+organization's root wallets are all still there. Two of them approve and the
+re-enrolment grant follows, with **no platform administrator anywhere in it**.
+
+- **A token belongs to one wallet.** Each approval token names the wallet it was
+  minted for and is spent by that wallet presenting its own Wallet ID, so two
+  approvals mean two devices rather than one device scanning twice.
+- **The person recovering never receives a token.** Approval links go to each
+  root wallet holder's own registered address; the requester gets a status page
+  and nothing else. That is the difference from the email path — a stolen inbox
+  now reaches a page it cannot act on.
+- **It replaces the weaker path rather than sitting beside it.** At three
+  confirmed root wallets with enforcement on, `/auth/recover` stops accepting
+  those administrators — silently, by never setting a `userId`, because
+  answering differently would let the form count somebody's root wallets. The
+  page points everybody at the approver flow instead.
+
+Two is the approval threshold and three is where the older path closes: below
+three an organization cannot reliably find two approvers, so taking it away
+would lock people out rather than protect them.
 
 ## Break-glass recovery
 

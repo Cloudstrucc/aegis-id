@@ -51,7 +51,11 @@ test('organization invitation is created without contacting ACA-Py', async () =>
     const record = await service.createIssuerOrganizationInvitation(subscription, workspace);
 
     assert.equal(record.mode, 'product');
-    assert.match(record.invitationUrl, /^aegisid:\/\/org-invite\?/);
+    // This environment's scheme, not the bare `aegisid`: each wallet build
+    // registers its own, and on iOS a scheme is claimed exclusively, so a bare
+    // link opened the production build or nothing at all.
+    const { app } = require('../src/config');
+    assert.match(record.invitationUrl, new RegExp(`^${app.walletUrlScheme}://org-invite\\?`));
     assert.ok(record.qrCodeDataUrl.startsWith('data:image/png;base64,'));
     assert.equal(record.status, 'invitation-created');
 
@@ -179,5 +183,21 @@ test('a product-path wallet can poll for its challenge by organization', async (
     assert.equal(byConnection.length, 0);
 
     delete require.cache[require.resolve('../src/services/wallet-challenge-service')];
+  });
+});
+
+test('the invitation carries the environment build\'s URL scheme, not the bare aegisid', async () => {
+  // Each wallet build registers its own scheme so all four can be installed
+  // side by side. On iOS a scheme is claimed exclusively, so a bare `aegisid`
+  // link opened the production build — or, if it was not installed, nothing.
+  await withIsolatedStore(async (service) => {
+    process.env.WALLET_URL_SCHEME = 'aegisid-qa';
+    resetModules();
+    const scoped = require('../src/services/issuer-organization-service');
+
+    const record = await scoped.createIssuerOrganizationInvitation(subscription, workspace);
+    assert.match(record.invitationUrl, /^aegisid-qa:\/\/org-invite\?/);
+    // The QR and the iOS deep link are the same link, so all three move together.
+    assert.equal(record.iosDeepLinkUrl, record.invitationUrl);
   });
 });

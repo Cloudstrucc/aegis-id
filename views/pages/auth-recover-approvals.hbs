@@ -1,0 +1,103 @@
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Account recovery</p>
+  <h1>Ask your root wallets.</h1>
+  <p>Your organization's root wallets can put you back on your feet without anyone at Vanguard being involved. {{approvalsRequired}} of them have to approve from their own devices.</p>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      {{#if (eq stage "email")}}
+        <p class="eyebrow">Step 1 of 3</p>
+        <h2>Which account?</h2>
+        <p>Enter the address you sign in with. We ask your organization's root wallet holders, not you, to approve.</p>
+      {{else if (eq stage "sent")}}
+        <p class="eyebrow">Step 2 of 3</p>
+        <h2>Your root wallets have been asked.</h2>
+        <p>Nothing was sent to you that can approve anything — the approvals went to the wallet holders themselves.</p>
+      {{else if (eq stage "status")}}
+        <p class="eyebrow">Step 2 of 3</p>
+        <h2>Waiting on approvals.</h2>
+        <p>Each holder approves from the device holding their wallet. You need {{request.approvalsRequired}}.</p>
+      {{else if (eq stage "granted")}}
+        <p class="eyebrow">Step 3 of 3</p>
+        <h2>Approved.</h2>
+        <p>Your organization's root wallets authorised this, and the link to register a new passkey is on its way to your registered address.</p>
+      {{else}}
+        <p class="eyebrow">Recovery</p>
+        <h2>This request is no longer open.</h2>
+        <p>Requests expire, and each one can only be spent once.</p>
+      {{/if}}
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-panel__form">
+        {{#if errorMessage}}<p class="form-alert">{{errorMessage}}</p>{{/if}}
+
+        {{#if (eq stage "email")}}
+          <form action="/auth/recover/approvals" method="post" novalidate>
+            <div class="field-group">
+              <label for="email">Work email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required>
+            </div>
+            <button class="button button--primary" type="submit">Ask for approval</button>
+          </form>
+          <p class="form-footnote">
+            This works when your organization has at least {{approvalsRequired}} confirmed root wallets. If it does not,
+            <a href="/auth/recover">use a recovery code</a> instead.
+          </p>
+        {{else if (eq stage "sent")}}
+          <p>
+            If that address has an account whose organization has root wallets, each holder has been
+            sent a link that works only with their own wallet, and you have been sent a page where you
+            can watch the approvals arrive.
+          </p>
+          <p class="form-footnote">Approvals expire, so ask the holders now rather than later.</p>
+        {{else if (eq stage "status")}}
+          <table class="data-table">
+            <thead>
+              <tr><th scope="col">Root wallet</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody>
+              {{#each request.approvers}}
+                <tr>
+                  <td>
+                    <code>{{walletId}}</code>
+                    {{#if label}}<span class="muted"> — {{label}}</span>{{/if}}
+                  </td>
+                  <td>
+                    {{#if hasApproved}}
+                      <span class="status-pill status-pill--accepted">Approved</span>
+                    {{else if notified}}
+                      <span class="status-pill status-pill--sent">Asked</span>
+                    {{else}}
+                      <span class="status-pill status-pill--revoked">Not reachable</span>
+                    {{/if}}
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+
+          <p class="form-footnote">{{request.approvalCount}} of {{request.approvalsRequired}} approvals.</p>
+
+          {{#if request.isApproved}}
+            <form action="/auth/recover/approvals/{{statusToken}}/claim" method="post">
+              <button class="button button--primary" type="submit">Send my re-enrolment link</button>
+            </form>
+          {{else}}
+            <form action="/auth/recover/approvals/{{statusToken}}" method="get">
+              <button class="button button--secondary" type="submit">Refresh</button>
+            </form>
+          {{/if}}
+        {{else if (eq stage "granted")}}
+          <p>Open the link on the device you want to use from now on. It expires shortly and works once.</p>
+        {{else}}
+          <p><a href="/auth/recover/approvals">Start again</a></p>
+        {{/if}}
+
+        <p class="form-footnote"><a href="/auth/login">Back to sign in</a></p>
+      </div>
+    </div>
+  </div>
+</section>

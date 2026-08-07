@@ -36,6 +36,20 @@
                 <data
                     android:host="wallet"
                     android:scheme="${aegisUrlScheme}" />
+                <!-- Root wallet nomination and break-glass authorisation. Both
+                     are scanned from the organization's root wallets page, and
+                     without these the QR opens nothing. -->
+                <data
+                    android:host="root-wallet-confirm"
+                    android:scheme="${aegisUrlScheme}" />
+                <data
+                    android:host="break-glass-authorise"
+                    android:scheme="${aegisUrlScheme}" />
+                <!-- A root wallet approving an administrator's recovery. The
+                     link is sent to this holder, not to the person recovering. -->
+                <data
+                    android:host="recovery-approve"
+                    android:scheme="${aegisUrlScheme}" />
             </intent-filter>
 
             <intent-filter>

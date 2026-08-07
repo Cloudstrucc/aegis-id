@@ -67,19 +67,6 @@ const NOT_DEPLOYED = new Map([
   ['ISSUER_WALLET_DB_URL', 'aries-lab only'],
   ['AEGIS_ISSUER_DID_METHOD', "aries-lab only; product path defaults to 'web'"],
 
-  // Pre-existing gaps, allowlisted so this guard can start protecting new
-  // settings today rather than waiting on unrelated work. Each falls back to a
-  // usable default, so nothing is broken — but none of them can be configured
-  // per environment either, which is not obviously intended.
-  //   IOS_APP_BUNDLE_IDS           - defaults cover the three shipped bundles
-  //   DIGITAL_SIGNATURE_APP_URL    - derived from BUSINESS_EXPENSES_APP_URL
-  //   AUDIT_SIGNING_LOCAL_KEY_PATH - only read in local-key signing mode, and
-  //                                  its default sits in wwwroot
-  //   AUDIT_ANCHOR_DIR             - same, defaults to data/audit-heads
-  ['IOS_APP_BUNDLE_IDS', 'pre-existing gap; safe default'],
-  ['DIGITAL_SIGNATURE_APP_URL', 'pre-existing gap; derived default'],
-  ['AUDIT_SIGNING_LOCAL_KEY_PATH', 'pre-existing gap; local-key signing only'],
-  ['AUDIT_ANCHOR_DIR', 'pre-existing gap; local-key signing only']
 ]);
 
 test('every setting the code reads is forwarded by the deploy script', () => {

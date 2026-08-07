@@ -97,6 +97,28 @@ const didWebOrigin = normalizedOrigin(process.env.AEGIS_DID_WEB_ORIGIN, didWebDo
 const localTestModeRequested = booleanFlag(process.env.LOCAL_TEST_MODE, false);
 const localTestModeAllowed = localTestModeRequested && (process.env.NODE_ENV || 'development') !== 'production';
 
+const deployEnv = process.env.APP_ENV || process.env.DEPLOY_ENV ||
+  (process.env.NODE_ENV === 'production' ? 'prod' : 'local');
+
+// Every wallet deep link this server emits has to open *this* environment's
+// build. Each build registers its own URL scheme so all four can be installed
+// side by side, so emitting the bare `aegisid` sent every link to the
+// production build — on iOS, where a scheme is claimed exclusively, that meant
+// dev and qa links opened nothing at all.
+//
+// Keep this table in step with `aegisEnvironment(...)` in
+// `android/VanguardAegisWallet/app/build.gradle.kts` and `AEGIS_URL_SCHEME` in
+// the iOS project. `WALLET_URL_SCHEME` overrides it for a deployment whose name
+// is not one of the four.
+const walletUrlSchemes = {
+  local: 'aegisid-local',
+  dev: 'aegisid-dev',
+  qa: 'aegisid-qa',
+  prod: 'aegisid'
+};
+const walletUrlScheme = (process.env.WALLET_URL_SCHEME || '').trim() ||
+  walletUrlSchemes[deployEnv] || 'aegisid';
+
 const config = {
   app: {
     name: 'Vanguard Cloud Services - Aegis ID',
@@ -104,8 +126,10 @@ const config = {
     // The deployment's own name (local/dev/qa/prod), as distinct from NODE_ENV,
     // which is 'production' for dev, qa and prod alike. Surfaced so a page can
     // tell a tester which build belongs to the site they are on.
-    deployEnv: process.env.APP_ENV || process.env.DEPLOY_ENV ||
-      (process.env.NODE_ENV === 'production' ? 'prod' : 'local'),
+    deployEnv,
+    // The URL scheme this environment's wallet build registers. Every deep link
+    // the server emits must use it, or the link opens the wrong build or none.
+    walletUrlScheme,
     port: Number.parseInt(process.env.PORT || '3000', 10),
     publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.APP_PUBLIC_BASE_URL || 'http://localhost:3000',
     iosTestFlightUrl: process.env.IOS_TESTFLIGHT_PUBLIC_URL || '',
@@ -221,6 +245,10 @@ const config = {
     accountReenrolmentGrants: resolveFromRoot(
       process.env.ACCOUNT_REENROLMENT_STORE_PATH,
       'data/account-reenrolment-grants.json'
+    ),
+    approverRecoveryRequests: resolveFromRoot(
+      process.env.APPROVER_RECOVERY_STORE_PATH,
+      'data/approver-recovery-requests.json'
     ),
     // Where the filesystem mail transport drops messages during local
     // development. Outside the repo's data directory because it is not state.

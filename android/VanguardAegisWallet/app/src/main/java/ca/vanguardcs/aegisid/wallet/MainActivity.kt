@@ -60,7 +60,15 @@ class MainActivity : ComponentActivity() {
         // hosts must stay in step with the intent filters in the manifest.
         val isAegisScheme = scheme == BuildConfig.AEGIS_URL_SCHEME.lowercase() ||
             scheme?.startsWith("aegisid") == true
-        val isKnownHost = data.host?.lowercase() in setOf("invite", "credential-invite", "org-invite", "wallet")
+        val isKnownHost = data.host?.lowercase() in setOf(
+            "invite",
+            "credential-invite",
+            "org-invite",
+            "wallet",
+            "root-wallet-confirm",
+            "break-glass-authorise",
+            "recovery-approve"
+        )
 
         if ((isAegisScheme && isKnownHost) || scheme == "openid-vc") {
             store.importInvitation(data.toString())

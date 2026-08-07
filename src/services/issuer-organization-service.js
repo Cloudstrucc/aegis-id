@@ -40,7 +40,10 @@ async function createProductOrganizationInvitation(subscription, workspace) {
     subscription_id: subscription.id,
     vanguard_web_app_url: publicBaseUrl
   });
-  const inviteUrl = `aegisid://org-invite?${params.toString()}`;
+  // This environment's scheme, not the bare `aegisid`: a dev build registers
+  // `aegisid-dev`, and on iOS a scheme is claimed exclusively, so a bare link
+  // opened the production build or nothing.
+  const inviteUrl = `${config.app.walletUrlScheme}://org-invite?${params.toString()}`;
   const webInviteUrl = `${publicBaseUrl}/wallet/organization-invitations/${encodeURIComponent(id)}`;
   const record = {
     id,

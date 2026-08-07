@@ -223,6 +223,39 @@ class WalletStore(
                 return
             }
 
+            // Root wallet confirmation and break-glass authorisation. Checked
+            // before the credential parsers because all of these are plain
+            // aegisid:// links and only the host tells them apart.
+            if (RootWalletLinkParser.canParseConfirmation(rawText)) {
+                val confirmation = RootWalletLinkParser.parseConfirmation(rawText)
+                if (confirmation == null) {
+                    lastImportError = "That root wallet nomination could not be read."
+                    return
+                }
+                viewModelScope.launch { confirmRootWalletNomination(confirmation) }
+                return
+            }
+
+            if (RootWalletLinkParser.canParseBreakGlass(rawText)) {
+                val authorisation = RootWalletLinkParser.parseBreakGlass(rawText)
+                if (authorisation == null) {
+                    lastImportError = "That break-glass authorisation could not be read."
+                    return
+                }
+                viewModelScope.launch { authoriseBreakGlassCode(authorisation) }
+                return
+            }
+
+            if (RootWalletLinkParser.canParseRecoveryApproval(rawText)) {
+                val approval = RootWalletLinkParser.parseRecoveryApproval(rawText)
+                if (approval == null) {
+                    lastImportError = "That recovery approval could not be read."
+                    return
+                }
+                viewModelScope.launch { approveAccountRecovery(approval) }
+                return
+            }
+
             if (AegisCredentialInviteParser.canParse(rawText)) {
                 importCredentialInvite(AegisCredentialInviteParser.parse(rawText))
                 return

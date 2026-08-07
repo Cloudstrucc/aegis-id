@@ -188,8 +188,8 @@ const WALLET_BUNDLE_ID = 'ca.vanguardcs.aegisid.wallet.dev';
 const WALLET_CONFIGURATION = 'Debug-Local';
 
 /**
- * Each configuration registers its own URL scheme (Local and Dev use
- * aegisid-dev, prod uses aegisid), so ask the project rather than assume.
+ * Each configuration registers its own URL scheme (Local uses aegisid-local,
+ * Dev aegisid-dev, prod aegisid), so ask the project rather than assume.
  */
 async function walletUrlScheme() {
   try {

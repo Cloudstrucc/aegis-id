@@ -329,3 +329,103 @@ extension WalletStore {
         }
     }
 }
+
+// MARK: - Root wallets and break glass
+
+@MainActor
+extension WalletStore {
+    /// Confirm this wallet's nomination as a root wallet of an organization.
+    ///
+    /// A Wallet ID is an identifier, not a secret, so a nomination on its own
+    /// grants nothing: the token in the QR is what proves the nominated device
+    /// is the one holding the link. Refused here when it names a different
+    /// wallet, so the holder gets an immediate explanation rather than a
+    /// server-side "not valid" that reads like a fault.
+    func confirmRootWalletNomination(_ confirmation: AegisRootWalletConfirmation) async {
+        lastImportError = nil
+        lastImportMessage = nil
+
+        guard let walletId = identity?.walletId else {
+            lastImportError = "Finish setting up your wallet before confirming a root wallet nomination."
+            return
+        }
+
+        guard WalletIdFormat.matches(confirmation.walletId, walletId) else {
+            lastImportError = "This nomination is for wallet \(confirmation.walletId), not this one."
+            return
+        }
+
+        do {
+            let result = try await registrationClient.confirmRootWallet(
+                walletId: walletId,
+                token: confirmation.token,
+                sourceWebAppURL: confirmation.sourceWebAppURL
+            )
+            lastImportMessage = result.message
+                ?? "This wallet can now recover control of the organization."
+        } catch {
+            lastImportError = error.localizedDescription
+        }
+    }
+
+    /// Grant the standing permission that makes a break-glass code usable.
+    ///
+    /// The link carries only the token. **This wallet supplies its own Wallet
+    /// ID** — never one from the link — because any of the organization's
+    /// confirmed root wallets may authorise, and it is the server's check that
+    /// this wallet is one of them that gives the authorisation its meaning.
+    func authoriseBreakGlassCode(_ authorisation: AegisBreakGlassAuthorisation) async {
+        lastImportError = nil
+        lastImportMessage = nil
+
+        guard let walletId = identity?.walletId else {
+            lastImportError = "Finish setting up your wallet before authorising a break-glass code."
+            return
+        }
+
+        do {
+            let result = try await registrationClient.authoriseBreakGlass(
+                walletId: walletId,
+                token: authorisation.token,
+                sourceWebAppURL: authorisation.sourceWebAppURL
+            )
+            lastImportMessage = result.message
+                ?? "The organization can now be recovered with this code if every root wallet is lost."
+        } catch {
+            lastImportError = error.localizedDescription
+        }
+    }
+}
+
+@MainActor
+extension WalletStore {
+    /// Approve an organization administrator's recovery.
+    ///
+    /// This wallet is one of the organization's root wallets, and two of them
+    /// have to agree before the administrator is re-enrolled. The link reached
+    /// this holder's own address rather than the person recovering, which is
+    /// what keeps a stolen inbox from approving itself; this wallet still
+    /// supplies its own Wallet ID, so the approval names a device.
+    func approveAccountRecovery(_ approval: AegisRecoveryApproval) async {
+        lastImportError = nil
+        lastImportMessage = nil
+
+        guard let walletId = identity?.walletId else {
+            lastImportError = "Finish setting up your wallet before approving a recovery."
+            return
+        }
+
+        do {
+            let result = try await registrationClient.approveAccountRecovery(
+                walletId: walletId,
+                requestId: approval.requestId,
+                token: approval.token,
+                sourceWebAppURL: approval.sourceWebAppURL
+            )
+            lastImportMessage = result.message
+                ?? "Approved. \(result.approvalCount) of \(result.approvalsRequired) approvals."
+        } catch {
+            lastImportError = error.localizedDescription
+        }
+    }
+}

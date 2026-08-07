@@ -8,6 +8,9 @@ const {
   describeConnectionError,
   sendWalletChallenge
 } = require('../src/adapters/aries/aries-lab-adapter');
+// Deep links carry this environment's scheme, not the bare `aegisid` — each
+// wallet build registers its own, and on iOS a scheme is claimed exclusively.
+const { app: appConfig } = require('../src/config');
 
 test('Aries status unwraps refused admin port errors with a useful hint', () => {
   const details = describeConnectionError({
@@ -68,7 +71,7 @@ test('createOutOfBandInvitation returns an iOS-scannable OOB QR payload', async 
   assert.deepEqual(requests[0].body.handshake_protocols, ['https://didcomm.org/didexchange/1.0']);
   assert.equal(requests[0].body.use_did_method, 'did:peer:2');
   assert.match(invitation.invitationUrl, /\?oob=/);
-  assert.match(invitation.iosDeepLinkUrl, /^aegisid:\/\/invite\?oob=/);
+  assert.match(invitation.iosDeepLinkUrl, new RegExp(`^${appConfig.walletUrlScheme}://invite\\?oob=`));
   assert.equal(invitation.phoneReachable, true);
   assert.match(invitation.qrCodeDataUrl, /^data:image\/png;base64,/);
   assert.match(invitation.iosQrCodeDataUrl, /^data:image\/png;base64,/);
@@ -136,7 +139,7 @@ test('createIosWalletDeepLink keeps the OOB payload, source endpoint, and org me
   );
   const url = new URL(deepLink);
 
-  assert.equal(url.protocol, 'aegisid:');
+  assert.equal(url.protocol, `${appConfig.walletUrlScheme}:`);
   assert.equal(url.host, 'invite');
   assert.equal(url.searchParams.get('oob'), 'abc123');
   assert.equal(url.searchParams.get('endpoint'), 'http://10.0.0.240:4010');

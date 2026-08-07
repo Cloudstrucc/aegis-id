@@ -437,7 +437,7 @@ function createIosWalletDeepLink(invitationUrl) {
     }
   }
 
-  return `aegisid://invite?${params.toString()}`;
+  return `${config.app.walletUrlScheme}://invite?${params.toString()}`;
 }
 
 function invitationPayloadFromUrl(rawInvitationUrl) {

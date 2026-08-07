@@ -38,14 +38,16 @@ const {
   listBreakGlassCodes,
   revokeBreakGlassCode
 } = require('../services/break-glass-service');
+const {
+  APPROVALS_REQUIRED,
+  REPLACES_EMAIL_AT,
+  approveRecoveryRequest
+} = require('../services/approver-recovery-service');
 
-// The URL scheme the wallet registers. Deliberately the bare `aegisid`, to
-// match the org invitation the server already emits — a second convention here
-// would be worse than the one inconsistency we have. Note that dev and qa
-// builds register `aegisid-dev` and `aegisid-qa`, so on iOS these links open
-// only the production build; pasting into the wallet works on every build,
-// which is what the Android parser's `startsWith("aegisid")` allows for.
-const WALLET_SCHEME = 'aegisid';
+// The URL scheme the wallet registers, which is per environment: a dev build
+// registers `aegisid-dev`, so a bare `aegisid` link opened the production build
+// or, on iOS where a scheme is claimed exclusively, nothing at all.
+const WALLET_SCHEME = config.app.walletUrlScheme;
 
 const router = express.Router();
 
@@ -64,6 +66,25 @@ async function loadWorkspace(req) {
 
 function domainPath(req) {
   return `/organizations/${req.params.subscriptionId}/${req.params.workspaceId}/domain`;
+}
+
+/**
+ * These two endpoints answer both a wallet and a browser.
+ *
+ * The wallet follows the deep link with `Accept: application/json` and shows
+ * the outcome in the app; a person who opened the same URL in a browser gets
+ * the page. Rendering HTML at a wallet left it parsing markup for a yes or no,
+ * which is how a failure reached the holder as "Request failed (400)".
+ */
+function wantsJson(req) {
+  return req.accepts(['html', 'json']) === 'json';
+}
+
+function respond(req, res, { status = 200, json, view }) {
+  if (wantsJson(req)) {
+    return res.status(status).json(json);
+  }
+  return res.status(status).render('pages/root-wallet-confirmed', view);
 }
 
 router.get(
@@ -192,6 +213,14 @@ router.get(
         // the QR the wallet scans, not in a field anybody can read off a
         // screenshot later.
         nominated,
+        // Whether this organization's own wallets can now recover its
+        // administrators, and whether that has displaced the weaker path.
+        approverRecovery: {
+          approvalsRequired: APPROVALS_REQUIRED,
+          replacesEmailAt: REPLACES_EMAIL_AT,
+          available: summary.confirmedCount >= APPROVALS_REQUIRED,
+          active: config.rootWallets.enforced && summary.confirmedCount >= REPLACES_EMAIL_AT
+        },
         breakGlassIssued,
         breakGlassCodes,
         liveBreakGlass: breakGlassCodes.find((entry) => entry.isActive || entry.isAwaitingAuthorisation) || null,
@@ -259,17 +288,28 @@ router.post(
 router.get('/api/root-wallets/confirm', authorize('api.rootWallet.confirm'), async (req, res, next) => {
   try {
     const record = await confirmRootWallet(req.query.wallet_id, req.query.token);
-    return res.render('pages/root-wallet-confirmed', {
-      title: 'Root wallet confirmed',
-      description: 'This wallet can now recover control of the organization.',
-      walletId: record.walletId
+    return respond(req, res, {
+      json: {
+        confirmed: true,
+        walletId: record.walletId,
+        message: 'This wallet can now recover control of the organization.'
+      },
+      view: {
+        title: 'Root wallet confirmed',
+        description: 'This wallet can now recover control of the organization.',
+        walletId: record.walletId
+      }
     });
   } catch (error) {
     if (error.expose) {
-      return res.status(error.status || 400).render('pages/root-wallet-confirmed', {
-        title: 'Confirmation failed',
-        description: 'This nomination could not be confirmed.',
-        errorMessage: error.message
+      return respond(req, res, {
+        status: error.status || 400,
+        json: { error: { message: error.message } },
+        view: {
+          title: 'Confirmation failed',
+          description: 'This nomination could not be confirmed.',
+          errorMessage: error.message
+        }
       });
     }
     return next(error);
@@ -332,29 +372,117 @@ router.get('/api/break-glass/authorise', authorize('api.rootWallet.confirm'), as
     // required, and a missing wallet_id is refused explicitly rather than
     // falling through to "not valid", which is what made this undiagnosable.
     if (!req.query.wallet_id) {
-      return res.status(400).render('pages/root-wallet-confirmed', {
-        title: 'Authorisation failed',
-        description: 'This code could not be authorised.',
-        errorMessage:
-          'The wallet did not identify itself. Open this from the Aegis wallet rather than a browser.'
+      const message =
+        'The wallet did not identify itself. Open this from the Aegis wallet rather than a browser.';
+      return respond(req, res, {
+        status: 400,
+        json: { error: { message } },
+        view: {
+          title: 'Authorisation failed',
+          description: 'This code could not be authorised.',
+          errorMessage: message
+        }
       });
     }
     const record = await authoriseBreakGlassCode(req.query.wallet_id, req.query.token);
-    return res.render('pages/root-wallet-confirmed', {
-      title: 'Break-glass code authorised',
-      description: 'The organization can now be recovered with this code if every root wallet is lost.',
-      breakGlass: record
+    return respond(req, res, {
+      json: {
+        authorised: true,
+        walletId: record.authorisedByWalletId,
+        message:
+          'The organization can now be recovered with this code if every root wallet is lost.'
+      },
+      view: {
+        title: 'Break-glass code authorised',
+        description: 'The organization can now be recovered with this code if every root wallet is lost.',
+        breakGlass: record
+      }
     });
   } catch (error) {
     if (error.expose) {
-      return res.status(error.status || 400).render('pages/root-wallet-confirmed', {
-        title: 'Authorisation failed',
-        description: 'This code could not be authorised.',
-        errorMessage: error.message
+      return respond(req, res, {
+        status: error.status || 400,
+        json: { error: { message: error.message } },
+        view: {
+          title: 'Authorisation failed',
+          description: 'This code could not be authorised.',
+          errorMessage: error.message
+        }
       });
     }
     return next(error);
   }
 });
+
+// --- routine recovery, approved by root wallets ------------------------------
+
+/**
+ * A root wallet approving an administrator's recovery.
+ *
+ * The wallet identifies itself with its own Wallet ID, as it does everywhere
+ * else here; the token names which wallet may spend it and was sent to that
+ * holder's own address, never to the person recovering. Two distinct wallets
+ * have to arrive here before anything is issued.
+ */
+router.get(
+  '/api/account-recovery/approve',
+  authorize('api.rootWallet.approveRecovery'),
+  async (req, res, next) => {
+    try {
+      if (!req.query.wallet_id) {
+        const message =
+          'The wallet did not identify itself. Open this from the Aegis wallet rather than a browser.';
+        return respond(req, res, {
+          status: 400,
+          json: { error: { message } },
+          view: {
+            title: 'Approval failed',
+            description: 'This recovery could not be approved.',
+            errorMessage: message
+          }
+        });
+      }
+
+      const record = await approveRecoveryRequest(
+        req.query.wallet_id,
+        req.query.request_id,
+        req.query.token
+      );
+
+      const remaining = Math.max(0, record.approvalsRequired - record.approvalCount);
+      const message = record.isApproved
+        ? `Approved. ${record.organizationName} has the approvals it needs, and the re-enrolment link goes to the account's own address.`
+        : `Approved. ${remaining} more root wallet approval${remaining === 1 ? '' : 's'} needed.`;
+
+      return respond(req, res, {
+        json: {
+          approved: true,
+          approvalCount: record.approvalCount,
+          approvalsRequired: record.approvalsRequired,
+          isApproved: record.isApproved,
+          message
+        },
+        view: {
+          title: 'Recovery approved',
+          description: message,
+          walletId: req.query.wallet_id
+        }
+      });
+    } catch (error) {
+      if (error.expose) {
+        return respond(req, res, {
+          status: error.status || 400,
+          json: { error: { message: error.message } },
+          view: {
+            title: 'Approval failed',
+            description: 'This recovery could not be approved.',
+            errorMessage: error.message
+          }
+        });
+      }
+      return next(error);
+    }
+  }
+);
 
 module.exports = router;

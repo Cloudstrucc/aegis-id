@@ -103,6 +103,81 @@ struct WalletRegistrationClient {
         )
     }
 
+    // MARK: - Root wallets and break glass
+
+    struct RootWalletConfirmation: Decodable {
+        let confirmed: Bool
+        let walletId: String
+        let message: String?
+    }
+
+    struct BreakGlassAuthorisation: Decodable {
+        let authorised: Bool
+        let walletId: String?
+        let message: String?
+    }
+
+    /// Confirm this device's nomination as a root wallet.
+    ///
+    /// Both values come from the link: the organization nominated a specific
+    /// Wallet ID, and the token bound to it is the whole authorization — which
+    /// is why nominating alone grants nothing.
+    func confirmRootWallet(
+        walletId: String,
+        token: String,
+        sourceWebAppURL: String? = nil
+    ) async throws -> RootWalletConfirmation {
+        try await get(
+            path: "api/root-wallets/confirm",
+            query: ["wallet_id": walletId, "token": token],
+            baseURL: portalURL(sourceWebAppURL)
+        )
+    }
+
+    /// Authorise a break-glass code as a root wallet of the organization.
+    ///
+    /// The Wallet ID is **this device's own**, never one carried in the link.
+    /// Any of the organization's confirmed root wallets may authorise, so the
+    /// link cannot name one; supplying our own is what makes the authorisation
+    /// evidence that a root wallet agreed rather than that somebody had a URL.
+    func authoriseBreakGlass(
+        walletId: String,
+        token: String,
+        sourceWebAppURL: String? = nil
+    ) async throws -> BreakGlassAuthorisation {
+        try await get(
+            path: "api/break-glass/authorise",
+            query: ["wallet_id": walletId, "token": token],
+            baseURL: portalURL(sourceWebAppURL)
+        )
+    }
+
+    struct RecoveryApproval: Decodable {
+        let approved: Bool
+        let approvalCount: Int
+        let approvalsRequired: Int
+        let isApproved: Bool
+        let message: String?
+    }
+
+    /// Approve an administrator's recovery as a root wallet.
+    ///
+    /// Same shape as break-glass: the token says which request, and **this
+    /// device's own** Wallet ID says who approved. The token was minted for
+    /// this wallet alone, so two approvals genuinely mean two devices.
+    func approveAccountRecovery(
+        walletId: String,
+        requestId: String,
+        token: String,
+        sourceWebAppURL: String? = nil
+    ) async throws -> RecoveryApproval {
+        try await get(
+            path: "api/account-recovery/approve",
+            query: ["wallet_id": walletId, "request_id": requestId, "token": token],
+            baseURL: portalURL(sourceWebAppURL)
+        )
+    }
+
     // MARK: - Contact changes (challenge gated)
 
     func startContactChange(walletId: String, field: String, value: String) async throws -> ContactChallenge {
@@ -177,9 +252,19 @@ struct WalletRegistrationClient {
         return url
     }
 
-    private func get<T: Decodable>(path: String, baseURL: URL? = nil) async throws -> T {
-        var request = URLRequest(url: (baseURL ?? webAppURL).appending(path: path))
+    private func get<T: Decodable>(
+        path: String,
+        query: [String: String] = [:],
+        baseURL: URL? = nil
+    ) async throws -> T {
+        var url = (baseURL ?? webAppURL).appending(path: path)
+        if !query.isEmpty {
+            url.append(queryItems: query.map(URLQueryItem.init))
+        }
+        var request = URLRequest(url: url)
         request.timeoutInterval = timeout
+        // These endpoints answer a browser with a page and a wallet with JSON.
+        // Without this header the app would be parsing HTML for a yes or no.
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         return try await send(request)
     }

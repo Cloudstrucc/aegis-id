@@ -40,6 +40,30 @@
     </div>
   {{/unless}}
 
+  {{#if approverRecovery.active}}
+    <div class="callout callout--success">
+      <strong>This organization recovers its own administrators.</strong>
+      <span>
+        An administrator who loses their device is put back on their feet by
+        {{approverRecovery.approvalsRequired}} of these wallets approving from their own devices, at
+        <code>/auth/recover/approvals</code> — no platform administrator, and nobody at Vanguard,
+        anywhere in it. The weaker recovery-code-and-email path is withheld for this
+        organization's administrators, because leaving it open would simply be the
+        way in.
+      </span>
+    </div>
+  {{else if approverRecovery.available}}
+    <div class="callout callout--success">
+      <strong>Your administrators can already recover through these wallets.</strong>
+      <span>
+        {{approverRecovery.approvalsRequired}} of them approving is enough to re-enrol an administrator
+        who has lost their device, at <code>/auth/recover/approvals</code>. At
+        {{approverRecovery.replacesEmailAt}} confirmed root wallets{{#unless enforced}} on an enforcing
+        deployment{{/unless}} it becomes the only way, and the recovery-code-and-email path closes.
+      </span>
+    </div>
+  {{/if}}
+
   {{#if isAtRisk}}
     <div class="callout callout--danger">
       <strong>Add {{shortOfRecommended}} more root wallet(s) — you are one lost device from being locked out.</strong>
