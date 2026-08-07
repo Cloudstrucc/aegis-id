@@ -9,71 +9,96 @@ const posterDir = path.join(root, 'public', 'images');
 const width = 1280;
 const height = 720;
 const fps = 24;
-const durationSeconds = 30;
-const totalFrames = fps * durationSeconds;
+const sceneSeconds = 5;
 
-const scenes = [
+// The order the product actually runs in. Two things this had wrong before and
+// which matter more than the animation: the plan is chosen *before* the account
+// exists, and a wallet is registered and made a root wallet before anything can
+// be issued to it. An onboarding video that skips those teaches a path that
+// stops working at the first enforcing deployment.
+const sceneScript = [
   {
-    start: 0,
-    end: 5,
     eyebrow: 'Step 1',
+    title: 'Choose A Plan',
+    node: 'Plan',
+    copy: 'The plan comes first. Picking Enterprise is answered on the pricing page rather than after a registration form.',
+    accent: '#1769e0',
+    visual: 'plans',
+    laptopLabel: 'Plans'
+  },
+  {
+    eyebrow: 'Step 2',
     title: 'Create Account',
-    copy: 'A new subscriber opens the Vanguard Aegis ID website and creates a secure user account.',
+    node: 'Account',
+    copy: 'Register with a work email, then finish a second factor. A registration code can stand in for payment.',
     accent: '#00b7c7',
     visual: 'account',
-    laptopLabel: 'Website'
+    laptopLabel: 'Register'
   },
   {
-    start: 5,
-    end: 10,
-    eyebrow: 'Step 2',
-    title: 'Create Workspace',
-    copy: 'After sign-in, the subscriber registers an organization workspace and becomes the first administrator.',
-    accent: '#1769e0',
-    visual: 'workspace',
-    laptopLabel: 'Workspace'
-  },
-  {
-    start: 10,
-    end: 15,
     eyebrow: 'Step 3',
-    title: 'Issue Credential',
-    copy: 'The administrator creates an issuance invitation with selected claims, roles, and an acceptance QR code.',
+    title: 'Create Organization',
+    node: 'Org',
+    copy: 'The workspace is created with a permanent handle, and an optional domain can be proven by a DNS record.',
+    accent: '#19b97a',
+    visual: 'organization',
+    laptopLabel: 'Organization'
+  },
+  {
+    eyebrow: 'Step 4',
+    title: 'Set Up The Wallet',
+    node: 'Wallet',
+    copy: 'Install the wallet on iOS or Android. First run mints a Wallet ID and shows ten recovery codes, once.',
+    accent: '#f7b955',
+    visual: 'walletSetup',
+    laptopLabel: 'Wallet ID'
+  },
+  {
+    eyebrow: 'Step 5',
+    title: 'Add A Root Wallet',
+    node: 'Root',
+    copy: 'Nominate the Wallet ID, then have the holder scan the code. A nomination alone grants nothing.',
+    accent: '#7b6cf6',
+    visual: 'rootWallet',
+    laptopLabel: 'Root wallets'
+  },
+  {
+    eyebrow: 'Step 6',
+    title: 'Then Add Two More',
+    node: 'Three',
+    copy: 'One root wallet is one lost device from being stranded. Three held by different people is the bar to be safe.',
+    accent: '#7b6cf6',
+    visual: 'rootWalletsThree',
+    laptopLabel: 'Three confirmed'
+  },
+  {
+    eyebrow: 'Step 7',
+    title: 'Issue A Credential',
+    node: 'Issue',
+    copy: 'Choose the claims and bind the invitation to a Wallet ID, so only that wallet can accept it.',
     accent: '#19b97a',
     visual: 'issuance',
     laptopLabel: 'Issue'
   },
   {
-    start: 15,
-    end: 20,
-    eyebrow: 'Step 4',
-    title: 'Download iOS App',
-    copy: 'The credential holder installs the Vanguard Aegis ID iOS wallet and opens the scanner.',
-    accent: '#f7b955',
-    visual: 'ios',
-    laptopLabel: 'Mobile'
-  },
-  {
-    start: 20,
-    end: 25,
-    eyebrow: 'Step 5',
-    title: 'Scan And Accept',
-    copy: 'The user scans the QR code, reviews the issuer details, and accepts the organization invitation.',
+    eyebrow: 'Step 8',
+    title: 'Accept And Approve',
+    node: 'Approve',
+    copy: 'The holder scans and accepts. Later a connected app raises a wallet challenge, and every decision becomes evidence.',
     accent: '#00b7c7',
-    visual: 'scan',
-    laptopLabel: 'QR invite'
-  },
-  {
-    start: 25,
-    end: 30,
-    eyebrow: 'Step 6',
-    title: 'Test OIDC Challenge',
-    copy: 'A protected app redirects through Aegis ID, sends a wallet challenge, and records the accepted action in the ledger.',
-    accent: '#1769e0',
-    visual: 'oidc',
-    laptopLabel: 'OIDC'
+    visual: 'acceptApprove',
+    laptopLabel: 'Challenge'
   }
 ];
+
+const scenes = sceneScript.map((scene, index) => ({
+  ...scene,
+  start: index * sceneSeconds,
+  end: (index + 1) * sceneSeconds
+}));
+
+const durationSeconds = scenes.length * sceneSeconds;
+const totalFrames = fps * durationSeconds;
 
 function main() {
   fs.rmSync(frameDir, { recursive: true, force: true });
@@ -118,7 +143,11 @@ function main() {
     { stdio: 'inherit' }
   );
 
-  fs.copyFileSync(path.join(frameDir, 'frame-0000.png'), posterPath);
+  // Not frame zero: each scene fades its visual in, so the first frame is the
+  // one frame where the thing the poster is meant to show is still washed out.
+  // Take one from the middle of the opening scene instead.
+  const posterFrame = Math.min(Math.round(fps * sceneSeconds * 0.6), totalFrames - 1);
+  fs.copyFileSync(path.join(frameDir, `frame-${String(posterFrame).padStart(4, '0')}.png`), posterPath);
   console.log(`Created ${path.relative(root, videoPath)}`);
   console.log(`Created ${path.relative(root, posterPath)}`);
 }
@@ -165,7 +194,7 @@ function renderFrame(scene, localT, t) {
     <path d="M48 636 C302 590 492 648 692 568 S1020 500 1248 574" fill="none" stroke="#19b97a" stroke-width="3" stroke-dasharray="6 12"/>
   </g>
 
-  <g transform="translate(${cardX},112)">
+  <g transform="translate(${cardX},156)">
     <text class="label" x="0" y="0">${escapeXml(scene.eyebrow)}</text>
     <text class="title" x="0" y="76">${escapeXml(scene.title)}</text>
     ${wrapText(scene.copy, 0, 126, 590, 31, 'copy')}
@@ -177,7 +206,7 @@ function renderFrame(scene, localT, t) {
   ${renderLaptop(250, 462, scene, pulse)}
   ${renderCloud(770, 112 + cloudLift, scene.accent)}
   ${renderSceneVisual(650, 284, scene, visualReveal, pulse)}
-  ${renderJourneyNodes(610, 594 + nodeOffset, scene, scene.accent)}
+  ${renderJourneyNodes(520, 634 + nodeOffset, scene, scene.accent)}
 
   <g transform="translate(64,40)">
     <rect x="0" y="0" width="54" height="54" rx="12" fill="url(#accent)" opacity="0.95"/>
@@ -222,47 +251,133 @@ function renderSceneVisual(x, y, scene, reveal, pulse) {
   const offset = Math.round((1 - reveal) * 26);
   const opacity = 0.14 + reveal * 0.86;
   const visual = {
+    plans: renderPlansVisual,
     account: renderAccountVisual,
-    workspace: renderWorkspaceVisual,
+    organization: renderOrganizationVisual,
+    walletSetup: renderWalletSetupVisual,
+    rootWallet: renderRootWalletVisual,
+    rootWalletsThree: renderRootWalletsThreeVisual,
     issuance: renderIssuanceVisual,
-    ios: renderIosDownloadVisual,
-    scan: renderScanVisual,
-    oidc: renderOidcVisual
-  }[scene.visual] || renderWorkspaceVisual;
+    acceptApprove: renderAcceptApproveVisual
+  }[scene.visual] || renderOrganizationVisual;
 
   return `<g transform="translate(${x + offset},${y})" opacity="${opacity}" filter="url(#shadow)">
     ${visual(scene.accent, pulse)}
   </g>`;
 }
 
+function renderPlansVisual(accent, pulse) {
+  const plans = [
+    ['Trial', '$0', '#7aa5cc'],
+    ['Basic', '$49', accent],
+    ['Scale', '$199', '#7aa5cc']
+  ];
+  return `<rect x="0" y="0" width="440" height="282" rx="22" fill="#ffffff"/>
+    <text class="small" x="30" y="48">Choose a plan first</text>
+    ${plans.map(([name, price, colour], index) => {
+      const x = 26 + index * 132;
+      const chosen = index === 1;
+      return `<g transform="translate(${x},72)">
+        <rect x="0" y="0" width="118" height="130" rx="16" fill="${chosen ? '#edf6ff' : '#f5f9fd'}" stroke="${chosen ? accent : '#dbe6f2'}" stroke-width="${chosen ? 4 : 2}"/>
+        <text class="small" x="18" y="40">${name}</text>
+        <text class="tiny" x="18" y="70">${price} / month</text>
+        ${chosen ? `<rect x="18" y="88" width="82" height="26" rx="8" fill="${colour}"/><text class="whiteTiny" x="34" y="106">Chosen</text>` : ''}
+      </g>`;
+    }).join('')}
+    <rect x="26" y="224" width="${196 + pulse * 18}" height="34" rx="10" fill="${accent}"/>
+    <text class="whiteTiny" x="44" y="247">Continue to checkout</text>`;
+}
+
 function renderAccountVisual(accent, pulse) {
-  return `<rect x="0" y="0" width="430" height="270" rx="22" fill="#ffffff"/>
+  return `<rect x="0" y="0" width="430" height="282" rx="22" fill="#ffffff"/>
     <rect x="0" y="0" width="430" height="54" rx="22" fill="#edf6ff"/>
     <circle cx="34" cy="27" r="8" fill="#c9d9e8"/>
     <circle cx="60" cy="27" r="8" fill="#c9d9e8"/>
     <circle cx="86" cy="27" r="8" fill="#c9d9e8"/>
     <text class="small" x="34" y="96">Create your account</text>
-    <rect x="34" y="124" width="164" height="28" rx="8" fill="#edf6ff"/>
-    <rect x="218" y="124" width="164" height="28" rx="8" fill="#edf6ff"/>
-    <rect x="34" y="170" width="348" height="28" rx="8" fill="#edf6ff"/>
-    <rect x="34" y="218" width="${136 + pulse * 18}" height="34" rx="10" fill="${accent}"/>
-    <text class="whiteTiny" x="58" y="241">Create account</text>`;
+    <rect x="34" y="118" width="164" height="28" rx="8" fill="#edf6ff"/>
+    <rect x="218" y="118" width="164" height="28" rx="8" fill="#edf6ff"/>
+    <rect x="34" y="158" width="348" height="28" rx="8" fill="#edf6ff"/>
+    <rect x="34" y="196" width="216" height="26" rx="8" fill="#f5f9fd" stroke="#dbe6f2" stroke-width="2"/>
+    <text class="tiny" x="46" y="214">Registration code (optional)</text>
+    <rect x="34" y="234" width="${136 + pulse * 18}" height="34" rx="10" fill="${accent}"/>
+    <text class="whiteTiny" x="58" y="257">Create account</text>`;
 }
 
-function renderWorkspaceVisual(accent) {
-  return `<rect x="0" y="0" width="440" height="280" rx="22" fill="#ffffff"/>
-    <rect x="30" y="30" width="160" height="84" rx="16" fill="#edf6ff"/>
-    <text class="small" x="52" y="68">Organization</text>
-    <text class="tiny" x="52" y="96">Admin workspace</text>
-    <rect x="220" y="30" width="190" height="84" rx="16" fill="#e8fff4"/>
-    <text class="small" x="244" y="68">First admin</text>
-    <text class="tiny" x="244" y="96">Subscriber owner</text>
-    <path d="M95 154 H315" stroke="${accent}" stroke-width="8" stroke-linecap="round"/>
-    <circle cx="95" cy="154" r="26" fill="${accent}"/>
-    <circle cx="205" cy="154" r="22" fill="#00b7c7"/>
-    <circle cx="315" cy="154" r="22" fill="#19b97a"/>
-    <rect x="42" y="204" width="356" height="44" rx="12" fill="#f5f9fd"/>
-    <text class="tiny" x="64" y="232">Workspace ready for credentials</text>`;
+function renderOrganizationVisual(accent) {
+  return `<rect x="0" y="0" width="440" height="282" rx="22" fill="#ffffff"/>
+    <text class="small" x="30" y="46">Your organization</text>
+    <rect x="28" y="66" width="384" height="70" rx="16" fill="#edf6ff"/>
+    <text class="small" x="50" y="102">VCS-613</text>
+    <rect x="176" y="82" width="152" height="28" rx="14" fill="${accent}"/>
+    <text class="whiteTiny" x="192" y="101">vcs-613-a7f3</text>
+    <text class="tiny" x="50" y="126">Handle is permanent and globally unique</text>
+    <rect x="28" y="152" width="384" height="60" rx="16" fill="#e8fff4"/>
+    <circle cx="58" cy="182" r="14" fill="#19b97a"/>
+    <path d="M51 182 L56 188 L66 176" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="small" x="84" y="178">vanguardcs.ca</text>
+    <text class="tiny" x="84" y="200">Proven by a DNS TXT record</text>
+    <rect x="28" y="228" width="384" height="34" rx="10" fill="#f5f9fd"/>
+    <text class="tiny" x="50" y="250">Public page: /orgs/vcs-613-a7f3</text>`;
+}
+
+function renderWalletSetupVisual(accent, pulse) {
+  return `<rect x="0" y="0" width="238" height="286" rx="34" fill="#091522"/>
+    <rect x="16" y="26" width="206" height="228" rx="22" fill="#ffffff"/>
+    <text class="small" x="38" y="64">Your Wallet ID</text>
+    <rect x="34" y="80" width="180" height="30" rx="8" fill="#edf6ff"/>
+    <text class="tiny" x="42" y="100">AEG-4K7P-2M9X-QT3B</text>
+    <text class="tiny" x="38" y="140">Recovery codes</text>
+    ${[0, 1, 2, 3].map((i) => `<rect x="${36 + (i % 2) * 86}" y="${152 + Math.floor(i / 2) * 26}" width="76" height="18" rx="5" fill="#f0f5fa"/>`).join('')}
+    <rect x="36" y="212" width="${118 + pulse * 14}" height="28" rx="9" fill="${accent}"/>
+    <text class="whiteTiny" x="52" y="232">Saved them</text>
+    <g transform="translate(276,44)">
+      <rect x="0" y="0" width="186" height="70" rx="18" fill="#050b13"/>
+      <text class="whiteTiny" x="22" y="30">TestFlight</text>
+      <text class="tiny" x="22" y="54" fill="#9fb4c7">iOS wallet</text>
+      <rect x="0" y="92" width="186" height="70" rx="18" fill="#0d3b2e"/>
+      <text class="whiteTiny" x="22" y="122">Google Play</text>
+      <text class="tiny" x="22" y="146" fill="#9fd8bf">Android wallet</text>
+      <text class="tiny" x="0" y="198" fill="#cde0f5">The key stays on the device</text>
+    </g>`;
+}
+
+function renderRootWalletVisual(accent, pulse) {
+  return `<rect x="0" y="0" width="252" height="286" rx="22" fill="#ffffff"/>
+    <text class="small" x="26" y="46">Nominate a wallet</text>
+    <rect x="26" y="66" width="200" height="30" rx="8" fill="#edf6ff"/>
+    <text class="tiny" x="36" y="86">AEG-4K7P-2M9X-QT3B</text>
+    ${renderMiniQr(26, 112, 108, accent)}
+    <rect x="26" y="236" width="200" height="30" rx="9" fill="#fff4e2"/>
+    <text class="tiny" x="40" y="256">Pending until scanned</text>
+    <g transform="translate(276,18)">
+      <rect x="0" y="0" width="164" height="250" rx="30" fill="#091522"/>
+      <rect x="14" y="22" width="136" height="192" rx="18" fill="#ffffff"/>
+      <text class="small" x="34" y="60">Confirm?</text>
+      <text class="tiny" x="34" y="86">VCS-613 nominated</text>
+      <text class="tiny" x="34" y="106">this wallet</text>
+      <rect x="34" y="126" width="${94 + pulse * 12}" height="30" rx="9" fill="#19b97a"/>
+      <text class="whiteTiny" x="48" y="147">Confirm</text>
+      <rect x="34" y="168" width="94" height="26" rx="8" fill="#f0f5fa"/>
+      <text class="tiny" x="52" y="186">Not now</text>
+    </g>`;
+}
+
+function renderRootWalletsThreeVisual(accent, pulse) {
+  const holders = ['Fred P.', 'Dana R.', 'Sam O.'];
+  return `<rect x="0" y="0" width="440" height="286" rx="22" fill="#ffffff"/>
+    <text class="small" x="30" y="46">Root wallets</text>
+    <rect x="30" y="64" width="380" height="14" rx="7" fill="#e5eef8"/>
+    <rect x="30" y="64" width="${380 * (0.72 + pulse * 0.28)}" height="14" rx="7" fill="#19b97a"/>
+    <text class="tiny" x="30" y="100">3 of 3 confirmed</text>
+    ${holders.map((name, index) => `<g transform="translate(30,${118 + index * 46})">
+      <rect x="0" y="0" width="380" height="38" rx="12" fill="#f5f9fd"/>
+      <circle cx="26" cy="19" r="11" fill="#19b97a"/>
+      <path d="M20 19 L24 24 L33 14" stroke="#ffffff" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <text class="tiny" x="52" y="24">${escapeXml(name)}</text>
+      <text class="tiny" x="176" y="24">Confirmed</text>
+    </g>`).join('')}
+    <text class="tiny" x="30" y="276" fill="${accent}">Two of them can recover an administrator</text>`;
 }
 
 function renderIssuanceVisual(accent, pulse) {
@@ -272,54 +387,38 @@ function renderIssuanceVisual(accent, pulse) {
     <text class="whiteTiny" x="52" y="100">Employee</text>
     <rect x="52" y="134" width="96" height="12" rx="6" fill="${accent}"/>
     <rect x="52" y="162" width="118" height="10" rx="5" fill="#7aa5cc"/>
+    <text class="tiny" x="52" y="206" fill="#9fb4c7">Bound to</text>
+    <text class="tiny" x="52" y="226" fill="#ffffff">AEG-4K7P</text>
     <rect x="226" y="30" width="176" height="128" rx="16" fill="#f5f9fd"/>
     ${renderMiniQr(248, 48, 88, accent)}
     <rect x="226" y="178" width="176" height="28" rx="8" fill="#edf6ff"/>
+    <text class="tiny" x="240" y="197">Only that wallet may accept</text>
     <rect x="226" y="218" width="${128 + pulse * 20}" height="30" rx="10" fill="${accent}"/>
     <text class="whiteTiny" x="248" y="239">Create issuance</text>`;
 }
 
-function renderIosDownloadVisual(accent) {
-  return `<rect x="12" y="0" width="196" height="286" rx="34" fill="#091522"/>
-    <rect x="28" y="24" width="164" height="222" rx="22" fill="#ffffff"/>
-    <rect x="70" y="40" width="80" height="10" rx="5" fill="#091522"/>
-    <rect x="54" y="78" width="112" height="112" rx="24" fill="url(#accent)"/>
-    <text class="whiteTiny" x="86" y="144">Aegis</text>
-    <text class="small" x="48" y="222">Install wallet</text>
-    <g transform="translate(248,62)">
-      <rect x="0" y="0" width="170" height="62" rx="16" fill="#050b13"/>
-      <text class="whiteTiny" x="22" y="27">Download beta</text>
-      <text class="whiteTiny" x="22" y="50">on iOS</text>
-      <path d="M86 108 V172 M62 148 L86 172 L110 148" stroke="${accent}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+function renderAcceptApproveVisual(accent, pulse) {
+  return `<rect x="0" y="0" width="228" height="286" rx="34" fill="#091522"/>
+    <rect x="16" y="26" width="196" height="228" rx="22" fill="#ffffff"/>
+    <text class="small" x="38" y="64">Approve?</text>
+    <text class="tiny" x="38" y="90">Business Expenses</text>
+    <text class="tiny" x="38" y="110">wants to sign you in</text>
+    <rect x="38" y="128" width="${104 + pulse * 12}" height="32" rx="10" fill="#19b97a"/>
+    <text class="whiteTiny" x="54" y="150">Approve</text>
+    <rect x="38" y="172" width="104" height="30" rx="10" fill="#f0f5fa"/>
+    <text class="tiny" x="62" y="192">Decline</text>
+    <text class="tiny" x="38" y="228">Both answers count</text>
+    <g transform="translate(266,26)">
+      <rect x="0" y="0" width="238" height="234" rx="20" fill="#ffffff"/>
+      <text class="small" x="24" y="44">Evidence ledger</text>
+      ${[0, 1, 2].map((i) => `<g transform="translate(24,${64 + i * 52})">
+        <circle cx="10" cy="14" r="9" fill="${i === 0 ? '#19b97a' : accent}"/>
+        <rect x="30" y="6" width="${124 - i * 18}" height="10" rx="5" fill="#7aa5cc"/>
+        <rect x="30" y="22" width="${88 - i * 12}" height="8" rx="4" fill="#c9d9e8"/>
+        ${i < 2 ? '<path d="M10 26 V44" stroke="#dbe6f2" stroke-width="3"/>' : ''}
+      </g>`).join('')}
+      <text class="tiny" x="24" y="222">Hash-chained and append only</text>
     </g>`;
-}
-
-function renderScanVisual(accent, pulse) {
-  return `<rect x="0" y="0" width="206" height="278" rx="34" fill="#091522"/>
-    <rect x="16" y="24" width="174" height="218" rx="22" fill="#ffffff"/>
-    <text class="small" x="42" y="72">Scan QR</text>
-    ${renderMiniQr(52, 96, 88, accent)}
-    <rect x="36" y="${196 + pulse * 8}" width="134" height="6" rx="3" fill="${accent}" opacity="0.9"/>
-    <g transform="translate(250,28)">
-      <rect x="0" y="0" width="188" height="220" rx="20" fill="#ffffff"/>
-      <text class="small" x="24" y="48">Issuer</text>
-      <text class="tiny" x="24" y="78">Vanguard Aegis ID</text>
-      <rect x="24" y="112" width="140" height="38" rx="10" fill="${accent}"/>
-      <text class="whiteTiny" x="52" y="137">Accept invite</text>
-    </g>`;
-}
-
-function renderOidcVisual(accent) {
-  return `<rect x="0" y="0" width="440" height="276" rx="22" fill="#ffffff"/>
-    <rect x="0" y="0" width="440" height="52" rx="22" fill="#edf6ff"/>
-    <text class="small" x="30" y="94">Business Expenses</text>
-    <rect x="30" y="126" width="180" height="38" rx="10" fill="${accent}"/>
-    <text class="whiteTiny" x="56" y="151">Sign in with Aegis ID</text>
-    <rect x="236" y="84" width="168" height="150" rx="18" fill="#061625"/>
-    <text class="whiteTiny" x="260" y="122">Wallet challenge</text>
-    <text class="whiteTiny" x="260" y="154">Approve sign-in</text>
-    <rect x="260" y="184" width="112" height="32" rx="10" fill="#19b97a"/>
-    <text class="whiteTiny" x="286" y="206">Accept</text>`;
 }
 
 function renderMiniQr(x, y, size, accent) {
@@ -412,20 +511,24 @@ function renderPlatformNodes(x, y, accent) {
   </g>`;
 }
 
+// The strip has to hold however many steps the script has without running off
+// the frame, so the spacing is derived rather than fixed — eight steps at the
+// old 94px pitch ran 82px past the right edge.
 function renderJourneyNodes(x, y, scene, accent) {
-  const nodes = scenes.map((item, index) => ({
-    label: String(index + 1).padStart(2, '0'),
-    title: item.title.split(' ')[0],
-    active: item === scene
-  }));
+  const available = width - x - 40;
+  const step = Math.min(94, Math.floor(available / scenes.length));
+  const nodeWidth = step - 8;
+
   return `<g transform="translate(${x},${y})">
-    ${nodes.map((node, index) => {
-      const dx = index * 94;
-      return `<g transform="translate(${dx},0)">
-        ${index > 0 ? `<path d="M-46 24 H-12" stroke="${accent}" stroke-width="4" stroke-linecap="round" opacity="0.5"/>` : ''}
-        <rect x="0" y="0" width="72" height="58" rx="16" fill="${node.active ? accent : '#ffffff'}" opacity="${node.active ? '1' : '0.82'}"/>
-        <text x="22" y="25" class="${node.active ? 'whiteTiny' : 'tiny'}">${node.label}</text>
-        <text x="12" y="46" class="${node.active ? 'whiteTiny' : 'tiny'}">${escapeXml(node.title)}</text>
+    ${scenes.map((item, index) => {
+      const active = item === scene;
+      const label = String(index + 1).padStart(2, '0');
+      const title = item.node || item.title.split(' ')[0];
+      return `<g transform="translate(${index * step},0)">
+        ${index > 0 ? `<path d="M${nodeWidth - step + 3} 29 H-3" stroke="${accent}" stroke-width="4" stroke-linecap="round" opacity="0.5"/>` : ''}
+        <rect x="0" y="0" width="${nodeWidth}" height="58" rx="16" fill="${active ? accent : '#ffffff'}" opacity="${active ? '1' : '0.82'}"/>
+        <text x="10" y="25" class="${active ? 'whiteTiny' : 'tiny'}">${label}</text>
+        <text x="10" y="46" class="${active ? 'whiteTiny' : 'tiny'}">${escapeXml(title)}</text>
       </g>`;
     }).join('')}
   </g>`;

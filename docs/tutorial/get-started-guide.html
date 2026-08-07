@@ -343,6 +343,13 @@
       font-weight: 620;
     }
 
+    /* The bullet is a grid cell, so an item that mixes text with an inline
+       element has to wrap the whole line in one span — otherwise every text
+       node becomes a grid cell of its own and the sentence comes apart. */
+    .checklist li > span {
+      grid-column: 2;
+    }
+
     .checklist li::before {
       content: "";
       width: 18px;
@@ -587,6 +594,63 @@
     .badge--blue {
       color: var(--blue);
       background: rgba(23, 105, 224, 0.12);
+    }
+
+    .badge--amber {
+      color: #8a5a00;
+      background: rgba(246, 184, 77, 0.2);
+    }
+
+    .badge--red {
+      color: var(--red);
+      background: rgba(217, 83, 79, 0.12);
+    }
+
+    /* Root wallet counter. The bar is the whole point of the page it mirrors:
+       a number on its own does not read as "you are one device from stranded". */
+    .meter {
+      margin-top: 18px;
+    }
+
+    .meter__bar {
+      overflow: hidden;
+      height: 12px;
+      border-radius: 999px;
+      background: #e5eef8;
+    }
+
+    .meter__fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .meter__label {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 760;
+    }
+
+    .note {
+      margin-top: 18px;
+      border-left: 4px solid var(--blue);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      background: var(--mist);
+      color: var(--ink);
+      font-size: 0.92rem;
+      font-weight: 640;
+    }
+
+    .note--warn {
+      border-left-color: var(--amber);
+    }
+
+    .note strong {
+      display: block;
+      margin-bottom: 4px;
     }
 
     .qr-layout {
@@ -1080,6 +1144,7 @@
       </a>
       <nav class="nav" aria-label="Guide navigation">
         <a href="#journey">Journey</a>
+        <a href="#root-wallets">Root wallets</a>
         <a href="#examples">Example apps</a>
         <a href="#wizards">Platform wizards</a>
         <a href="https://github.com/Cloudstrucc/aegis-id" target="_blank" rel="noopener" aria-label="Open GitHub repository">
@@ -1098,7 +1163,7 @@
         <div class="reveal">
           <p class="eyebrow">Get started guide</p>
           <h1>Launch the Aegis ID pilot with confidence.</h1>
-          <p class="lead">A visual walkthrough for registering an account, creating an organization, issuing a credential, accepting it in the mobile wallet, testing OIDC wallet challenges, and connecting common identity platforms.</p>
+          <p class="lead">A visual walkthrough in the order the product actually runs: choose a plan, create the account and the organization, set up the wallet, confirm the root wallets that can recover it, then issue a credential and prove it with a wallet challenge.</p>
           <div class="hero-actions">
             <a class="button button--primary" href="#journey">Start the walkthrough</a>
             <a class="button" href="#wizards">Review setup steps</a>
@@ -1109,11 +1174,11 @@
             <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
             <div class="browser__body">
               <p class="eyebrow">Pilot path</p>
-              <div class="browser__title">Account. Org. Credential. Challenge.</div>
+              <div class="browser__title">Plan. Org. Root wallets. Credential.</div>
               <div class="tiles">
-                <div class="tile"><strong>Web</strong><span>Register and create workspace</span></div>
-                <div class="tile"><strong>Wallet</strong><span>Accept credential invite</span></div>
-                <div class="tile"><strong>Apps</strong><span>Approve expense and sign PDF</span></div>
+                <div class="tile"><strong>Web</strong><span>Plan, account, organization</span></div>
+                <div class="tile"><strong>Wallet</strong><span>Wallet ID, then root wallets</span></div>
+                <div class="tile"><strong>Apps</strong><span>Credential, challenge, evidence</span></div>
               </div>
               <span class="hotspot" style="right: 34px; bottom: 34px;"></span>
             </div>
@@ -1131,30 +1196,73 @@
         <p>Use this visual guide as a practical onboarding path for administrators, wallet users, and relying-party application testers.</p>
       </div>
       <div class="toc reveal">
-        <a href="#account"><span>01</span><strong>Create account and MFA</strong></a>
-        <a href="#organization"><span>02</span><strong>Create organization workspace</strong></a>
-        <a href="#wallet"><span>03</span><strong>Install wallet and accept credential</strong></a>
-        <a href="#oidc"><span>04</span><strong>Test OIDC wallet challenge</strong></a>
-        <a href="#examples"><span>05</span><strong>Use example apps</strong></a>
-        <a href="#signature"><span>06</span><strong>Digitally sign a PDF</strong></a>
-        <a href="#wizards"><span>07</span><strong>Configure platform wizards</strong></a>
-        <a href="#azure"><span>08</span><strong>Azure app, Key Vault, secrets</strong></a>
+        <a href="#plan"><span>01</span><strong>Choose a plan</strong></a>
+        <a href="#account"><span>02</span><strong>Create account and second factor</strong></a>
+        <a href="#organization"><span>03</span><strong>Create the organization</strong></a>
+        <a href="#wallet"><span>04</span><strong>Set up the wallet</strong></a>
+        <a href="#root-wallets"><span>05</span><strong>Confirm the first root wallet</strong></a>
+        <a href="#root-wallets-three"><span>06</span><strong>Get to three, and what that buys</strong></a>
+        <a href="#credential"><span>07</span><strong>Issue and accept a credential</strong></a>
+        <a href="#oidc"><span>08</span><strong>Test a wallet challenge</strong></a>
+        <a href="#examples"><span>09</span><strong>Use example apps</strong></a>
+        <a href="#signature"><span>10</span><strong>Digitally sign a PDF</strong></a>
+        <a href="#wizards"><span>11</span><strong>Configure platform wizards</strong></a>
+        <a href="#azure"><span>12</span><strong>Azure app, Key Vault, secrets</strong></a>
       </div>
     </section>
 
     <section class="section section--wide journey" id="journey">
-      <article id="account" class="step reveal">
+      <article id="plan" class="step reveal">
         <div class="step__copy">
           <span class="step-number">01</span>
+          <p class="step-kicker">Plan first</p>
+          <h2>Choose the plan before the account exists.</h2>
+          <p>The order is deliberate: <code>/plans</code>, then checkout for a paid plan, then registration. Somebody who needs Enterprise finds that out on the pricing page rather than after filling in a form.</p>
+          <ul class="checklist">
+            <li>Open Plans and compare tiers, limits, and prices.</li>
+            <li>Pick a plan here, or on the registration form itself — both offer the whole catalogue.</li>
+            <li>A paid plan routes to hosted checkout; card details never reach Aegis.</li>
+            <li>A registration code from an administrator stands in for payment.</li>
+          </ul>
+          <div class="note">
+            <strong>A form asks for a plan; it never grants one.</strong>
+            The choice is validated against the catalogue and kept in the session, and every route passes the session's plan when the subscription is created. Posting a different plan on the form changes nothing.
+          </div>
+        </div>
+        <div class="visual-stack">
+          <div class="browser">
+            <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="browser__body">
+              <p class="eyebrow">Plans</p>
+              <div class="browser__title">Choose a plan.</div>
+              <div class="tiles">
+                <div class="tile"><strong>Trial</strong><span>Free, time limited</span><br><br><span class="ui-button">Start trial</span></div>
+                <div class="tile"><strong>Basic</strong><span>Per month, per workspace</span><br><br><span class="ui-button">Choose Basic</span></div>
+                <div class="tile"><strong>Enterprise</strong><span>Talk to us</span><br><br><span class="ui-button">Contact sales</span></div>
+              </div>
+              <div class="callout callout--bottom" data-pin="1">A paid plan goes to checkout. Walking away from the card form still creates nothing you have not paid for.</div>
+              <span class="hotspot" style="left: 300px; top: 210px;"></span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article id="account" class="step reveal">
+        <div class="step__copy">
+          <span class="step-number">02</span>
           <p class="step-kicker">Account registration</p>
-          <h2>Create an Aegis ID account.</h2>
-          <p>The anonymous home page should lead the user to register, verify MFA, and then open invited organizations or subscribe a new organization workspace.</p>
+          <h2>Create the account and finish a second factor.</h2>
+          <p>Register with the work email the organization will use. A second factor completes the sign-in; which methods exist is configured per deployment rather than hardcoded.</p>
           <ul class="checklist">
             <li>Enter name, work email, phone, and password.</li>
-            <li>Complete email, SMS, or passkey second factor.</li>
-            <li>Land on the organization selection page if the email matches a credential invite.</li>
-            <li>Subscribe a new organization only when the user is creating an admin workspace.</li>
+            <li>Complete the emailed or texted code, or a passkey.</li>
+            <li>Enter a registration code here if you were given one — it is checked now and spent at subscribe.</li>
+            <li>Land on the organization page, or on the invited organizations if the email matches a credential invite.</li>
           </ul>
+          <div class="note">
+            <strong>Codes and links are never shown in a response.</strong>
+            Everything goes through the delivery service. On a hosted environment that means an administrator has to configure email or SMS first — until then, delivery fails closed rather than silently doing nothing.
+          </div>
         </div>
         <div class="visual-stack">
           <div class="browser">
@@ -1165,12 +1273,12 @@
               <div class="form-grid">
                 <div class="field"><span>Name</span><strong>Frederick Pearson</strong></div>
                 <div class="field"><span>Work email</span><strong>fpearson@vanguardcs.ca</strong></div>
-                <div class="field"><span>Phone</span><strong>+1 555 0100</strong></div>
-                <div class="field"><span>MFA</span><strong>Email or SMS</strong></div>
+                <div class="field"><span>Plan</span><strong>Basic</strong></div>
+                <div class="field"><span>Registration code</span><strong>Optional</strong></div>
               </div>
               <div style="margin-top: 18px;"><span class="ui-button">Create account</span></div>
-              <div class="callout callout--top" data-pin="1">Select Create account from the public home page.</div>
-              <div class="callout callout--middle" data-pin="2">Use work email so organization invitations match the wallet holder.</div>
+              <div class="callout callout--top" data-pin="1">Use the work email so organization invitations match the wallet holder.</div>
+              <div class="callout callout--middle" data-pin="2">An invalid registration code re-renders this form rather than leaving a half-made account.</div>
               <span class="hotspot" style="left: 174px; bottom: 72px;"></span>
             </div>
           </div>
@@ -1179,30 +1287,39 @@
 
       <article id="organization" class="step reveal">
         <div class="step__copy">
-          <span class="step-number">02</span>
-          <p class="step-kicker">Organization workspace</p>
-          <h2>Open or register the organization.</h2>
-          <p>Invited users see the organizations tied to their credential invitation. New organization subscribers can register a workspace and become the first administrator.</p>
+          <span class="step-number">03</span>
+          <p class="step-kicker">Organization identity</p>
+          <h2>Create the organization, then prove who it is.</h2>
+          <p>The workspace is created with a <strong>handle</strong> — globally unique, assigned once, never reused. The organization's <em>name</em> is only a label: two subscribers may both be "Cloudstrucc", and always will be able to.</p>
           <ul class="checklist">
-            <li>Open an invited organization tile as a credential holder.</li>
-            <li>Or create a workspace and choose an initial plan.</li>
-            <li>Review people, claims, roles, platform setup, branding, and audit logs.</li>
+            <li>Create the workspace and become its first administrator.</li>
+            <li><span>Note the handle. Its public page lives at <code>/orgs/&lt;handle&gt;</code>.</span></li>
+            <li><span>Optionally claim a domain and publish the TXT record at <code>_aegis-challenge.&lt;domain&gt;</code>.</span></li>
+            <li>Review people, claims, roles, branding, and the audit log.</li>
           </ul>
+          <div class="note">
+            <strong>DNS rather than a file upload.</strong>
+            Publishing in the zone requires control of the zone; a file only proves control of one web server. Two organizations may both have a <em>pending</em> claim on a domain — only publishing decides it — but a domain already verified elsewhere is refused.
+          </div>
         </div>
         <div class="visual-stack">
           <div class="browser">
             <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
             <div class="browser__body">
-              <p class="eyebrow">Organizations</p>
-              <div class="browser__title">Choose your workspace.</div>
-              <div class="tiles">
-                <div class="tile"><strong>Vanguardcs</strong><span>Administrator</span><br><br><span class="ui-button">Open dashboard</span></div>
-                <div class="tile"><strong>Cloudstrucc</strong><span>Credential holder</span><br><br><span class="ui-button">Open org</span></div>
-                <div class="tile"><strong>Add org</strong><span>Subscribe another organization</span></div>
-                <div class="tile"><strong>Identity due</strong><span>Admin profile validation in 30 days</span></div>
+              <p class="eyebrow">Organization identity</p>
+              <div class="browser__title">VCS-613</div>
+              <div class="form-grid">
+                <div class="field"><span>Handle</span><strong>vcs-613-a7f3</strong></div>
+                <div class="field"><span>Public page</span><strong>/orgs/vcs-613-a7f3</strong></div>
+                <div class="field"><span>Domain</span><strong>vanguardcs.ca</strong></div>
+                <div class="field"><span>Status</span><strong>Verified</strong></div>
               </div>
-              <div class="callout callout--bottom" data-pin="1">Click an organization tile to enter with the role attached to your account or credential.</div>
-              <span class="hotspot" style="left: 184px; top: 246px;"></span>
+              <div class="table">
+                <div class="row row--head"><span>Record</span><span>Host</span><span>Value</span><span>State</span></div>
+                <div class="row"><strong>TXT</strong><span>_aegis-challenge</span><span>aegis-verify=…</span><span class="badge">Found</span></div>
+              </div>
+              <div class="callout callout--bottom" data-pin="1">Unverified is not anonymous — the public page says plainly whether the domain is proven.</div>
+              <span class="hotspot" style="left: 240px; top: 180px;"></span>
             </div>
           </div>
         </div>
@@ -1210,17 +1327,191 @@
 
       <article id="wallet" class="step reveal">
         <div class="step__copy">
-          <span class="step-number">03</span>
-          <p class="step-kicker">Mobile wallet setup</p>
-          <h2>Install the iOS wallet, then accept a credential invite.</h2>
-          <p>TestFlight handles the iOS install. The invite page also includes portal registration and sign-in links for the invited email, so the same person can see the organization in the web app.</p>
+          <span class="step-number">04</span>
+          <p class="step-kicker">Wallet setup</p>
+          <h2>Install the wallet and register a Wallet ID.</h2>
+          <p>There are two wallets — iOS through TestFlight, Android through Play — and both do the same thing on first run. Setup is blocked until a Wallet ID exists, because a credential cannot bind without one.</p>
           <ul class="checklist">
-            <li>Open the TestFlight link on the iPhone.</li>
-            <li>Install Vanguard Aegis ID Wallet.</li>
-            <li>Scan the credential invitation QR code.</li>
-            <li>Create or sign in to the portal with the invited email.</li>
-            <li>Open Ledger and accept the credential.</li>
+            <li>Install the wallet for your platform on the device that will hold the credential.</li>
+            <li>Register with the same work email the organization knows.</li>
+            <li>Save the ten recovery codes. They are shown once and never again.</li>
+            <li>Share the Wallet ID from the app when an administrator asks for it.</li>
           </ul>
+          <div class="note">
+            <strong>The device key never leaves the device.</strong>
+            Recovery <em>rotates</em> that key rather than restoring it, which is why nothing sensitive has to be backed up anywhere.
+          </div>
+          <div class="note note--warn">
+            <strong>Wallet registrations are per environment.</strong>
+            A wallet registered against dev genuinely does not exist on qa or prod. If an administrator is told "no wallet is registered with that ID", check which environment each side is on before checking the ID.
+          </div>
+        </div>
+        <div class="visual-stack">
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="phone__notch"></div>
+              <div class="phone-card">
+                <h3>Your Wallet ID</h3>
+                <p style="color: rgba(255,255,255,.78);">AEG-4K7P-2M9X-QT3B</p>
+              </div>
+              <div class="phone-list">
+                <div>Email: fpearson@vanguardcs.ca</div>
+                <div>Recovery codes: 10 remaining</div>
+                <div>Device key: on this device only</div>
+              </div>
+              <button class="phone-action">I have saved my codes</button>
+            </div>
+            <div class="card" style="max-width: 360px; padding: 22px;">
+              <p class="eyebrow">Both platforms</p>
+              <h3>iOS and Android are equals here.</h3>
+              <p>Each build registers its own URL scheme — <code>aegisid</code>, <code>aegisid-dev</code>, <code>aegisid-qa</code>, <code>aegisid-local</code> — so all four environments can sit on one device, and a link opens the build it was meant for.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article id="root-wallets" class="step reveal">
+        <div class="step__copy">
+          <span class="step-number">05</span>
+          <p class="step-kicker">Root wallets</p>
+          <h2>Nominate a root wallet, then have the holder confirm it.</h2>
+          <p>Root wallets are the wallets that can recover administrative control of the organization. They exist because control otherwise rests on an email address and on the platform administrator — which means we could restore access to your organization, and so could anyone who took over your inbox.</p>
+          <ul class="checklist">
+            <li><span>Open <strong>Root wallets</strong> in the organization.</span></li>
+            <li>Paste the holder's Wallet ID and nominate it.</li>
+            <li>Show the QR to the holder. Their wallet scans it and confirms.</li>
+            <li>Watch the row move from Pending to Confirmed. Only confirmed wallets count.</li>
+          </ul>
+          <div class="note">
+            <strong>Nominating is not confirming.</strong>
+            A Wallet ID is an identifier, not a secret, so anyone who saw one could otherwise make that wallet responsible for an organization. The confirmation token travels only in the QR, is single-use, expires in 72 hours, and is discarded once spent. If the code is missed, withdraw the nomination and start again.
+          </div>
+        </div>
+        <div class="visual-stack">
+          <div class="qr-layout">
+            <div class="browser">
+              <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+              <div class="browser__body">
+                <p class="eyebrow">Root wallets</p>
+                <h3>Nominate a wallet</h3>
+                <div class="table">
+                  <div class="row row--head"><span>Wallet</span><span>Held by</span><span>Status</span><span>Action</span></div>
+                  <div class="row"><strong>AEG-4K7P-2M9X-QT3B</strong><span>Frederick P.</span><span class="badge badge--amber">Pending</span><span class="ui-button">Show QR</span></div>
+                </div>
+                <div class="callout callout--middle" data-pin="1">Pending means nominated and nothing more. It does not count towards the minimum.</div>
+              </div>
+            </div>
+            <div class="qr-box">
+              <div>
+                <img class="qr-image" src="assets/credential-invite-qr.svg" alt="Example root wallet confirmation QR code">
+                <p style="margin: 16px 0 0; text-align: center; font-weight: 760;">aegisid://root-wallet-confirm?...</p>
+                <p style="margin: 10px 0 0; text-align: center; font-weight: 760;">Scanned from the wallet, not a browser</p>
+              </div>
+            </div>
+          </div>
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="phone__notch"></div>
+              <div class="phone-card">
+                <h3>Confirm root wallet</h3>
+                <p style="color: rgba(255,255,255,.78);">VCS-613 nominated this wallet to recover the organization.</p>
+              </div>
+              <div class="phone-list">
+                <div>Organization: VCS-613</div>
+                <div>This wallet: AEG-4K7P-2M9X-QT3B</div>
+                <div>Expires: 72 hours from nomination</div>
+              </div>
+              <button class="phone-action">Confirm</button>
+            </div>
+            <div class="card" style="max-width: 360px; padding: 22px;">
+              <p class="eyebrow">Enforcement</p>
+              <h3>No confirmed root wallet, no issuance.</h3>
+              <p>On dev, qa and prod the policy is on: an organization with none cannot issue credentials at all. That is the point of the feature rather than a side effect of it.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article id="root-wallets-three" class="step reveal">
+        <div class="step__copy">
+          <span class="step-number">06</span>
+          <p class="step-kicker">Get to three</p>
+          <h2>One is the bar to operate. Three is the bar to be safe.</h2>
+          <p>Repeat the nominate-and-confirm step with two more wallets, held by <em>different people</em>. One root wallet means one lost device strands the organization; three means no single loss does.</p>
+          <ul class="checklist">
+            <li>Nominate a second and third Wallet ID. Existing root wallets do not need to approve.</li>
+            <li>Confirm each from its own device.</li>
+            <li>Ten is the ceiling — past a point another root wallet is another device that can recover the organization.</li>
+            <li>Withdrawing is allowed at any count, on purpose: a stolen device has to be removable at once.</li>
+          </ul>
+          <div class="note">
+            <strong>What three unlocks.</strong>
+            An administrator who loses their authenticator is recovered by <em>two</em> of these wallets approving from their own devices, at <code>/auth/recover/approvals</code> — with no platform administrator in it. At three confirmed wallets the weaker recovery-code-and-email path closes for this organization's administrators, because a route that is easier to attack is not an alternative.
+          </div>
+          <div class="note note--warn">
+            <strong>Break-glass is the other case, not the same one.</strong>
+            It covers losing <em>every</em> root wallet. The customer generates the code and keeps it, a root wallet authorises it in advance, and redeeming needs both the code and a platform administrator plus a ticket reference. No administrator here can reach your organization on their own — by construction, not by policy.
+          </div>
+        </div>
+        <div class="visual-stack">
+          <div class="browser">
+            <div class="browser__bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="browser__body">
+              <p class="eyebrow">Root wallets</p>
+              <div class="browser__title">Three confirmed.</div>
+              <div class="meter">
+                <div class="meter__bar"><div class="meter__fill" style="width: 100%"></div></div>
+                <span class="meter__label">3 of 3 confirmed</span>
+              </div>
+              <div class="table">
+                <div class="row row--head"><span>Wallet</span><span>Held by</span><span>Status</span><span>Action</span></div>
+                <div class="row"><strong>AEG-4K7P-2M9X-QT3B</strong><span>Frederick P.</span><span class="badge">Confirmed</span><span class="ui-button">Withdraw</span></div>
+                <div class="row"><strong>AEG-8FJE-B7RY-52R0</strong><span>Dana R.</span><span class="badge">Confirmed</span><span class="ui-button">Withdraw</span></div>
+                <div class="row"><strong>AEG-3YBP-17RT-HGD9</strong><span>Sam O.</span><span class="badge">Confirmed</span><span class="ui-button">Withdraw</span></div>
+              </div>
+              <div class="callout callout--bottom" data-pin="1">At one or two you can operate, but a danger banner says what you are exposed to.</div>
+              <span class="hotspot" style="right: 40px; top: 160px;"></span>
+            </div>
+          </div>
+          <div class="phone-wrap">
+            <div class="phone">
+              <div class="phone__notch"></div>
+              <div class="phone-card">
+                <h3>Approve a recovery</h3>
+                <p style="color: rgba(255,255,255,.78);">An administrator of VCS-613 has asked to recover their access.</p>
+              </div>
+              <div class="phone-list">
+                <div>Requested by: fpearson@vanguardcs.ca</div>
+                <div>Approvals so far: 1 of 2</div>
+                <div>This link works only with your wallet</div>
+              </div>
+              <button class="phone-action">Approve</button>
+            </div>
+            <div class="card" style="max-width: 360px; padding: 22px;">
+              <p class="eyebrow">Why it is not just another email</p>
+              <h3>The approval never reaches the person recovering.</h3>
+              <p>Each approval link goes to its own root wallet holder's registered address. Somebody who has taken over the administrator's inbox reaches a status page and nothing they can act on.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article id="credential" class="step reveal">
+        <div class="step__copy">
+          <span class="step-number">07</span>
+          <p class="step-kicker">Credential issuance</p>
+          <h2>Issue a credential, and accept it in the wallet.</h2>
+          <p>With root wallets confirmed, the organization can issue. Bind the invitation to a Wallet ID so only that wallet can accept it — the invite page also carries portal registration and sign-in links for the invited email.</p>
+          <ul class="checklist">
+            <li>Open People, choose the holder, and invite an organization credential.</li>
+            <li><span>Paste the holder's Wallet ID, or the whole <code>aegisid://wallet?…</code> link they shared.</span></li>
+            <li>Show the QR. The wallet scans it and accepts.</li>
+            <li>Check the ledger: the acceptance is on the evidence chain.</li>
+          </ul>
+          <div class="note">
+            <strong>Binding to a Wallet ID is the high-assurance option.</strong>
+            Without one the invite binds to the holder's registered email or phone instead, which is lower assurance. A wallet-bound invite is rejected on the device before it ever reaches the server if it names a different wallet.
+          </div>
         </div>
         <div class="visual-stack">
           <div class="qr-layout">
@@ -1269,16 +1560,20 @@
 
       <article id="oidc" class="step reveal">
         <div class="step__copy">
-          <span class="step-number">04</span>
-          <p class="step-kicker">OIDC wallet challenge</p>
-          <h2>Prove sign-in with a wallet challenge.</h2>
-          <p>After OIDC sign-in succeeds, Aegis ID sends a wallet challenge from the selected issuing organization.</p>
+          <span class="step-number">08</span>
+          <p class="step-kicker">Wallet challenge</p>
+          <h2>Prove a sign-in with a wallet challenge.</h2>
+          <p>After OIDC sign-in succeeds, Aegis ID raises a wallet challenge from the issuing organization. Approving and declining are both real answers, and both land on the evidence chain.</p>
           <ul class="checklist">
             <li>Select the organization that issued the credential.</li>
-            <li>Start OIDC sign-in.</li>
-            <li>Open the wallet and approve the challenge.</li>
-            <li>Return to the protected app.</li>
+            <li>Start OIDC sign-in from the protected app.</li>
+            <li>Open the wallet and approve — or decline — the challenge.</li>
+            <li>Return to the app, then read the decision back in the ledger.</li>
           </ul>
+          <div class="note">
+            <strong>A product-path organization needs no ACA-Py.</strong>
+            The wallet collects challenges by polling the organization it is connected to, so this works on any deployment whether or not the Aries lab is running.
+          </div>
         </div>
         <div class="visual-stack split">
           <div class="browser">
