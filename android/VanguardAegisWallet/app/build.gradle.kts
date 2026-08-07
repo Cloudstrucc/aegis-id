@@ -103,9 +103,9 @@ android {
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "Aegis ID Dev")
             aegisEnvironment(
-                baseUrl = "https://vanguard-aegis-id-dev-65067d.azurewebsites.net",
+                baseUrl = "https://vanguard-aegis-id-dev-0e75d1.azurewebsites.net",
                 urlScheme = "aegisid-dev",
-                appLinkHost = "vanguard-aegis-id-dev-65067d.azurewebsites.net"
+                appLinkHost = "vanguard-aegis-id-dev-0e75d1.azurewebsites.net"
             )
         }
         create("qa") {
@@ -114,18 +114,18 @@ android {
             versionNameSuffix = "-qa"
             resValue("string", "app_name", "Aegis ID QA")
             aegisEnvironment(
-                baseUrl = "https://vanguard-aegis-id-qa-65067d.azurewebsites.net",
+                baseUrl = "https://vanguard-aegis-id-qa-0e75d1.azurewebsites.net",
                 urlScheme = "aegisid-qa",
-                appLinkHost = "vanguard-aegis-id-qa-65067d.azurewebsites.net"
+                appLinkHost = "vanguard-aegis-id-qa-0e75d1.azurewebsites.net"
             )
         }
         create("prod") {
             dimension = "environment"
             resValue("string", "app_name", "Aegis ID")
             aegisEnvironment(
-                baseUrl = "https://vanguard-aegis-id-65067d.azurewebsites.net",
+                baseUrl = "https://vanguard-aegis-id-0e75d1.azurewebsites.net",
                 urlScheme = "aegisid",
-                appLinkHost = "vanguard-aegis-id-65067d.azurewebsites.net"
+                appLinkHost = "vanguard-aegis-id-0e75d1.azurewebsites.net"
             )
         }
     }
