@@ -95,7 +95,13 @@ async function nominateRootWallet(workspaceId, walletIdInput, { actorEmail, labe
 
   const wallet = await getWalletByWalletId(walletId);
   if (!wallet) {
-    throw validationError('No wallet is registered with that ID.', 404);
+    // Naming the environment matters: wallet registrations are per-deployment,
+    // so a wallet registered against dev genuinely does not exist on qa or
+    // prod. Without this the message reads as "your Wallet ID is wrong".
+    throw validationError(
+      `No wallet is registered with that ID on ${config.app.deployEnv}. Wallet registrations are per environment — a wallet registered against another environment will not be found here.`,
+      404
+    );
   }
   if (wallet.status === 'revoked') {
     throw validationError('That wallet has been withdrawn from service.', 409);

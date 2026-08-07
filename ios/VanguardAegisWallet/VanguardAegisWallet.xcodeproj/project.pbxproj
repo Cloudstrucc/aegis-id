@@ -1084,7 +1084,7 @@
 				A9000000000000000000000A /* Release-QA */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		A90000000000000000000002 /* Build configuration list for PBXNativeTarget "VanguardAegisWallet" */ = {
 			isa = XCConfigurationList;
@@ -1099,7 +1099,7 @@
 				A9000000000000000000000E /* Release-QA */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};

@@ -39,6 +39,14 @@ const {
   revokeBreakGlassCode
 } = require('../services/break-glass-service');
 
+// The URL scheme the wallet registers. Deliberately the bare `aegisid`, to
+// match the org invitation the server already emits — a second convention here
+// would be worse than the one inconsistency we have. Note that dev and qa
+// builds register `aegisid-dev` and `aegisid-qa`, so on iOS these links open
+// only the production build; pasting into the wallet works on every build,
+// which is what the Android parser's `startsWith("aegisid")` allows for.
+const WALLET_SCHEME = 'aegisid';
+
 const router = express.Router();
 
 async function loadWorkspace(req) {
@@ -216,9 +224,15 @@ router.post(
         label: req.body.label
       });
 
-      // The wallet scans this. Everything it needs to confirm is in the link,
-      // and the link is the only place the token appears.
-      const confirmUrl = `${config.app.publicBaseUrl}/api/root-wallets/confirm?wallet_id=${encodeURIComponent(
+      // An aegisid:// deep link, not an https URL. The wallet's scanner only
+      // understands this scheme and Aries out-of-band invitations, so an https
+      // link produced "paste an Aries out-of-band invitation URL" and the flow
+      // could never complete. Same shape as the org invite the wallet already
+      // handles.
+      //
+      // The nominated Wallet ID travels in the link because we know which
+      // wallet is being nominated. Break-glass cannot do that — see below.
+      const confirmUrl = `${WALLET_SCHEME}://root-wallet-confirm?wallet_id=${encodeURIComponent(
         record.walletId
       )}&token=${encodeURIComponent(confirmationToken)}`;
 
@@ -280,7 +294,11 @@ router.post(
       }
 
       const { code, authorisationToken } = await issueBreakGlassCode(workspace, { actorEmail });
-      const authoriseUrl = `${config.app.publicBaseUrl}/api/break-glass/authorise?token=${encodeURIComponent(
+      // No wallet_id here, and that is the point: any of the organization's
+      // root wallets may authorise, so the scanning wallet supplies its own.
+      // The previous https URL omitted it too — but the handler read it — so
+      // authorisation could never succeed for anybody.
+      const authoriseUrl = `${WALLET_SCHEME}://break-glass-authorise?token=${encodeURIComponent(
         authorisationToken
       )}`;
 
@@ -310,6 +328,17 @@ router.post(
  */
 router.get('/api/break-glass/authorise', authorize('api.rootWallet.confirm'), async (req, res, next) => {
   try {
+    // The wallet sends its own Wallet ID; the token proves which code. Both are
+    // required, and a missing wallet_id is refused explicitly rather than
+    // falling through to "not valid", which is what made this undiagnosable.
+    if (!req.query.wallet_id) {
+      return res.status(400).render('pages/root-wallet-confirmed', {
+        title: 'Authorisation failed',
+        description: 'This code could not be authorised.',
+        errorMessage:
+          'The wallet did not identify itself. Open this from the Aegis wallet rather than a browser.'
+      });
+    }
     const record = await authoriseBreakGlassCode(req.query.wallet_id, req.query.token);
     return res.render('pages/root-wallet-confirmed', {
       title: 'Break-glass code authorised',
