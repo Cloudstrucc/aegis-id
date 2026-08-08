@@ -6,6 +6,13 @@ full setup, suitable for YouTube.
 Target length **9–10 minutes**. Every route below is real; every value in
 `{braces}` comes from the recording card the seed script prints.
 
+**Voice.** The narration is written in a neutral product register — no "I", no
+"we", and the viewer is not addressed as "you". That is deliberate: it lets
+anyone record it, survives being re-recorded by a different person or a
+synthesised voice, and does not date when the person who made it moves on. Keep
+that register if you edit the script. Everything outside the `>` blocks is a
+stage direction and addresses the person recording directly.
+
 ---
 
 ## Before you record
@@ -88,19 +95,19 @@ Timings are targets, not constraints. `→` marks a click, `⌨` marks typing.
 
 **Screen:** `/` home page, scrolled to the architecture diagram (`#architecture`).
 
-> Most systems answer "who is this?" in a dozen places at once. Every app keeps
-> its own copy of who may do what, every integration adds another way in, and
-> when someone loses their laptop the answer to "how do we get them back?" is
-> usually a support ticket and a shrug.
+> Most organizations answer "who is this?" in a dozen places at once. Every
+> application keeps its own copy of who may do what, every integration adds
+> another way in, and when someone loses their laptop, recovering their access
+> means a support ticket.
 >
-> Aegis ID is one place that holds that policy. Identity can be proven in
-> several ways — a passkey, a hardware key, an approval from a phone — and
-> consumed by any number of applications. What stays constant is the middle:
-> one decision point that makes the call, and writes down what it decided.
+> Aegis ID holds that policy in one place. Identity can be proven several ways —
+> a passkey, a hardware key, an approval from a phone — and consumed by any
+> number of applications. What stays constant is the middle: a single decision
+> point that makes the call and records what it decided.
 >
-> In the next nine minutes I'm going to set one up from nothing. A plan, an
-> account, an organization, a wallet, the wallets that can recover the whole
-> thing, and a credential issued to a real device.
+> This walkthrough sets one up from nothing: a plan, an account, an
+> organization, a wallet, the wallets that can recover the whole thing, and a
+> credential issued to a real device.
 
 **Shots:** slow scroll through the three architecture columns. Pause on
 "Aegis ID decides".
@@ -111,20 +118,22 @@ Timings are targets, not constraints. `→` marks a click, `⌨` marks typing.
 
 **Route:** `/plans`
 
-> The plan comes first, and that ordering is deliberate. If your organization
-> needs Enterprise, you find that out on the pricing page rather than after
-> you've filled in a registration form.
+> The plan comes first, and that ordering is deliberate. An organization that
+> needs Enterprise finds that out on the pricing page rather than after filling
+> in a registration form.
 
 → `Choose a plan` from the home header
 → compare the tiers, hover Basic
 → `Choose Basic`
 
-> I'll take Basic. I have a registration code, which is how you'd hand a plan to
-> a pilot customer or an internal team without a card ever being involved.
+> This walkthrough uses Basic, redeemed with a registration code — the way a
+> plan is handed to a pilot customer or an internal team without a card being
+> involved at all.
 
 **Note:** the checkout page appears only when `STRIPE_SECRET_KEY` is set. If it
-is not, say "card checkout is off on this deployment" and use the code path —
-that is honest and it is what a fresh install does.
+is not, narrate "card checkout is off on this deployment until a payment
+provider is configured" and take the code path — that is accurate, and it is
+what a fresh install does.
 
 ---
 
@@ -137,21 +146,22 @@ that is honest and it is what a fresh install does.
 ⌨ Password
 ⌨ Registration code: `{code from the recording card}`
 
-> Use the work email the organization will actually use — organization
-> invitations match on it later.
+> The work email matters: organization invitations are matched against it
+> later.
 >
-> The code is checked here, before the account is created, so an invalid one
-> re-renders this form rather than leaving you with a half-made account that
-> can't have the plan it asked for.
+> The registration code is checked here, before the account is created. An
+> invalid one returns to this form rather than leaving behind a half-made
+> account that cannot have the plan it asked for.
 
 → `Create account` → lands on `/auth/verify`
 
 **Cut to:** terminal showing `data/demo/mail/` and `tail` the newest file.
 
-> Sign-in codes are never shown in a response — they go through the delivery
-> service. On a laptop that writes them to a folder. On a hosted environment
-> an administrator configures email or SMS first, and until they do, delivery
-> fails closed rather than quietly doing nothing.
+> Sign-in codes are never returned in a response. Every message goes through
+> the delivery service — which on a developer machine writes to a folder, and on
+> a hosted environment sends over email or SMS once an administrator has
+> configured it. Until that is configured, delivery fails closed rather than
+> quietly doing nothing.
 
 ⌨ the six-digit code → signed in
 
@@ -164,24 +174,26 @@ that is honest and it is what a fresh install does.
 ⌨ Organization: `Vanguard Cloud Services`
 → `Create organization`
 
-> The name is a label, not an identity. Two subscribers can both be called
-> Cloudstrucc, and they always will be able to — real companies share names.
+> An organization's name is a label, not an identity. Two subscribers can both
+> be called Cloudstrucc, and they always will be able to — real companies share
+> names.
 
 **Route:** `/organizations/{sub}/{ws}/domain`
 
-> Identity lives in two other things. A handle, assigned once and never reused,
-> which gives the organization a public page anybody can check. And optionally a
+> Identity lives in two other things: a handle, assigned once and never reused,
+> which gives the organization a public page anyone can check; and optionally a
 > verified domain.
 
 → claim `vanguardcs.ca` → show the TXT record
 
-> DNS rather than a file upload, because publishing a record in the zone
-> requires control of the zone. A file only proves control of one web server.
+> Verification is by DNS rather than file upload, because publishing a record
+> in the zone requires control of the zone. A file only proves control of one
+> web server.
 
 **Cut to:** `/orgs/{handle}` in a second tab
 
-> Unverified is not anonymous. Every organization has this page, and it says
-> plainly whether the domain is proven.
+> Unverified is not anonymous. Every organization has this page, and it states
+> plainly whether the domain has been proven.
 
 ---
 
@@ -189,23 +201,23 @@ that is honest and it is what a fresh install does.
 
 **Screen:** phone or simulator.
 
-> Two wallets, iOS and Android, and they do the same thing on first run.
+> There are two wallets, iOS and Android, and they behave identically on first
+> run.
 
 → open the wallet → register with `fpearson@vanguardcs.ca`
 
-> It mints a Wallet ID, and shows ten recovery codes exactly once.
+> Setup mints a Wallet ID and shows ten recovery codes exactly once.
 
 **Shot:** hold on the recovery codes screen for a beat.
 
-> The device key that backs this never leaves the phone. Recovery *rotates*
-> that key rather than restoring it — which is why there's nothing sensitive
-> to back up anywhere, and why these ten codes are the only copy of the way
-> back in.
+> The device key behind it never leaves the phone. Recovery *rotates* that key
+> rather than restoring it, which is why nothing sensitive needs backing up
+> anywhere — and why these ten codes are the only copy of the way back in.
 
 → `I have saved my codes` → wallet home showing the Wallet ID
 
-> That Wallet ID is an identifier, not a secret. You can share it. Which is
-> exactly why the next step works the way it does.
+> A Wallet ID is an identifier, not a secret. It is meant to be shared — which
+> is exactly why the next step works the way it does.
 
 ---
 
@@ -213,17 +225,17 @@ that is honest and it is what a fresh install does.
 
 **Route:** `/organizations/{sub}/{ws}/root-wallets`
 
-> Root wallets are the wallets that can recover administrative control of this
-> organization. They exist because otherwise control rests on an email address
-> and on us — meaning Vanguard could restore access to your organization, and so
-> could anyone who took over your inbox.
+> Root wallets are the wallets that can recover administrative control of an
+> organization. They exist because control otherwise rests on an email address
+> and on the platform operator — meaning Vanguard could restore access to a
+> customer's organization, and so could anyone who took over their inbox.
 
 ⌨ paste the Wallet ID from the phone → `Nominate`
 
 **Shot:** the row appears as **Pending**.
 
-> Notice it says pending. Nominating is not confirming. A Wallet ID is public,
-> so if nominating were enough, anyone who saw one could make that wallet
+> The row says pending. Nominating is not confirming. A Wallet ID is public, so
+> if nominating alone were enough, anyone who saw one could make that wallet
 > responsible for an organization.
 
 → `Show QR`
@@ -235,8 +247,9 @@ that is honest and it is what a fresh install does.
 
 **Cut back to:** browser, refresh, row now says **Confirmed**.
 
-> The token that did that travelled only in the QR. It's single-use, it expires
-> in seventy-two hours, and it's discarded the moment it's spent.
+> The token that authorised that travelled only in the QR code. It is
+> single-use, it expires in seventy-two hours, and it is discarded the moment it
+> is spent.
 
 ---
 
@@ -247,25 +260,25 @@ that is honest and it is what a fresh install does.
 ⌨ paste `{Dana Reyes Wallet ID}` → `Nominate`
 ⌨ paste `{Sam Okonkwo Wallet ID}` → `Nominate`
 
-> These two are already registered wallets belonging to two other people. I'll
-> nominate them, and they'd confirm from their own devices the same way.
+> These are registered wallets belonging to two other people. Each is nominated
+> the same way, and each holder confirms from their own device.
 
 **Shot:** the meter moving to 3 of 3, then the callout that appears.
 
-> One root wallet lets you operate. It also means one lost device strands the
-> organization. Three, held by different people, means no single loss does.
+> One root wallet is enough to operate. It also means one lost device strands
+> the organization. Three, held by different people, means no single loss does.
 >
-> And at three, something changes. An administrator who loses their
-> authenticator is now recovered by two of these wallets approving from their
-> own devices — with no platform administrator anywhere in it. The weaker
-> recovery-code-and-email path closes for this organization, because a route
-> that's easier to attack isn't an alternative, it's the way in.
+> At three, something changes. An administrator who loses their authenticator is
+> recovered by two of these wallets approving from their own devices, with no
+> platform administrator involved at any point. The weaker
+> recovery-code-and-email path closes for that organization — because a route
+> that is easier to attack is not an alternative, it is the way in.
 
 **Optional cut:** `/auth/recover/approvals` to show the flow exists.
 
-> The approval links go to each wallet holder's own address — never to the
-> person recovering. Someone who's taken over the administrator's inbox reaches
-> a status page and nothing they can act on.
+> Each approval link goes to its own wallet holder's registered address, never
+> to the person recovering. Anyone who has taken over the administrator's inbox
+> reaches a status page and nothing they can act on.
 
 ---
 
@@ -273,16 +286,16 @@ that is honest and it is what a fresh install does.
 
 **Route:** `/dashboard/{sub}/orgs/{ws}` → People, then Credentials
 
-> With root wallets confirmed, the organization can issue. Before that it
-> couldn't — issuance is blocked for an organization with no way back.
+> With root wallets confirmed, the organization can issue credentials. Before
+> that it could not: issuance is blocked for an organization with no way back.
 
 → `Credentials` blade → `Invite credential`
 ⌨ holder email, job title
 ⌨ Wallet ID: the phone's
 
-> Binding the invitation to a Wallet ID is the high-assurance option: only that
-> wallet can accept it. Without one it binds to the holder's registered email or
-> phone instead, which is weaker.
+> Binding the invitation to a Wallet ID is the high-assurance option — only that
+> wallet can accept it. Without one, the invitation binds to the holder's
+> registered email or phone instead, which is weaker.
 
 → `Create issuance` → QR appears
 
@@ -297,14 +310,14 @@ that is honest and it is what a fresh install does.
 **Route:** `/dashboard/{sub}/orgs/{ws}` — the Ledger blade
 
 > Every one of those steps is on the evidence chain — the nomination, the
-> confirmation, the issuance, the acceptance. Hash-chained and append only, so
-> the record of what happened can't be quietly edited afterwards.
+> confirmation, the issuance, the acceptance. Hash-chained and append-only, so
+> the record of what happened cannot be quietly edited afterwards.
 >
-> That's the whole setup. A plan, an account, an organization that can prove who
-> it is, three wallets that can recover it without us, and a credential bound to
-> a real device.
+> That is the full setup: a plan, an account, an organization that can prove who
+> it is, three wallets that can recover it without the platform operator, and a
+> credential bound to a real device.
 >
-> Links to the guide and the docs are in the description.
+> Links to the written guide and the documentation are in the description.
 
 **Shot:** end on the dashboard with real numbers in the tiles.
 
