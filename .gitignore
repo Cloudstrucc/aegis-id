@@ -21,5 +21,8 @@ build/
 *.zip
 data/*.json
 !data/.gitkeep
+# Seeded recording environment. Same reason as data/*.json: it is state, and it
+# holds password hashes and wallet registrations for the demo accounts.
+data/demo/
 tmp/
 artifacts/
