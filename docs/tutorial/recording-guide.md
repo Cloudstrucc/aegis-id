@@ -15,19 +15,54 @@ stage direction and addresses the person recording directly.
 
 ---
 
+## Two ways to get the footage
+
+**Record the browser legs automatically**, then film only the phone:
+
+```bash
+npm install --no-save playwright && npx playwright install chromium
+npm run demo:seed -- --reset
+npm run video:walkthrough
+```
+
+That drives the real application through every browser step — filling the
+forms, clicking through, with a visible cursor — and writes
+`artifacts/walkthrough/`:
+
+| File | What it is |
+|---|---|
+| `walkthrough.mp4` | 1280×720, about 4½ minutes, chaptered |
+| `chapters.txt` | paste straight into the YouTube description |
+| `shots.json` | every step and gap with its timestamp |
+
+The wallet steps are a phone, which a browser cannot drive, so they become
+titled gaps of a known length — 90 seconds for wallet setup, 35 for each scan.
+Film those separately and drop them into the gaps; the chapter markers still
+line up. `shots.json` tells the editor exactly where.
+
+**Or record it by hand** with the shot list below, which is the same journey
+with the narration written out. Do that if you want the pacing of a person
+rather than a script, or if you are demonstrating something the automation does
+not cover.
+
+Either way the voiceover script below is what gets narrated, and the seeded
+environment is the same.
+
+---
+
 ## Before you record
 
 ### 1. Seed the environment
 
 ```bash
-node scripts/seed-demo-environment.js
+npm run demo:seed
 ```
 
 Then start the app **through the same script**, so it reads the demo stores
 rather than your own:
 
 ```bash
-node scripts/seed-demo-environment.js --run
+npm run demo:run
 ```
 
 The demo lives in `data/demo/` and never touches `data/`, so your development
@@ -341,8 +376,12 @@ what a fresh install does.
 - **A stale wallet registration.** If you re-run the seed with `--reset`, every
   Wallet ID changes. Re-read the recording card.
 - **Starting the app the usual way.** `npm start` reads `data/`, not
-  `data/demo/`, so none of the seeded organization will be there. Start it with
-  `--run`.
+  `data/demo/`, so none of the seeded organization will be there. Use
+  `npm run demo:run`.
+- **Recording without reseeding.** `npm run video:walkthrough` creates an
+  account and an organization in the demo stores. Running it twice without
+  `demo:seed -- --reset` in between fails on the duplicate email — which is the
+  product being right, and still a wasted run.
 - **Wrong environment on the phone.** A wallet pointed at dev will not find a
   wallet registered on local, and the error says exactly that — but only if you
   read it. Registrations are per environment.

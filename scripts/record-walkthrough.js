@@ -195,6 +195,7 @@ async function chapterAccount(page) {
   await chapter(page, 'Create the account');
   await page.goto(`${baseUrl}/auth/register`);
   await settle(page, 1200);
+  await focusOn(page, 'form [name="displayName"]', 1600);
 
   await typeInto(page, '#displayName, [name="displayName"]', ACCOUNT.name);
   await typeInto(page, '#email, [name="email"]', ACCOUNT.email);
@@ -225,20 +226,18 @@ async function chapterOrganization(page) {
   await chapter(page, 'Create the organization');
   await page.goto(`${baseUrl}/subscribe`);
   await settle(page, 1500);
+  await focusOn(page, 'form[action="/subscribe"]', 1600);
 
   if (await page.locator('[name="organization"]').count()) {
     await typeInto(page, '[name="organization"]', ACCOUNT.organization);
-    const role = page.locator('[name="role"]').first();
-    if (await role.count()) {
-      await role.fill('Administrator');
-    }
+    await choose(page, '[name="role"]', 1);
     const consent = page.locator('[name="consent"]').first();
     if (await consent.count()) {
       await moveTo(page, consent);
       await consent.check().catch(() => {});
     }
     await settle(page, 700);
-    await submit(page, 'button[type="submit"]');
+    await submit(page, 'form[action="/subscribe"] button[type="submit"]');
     await settle(page, 2500);
   }
 
@@ -246,10 +245,11 @@ async function chapterOrganization(page) {
   if (subscriptionId && workspaceId) {
     await page.goto(`${baseUrl}/organizations/${subscriptionId}/${workspaceId}/domain`);
     await settle(page, 1500);
+    await focusOn(page, '[name="domain"]', 1500);
     if (await page.locator('[name="domain"]').count()) {
       await typeInto(page, '[name="domain"]', ACCOUNT.domain);
       await settle(page, 600);
-      await submit(page, 'button[type="submit"]');
+      await submit(page, 'form[action*="/domain"] button[type="submit"]');
       await settle(page, 3000);
     }
   }
@@ -261,6 +261,7 @@ async function chapterRootWallet(page) {
   const ids = await currentWorkspace(page);
   await page.goto(`${baseUrl}/organizations/${ids.subscriptionId}/${ids.workspaceId}/root-wallets`);
   await settle(page, 2500);
+  await focusOn(page, 'form[action*="root-wallets"] [name="walletId"]', 1600);
 
   const nominees = seededNominees();
   await typeInto(page, '[name="walletId"]', nominees[0].walletId, 60);
@@ -278,7 +279,10 @@ async function chapterRootWallet(page) {
 
   await confirmRootWalletOutOfBand(nominees[0].walletId);
   await page.reload();
-  await settle(page, 3000);
+  await settle(page, 1200);
+  // Hold on the row that just changed — pending to confirmed is the beat the
+  // whole chapter exists for.
+  await focusOn(page, '.data-table', 2600);
   return ids;
 }
 
@@ -287,6 +291,7 @@ async function chapterThreeRootWallets(page, ids) {
   const nominees = seededNominees().slice(1, 3);
 
   for (const nominee of nominees) {
+    await focusOn(page, 'form[action*="root-wallets"] [name="walletId"]', 900);
     await typeInto(page, '[name="walletId"]', nominee.walletId, 45);
     const label = page.locator('[name="label"]').first();
     if (await label.count()) {
@@ -300,8 +305,8 @@ async function chapterThreeRootWallets(page, ids) {
     await settle(page, 2000);
   }
 
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-  await settle(page, 4000);
+  // End on the meter reading three of three.
+  await focusOn(page, '.meter', 4000);
   return ids;
 }
 
@@ -371,9 +376,14 @@ async function card(page, title, subtitle, ms) {
         'font-family:Inter,-apple-system,Segoe UI,sans-serif;color:#fff;text-align:center',
         'opacity:0;transition:opacity .35s ease'
       ].join(';');
+      // Individual properties, not the `font:` shorthand — a shorthand whose
+      // family is `inherit` is invalid and the whole declaration gets dropped,
+      // which is how the title ended up at the browser default size.
+      const heading = 'font-size:46px;font-weight:900;line-height:1.15;max-width:70%';
+      const sub = 'font-size:20px;font-weight:600;line-height:1.5;color:#9fc4e6;max-width:60%';
       node.innerHTML =
-        `<div style="font:900 46px/1.15 inherit;max-width:70%">${title}</div>` +
-        (subtitle ? `<div style="font:600 20px/1.5 inherit;color:#9fc4e6;max-width:60%">${subtitle}</div>` : '');
+        `<div style="${heading}">${title}</div>` +
+        (subtitle ? `<div style="${sub}">${subtitle}</div>` : '');
       document.body.appendChild(node);
       requestAnimationFrame(() => {
         node.style.opacity = '1';
@@ -437,6 +447,22 @@ async function installCursor(page) {
   });
 }
 
+/**
+ * Bring the part of the page that is about to be used into the middle of the
+ * frame, and hold there.
+ *
+ * Every page here opens on a tall hero, so landing on one and starting to type
+ * puts the form off-screen for the first second of every chapter. Scrolling to
+ * it deliberately, before anything happens, is the difference between a
+ * recording that follows the work and one that jumps.
+ */
+async function focusOn(page, selector, ms = 1200) {
+  const target = page.locator(selector).locator('visible=true').first();
+  if (!(await target.count())) return;
+  await target.evaluate((node) => node.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  await page.waitForTimeout(ms / speed);
+}
+
 async function moveTo(page, locator) {
   const box = await locator.boundingBox();
   if (!box) return;
@@ -444,7 +470,7 @@ async function moveTo(page, locator) {
 }
 
 async function typeInto(page, selector, text, delay = 90) {
-  const field = page.locator(selector).first();
+  const field = page.locator(selector).locator('visible=true').first();
   if (!(await field.count())) return;
   await field.scrollIntoViewIfNeeded();
   await moveTo(page, field);
@@ -455,8 +481,26 @@ async function typeInto(page, selector, text, delay = 90) {
   await page.waitForTimeout(280 / speed);
 }
 
+/**
+ * Pick from a `<select>`. Separate from typeInto because a select is not
+ * fillable, and because the cursor has to visit it or the value appears to
+ * change on its own.
+ */
+async function choose(page, selector, index) {
+  const field = page.locator(selector).locator('visible=true').first();
+  if (!(await field.count())) return;
+  await field.scrollIntoViewIfNeeded();
+  await moveTo(page, field);
+  await page.waitForTimeout(260 / speed);
+  await field.selectOption({ index }).catch(() => {});
+  await page.waitForTimeout(260 / speed);
+}
+
 async function submit(page, selector) {
-  const button = page.locator(selector).first();
+  // Visible only. Several pages carry a submit button inside a collapsed panel
+  // or a modal, and the first match in the DOM is not always the one on screen
+  // — scrolling to a hidden element just times out.
+  const button = page.locator(selector).locator('visible=true').first();
   if (!(await button.count())) return;
   await button.scrollIntoViewIfNeeded();
   await moveTo(page, button);
