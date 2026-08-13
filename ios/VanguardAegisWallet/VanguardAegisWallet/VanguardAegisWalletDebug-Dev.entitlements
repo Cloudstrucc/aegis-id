@@ -17,5 +17,13 @@
 		<string>applinks:vanguard-aegis-id-qa-0e75d1.azurewebsites.net</string>
 		<string>webcredentials:vanguard-aegis-id-qa-0e75d1.azurewebsites.net</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.ca.vanguardcs.aegisid.wallet</string>
+	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)ca.vanguardcs.aegisid.wallet.passkeys</string>
+	</array>
 </dict>
 </plist>

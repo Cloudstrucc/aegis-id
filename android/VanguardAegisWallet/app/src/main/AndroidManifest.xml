@@ -69,5 +69,32 @@
                     android:scheme="https" />
             </intent-filter>
         </activity>
+
+        <!-- The wallet as a FIDO2 passkey provider.
+             API 34+ only: CredentialProviderService did not exist before, and
+             the manifest entry is guarded so older devices install the app and
+             simply do not offer it. -->
+        <service
+            android:name=".passkey.AegisCredentialProviderService"
+            android:enabled="true"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.credentials.CredentialProviderService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.credentials.provider"
+                android:resource="@xml/credential_provider" />
+        </service>
+
+        <!-- Where the holder agrees. The service cannot show anything, so every
+             create and every assertion is routed here through a PendingIntent. -->
+        <activity
+            android:name=".passkey.PasskeyConsentActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:theme="@style/PasskeyConsentTheme" />
     </application>
 </manifest>

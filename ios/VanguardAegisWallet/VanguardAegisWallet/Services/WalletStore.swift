@@ -1200,22 +1200,5 @@ private enum WalletPasskeyError: LocalizedError {
     }
 }
 
-private extension Data {
-    init?(base64URLEncoded value: String) {
-        var base64 = value
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-        let remainder = base64.count % 4
-        if remainder > 0 {
-            base64.append(String(repeating: "=", count: 4 - remainder))
-        }
-        self.init(base64Encoded: base64)
-    }
-
-    func base64URLEncodedString() -> String {
-        base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-    }
-}
+// base64url lives in PasskeyAuthenticator.swift, which both this target and the
+// credential provider extension compile. Two copies is a redeclaration.

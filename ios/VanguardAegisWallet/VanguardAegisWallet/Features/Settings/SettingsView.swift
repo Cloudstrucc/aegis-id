@@ -30,6 +30,17 @@ struct SettingsView: View {
                 }
             }
 
+            // Passkeys this wallet holds for other people's sites, as opposed
+            // to the wallet's own passkey settings further down, which are
+            // about approving Aegis challenges.
+            Section("Passkeys for other services") {
+                NavigationLink {
+                    PasskeysView()
+                } label: {
+                    LabeledContent("Saved passkeys", value: "\(PasskeyStore.shared.all().count)")
+                }
+            }
+
             Section("Aegis ID service") {
                 LabeledContent("Web app", value: AegisWalletEnvironment.webAppDisplayValue)
                 LabeledContent("Lab transport", value: AegisWalletEnvironment.usesHostedWebApp ? "Hosted bridge" : "Local ACA-Py")

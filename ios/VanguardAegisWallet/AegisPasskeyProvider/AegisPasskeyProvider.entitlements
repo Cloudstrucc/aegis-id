@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The extension is a separate process. Without the same App Group and
+	     keychain group it sees no passkeys and no keys, and every request
+	     fails with "no credential" on a wallet that plainly has one. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.ca.vanguardcs.aegisid.wallet</string>
+	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)ca.vanguardcs.aegisid.wallet.passkeys</string>
+	</array>
+</dict>
+</plist>

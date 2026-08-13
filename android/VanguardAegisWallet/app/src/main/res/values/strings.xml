@@ -3,4 +3,6 @@
          app/build.gradle.kts, so each install is labelled Aegis ID / Dev / QA /
          Local on the home screen. Defining it here too would be a duplicate
          resource. -->
+    <!-- Shown under Aegis ID in the system's passkey provider list. -->
+    <string name="passkey_provider_subtitle">Passkeys held on this device</string>
 </resources>

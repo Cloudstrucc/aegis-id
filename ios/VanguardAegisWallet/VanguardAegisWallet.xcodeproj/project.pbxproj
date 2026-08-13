@@ -7,6 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B00000000000000000000020 /* PasskeyAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* PasskeyAuthenticator.swift */; };
+		B00000000000000000000021 /* PasskeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000015 /* PasskeyStore.swift */; };
+		B00000000000000000000022 /* PasskeyIdentityIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* PasskeyIdentityIndex.swift */; };
+		B00000000000000000000023 /* PasskeysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* PasskeysView.swift */; };
+		B00000000000000000000024 /* AegisPasskeyProvider.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* AegisPasskeyProvider.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B00000000000000000000030 /* CredentialProviderViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* CredentialProviderViewController.swift */; };
+		B00000000000000000000031 /* PasskeyPromptViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000011 /* PasskeyPromptViews.swift */; };
+		B00000000000000000000032 /* PasskeyAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* PasskeyAuthenticator.swift */; };
+		B00000000000000000000033 /* PasskeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000015 /* PasskeyStore.swift */; };
+		B00000000000000000000034 /* PasskeyIdentityIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* PasskeyIdentityIndex.swift */; };
 		A10000000000000000000001 /* VanguardAegisWalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* VanguardAegisWalletApp.swift */; };
 		A10000000000000000000002 /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AppView.swift */; };
 		A10000000000000000000003 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* DesignSystem.swift */; };
@@ -34,7 +44,40 @@
 		A10000000000000000000055 /* WalletProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000055 /* WalletProfileView.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		B0000000000000000000000A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A60000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B00000000000000000000001;
+			remoteInfo = AegisPasskeyProvider;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B00000000000000000000008 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B00000000000000000000024 /* AegisPasskeyProvider.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		B00000000000000000000014 /* PasskeyAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyAuthenticator.swift; sourceTree = "<group>"; };
+		B00000000000000000000015 /* PasskeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyStore.swift; sourceTree = "<group>"; };
+		B00000000000000000000016 /* PasskeyIdentityIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyIdentityIndex.swift; sourceTree = "<group>"; };
+		B00000000000000000000017 /* PasskeysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeysView.swift; sourceTree = "<group>"; };
+		B00000000000000000000010 /* CredentialProviderViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialProviderViewController.swift; sourceTree = "<group>"; };
+		B00000000000000000000011 /* PasskeyPromptViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyPromptViews.swift; sourceTree = "<group>"; };
+		B00000000000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B00000000000000000000013 /* AegisPasskeyProvider.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AegisPasskeyProvider.entitlements; sourceTree = "<group>"; };
+		B00000000000000000000002 /* AegisPasskeyProvider.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AegisPasskeyProvider.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000001 /* VanguardAegisWalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VanguardAegisWalletApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
@@ -65,6 +108,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B00000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A30000000000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -75,10 +125,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B00000000000000000000006 /* AegisPasskeyProvider */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000010 /* CredentialProviderViewController.swift */,
+				B00000000000000000000011 /* PasskeyPromptViews.swift */,
+				B00000000000000000000012 /* Info.plist */,
+				B00000000000000000000013 /* AegisPasskeyProvider.entitlements */,
+			);
+			path = AegisPasskeyProvider;
+			sourceTree = "<group>";
+		};
 		A40000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000002 /* VanguardAegisWallet */,
+				B00000000000000000000006 /* AegisPasskeyProvider */,
 				A40000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -102,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000013 /* VanguardAegisWallet.app */,
+				B00000000000000000000002 /* AegisPasskeyProvider.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -142,6 +205,9 @@
 				A20000000000000000000021 /* AegisWalletEnvironment.swift */,
 				A20000000000000000000006 /* OOBInvitationParser.swift */,
 				A20000000000000000000014 /* LabAgentClient.swift */,
+				B00000000000000000000014 /* PasskeyAuthenticator.swift */,
+				B00000000000000000000015 /* PasskeyStore.swift */,
+				B00000000000000000000016 /* PasskeyIdentityIndex.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -189,6 +255,7 @@
 			children = (
 				A20000000000000000000055 /* WalletProfileView.swift */,
 				A20000000000000000000011 /* SettingsView.swift */,
+				B00000000000000000000017 /* PasskeysView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -231,6 +298,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B00000000000000000000001 /* AegisPasskeyProvider */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B00000000000000000000007 /* Build configuration list for PBXNativeTarget "AegisPasskeyProvider" */;
+			buildPhases = (
+				B00000000000000000000003 /* Sources */,
+				B00000000000000000000004 /* Frameworks */,
+				B00000000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AegisPasskeyProvider;
+			productName = AegisPasskeyProvider;
+			productReference = B00000000000000000000002 /* AegisPasskeyProvider.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A50000000000000000000001 /* VanguardAegisWallet */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A90000000000000000000002 /* Build configuration list for PBXNativeTarget "VanguardAegisWallet" */;
@@ -238,10 +322,12 @@
 				A70000000000000000000001 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
 				A80000000000000000000001 /* Resources */,
+				B00000000000000000000008 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B00000000000000000000009 /* PBXTargetDependency */,
 			);
 			name = VanguardAegisWallet;
 			productName = VanguardAegisWallet;
@@ -277,11 +363,19 @@
 			projectRoot = "";
 			targets = (
 				A50000000000000000000001 /* VanguardAegisWallet */,
+				B00000000000000000000001 /* AegisPasskeyProvider */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		B00000000000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A80000000000000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -296,6 +390,18 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B00000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B00000000000000000000030 /* CredentialProviderViewController.swift in Sources */,
+				B00000000000000000000031 /* PasskeyPromptViews.swift in Sources */,
+				B00000000000000000000032 /* PasskeyAuthenticator.swift in Sources */,
+				B00000000000000000000033 /* PasskeyStore.swift in Sources */,
+				B00000000000000000000034 /* PasskeyIdentityIndex.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A70000000000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -306,6 +412,10 @@
 				A10000000000000000000004 /* Models.swift in Sources */,
 				A10000000000000000000005 /* WalletStore.swift in Sources */,
 				A10000000000000000000055 /* WalletProfileView.swift in Sources */,
+				B00000000000000000000020 /* PasskeyAuthenticator.swift in Sources */,
+				B00000000000000000000021 /* PasskeyStore.swift in Sources */,
+				B00000000000000000000022 /* PasskeyIdentityIndex.swift in Sources */,
+				B00000000000000000000023 /* PasskeysView.swift in Sources */,
 				A10000000000000000000050 /* WalletIdentity.swift in Sources */,
 				A10000000000000000000051 /* WalletRegistrationClient.swift in Sources */,
 				A10000000000000000000052 /* WalletStore+Identity.swift in Sources */,
@@ -326,7 +436,231 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		B00000000000000000000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B00000000000000000000001 /* AegisPasskeyProvider */;
+			targetProxy = B0000000000000000000000A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		B00000000000000000000040 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AEGIS_APP_DISPLAY_NAME = "Aegis ID";
+				CODE_SIGN_ENTITLEMENTS = AegisPasskeyProvider/AegisPasskeyProvider.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AegisPasskeyProvider/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet.passkeys;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug";
+		};
+		B00000000000000000000041 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AEGIS_APP_DISPLAY_NAME = "Aegis ID";
+				CODE_SIGN_ENTITLEMENTS = AegisPasskeyProvider/AegisPasskeyProvider.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AegisPasskeyProvider/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet.passkeys;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release";
+		};
+		B00000000000000000000042 /* Debug-Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AEGIS_APP_DISPLAY_NAME = "Aegis ID Dev";
+				CODE_SIGN_ENTITLEMENTS = AegisPasskeyProvider/AegisPasskeyProvider.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AegisPasskeyProvider/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet.dev.passkeys;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-Dev";
+		};
+		B00000000000000000000043 /* Debug-Local */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AEGIS_APP_DISPLAY_NAME = "Aegis ID Dev";
+				CODE_SIGN_ENTITLEMENTS = AegisPasskeyProvider/AegisPasskeyProvider.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AegisPasskeyProvider/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet.dev.passkeys;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-Local";
+		};
+		B00000000000000000000044 /* Debug-Dev copy */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AEGIS_APP_DISPLAY_NAME = "Aegis ID Dev";
+				CODE_SIGN_ENTITLEMENTS = AegisPasskeyProvider/AegisPasskeyProvider.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AegisPasskeyProvider/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet.dev.passkeys;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-Dev copy";
+		};
+		B00000000000000000000045 /* Release-Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AEGIS_APP_DISPLAY_NAME = "Aegis ID Dev";
+				CODE_SIGN_ENTITLEMENTS = AegisPasskeyProvider/AegisPasskeyProvider.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AegisPasskeyProvider/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet.dev.passkeys;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release-Dev";
+		};
+		B00000000000000000000046 /* Debug-QA */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AEGIS_APP_DISPLAY_NAME = "Aegis ID QA";
+				CODE_SIGN_ENTITLEMENTS = AegisPasskeyProvider/AegisPasskeyProvider.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AegisPasskeyProvider/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet.qa.passkeys;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-QA";
+		};
+		B00000000000000000000047 /* Release-QA */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AEGIS_APP_DISPLAY_NAME = "Aegis ID QA";
+				CODE_SIGN_ENTITLEMENTS = AegisPasskeyProvider/AegisPasskeyProvider.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GL46AP73ZQ;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AegisPasskeyProvider/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = ca.vanguardcs.aegisid.wallet.qa.passkeys;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Release-QA";
+		};
 		A90000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1071,6 +1405,21 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		B00000000000000000000007 /* Build configuration list for PBXNativeTarget "AegisPasskeyProvider" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B00000000000000000000040 /* Debug */,
+				B00000000000000000000041 /* Release */,
+				B00000000000000000000042 /* Debug-Dev */,
+				B00000000000000000000043 /* Debug-Local */,
+				B00000000000000000000044 /* Debug-Dev copy */,
+				B00000000000000000000045 /* Release-Dev */,
+				B00000000000000000000046 /* Debug-QA */,
+				B00000000000000000000047 /* Release-QA */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		A90000000000000000000001 /* Build configuration list for PBXProject "VanguardAegisWallet" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

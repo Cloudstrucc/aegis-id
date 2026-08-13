@@ -5,4 +5,13 @@
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:statusBarColor">#F5F9FD</item>
     </style>
+
+    <!-- The consent activity shows only the biometric prompt. Without a
+         transparent theme an empty window flashes behind it on every request. -->
+    <style name="PasskeyConsentTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>

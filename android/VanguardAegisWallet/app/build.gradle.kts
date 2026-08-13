@@ -181,6 +181,11 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    // The provider half of the Credential Manager API: BeginGetCredential,
+    // PendingIntentHandler and the WebAuthn request/response parsers. Separate
+    // artifact from `credentials`, which is only the client side.
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui")

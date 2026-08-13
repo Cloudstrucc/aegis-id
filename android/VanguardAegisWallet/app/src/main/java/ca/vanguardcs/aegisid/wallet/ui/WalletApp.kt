@@ -409,6 +409,7 @@ private fun ConnectionsScreen(store: WalletStore) {
 private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String) -> JSONObject) {
     var passkeySubject by rememberSaveable { mutableStateOf(store.walletPasskeySubject) }
     var showProfile by rememberSaveable { mutableStateOf(false) }
+    var showPasskeys by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         store.refreshWalletPasskeyStatus()
@@ -418,6 +419,14 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
         Column(Modifier.fillMaxSize()) {
             TextButton(onClick = { showProfile = false }) { Text("< Settings") }
             WalletProfileScreen(store)
+        }
+        return
+    }
+
+    if (showPasskeys) {
+        Column(Modifier.fillMaxSize()) {
+            TextButton(onClick = { showPasskeys = false }) { Text("< Settings") }
+            PasskeysScreen()
         }
         return
     }
@@ -441,6 +450,24 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
                     onClick = { showProfile = true },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Wallet ID, contact and recovery") }
+            }
+        }
+
+        // Passkeys this wallet holds for other people's sites, as opposed to
+        // the wallet passkey settings further down, which are about approving
+        // Aegis challenges.
+        item {
+            AegisCard {
+                Text("Passkeys for other services", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "FIDO2 credentials this wallet stores for any site that supports them.",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Button(
+                    onClick = { showPasskeys = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Manage passkeys") }
             }
         }
 

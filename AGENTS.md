@@ -86,6 +86,22 @@ freshly installed package is in the *stopped* state and implicit intents skip
 those; and the URL is quoted for the **device** shell, where an unquoted `&` is
 a background operator that silently truncates it at the first parameter.
 
+## Passkeys for other services
+
+Both wallets act as **FIDO2 credential providers**, so a holder can use the
+Aegis wallet as their passkey for any site that supports one — not only for
+Aegis. iOS ships an `ASCredentialProviderExtension` target; Android a
+`CredentialProviderService` (API 34+). Full notes in
+[`docs/wallet-passkey-provider.md`](docs/wallet-passkey-provider.md).
+
+**Same-device only, and that is a platform limit rather than a gap.** Signing in
+on a desktop by scanning a QR is the hybrid (caBLE) transport, implemented
+inside iOS and Play services with no third-party API on either. Passkeys also do
+not sync between devices — the key is non-extractable and excluded from backups,
+so losing the phone means recovering through each site's own process. Both are
+stated in the wallet interface, because they are much easier to explain before
+somebody relies on them.
+
 ## iOS releases
 
 `scripts/release-ios.sh --env dev|qa|prod|all` archives, exports and uploads;

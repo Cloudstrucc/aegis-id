@@ -133,6 +133,24 @@ not. `--debug` builds unsigned deliberately and needs no credentials.
 The script does not upload. Artifacts land in `artifacts/android/` and
 publishing to Play is a manual step.
 
+## Passkey provider
+
+`AegisCredentialProviderService` lets the wallet hold FIDO2 passkeys for **any**
+application or site. See
+[`docs/wallet-passkey-provider.md`](../docs/wallet-passkey-provider.md).
+
+**API 34+ only** — `CredentialProviderService` did not exist before Android 14,
+so the service is `@RequiresApi` and the Passkeys screen says so on older
+devices rather than offering something that cannot work.
+
+The service shows nothing and signs nothing. Every answer is a `PendingIntent`
+into `PasskeyConsentActivity`, and that intent must be **`FLAG_MUTABLE`**: the
+system writes the request into it before sending, so an immutable one arrives
+empty and every request fails with no error worth reading.
+
+Same-device only. Scanning a desktop passkey QR is the hybrid transport, owned
+by Play services with no third-party API.
+
 ## Rules
 
 - Do not fake security-sensitive flows.
