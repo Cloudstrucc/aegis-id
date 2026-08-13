@@ -98,14 +98,31 @@ object PasskeyAuthenticator {
 
     // --- assertion -----------------------------------------------------------
 
-    fun assert(
+    /**
+     * Prepare the signing operation, ready to be authorised.
+     *
+     * Keys are generated auth-per-use, so the operation has to be wrapped in a
+     * BiometricPrompt.CryptoObject and only becomes usable once the holder has
+     * authenticated. Calling `sign()` on an unauthorised operation throws
+     * UserNotAuthenticatedException — which reaches the relying party as a flat
+     * "not allowed", saying nothing about what was actually refused.
+     */
+    fun prepareAssertion(credentialId: ByteArray): Signature {
+        val privateKey = loadKey(credentialId) ?: throw PasskeyMissingException()
+        return Signature.getInstance("SHA256withECDSA").apply { initSign(privateKey) }
+    }
+
+    /**
+     * Finish with the Signature the biometric prompt handed back. It is the
+     * same object, now authorised — a fresh one would not be.
+     */
+    fun completeAssertion(
         rpId: String,
-        credentialId: ByteArray,
+        signature: Signature,
         clientDataHash: ByteArray,
         signCount: Int,
         userVerified: Boolean
     ): Assertion {
-        val privateKey = loadKey(credentialId) ?: throw PasskeyMissingException()
         val authData = authenticatorData(
             rpId = rpId,
             userPresent = true,
@@ -118,13 +135,10 @@ object PasskeyAuthenticator {
         // The signature covers authenticatorData ‖ clientDataHash, in that
         // order. Reversing them produces a signature that verifies against
         // nothing and an error the relying party cannot explain.
-        val signature = Signature.getInstance("SHA256withECDSA").apply {
-            initSign(privateKey)
-            update(authData)
-            update(clientDataHash)
-        }.sign()
+        signature.update(authData)
+        signature.update(clientDataHash)
 
-        return Assertion(authData, signature, signCount)
+        return Assertion(authData, signature.sign(), signCount)
     }
 
     // --- authenticator data --------------------------------------------------

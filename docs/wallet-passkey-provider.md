@@ -147,6 +147,25 @@ open the project in Xcode once, select each target, and add **App Groups** and
 **Keychain Sharing** under Signing & Capabilities. Xcode registers both on the
 portal, and every later build from the script works.
 
+## Two failures that look like a permission problem
+
+Both surface to the relying party as the same flat message — *"the request is
+not allowed by the user agent or the platform"* — because WebAuthn has one error
+for "the authenticator declined" and no way to say why.
+
+**iOS: `$(AppIdentifierPrefix)` in Swift.** It is a build setting. Xcode expands
+it in `.entitlements` and `Info.plist` and **not** in source, where it stays a
+literal string and every keychain call fails with `errSecMissingEntitlement`.
+The group is published through `AEGIS_KEYCHAIN_ACCESS_GROUP` in both Info.plists
+and read at runtime.
+
+**Android: signing with an unauthorised operation.** Keys are generated
+auth-per-use, so a `Signature` has to be passed through
+`BiometricPrompt.CryptoObject` and the *same object* used afterwards — a fresh
+one throws `UserNotAuthenticatedException`. A CryptoObject also cannot travel
+with `DEVICE_CREDENTIAL`, so an assertion asks for a biometric specifically
+while registration, which authorises nothing, still accepts either.
+
 ## Testing it
 
 There is no way to unit-test this end to end without a relying party, so use a

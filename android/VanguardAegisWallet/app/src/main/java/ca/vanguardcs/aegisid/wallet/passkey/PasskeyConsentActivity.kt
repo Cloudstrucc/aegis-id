@@ -180,8 +180,17 @@ class PasskeyConsentActivity : FragmentActivity() {
             return
         }
 
-        verifyHolder("Sign in to ${passkey.rpId}") { verified ->
-            if (!verified) {
+        val operation = runCatching {
+            PasskeyAuthenticator.prepareAssertion(passkey.credentialIdBytes)
+        }.getOrElse {
+            finishCancelled()
+            return
+        }
+
+        // The prompt authorises this exact operation. Signing with anything
+        // else throws, because the key is generated auth-per-use.
+        verifyHolder("Sign in to ${passkey.rpId}", operation) { authorised ->
+            if (authorised == null) {
                 finishCancelled()
                 return@verifyHolder
             }
@@ -192,9 +201,9 @@ class PasskeyConsentActivity : FragmentActivity() {
                 val clientDataHash = MessageDigest.getInstance("SHA-256").digest(clientDataJson)
 
                 val signCount = store.recordUse(passkey.credentialId)
-                val assertion = PasskeyAuthenticator.assert(
+                val assertion = PasskeyAuthenticator.completeAssertion(
                     rpId = passkey.rpId,
-                    credentialId = passkey.credentialIdBytes,
+                    signature = authorised,
                     clientDataHash = clientDataHash,
                     signCount = signCount,
                     userVerified = true
@@ -240,12 +249,42 @@ class PasskeyConsentActivity : FragmentActivity() {
      * what makes the key usable at all.
      */
     private fun verifyHolder(reason: String, onResult: (Boolean) -> Unit) {
+        authenticate(reason, null) { onResult(it != null) }
+    }
+
+    /**
+     * Authorise a specific signing operation.
+     *
+     * Passes the Signature through a CryptoObject and hands back the same
+     * object, now usable. A device-credential fallback cannot carry a
+     * CryptoObject, so this asks for a biometric when one is being authorised.
+     */
+    private fun verifyHolder(
+        reason: String,
+        operation: java.security.Signature,
+        onResult: (java.security.Signature?) -> Unit
+    ) {
+        authenticate(reason, operation) { onResult(it) }
+    }
+
+    private fun authenticate(
+        reason: String,
+        operation: java.security.Signature?,
+        onResult: (java.security.Signature?) -> Unit
+    ) {
         val manager = BiometricManager.from(this)
-        val allowed = BiometricManager.Authenticators.BIOMETRIC_STRONG or
-            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        // A CryptoObject cannot travel with DEVICE_CREDENTIAL, so an operation
+        // being authorised needs a biometric. Without one, nothing here can
+        // proceed and saying so beats a prompt that cannot succeed.
+        val allowed = if (operation != null) {
+            BiometricManager.Authenticators.BIOMETRIC_STRONG
+        } else {
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        }
 
         if (manager.canAuthenticate(allowed) != BiometricManager.BIOMETRIC_SUCCESS) {
-            onResult(false)
+            onResult(null)
             return
         }
 
@@ -254,22 +293,27 @@ class PasskeyConsentActivity : FragmentActivity() {
             ContextCompat.getMainExecutor(this),
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    onResult(true)
+                    onResult(result.cryptoObject?.signature ?: operation)
                 }
 
                 override fun onAuthenticationError(code: Int, message: CharSequence) {
-                    onResult(false)
+                    onResult(null)
                 }
             }
         )
 
-        prompt.authenticate(
-            BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Aegis ID")
-                .setSubtitle(reason)
-                .setAllowedAuthenticators(allowed)
-                .build()
-        )
+        val info = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Aegis ID")
+            .setSubtitle(reason)
+            .setAllowedAuthenticators(allowed)
+            .apply { if (operation != null) setNegativeButtonText("Cancel") }
+            .build()
+
+        if (operation != null) {
+            prompt.authenticate(info, BiometricPrompt.CryptoObject(operation))
+        } else {
+            prompt.authenticate(info)
+        }
     }
 
     // --- WebAuthn plumbing ---------------------------------------------------

@@ -157,7 +157,17 @@ enum PasskeyAuthenticator {
 /// keychain otherwise. The access group is shared with the credential provider
 /// extension, which is a separate process and would otherwise see nothing.
 enum PasskeyKeyStore {
-    static let accessGroup = "$(AppIdentifierPrefix)ca.vanguardcs.aegisid.wallet.passkeys"
+    /// Read from the bundle, not written here.
+    ///
+    /// `$(AppIdentifierPrefix)` is a build setting. Xcode expands it in
+    /// `.entitlements` and `Info.plist` — and **not** in Swift source, where it
+    /// stays the literal string and every keychain call fails with
+    /// `errSecMissingEntitlement`. The failure surfaces to the browser as
+    /// "the request is not allowed by the user agent or the platform", which
+    /// says nothing about a keychain, so it is worth being deliberate here.
+    static let accessGroup: String? =
+        Bundle.main.object(forInfoDictionaryKey: "AEGIS_KEYCHAIN_ACCESS_GROUP") as? String
+
     private static let service = "ca.vanguardcs.aegisid.wallet.passkey-key"
 
     static func createKey(for credentialId: Data) throws -> P256.Signing.PrivateKey {
@@ -210,8 +220,12 @@ enum PasskeyKeyStore {
             kSecAttrService as String: service,
             kSecAttrAccount as String: credentialId.base64URLEncodedString()
         ]
+        // The simulator has no application-identifier prefix, so setting a group
+        // there fails rather than sharing anything.
         #if !targetEnvironment(simulator)
-        query[kSecAttrAccessGroup as String] = PasskeyKeyStore.accessGroup
+        if let group = accessGroup, !group.contains("$(") {
+            query[kSecAttrAccessGroup as String] = group
+        }
         #endif
         return query
     }
