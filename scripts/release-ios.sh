@@ -237,11 +237,18 @@ for env in "${ENVIRONMENTS[@]}"; do
   rm -rf "$archive" "$export_dir"
 
   log "Archiving $env"
+  # -allowProvisioningUpdates lets Xcode register App IDs, App Groups and
+  # profiles it does not have yet. Export always had it; archive did not, so a
+  # build that needed a new identifier failed here — before the step that could
+  # have created it. The passkey provider extension is exactly that case: it is
+  # a second bundle id, and both it and the app need the App Group capability
+  # added to their profiles.
   xcodebuild -project "$PROJECT" \
     -scheme "$scheme" \
     -configuration "$configuration" \
     -destination 'generic/platform=iOS' \
     -archivePath "$archive" \
+    -allowProvisioningUpdates \
     CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
     clean archive
 

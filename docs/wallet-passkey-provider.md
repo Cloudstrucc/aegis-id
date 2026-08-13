@@ -113,6 +113,27 @@ counter that goes backwards means two copies of a key that should exist once.
 It is stored with the record and incremented on use, never derived from
 anything a caller supplies.
 
+## Signing and provisioning
+
+The extension is a **second bundle id** — `<app bundle id>.passkeys` — and both
+it and the app need the **App Groups** capability on their App IDs. Neither
+exists the first time you build after this change, which is why the release
+script passes `-allowProvisioningUpdates` on the archive as well as the export:
+without it on the archive, the build fails at the step *before* the one that
+could have created what it was missing.
+
+    error: No profiles for 'ca.vanguardcs.aegisid.wallet.dev.passkeys' were found
+    error: Provisioning profile "…" doesn't include the App Groups capability
+    error: Provisioning profile "…" doesn't support the group.ca.vanguardcs.aegisid.wallet App Group
+
+That is what those three errors mean, and `scripts/release-ios.sh` handles them.
+
+If Apple's API declines to create the App Group from the command line — it
+sometimes does for a group identifier that has never existed on the account —
+open the project in Xcode once, select each target, and add **App Groups** and
+**Keychain Sharing** under Signing & Capabilities. Xcode registers both on the
+portal, and every later build from the script works.
+
 ## Testing it
 
 There is no way to unit-test this end to end without a relying party, so use a
