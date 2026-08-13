@@ -128,6 +128,19 @@ could have created what it was missing.
 
 That is what those three errors mean, and `scripts/release-ios.sh` handles them.
 
+### The AutoFill Credential Provider entitlement
+
+`com.apple.developer.authentication-services.autofill-credential-provider` has
+to be `true` in the entitlements of **the app as well as the extension**. That
+is easy to miss because nothing local complains: the archive builds, the code
+signs, and App Store Connect rejects the upload afterwards.
+
+    ERROR: Missing Entitlement. The extension bundle 'VanguardAegisWallet.app' is
+    missing entitlement 'com.apple.developer.authentication-services.autofill-credential-provider'. (90729)
+
+All five entitlements files carry it — the four app configurations and the
+extension's. Adding a new configuration means adding it there too.
+
 If Apple's API declines to create the App Group from the command line — it
 sometimes does for a group identifier that has never existed on the account —
 open the project in Xcode once, select each target, and add **App Groups** and

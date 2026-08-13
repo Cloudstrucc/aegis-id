@@ -25,6 +25,9 @@ Two things that break it silently:
   cannot use.
 - **`ProvidesPasskeys` in the extension Info.plist.** Without it iOS treats the
   extension as a password provider and never sends it a passkey request.
+- **`com.apple.developer.authentication-services.autofill-credential-provider`
+  on the app *and* the extension.** Nothing local complains without it — the
+  archive builds and signs, and App Store Connect rejects the upload with 90729.
 
 Same-device only. Scanning a desktop passkey QR is the hybrid transport, which
 is OS-owned with no third-party API — the interface says so rather than
