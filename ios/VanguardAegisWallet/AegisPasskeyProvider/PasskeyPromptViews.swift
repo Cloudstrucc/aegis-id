@@ -136,3 +136,23 @@ private struct LabelledRow: View {
         .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
     }
 }
+
+/// Shown while the extension works.
+///
+/// No button. The system sheet already collected the holder's choice of
+/// provider, and the biometric prompt collects the rest — anything in between
+/// is a tap that spends the relying party's timeout without deciding anything.
+struct PasskeyWorkingView: View {
+    let title: String
+    let relyingParty: String
+
+    var body: some View {
+        VStack(spacing: 14) {
+            ProgressView()
+            Text(title).font(.headline)
+            Text(relyingParty).font(.footnote).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(22)
+    }
+}

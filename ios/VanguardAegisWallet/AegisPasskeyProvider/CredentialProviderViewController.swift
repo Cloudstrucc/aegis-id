@@ -33,18 +33,18 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
 
         PasskeyDiagnostics.record("registration asked", detail: identity.relyingPartyIdentifier)
 
+        // Straight to verification. The system sheet has already asked the
+        // holder to choose this provider, so a second "are you sure" is a tap
+        // that buys nothing — and every extra step spends the relying party's
+        // timeout, after which iOS discards the answer and the site reports a
+        // flat refusal.
         present(
-            PasskeyPromptView(
-                title: "Create a passkey",
-                relyingParty: identity.relyingPartyIdentifier,
-                account: identity.userName,
-                actionTitle: "Create passkey",
-                explanation:
-                    "A new key is generated on this device. The private half never leaves it and is not in any backup.",
-                onConfirm: { [weak self] in self?.completeRegistration(request: request, identity: identity) },
-                onCancel: { [weak self] in self?.cancel(.userCanceled) }
+            PasskeyWorkingView(
+                title: "Creating a passkey",
+                relyingParty: identity.relyingPartyIdentifier
             )
         )
+        completeRegistration(request: request, identity: identity)
     }
 
     private func completeRegistration(request: ASPasskeyCredentialRequest, identity: ASPasskeyCredentialIdentity) {
@@ -103,12 +103,15 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
                 // housekeeping, and doing it before this held an in-flight
                 // request open long enough for iOS to time the extension out —
                 // which the site then reports as a flat "not allowed".
-                await extensionContext.completeRegistrationRequest(using: credential)
-                // Logged after the handover returns. iOS reports nothing when it
-                // rejects a credential, so "registered" without this entry means
-                // the extension was torn down mid-call — a timeout or a refusal
-                // — rather than the site declining something we sent.
-                PasskeyDiagnostics.record("handed to iOS", detail: identity.relyingPartyIdentifier)
+                // The completion reports whether the request had already
+                // expired. Discarding it hides the one failure the extension can
+                // actually see: iOS accepting the call and throwing the answer
+                // away because the site stopped waiting.
+                let expired = await extensionContext.completeRegistrationRequest(using: credential)
+                PasskeyDiagnostics.record(
+                    expired ? "iOS discarded it — request had expired" : "handed to iOS",
+                    detail: identity.relyingPartyIdentifier
+                )
                 await PasskeyIdentityIndex.refresh()
             } catch {
                 PasskeyDiagnostics.record("registration failed", detail: String(describing: error))
@@ -153,26 +156,17 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
             return
         }
 
-        present(
-            PasskeyPromptView(
-                title: "Sign in",
-                relyingParty: record.rpId,
-                account: record.accountLabel,
-                actionTitle: "Use passkey",
-                explanation: "This proves the key on this device without sending anything reusable.",
-                onConfirm: { [weak self] in
-                    Task { @MainActor in
-                        let verified = await self?.verifyHolder(reason: "Sign in to \(record.rpId)") ?? false
-                        guard verified else {
-                            self?.cancel(.userCanceled)
-                            return
-                        }
-                        await self?.sign(request: request, record: record, userVerified: true)
-                    }
-                },
-                onCancel: { [weak self] in self?.cancel(.userCanceled) }
-            )
-        )
+        present(PasskeyWorkingView(title: "Signing in", relyingParty: record.rpId))
+
+        Task { @MainActor in
+            let verified = await verifyHolder(reason: "Sign in to \(record.rpId)")
+            guard verified else {
+                PasskeyDiagnostics.record("assertion cancelled", detail: "holder not verified")
+                cancel(.userCanceled)
+                return
+            }
+            await sign(request: request, record: record, userVerified: true)
+        }
     }
 
     /// A site asked for a passkey without naming one, so the holder picks.
@@ -238,8 +232,11 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
                 authenticatorData: result.authenticatorData,
                 credentialID: record.credentialIdData
             )
-            await extensionContext.completeAssertionRequest(using: credential)
-            PasskeyDiagnostics.record("assertion completed", detail: record.rpId)
+            let expired = await extensionContext.completeAssertionRequest(using: credential)
+            PasskeyDiagnostics.record(
+                expired ? "iOS discarded it — request had expired" : "assertion completed",
+                detail: record.rpId
+            )
         } catch {
             PasskeyDiagnostics.record("assertion failed", detail: String(describing: error))
             cancel(.failed)
