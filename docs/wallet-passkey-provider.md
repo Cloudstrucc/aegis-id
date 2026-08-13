@@ -166,6 +166,41 @@ one throws `UserNotAuthenticatedException`. A CryptoObject also cannot travel
 with `DEVICE_CREDENTIAL`, so an assertion asks for a biometric specifically
 while registration, which authorises nothing, still accepts either.
 
+## What has been verified, and what has not
+
+Registration on iOS currently reaches `handed to iOS` — the extension builds a
+credential, hands it over, and iOS reports no expiry — and Safari still fails
+the page with `NotAllowedError`. These have each been checked rather than
+assumed, so they do not need checking again:
+
+| Checked | How | Result |
+|---|---|---|
+| Attestation object and assertion | Generated with the shipped Swift code, verified with `@simplewebauthn/server` — the library this platform uses | Both verify |
+| Credential shape | Against `ASPasskeyRegistrationCredential.h` | Matches the documented initializer |
+| Extension packaging | `pluginkit -mv` on a simulator | Registered against the app |
+| Built capability keys | `plutil -p` on the built `.appex` | `ProvidesPasskeys => true`, correct extension point and principal class |
+| Relying party config | `PASSKEY_RP_ID` / `PASSKEY_ORIGIN` per tenant | `rpId` equals the origin host |
+| Extension lifecycle | Device logs via the Passkeys screen | Biometric runs, no expiry reported |
+
+The simulator does **not** offer third-party credential providers in AutoFill
+settings, so the end-to-end path cannot be exercised there — only on a device.
+
+What remains unknown is why Safari rejects a credential iOS accepted. That
+reason exists only in the device log:
+
+```bash
+# with the iPhone connected
+log stream --device --predicate 'subsystem CONTAINS "AuthenticationServices" OR process == "Safari"' --level debug
+```
+
+Reproduce the registration while that runs. The rejection is named there and
+nowhere else — the DOMException the page receives is the same sentence for
+every cause.
+
+Worth running alongside it: register on `https://webauthn.io`. It separates a
+wallet problem from a problem with this platform's own request, and it takes a
+minute.
+
 ## Testing it
 
 There is no way to unit-test this end to end without a relying party, so use a
