@@ -17,6 +17,21 @@ import UIKit
 final class CredentialProviderViewController: ASCredentialProviderViewController {
     private let store = PasskeyStore.shared
 
+    /// Started from viewDidAppear, never from prepareInterface.
+    ///
+    /// LocalAuthentication presents over this view controller, so asking before
+    /// it is on screen fails immediately — the extension flashes up, cancels
+    /// itself, and iOS drops the holder back on the provider picker with
+    /// nothing to explain it.
+    private var pendingWork: (() -> Void)?
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        let work = pendingWork
+        pendingWork = nil
+        work?()
+    }
+
     // MARK: - Registration
 
     /// A site is creating a passkey and iOS has already asked the holder to
@@ -44,7 +59,7 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
                 relyingParty: identity.relyingPartyIdentifier
             )
         )
-        completeRegistration(request: request, identity: identity)
+        pendingWork = { [weak self] in self?.completeRegistration(request: request, identity: identity) }
     }
 
     private func completeRegistration(request: ASPasskeyCredentialRequest, identity: ASPasskeyCredentialIdentity) {
@@ -158,14 +173,17 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
 
         present(PasskeyWorkingView(title: "Signing in", relyingParty: record.rpId))
 
-        Task { @MainActor in
-            let verified = await verifyHolder(reason: "Sign in to \(record.rpId)")
-            guard verified else {
-                PasskeyDiagnostics.record("assertion cancelled", detail: "holder not verified")
-                cancel(.userCanceled)
-                return
+        pendingWork = { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                let verified = await self.verifyHolder(reason: "Sign in to \(record.rpId)")
+                guard verified else {
+                    PasskeyDiagnostics.record("assertion cancelled", detail: "holder not verified")
+                    self.cancel(.userCanceled)
+                    return
+                }
+                await self.sign(request: request, record: record, userVerified: true)
             }
-            await sign(request: request, record: record, userVerified: true)
         }
     }
 
@@ -253,11 +271,24 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
     private func verifyHolder(reason: String) async -> Bool {
         let context = LAContext()
         context.localizedCancelTitle = "Cancel"
-        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil) else {
+
+        var policyError: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &policyError) else {
+            PasskeyDiagnostics.record(
+                "cannot verify holder",
+                detail: policyError.map { "\($0.code): \($0.localizedDescription)" } ?? "no passcode set"
+            )
             return false
         }
+
         return await withCheckedContinuation { continuation in
-            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, _ in
+            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, error in
+                if !success {
+                    PasskeyDiagnostics.record(
+                        "verification refused",
+                        detail: (error as NSError?).map { "\($0.code): \($0.localizedDescription)" } ?? "declined"
+                    )
+                }
                 continuation.resume(returning: success)
             }
         }
