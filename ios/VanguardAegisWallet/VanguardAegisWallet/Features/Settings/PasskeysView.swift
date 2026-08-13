@@ -10,6 +10,7 @@ struct PasskeysView: View {
     @State private var passkeys: [StoredPasskey] = []
     @State private var providerEnabled = false
     @State private var pendingDeletion: StoredPasskey?
+    @State private var diagnostics: [PasskeyDiagnostics.Entry] = []
 
     private let store = PasskeyStore.shared
 
@@ -63,6 +64,35 @@ struct PasskeysView: View {
                 }
             }
 
+            // What the extension actually did. It runs as its own process with
+            // no console the holder can reach, and every failure reaches the
+            // site as the same sentence — so without this a problem cannot be
+            // told apart from a refusal.
+            if !diagnostics.isEmpty {
+                Section("Recent activity") {
+                    ForEach(diagnostics.prefix(12)) { entry in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.event).font(.caption.weight(.semibold))
+                            if !entry.detail.isEmpty {
+                                Text(entry.detail)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                            Text(entry.at.formatted(date: .omitted, time: .standard))
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, 1)
+                    }
+                    Button("Clear", role: .destructive) {
+                        PasskeyDiagnostics.clear()
+                        diagnostics = []
+                    }
+                    .font(.caption)
+                }
+            }
+
             Section {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Same device only").font(.caption.weight(.bold))
@@ -110,6 +140,7 @@ struct PasskeysView: View {
 
     private func reload() async {
         passkeys = store.all()
+        diagnostics = PasskeyDiagnostics.read()
         providerEnabled = await PasskeyIdentityIndex.isProviderEnabled()
         // The system's suggestion list drifts if a passkey was deleted while
         // the provider was switched off, so put it back in step on every visit.

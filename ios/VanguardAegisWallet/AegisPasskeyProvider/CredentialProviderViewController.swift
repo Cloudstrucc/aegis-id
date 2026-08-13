@@ -26,9 +26,12 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         guard let request = registrationRequest as? ASPasskeyCredentialRequest,
               let identity = request.credentialIdentity as? ASPasskeyCredentialIdentity
         else {
+            PasskeyDiagnostics.record("registration rejected", detail: "not a passkey request")
             cancel(.failed)
             return
         }
+
+        PasskeyDiagnostics.record("registration asked", detail: identity.relyingPartyIdentifier)
 
         present(
             PasskeyPromptView(
@@ -48,6 +51,10 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         // ES256 only. Saying so by refusing anything else is better than
         // creating a key the relying party will reject after the fact.
         guard request.supportedAlgorithms.contains(.ES256) else {
+            PasskeyDiagnostics.record(
+                "registration rejected",
+                detail: "site did not offer ES256: \(request.supportedAlgorithms.map(\.rawValue))"
+            )
             cancel(.failed)
             return
         }
@@ -55,6 +62,7 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         Task { @MainActor in
             let verified = await verifyHolder(reason: "Create a passkey for \(identity.relyingPartyIdentifier)")
             guard verified else {
+                PasskeyDiagnostics.record("registration cancelled", detail: "holder not verified")
                 cancel(.userCanceled)
                 return
             }
@@ -79,16 +87,26 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
                         lastUsedAt: nil
                     )
                 )
-                await PasskeyIdentityIndex.refresh()
-
                 let credential = ASPasskeyRegistrationCredential(
                     relyingParty: identity.relyingPartyIdentifier,
                     clientDataHash: request.clientDataHash,
                     credentialID: result.credentialId,
                     attestationObject: result.attestationObject
                 )
+
+                PasskeyDiagnostics.record(
+                    "registered",
+                    detail: "\(identity.relyingPartyIdentifier) · attestation \(result.attestationObject.count)B"
+                )
+
+                // Answer the system first. Republishing the identity store is
+                // housekeeping, and doing it before this held an in-flight
+                // request open long enough for iOS to time the extension out —
+                // which the site then reports as a flat "not allowed".
                 await extensionContext.completeRegistrationRequest(using: credential)
+                await PasskeyIdentityIndex.refresh()
             } catch {
+                PasskeyDiagnostics.record("registration failed", detail: String(describing: error))
                 cancel(.failed)
             }
         }
@@ -197,6 +215,7 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
 
     private func sign(clientDataHash: Data, record: StoredPasskey, userVerified: Bool) async {
         do {
+            PasskeyDiagnostics.record("assertion asked", detail: record.rpId)
             let signCount = store.recordUse(credentialId: record.credentialId)
             let result = try PasskeyAuthenticator.assert(
                 rpId: record.rpId,
@@ -215,7 +234,9 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
                 credentialID: record.credentialIdData
             )
             await extensionContext.completeAssertionRequest(using: credential)
+            PasskeyDiagnostics.record("assertion completed", detail: record.rpId)
         } catch {
+            PasskeyDiagnostics.record("assertion failed", detail: String(describing: error))
             cancel(.failed)
         }
     }
