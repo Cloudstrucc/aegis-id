@@ -104,6 +104,11 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
                 // request open long enough for iOS to time the extension out —
                 // which the site then reports as a flat "not allowed".
                 await extensionContext.completeRegistrationRequest(using: credential)
+                // Logged after the handover returns. iOS reports nothing when it
+                // rejects a credential, so "registered" without this entry means
+                // the extension was torn down mid-call — a timeout or a refusal
+                // — rather than the site declining something we sent.
+                PasskeyDiagnostics.record("handed to iOS", detail: identity.relyingPartyIdentifier)
                 await PasskeyIdentityIndex.refresh()
             } catch {
                 PasskeyDiagnostics.record("registration failed", detail: String(describing: error))
