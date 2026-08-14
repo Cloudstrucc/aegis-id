@@ -14,6 +14,7 @@
     "docs:validate": "node scripts/validate-docs.js",
     "video:setup": "node scripts/generate-setup-video.js",
     "video:walkthrough": "node scripts/record-walkthrough.js",
+    "store:assets": "bash scripts/capture-store-screenshots.sh",
     "demo:seed": "node scripts/seed-demo-environment.js",
     "demo:run": "node scripts/seed-demo-environment.js --run",
     "smoke": "node -e \"require('./src/app').createApp(); console.log('app bootstraps')\""
