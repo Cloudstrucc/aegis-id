@@ -27,6 +27,7 @@
 		A10000000000000000000006 /* OOBInvitationParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* OOBInvitationParser.swift */; };
 		A10000000000000000000007 /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* QRCodeScannerView.swift */; };
 		A10000000000000000000008 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* HomeView.swift */; };
+		A10000000000000000000090 /* WalletHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000090 /* WalletHelpView.swift */; };
 		A10000000000000000000009 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* ScanView.swift */; };
 		A10000000000000000000010 /* ConnectionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* ConnectionsView.swift */; };
 		A10000000000000000000011 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* SettingsView.swift */; };
@@ -89,6 +90,7 @@
 		A20000000000000000000006 /* OOBInvitationParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OOBInvitationParser.swift; sourceTree = "<group>"; };
 		A20000000000000000000007 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
 		A20000000000000000000008 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A20000000000000000000090 /* WalletHelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletHelpView.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* ScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanView.swift; sourceTree = "<group>"; };
 		A20000000000000000000010 /* ConnectionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionsView.swift; sourceTree = "<group>"; };
 		A20000000000000000000011 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -220,6 +222,7 @@
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000050 /* Onboarding */,
+				A40000000000000000000090 /* Help */,
 				A40000000000000000000009 /* Home */,
 				A40000000000000000000010 /* Scan */,
 				A40000000000000000000013 /* Organizations */,
@@ -228,6 +231,14 @@
 				A40000000000000000000012 /* Settings */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000090 /* Help */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000090 /* WalletHelpView.swift */,
+			);
+			path = Help;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000009 /* Home */ = {
@@ -431,6 +442,7 @@
 				A10000000000000000000012 /* LabAgentClient.swift in Sources */,
 				A10000000000000000000007 /* QRCodeScannerView.swift in Sources */,
 				A10000000000000000000008 /* HomeView.swift in Sources */,
+				A10000000000000000000090 /* WalletHelpView.swift in Sources */,
 				A10000000000000000000009 /* ScanView.swift in Sources */,
 				A10000000000000000000013 /* OrganizationsView.swift in Sources */,
 				A10000000000000000000017 /* LedgerView.swift in Sources */,

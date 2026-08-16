@@ -5,9 +5,36 @@ struct SettingsView: View {
     @State private var passkeySubject = ""
     @State private var isRegisteringPasskey = false
     @State private var passkeyPreference: WalletPasskeyCredentialPreference = .securityKey
+    @State private var showHelp = false
+    @State private var showWebApp = false
 
     var body: some View {
         List {
+            // First, above the wallet itself. Everything below assumes the
+            // holder already knows what this app is for; this is where they
+            // find out, or come back when a second organization invites them.
+            Section("Getting started") {
+                Button {
+                    showHelp = true
+                } label: {
+                    Label("How to set up and use this wallet", systemImage: "questionmark.circle")
+                }
+
+                Button {
+                    showWebApp = true
+                } label: {
+                    HStack {
+                        Label("Open the web app", systemImage: "safari")
+                        Spacer()
+                        Text(AegisWalletEnvironment.webAppDisplayValue)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.head)
+                    }
+                }
+            }
+
             Section("My wallet") {
                 NavigationLink {
                     WalletProfileView()
@@ -42,7 +69,12 @@ struct SettingsView: View {
             }
 
             Section("Aegis ID service") {
-                LabeledContent("Web app", value: AegisWalletEnvironment.webAppDisplayValue)
+                Button {
+                    showWebApp = true
+                } label: {
+                    LabeledContent("Web app", value: AegisWalletEnvironment.webAppDisplayValue)
+                }
+                .buttonStyle(.plain)
                 LabeledContent("Lab transport", value: AegisWalletEnvironment.usesHostedWebApp ? "Hosted bridge" : "Local ACA-Py")
             }
 
@@ -142,6 +174,12 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .sheet(isPresented: $showHelp) {
+            WalletHelpView()
+        }
+        .sheet(isPresented: $showWebApp) {
+            SafariView(url: AegisWalletEnvironment.webAppURL).ignoresSafeArea()
+        }
         .onAppear {
             passkeySubject = store.walletPasskeySubject
             Task { await store.refreshWalletPasskeyStatus() }

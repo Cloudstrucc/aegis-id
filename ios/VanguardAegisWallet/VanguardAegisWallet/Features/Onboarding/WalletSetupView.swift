@@ -21,6 +21,8 @@ struct WalletSetupView: View {
     @State private var errorMessage: String?
     @State private var savedCodesConfirmed = false
     @State private var showRecovery = false
+    @State private var showWebApp = false
+    @State private var showHelp = false
 
     var body: some View {
         NavigationStack {
@@ -36,9 +38,23 @@ struct WalletSetupView: View {
             .padding(24)
             .navigationTitle("Set up your wallet")
             .navigationBarTitleDisplayMode(.inline)
+            // On every step, not only the welcome. Somebody who installed the
+            // wallet before hearing of Aegis ID reaches the contact form still
+            // wondering what they are registering with.
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    WalletHelpButton(tabsAvailable: false)
+                }
+            }
         }
         .sheet(isPresented: $showRecovery) {
             WalletRecoveryView().environmentObject(store)
+        }
+        .sheet(isPresented: $showWebApp) {
+            SafariView(url: AegisWalletEnvironment.webAppURL).ignoresSafeArea()
+        }
+        .sheet(isPresented: $showHelp) {
+            WalletHelpView(tabsAvailable: false)
         }
     }
 
@@ -57,6 +73,20 @@ struct WalletSetupView: View {
             }
             Text("Your wallet holds the credentials your organizations issue to you. Set it up once and you will receive a Wallet ID to share with your administrators.")
                 .foregroundStyle(.secondary)
+
+            serviceCard
+
+            // Three lines, because the full guide is a tap away and a wall of
+            // text on the first screen is a wall of text nobody reads.
+            VStack(alignment: .leading, spacing: 7) {
+                SetupHint(number: "1", text: "Register below and save your recovery codes.")
+                SetupHint(number: "2", text: "Redeem an invitation — scan its QR on the Scan tab, or paste the link on the Home tab.")
+                SetupHint(number: "3", text: "Redeem another whenever a second organization invites you. One wallet holds them all.")
+            }
+
+            Button("How this works") { showHelp = true }
+                .font(.footnote.weight(.semibold))
+
             Spacer()
             Button("Get started") { step = .contact }
                 .buttonStyle(.borderedProminent)
@@ -64,6 +94,44 @@ struct WalletSetupView: View {
             Button("Recover an existing wallet") { showRecovery = true }
                 .frame(maxWidth: .infinity)
         }
+    }
+
+    /// Where the other half of the product lives.
+    ///
+    /// The App Store is the one way in that does not begin with an invitation,
+    /// so this is the first screen a holder can arrive at knowing nothing —
+    /// including the address of the service they are registering against.
+    private var serviceCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("AEGIS ID SERVICE")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white.opacity(0.7))
+
+            Text(AegisWalletEnvironment.webAppDisplayValue)
+                .font(.system(.subheadline, design: .monospaced).bold())
+                .foregroundStyle(.white)
+                .textSelection(.enabled)
+                .lineLimit(2)
+                .minimumScaleFactor(0.6)
+
+            Button {
+                showWebApp = true
+            } label: {
+                Label("Open the web app", systemImage: "safari")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [VanguardTheme.navy, VanguardTheme.blue],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var contactStep: some View {
@@ -163,6 +231,24 @@ struct WalletSetupView: View {
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity)
                 .disabled(!savedCodesConfirmed)
+        }
+    }
+
+    private struct SetupHint: View {
+        var number: String
+        var text: String
+
+        var body: some View {
+            HStack(alignment: .top, spacing: 9) {
+                Text(number)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 18, height: 18)
+                    .background(VanguardTheme.blue, in: Circle())
+                Text(text)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

@@ -48,6 +48,13 @@ struct HomeView: View {
                 }
 
                 Spacer()
+
+                // Home hides its navigation bar, so the help lives in the hero.
+                // It stays after setup on purpose: the questions it answers —
+                // where the web app is, how to add a second organization —
+                // come up long after the first run.
+                WalletHelpButton(tint: .white)
+                    .font(.title2)
             }
 
             HStack(spacing: 10) {

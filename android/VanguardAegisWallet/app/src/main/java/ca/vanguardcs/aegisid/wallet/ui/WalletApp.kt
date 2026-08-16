@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Business
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Home
@@ -102,6 +104,7 @@ private fun WalletTabs(
     onGetPasskey: suspend (String) -> JSONObject
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(WalletTab.Home) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         store.autoRefreshOidcWalletChallenges()
@@ -111,7 +114,24 @@ private fun WalletTabs(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(selectedTab.title, fontWeight = FontWeight.Bold) },
+                    title = {
+                        Text(
+                            if (showHelp) "Getting started" else selectedTab.title,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    // Present on every tab, not only during onboarding: the
+                    // questions it answers — where the web app is, how to add a
+                    // second organization — come up long after the first run.
+                    actions = {
+                        IconButton(onClick = { showHelp = !showHelp }) {
+                            Icon(
+                                if (showHelp) Icons.Outlined.Close else Icons.AutoMirrored.Outlined.HelpOutline,
+                                contentDescription = if (showHelp) "Close" else "Getting started",
+                                tint = VanguardColors.Ink
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = VanguardColors.Mist,
                         titleContentColor = VanguardColors.Ink
@@ -152,7 +172,9 @@ private fun WalletTabs(
                     .background(VanguardColors.Mist)
                     .padding(padding)
             ) {
-                when (selectedTab) {
+                if (showHelp) {
+                    WalletHelpScreen()
+                } else when (selectedTab) {
                     WalletTab.Home -> HomeScreen(store)
                     WalletTab.Scan -> ScanScreen(store)
                     WalletTab.Organizations -> OrganizationsScreen(store)
@@ -410,6 +432,7 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
     var passkeySubject by rememberSaveable { mutableStateOf(store.walletPasskeySubject) }
     var showProfile by rememberSaveable { mutableStateOf(false) }
     var showPasskeys by rememberSaveable { mutableStateOf(false) }
+    val settingsContext = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
         store.refreshWalletPasskeyStatus()
@@ -436,6 +459,31 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        // First, above the wallet itself. Everything below assumes the holder
+        // already knows what this app is for; this is where they find out, or
+        // come back when a second organization invites them.
+        item {
+            AegisCard {
+                Text("Getting started", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "How to set up this wallet, redeem an invitation, and hold credentials from " +
+                        "more than one organization.",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    BuildConfig.AEGIS_WEB_APP_BASE_URL,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold
+                )
+                Button(
+                    onClick = { openWebApp(settingsContext) },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Open the web app") }
+            }
+        }
+
         item {
             AegisCard {
                 Text("My wallet", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
