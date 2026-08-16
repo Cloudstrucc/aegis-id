@@ -121,6 +121,122 @@ queried.
 
 ---
 
+## App Review Information
+
+### Sign-In Information
+
+**Leave "Sign-in required" unchecked.** The wallet has no username and password —
+first run registers the device against an email address the holder chooses and
+mints a Wallet ID. Ticking the box and supplying nothing is worse than leaving
+it clear.
+
+The real risk is different: a reviewer who registers and finds an empty wallet
+sees an app that appears to do nothing, which is a rejection under app
+completeness. The Notes below carry a pasteable invitation so the reviewer
+reaches a populated wallet in about a minute. **That invitation has to be
+generated before submitting** — see below.
+
+### Notes — paste this, with the two placeholders filled in
+
+```
+WHAT THIS APP IS
+
+Vanguard Aegis ID Wallet is the holder-side companion to Vanguard Aegis ID, an
+enterprise identity service. An organization issues a credential to a person, it
+arrives in this wallet, and the person then approves or declines the requests
+that follow - signing in, approving an expense, signing a document - from their
+own device.
+
+The wallet is not useful on its own, so a demo organization has been
+pre-provisioned for you below.
+
+NO ACCOUNT OR PASSWORD IS NEEDED
+
+There is no username or password. On first run the wallet registers itself
+against an email address you choose and mints a Wallet ID, which is the
+identifier a holder shares with an administrator. Any address works, nothing is
+verified against a directory, and no mail is sent to you.
+
+HOW TO SEE THE FULL FUNCTIONALITY
+
+1. Launch the app and tap "Get started".
+2. Enter any email address - for example appreview@example.com - and tap
+   "Create my wallet".
+3. You are shown a Wallet ID, then ten recovery codes. Turn on "I have saved
+   these codes" and tap "Finish setup".
+4. On the Home tab, scroll to "Paste invitation" and paste this link:
+
+   <INVITATION LINK>
+
+5. Submit it. The wallet joins the demo organization and the credential appears
+   under the Organizations tab.
+6. The Ledger tab shows the record of what was accepted and when.
+
+The invitation is valid until <DATE> and can be used more than once.
+
+ABOUT THE CREDENTIAL PROVIDER EXTENSION
+
+The bundle contains an AutoFill Credential Provider extension
+(ca.vanguardcs.aegisid.wallet.passkeys). It lets the wallet hold FIDO2 passkeys
+for third-party sites, the same role iCloud Keychain plays. A user turns it on
+under Settings > General > AutoFill & Passwords.
+
+- The App Group and Keychain Sharing entitlements are there because the
+  extension runs as a separate process from the app and needs the same passkey
+  records and keys.
+- Keys are generated on the device, are not extractable, and never leave it.
+  Nothing is uploaded, and this feature needs no account.
+- Passkeys held here work on that device only. Cross-device sign-in uses the
+  hybrid transport, which iOS provides and does not expose to third-party
+  providers. The app says so in its own interface rather than implying
+  otherwise.
+
+PRIVACY
+
+The app collects an email address and, optionally, a phone number, both entered
+by the holder, and uses them only so an organization can address a credential to
+the right person. There is no analytics and no tracking. Credentials and passkey
+material stay on the device.
+
+We are happy to give a live walkthrough on request.
+```
+
+### Generating the invitation link
+
+Do this before submitting, on **prod**:
+
+1. Sign in and open the organization you want the reviewer to see.
+2. Credentials → invite a credential for `appreview@example.com`.
+3. **Set the invitation window to 365 days.** The default is 7, and an
+   invitation that expires mid-review is a rejection that costs a full cycle.
+4. Copy the `aegisid://credential-invite?…` deep link from the invitation panel
+   — not the QR image. A reviewer has one device and cannot scan a code shown on
+   the screen they are holding.
+5. Paste it into the Notes in place of `<INVITATION LINK>`, and put the expiry
+   date in place of `<DATE>`.
+
+### Attachment
+
+Optional, and not needed. The invitation link in the Notes does the work a QR
+image cannot.
+
+### Contact Information
+
+Yours — a real phone number and an address that is monitored. Review does call
+when a submission needs clarifying, and an unanswered contact stalls the whole
+thing.
+
+### App Store Version Release
+
+**Manually release this version.**
+
+The scheduled option is pre-filled with a date that means nothing, and automatic
+release puts a first version in front of the public the moment it is approved.
+Manual lets you confirm the demo invitation still works and the passkey feature
+behaves before anyone can download it.
+
+---
+
 ## Google Play
 
 Play asks for a short and a full description rather than promotional text.
