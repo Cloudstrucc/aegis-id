@@ -49,13 +49,17 @@ App Store Connect wants up to 10 per size. Upload from
 `artifacts/store-assets/ios-6.7-1284x2778/`; it will offer to reuse them for
 other sizes, and `ios-6.5-1242x2688/` is there if it does not.
 
-The five captured screens, in the order that reads best:
+The captured screens, in the order that reads best:
 
 1. `01-home.png` — the branded home screen
 2. `02-wallet-id.png` — the Wallet ID, which is the thing a holder shares
-3. `05-passkeys.png` — passkeys for other services
+3. `06-getting-started.png` — the Getting started guide
 4. `04-settings.png` — settings, showing what the wallet holds
 5. `03-recovery-codes.png` — recovery codes, shown once
+
+`05-passkeys.png` is **not** in the 1.0 set. That screen is hidden in this build
+— see below — so a screenshot of it would advertise something the binary does
+not do.
 
 App previews (video) are optional and none are generated. The onboarding video
 at `public/videos/setup-walkthrough.mp4` is 1280×720 and the wrong shape for a
@@ -63,8 +67,22 @@ phone preview, so it cannot be reused.
 
 ### 3. What review will ask about
 
-A credential provider extension attracts questions the rest of the app does
-not. Answer them in the review notes rather than waiting to be asked:
+**1.0 does not ship the credential provider**, so the questions an AutoFill
+extension attracts do not arise. The app declares no
+`autofill-credential-provider` entitlement and embeds no `.appex`; nothing
+appears under Settings › General › AutoFill & Passwords. Do not describe the
+feature in the review notes — it is not in the binary being reviewed.
+
+What review does still need:
+
+- **A way to see the app work.** The wallet is useless without an organization
+  issuing to it, so the review notes carry a long-lived credential invitation
+  the reviewer pastes on the Home tab. See
+  [`store-listing-copy.md`](store-listing-copy.md).
+- **Why there is no sign-in.** There is no username or password; first run
+  registers the device against an address the holder chooses.
+
+When the provider does ship, in 1.1 or later, these come back:
 
 - **What the extension does.** It stores FIDO2 passkeys for third-party sites
   and answers the system's passkey requests. It is not an ad blocker, keyboard,
@@ -74,8 +92,6 @@ not. Answer them in the review notes rather than waiting to be asked:
 - **That it collects nothing.** Keys are generated on device, are
   non-extractable, and never leave it. There is no analytics and no account
   required to use the passkey feature.
-- **A demo account.** Review needs one that can reach the credential screens —
-  a wallet registered against prod with at least one issued credential.
 
 ### 4. Privacy
 
@@ -134,13 +150,25 @@ scripts/release-android.sh --env prod -PaegisVersionCode=$(( ($(date +%s) - 1577
 
 Two things in this repo will get a build rejected or shipped broken:
 
-**The passkey provider does not work end to end yet.** Registration reaches
-`handed to iOS` and Safari still rejects it — see
-[`wallet-passkey-provider.md`](wallet-passkey-provider.md) for what has been
-eliminated. Shipping the feature to a store in that state means shipping a
-provider that appears in the OS picker and then fails, which is a poor first
-impression and an easy review rejection. Ship it once a real device completes a
-registration.
+**The passkey provider does not work end to end yet, and iOS 1.0 therefore
+leaves it out.** Registration reaches `handed to iOS` and Safari still rejects
+it — see [`wallet-passkey-provider.md`](wallet-passkey-provider.md) for what has
+been eliminated.
+
+Shipping it anyway would mean shipping a provider that iOS advertises in its own
+settings on our behalf and that then fails every time. A missing feature costs
+nothing; a broken advertised one costs the listing its credibility, and the
+one-star reviews outlive the fix.
+
+So on iOS the extension is built but not embedded, the app's autofill
+entitlement is gone, and the Passkeys screen is hidden behind
+`AegisWalletEnvironment.providesPasskeysForOtherServices`. Nothing was deleted —
+flipping that flag back and restoring two `project.pbxproj` entries ships it,
+once a real device completes a registration.
+
+**Android still ships its provider.** The failure documented above is iOS-only,
+and the Android path was never observed failing. If it has not been exercised on
+a device either, hold it back the same way rather than assuming.
 
 **Cross-device sign-in cannot be claimed.** The listing must not say the wallet
 signs you in on a computer by scanning a code. That is the hybrid transport, it

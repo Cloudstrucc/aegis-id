@@ -15,6 +15,13 @@ Use this guidance for work under `/ios`.
 that lets the wallet hold FIDO2 passkeys for **any** site, not just Aegis. See
 [`docs/wallet-passkey-provider.md`](../docs/wallet-passkey-provider.md).
 
+**It is not embedded in 1.0.** Registration still fails on a device, so the app
+ships with no autofill entitlement, no `.appex` and the Passkeys screen hidden
+behind `AegisWalletEnvironment.providesPasskeysForOtherServices`. The target and
+every line of the implementation are still here; turning it back on is that
+flag, the app entitlement, and two `project.pbxproj` entries — the embed build
+file and the target dependency. The notes below apply the moment it is.
+
 Two things that break it silently:
 
 - **The extension is a different process.** It reads the App Group container and

@@ -10,6 +10,20 @@ enum AegisWalletEnvironment {
     static let verifierAdminURL = URL(string: "http://localhost:5011")!
     static let mediatorAdminURL = URL(string: "http://localhost:3011")!
 
+    /// Whether this build embeds the AutoFill credential provider extension.
+    ///
+    /// False for 1.0. The provider appears in iOS's own settings and then fails
+    /// every registration — a feature the operating system advertises on our
+    /// behalf and that does not work is worse than one that is absent, both at
+    /// review and in the first reviews on the listing. See
+    /// `docs/wallet-passkey-provider.md` for what has been eliminated.
+    ///
+    /// Nothing was deleted to turn this off. The extension target, the
+    /// authenticator, the store and the Passkeys screen are all still here;
+    /// only the embed phase, the app's autofill entitlement and this flag
+    /// changed, so shipping it in 1.1 is a revert rather than a rewrite.
+    static let providesPasskeysForOtherServices = false
+
     /// The URL scheme this build registers.
     ///
     /// Each configuration registers its own (`aegisid-local`, `aegisid-dev`,

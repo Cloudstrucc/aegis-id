@@ -4,8 +4,10 @@ Ready to paste. Character counts are against Apple's limits and were checked,
 not estimated.
 
 Everything here describes what the wallet actually does today. Nothing claims
-cross-device passkey sign-in, and the passkey provider is held back to an
-optional block at the end — see the note there before using it.
+cross-device passkey sign-in, and **iOS 1.0 does not ship the passkey provider
+at all** — the block at the end stays out of the listing and out of the review
+notes until a device completes a registration. See
+[`store-submission.md`](store-submission.md).
 
 ---
 
@@ -173,23 +175,6 @@ HOW TO SEE THE FULL FUNCTIONALITY
 6. The Ledger tab shows the record of what was accepted and when.
 
 The invitation is valid until <DATE> and can be used more than once.
-
-ABOUT THE CREDENTIAL PROVIDER EXTENSION
-
-The bundle contains an AutoFill Credential Provider extension
-(ca.vanguardcs.aegisid.wallet.passkeys). It lets the wallet hold FIDO2 passkeys
-for third-party sites, the same role iCloud Keychain plays. A user turns it on
-under Settings > General > AutoFill & Passwords.
-
-- The App Group and Keychain Sharing entitlements are there because the
-  extension runs as a separate process from the app and needs the same passkey
-  records and keys.
-- Keys are generated on the device, are not extractable, and never leave it.
-  Nothing is uploaded, and this feature needs no account.
-- Passkeys held here work on that device only. Cross-device sign-in uses the
-  hybrid transport, which iOS provides and does not expose to third-party
-  providers. The app says so in its own interface rather than implying
-  otherwise.
 
 PRIVACY
 

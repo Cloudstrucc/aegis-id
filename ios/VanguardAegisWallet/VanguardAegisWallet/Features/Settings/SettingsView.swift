@@ -60,11 +60,17 @@ struct SettingsView: View {
             // Passkeys this wallet holds for other people's sites, as opposed
             // to the wallet's own passkey settings further down, which are
             // about approving Aegis challenges.
-            Section("Passkeys for other services") {
-                NavigationLink {
-                    PasskeysView()
-                } label: {
-                    LabeledContent("Saved passkeys", value: "\(PasskeyStore.shared.all().count)")
+            //
+            // Hidden while the provider is not embedded: a screen offering to
+            // manage passkeys iOS will never route to this app is a promise the
+            // build cannot keep.
+            if AegisWalletEnvironment.providesPasskeysForOtherServices {
+                Section("Passkeys for other services") {
+                    NavigationLink {
+                        PasskeysView()
+                    } label: {
+                        LabeledContent("Saved passkeys", value: "\(PasskeyStore.shared.all().count)")
+                    }
                 }
             }
 
