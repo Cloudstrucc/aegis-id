@@ -1,5 +1,12 @@
 # The wallet as a FIDO2 passkey provider
 
+> **iOS 1.0 ships without this.** The extension is built but not embedded, the
+> app's autofill entitlement is removed and the Passkeys screen is hidden behind
+> `AegisWalletEnvironment.providesPasskeysForOtherServices`, because the failure
+> at the end of this page is unresolved. Nothing here was deleted — flipping the
+> flag and restoring two `project.pbxproj` entries ships it. Android is
+> unaffected.
+
 Both wallets can hold passkeys for **any** site or application that supports
 them — not only Aegis ID. The wallet registers itself with the operating system
 as a credential provider, and from then on it appears alongside iCloud Keychain

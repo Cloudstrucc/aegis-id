@@ -25,10 +25,5 @@
 	<array>
 		<string>$(AppIdentifierPrefix)ca.vanguardcs.aegisid.wallet.passkeys</string>
 	</array>
-	<!-- Required by the AutoFill Credential Provider capability, on the app as
-	     well as the extension. Without it the archive builds and signs, and
-	     App Store Connect rejects the upload with 90729. -->
-	<key>com.apple.developer.authentication-services.autofill-credential-provider</key>
-	<true/>
 </dict>
 </plist>

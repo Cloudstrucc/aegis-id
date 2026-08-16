@@ -64,7 +64,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B00000000000000000000024 /* AegisPasskeyProvider.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -342,7 +341,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				B00000000000000000000009 /* PBXTargetDependency */,
 			);
 			name = VanguardAegisWallet;
 			productName = VanguardAegisWallet;
