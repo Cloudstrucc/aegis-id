@@ -132,6 +132,11 @@ const config = {
     walletUrlScheme,
     port: Number.parseInt(process.env.PORT || '3000', 10),
     publicBaseUrl: process.env.PUBLIC_BASE_URL || process.env.APP_PUBLIC_BASE_URL || 'http://localhost:3000',
+    // The address on /support. Empty is a real state and the page says so
+    // rather than printing a mailbox nobody reads — but the App Store requires
+    // a support URL where somebody can actually get help, so set it before
+    // submitting. It is deliberately not defaulted to a guess at a domain.
+    supportEmail: process.env.SUPPORT_EMAIL || '',
     iosTestFlightUrl: process.env.IOS_TESTFLIGHT_PUBLIC_URL || '',
     androidTestingUrl: process.env.ANDROID_TESTING_URL || '',
     // The signature demo lives inside the Business Expenses app.

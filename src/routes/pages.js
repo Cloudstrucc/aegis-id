@@ -378,6 +378,26 @@ router.post('/admin/account-recovery', authorize('admin.accountRecovery.manage')
   }
 });
 
+// Where somebody gets help.
+//
+// Public and unauthenticated on purpose: the people who most need it are the
+// ones who cannot sign in, and it is also the page the App Store requires as a
+// support URL — a listing cannot point at something behind a login.
+router.get('/support', authorize('public.home'), (req, res) => {
+  res.render('pages/support', {
+    title: 'Support',
+    description: 'Get help with Vanguard Aegis ID and the Aegis ID wallet.',
+    supportEmail: config.app.supportEmail,
+    hasSupportEmail: Boolean(config.app.supportEmail),
+    walletUrlScheme: config.app.walletUrlScheme,
+    hasAndroidDownload: Boolean(config.app.androidTestingUrl),
+    iosTestFlightUrl: config.app.iosTestFlightUrl,
+    hasIosTestFlight: Boolean(config.app.iosTestFlightUrl),
+    deployEnv: config.app.deployEnv,
+    isNonProd: config.app.deployEnv !== 'prod'
+  });
+});
+
 // Sideloading instructions for the Android wallet. Public, because the badge
 // that links here is on the public home page — but deliberately a page rather
 // than a bare link to the .apk, so nobody meets Android's "unknown source"

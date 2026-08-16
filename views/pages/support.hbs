@@ -1,0 +1,233 @@
+{{!--
+  Public, unauthenticated, and required by the App Store as the wallet's
+  support URL. The people who most need this page are the ones who cannot sign
+  in, so nothing here may sit behind a login.
+--}}
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Support</p>
+  <h1>Get help with Aegis ID.</h1>
+  <p>
+    Aegis ID is an identity platform with a companion wallet on iOS and Android.
+    Most questions come from one of two places — setting a wallet up, or getting
+    back in after losing a device. Both are answered below.
+  </p>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      <p class="eyebrow">Contact</p>
+      <h2>Talk to somebody.</h2>
+      <p>
+        If your organization issued you a credential, your own administrator can
+        usually resolve it faster than we can — they can reissue an invitation,
+        reset a credential, or confirm who you are. Come to us when they cannot.
+      </p>
+      <p>
+        Please include the environment you are on and, if it is a wallet
+        problem, your Wallet ID. Never send a recovery code, a password, or a
+        break-glass code to anybody, including us.
+      </p>
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-panel__form">
+        <h2>Support</h2>
+        {{#if hasSupportEmail}}
+          <p><a class="button button--primary" href="mailto:{{supportEmail}}">Email {{supportEmail}}</a></p>
+          <p class="form-footnote">
+            We answer within one business day. There is no telephone support line.
+          </p>
+        {{else}}
+          {{!--
+            An honest empty state rather than a mailbox nobody reads. SUPPORT_EMAIL
+            is unset on this deployment.
+          --}}
+          <p class="form-alert">
+            No support address is configured for this deployment.
+          </p>
+          <p class="form-footnote">
+            Contact the administrator at the organization that issued your
+            credential, or whoever asked you to install the wallet.
+          </p>
+        {{/if}}
+
+        {{#if isNonProd}}
+          <p class="form-footnote">
+            This is the <strong>{{deployEnv}}</strong> environment. It is for
+            testing, and the credentials in it are not real.
+          </p>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="section-heading">
+    <p class="eyebrow">The wallet</p>
+    <h2>Setting one up.</h2>
+    <p>
+      The wallet is the holder's half of Aegis ID. It is not useful on its own —
+      an organization has to issue you a credential or send you an invitation.
+    </p>
+  </div>
+
+  <div class="assurance-grid">
+    <article class="assurance-card">
+      <h3>Your Wallet ID</h3>
+      <p>
+        First run asks for an email address and gives you a Wallet ID. That is
+        what you hand an administrator so they can issue a credential to your
+        device.
+      </p>
+      <p>
+        It is an identifier, not a secret. Knowing it does not let anybody act
+        as you, so it is safe to send by email or read out.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Redeeming an invitation</h3>
+      <p>
+        Two ways, and they are not interchangeable. <strong>Scan</strong> reads a
+        QR shown on another screen. <strong>Paste invitation</strong>, on the
+        Home tab, takes a <code>{{walletUrlScheme}}://</code> link that arrived
+        by email or message on the phone itself.
+      </p>
+      <p>
+        Use the second when the invitation is on the device you are holding —
+        you cannot scan a code with the screen displaying it.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>More than one organization</h3>
+      <p>
+        One wallet holds credentials from as many organizations as invite you.
+        You do not need to install it twice.
+      </p>
+      <p>
+        They stay separate: each organization sees only what it issued you and
+        the approvals it asked for, never another organization's, and never the
+        list of who else you hold a credential from.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Nothing arrived</h3>
+      <p>
+        An invitation goes to the address registered in the wallet, and it can
+        expire. Ask your administrator to check the address and send a fresh one.
+      </p>
+      <p>
+        They can also issue straight to your Wallet ID, which avoids email
+        entirely.
+      </p>
+    </article>
+  </div>
+</section>
+
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Losing a device</p>
+    <h2>Getting back in.</h2>
+  </div>
+
+  <div class="callout callout--warning">
+    <p>
+      <strong>The key behind your wallet never leaves the device it was made
+      on.</strong> It is not in any backup, so a new phone cannot restore the old
+      wallet — recovery issues a new key rather than recovering the old one.
+      That is why the ten single-use recovery codes shown during setup matter,
+      and why they are shown only once.
+    </p>
+  </div>
+
+  <div class="assurance-grid">
+    <article class="assurance-card">
+      <h3>You still have your recovery codes</h3>
+      <p>
+        Install the wallet on the new device, choose <em>Recover an existing
+        wallet</em>, and use one code. Your credentials and your organizations
+        come back and the code is spent.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>You have run out of codes</h3>
+      <p>
+        This is a deliberate hard stop rather than a bug. An administrator has to
+        verify who you are away from the system and authorise a re-enrolment.
+        Contact yours.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>You administer an organization</h3>
+      <p>
+        If you have lost the authenticator you sign in with, and your
+        organization has root wallets, two of their holders can approve your
+        recovery at <a href="/auth/recover/approvals">/auth/recover/approvals</a>
+        with no platform operator involved.
+      </p>
+      <p>
+        Otherwise start at <a href="/auth/recover">/auth/recover</a>.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Your organization has lost every root wallet</h3>
+      <p>
+        Break-glass recovery covers it, and needs both the code your organization
+        generated and kept, and a platform administrator. Nobody here can reach
+        your organization without it.
+      </p>
+      <p>Contact support with your ticket reference.</p>
+    </article>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      <p class="eyebrow">Privacy</p>
+      <h2>What the wallet holds.</h2>
+      <p>
+        An email address and, if you gave one, a phone number — both entered by
+        you, and used only so an organization can address a credential to the
+        right person. There is no analytics and no tracking.
+      </p>
+      <p>
+        Credentials and key material stay on the device. To have your wallet and
+        its record removed, ask the organization that issued to you, or contact
+        support.
+      </p>
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-panel__form">
+        <h2>Getting the app</h2>
+        {{#if hasIosTestFlight}}
+          <p><a class="button button--secondary" href="{{iosTestFlightUrl}}">iOS — TestFlight</a></p>
+        {{/if}}
+        {{#if hasAndroidDownload}}
+          <p><a class="button button--secondary" href="/downloads/android">Android — install guide</a></p>
+        {{/if}}
+        <p><a class="button button--secondary" href="/docs/tutorial/get-started-guide.html">Get Started Guide</a></p>
+
+        <h2>Reporting a security issue</h2>
+        <p class="form-footnote">
+          {{#if hasSupportEmail}}
+            Write to <a href="mailto:{{supportEmail}}">{{supportEmail}}</a> with
+            "security" in the subject. Please tell us before telling anybody
+            else, and give us a reasonable window to fix it.
+          {{else}}
+            No support address is configured for this deployment. Report through
+            your organization's administrator.
+          {{/if}}
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

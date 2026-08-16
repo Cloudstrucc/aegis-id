@@ -84,16 +84,23 @@ and repeating those wastes characters.
 
 ## Support URL
 
-**You need to create this.** Apple requires a page where a user can actually get
-help, and the deployment has no support or contact page today. The Get Started
-Guide is close but offers no way to reach anybody:
-
 ```
-https://vanguard-aegis-id-0e75d1.azurewebsites.net/docs/tutorial/get-started-guide.html
+https://vanguard-aegis-id-0e75d1.azurewebsites.net/support
 ```
 
-A short page with a support email address is enough, and is the safer answer —
-review does check this one.
+Public and unauthenticated — the people who most need it are the ones who cannot
+sign in, and a store listing cannot point at a page behind a login.
+
+**Set `SUPPORT_EMAIL` on prod before submitting.** With it unset the page says
+plainly that no address is configured, which is honest but is not a support
+page. Review does check this URL.
+
+```bash
+az webapp config appsettings set --name vanguard-aegis-id-65067d --resource-group <rg> --settings SUPPORT_EMAIL=support@example.com
+```
+
+`scripts/deploy-azure-webapp.sh` forwards the setting, so a later deployment
+keeps it.
 
 ## Marketing URL
 
