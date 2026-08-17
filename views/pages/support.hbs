@@ -203,11 +203,26 @@
         its record removed, ask the organization that issued to you, or contact
         support.
       </p>
+      {{#if hasPrivacyPolicy}}
+        <p><a href="{{privacyPolicyUrl}}">Read the full privacy policy</a></p>
+      {{/if}}
     </div>
 
     <div class="auth-panel">
       <div class="auth-panel__form">
         <h2>Getting the app</h2>
+        {{!--
+          The published listings come first and exist on production only. On
+          dev and qa the deploy script blanks them, so what remains is the test
+          build for the environment you are actually on — which is the one that
+          talks to this site.
+        --}}
+        {{#if hasAppStore}}
+          <p><a class="button button--secondary" href="{{appStoreUrl}}">iOS — App Store</a></p>
+        {{/if}}
+        {{#if hasPlayStore}}
+          <p><a class="button button--secondary" href="{{playStoreUrl}}">Android — Google Play</a></p>
+        {{/if}}
         {{#if hasIosTestFlight}}
           <p><a class="button button--secondary" href="{{iosTestFlightUrl}}">iOS — TestFlight</a></p>
         {{/if}}

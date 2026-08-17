@@ -78,7 +78,9 @@ load_env_file "$ENV_FILE_PATH" || die "Environment file not found: $ENV_FILE_PAT
 TENANT_KEYS=(
   AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP AZURE_WEBAPP_NAME AZURE_LOCATION
   APP_PUBLIC_BASE_URL PUBLIC_BASE_URL BUSINESS_EXPENSES_APP_URL WEBSITE_NODE_DEFAULT_VERSION
-  IOS_TESTFLIGHT_PUBLIC_URL ANDROID_TESTING_URL SUPPORT_EMAIL
+  IOS_TESTFLIGHT_PUBLIC_URL ANDROID_TESTING_URL
+  # Production only — see PROD_ONLY_KEYS below.
+  SUPPORT_EMAIL APP_STORE_URL PLAY_STORE_URL PRIVACY_POLICY_URL
   USER_STORE_PATH SUBSCRIPTION_STORE_PATH SUBSCRIBER_WORKSPACE_STORE_PATH TRANSACTION_STORE_PATH
   ISSUER_ORG_STORE_PATH ORG_ADMIN_STORE_PATH ORG_ADMIN_EVENT_STORE_PATH OIDC_WALLET_SESSION_STORE_PATH
   WALLET_STORE_PATH WALLET_CONTACT_CHALLENGE_STORE_PATH WALLET_RECOVERY_CODE_STORE_PATH
@@ -313,8 +315,32 @@ if [[ "$VERIFY_ONLY" != "1" ]]; then
     fi
   }
 
+  # Settings that describe the published apps and the people behind them. They
+  # belong to production alone: a dev or qa site that shows the public App Store
+  # listing or the production support mailbox sends a tester somewhere nobody
+  # expected them, and support then fields questions about builds that were
+  # never released.
+  #
+  # Blanked rather than skipped. append_if_set omits an empty value, and
+  # omitting a setting does not remove it — App Service keeps whatever the last
+  # deployment left. So a value that reached dev once, by a mistake or an
+  # earlier version of this script, would stay there for good. Sending an
+  # explicit empty string is what actually guarantees the rule.
+  PROD_ONLY_KEYS=(SUPPORT_EMAIL APP_STORE_URL PLAY_STORE_URL PRIVACY_POLICY_URL)
+
+  if [[ "$DEPLOY_ENV" != "prod" ]]; then
+    for key in "${PROD_ONLY_KEYS[@]}"; do
+      if [[ -n "${!key:-}" ]]; then
+        log "Withheld from $DEPLOY_ENV (production only): $key"
+      fi
+      unset "$key"
+      app_settings+=("$key=")
+    done
+  fi
+
   for key in \
-    IOS_TESTFLIGHT_PUBLIC_URL ANDROID_TESTING_URL SUPPORT_EMAIL \
+    IOS_TESTFLIGHT_PUBLIC_URL ANDROID_TESTING_URL \
+    SUPPORT_EMAIL APP_STORE_URL PLAY_STORE_URL PRIVACY_POLICY_URL \
     USER_STORE_PATH SUBSCRIPTION_STORE_PATH SUBSCRIBER_WORKSPACE_STORE_PATH TRANSACTION_STORE_PATH \
     ISSUER_ORG_STORE_PATH ORG_ADMIN_STORE_PATH ORG_ADMIN_EVENT_STORE_PATH OIDC_WALLET_SESSION_STORE_PATH \
     OIDC_CODE_STORE_PATH WALLET_CHALLENGE_STORE_PATH WALLET_PASSKEY_STORE_PATH AUDIT_STORE_PATH \

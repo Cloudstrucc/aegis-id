@@ -137,6 +137,13 @@ const config = {
     // a support URL where somebody can actually get help, so set it before
     // submitting. It is deliberately not defaulted to a guess at a domain.
     supportEmail: process.env.SUPPORT_EMAIL || '',
+    // The published listings and the privacy policy behind them. Production
+    // only — the deploy script blanks all four on dev and qa, because a test
+    // site offering the public App Store build sends a tester to the wrong
+    // application entirely.
+    appStoreUrl: process.env.APP_STORE_URL || '',
+    playStoreUrl: process.env.PLAY_STORE_URL || '',
+    privacyPolicyUrl: process.env.PRIVACY_POLICY_URL || '',
     iosTestFlightUrl: process.env.IOS_TESTFLIGHT_PUBLIC_URL || '',
     androidTestingUrl: process.env.ANDROID_TESTING_URL || '',
     // The signature demo lives inside the Business Expenses app.

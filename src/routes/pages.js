@@ -393,6 +393,14 @@ router.get('/support', authorize('public.home'), (req, res) => {
     hasAndroidDownload: Boolean(config.app.androidTestingUrl),
     iosTestFlightUrl: config.app.iosTestFlightUrl,
     hasIosTestFlight: Boolean(config.app.iosTestFlightUrl),
+    // Set on production only. Elsewhere the page offers the test builds
+    // instead, which are the ones a tester on that environment can use.
+    appStoreUrl: config.app.appStoreUrl,
+    hasAppStore: Boolean(config.app.appStoreUrl),
+    playStoreUrl: config.app.playStoreUrl,
+    hasPlayStore: Boolean(config.app.playStoreUrl),
+    privacyPolicyUrl: config.app.privacyPolicyUrl,
+    hasPrivacyPolicy: Boolean(config.app.privacyPolicyUrl),
     deployEnv: config.app.deployEnv,
     isNonProd: config.app.deployEnv !== 'prod'
   });
