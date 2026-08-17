@@ -1,7 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-// The support page, which the App Store listing points at.
+// The support page and the privacy policy, both of which a store listing
+// points at.
 //
 // The property that matters is that it renders for somebody who is not signed
 // in, because the people who most need it are the ones who cannot sign in — and
@@ -77,6 +78,39 @@ test('with no address configured the support page says so rather than inventing 
   } finally {
     if (previous !== undefined) {
       process.env.SUPPORT_EMAIL = previous;
+    }
+  }
+});
+
+test('the privacy policy renders to an anonymous visitor', async () => {
+  await withApp(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/privacy`, { redirect: 'manual' });
+    const body = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(body, /What we collect/);
+
+    // The three claims a reviewer and a holder both come here to check.
+    assert.match(body, /never leaves the device|cannot be extracted/);
+    assert.match(body, /No analytics/);
+    assert.match(body, /Last updated/);
+  });
+});
+
+test('the privacy policy URL falls back to the page this app serves', async () => {
+  const previous = process.env.PRIVACY_POLICY_URL;
+  delete process.env.PRIVACY_POLICY_URL;
+
+  try {
+    await withApp(async (baseUrl) => {
+      // A listing field that is empty is a listing field that fails review, so
+      // the default is the local policy rather than nothing.
+      const response = await fetch(`${baseUrl}/support`);
+      assert.match(await response.text(), /href="\/privacy"/);
+    });
+  } finally {
+    if (previous !== undefined) {
+      process.env.PRIVACY_POLICY_URL = previous;
     }
   }
 });

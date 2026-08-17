@@ -143,7 +143,10 @@ const config = {
     // application entirely.
     appStoreUrl: process.env.APP_STORE_URL || '',
     playStoreUrl: process.env.PLAY_STORE_URL || '',
-    privacyPolicyUrl: process.env.PRIVACY_POLICY_URL || '',
+    // Falls back to the policy this application serves. Set the variable only
+    // to point at a different one — a corporate policy that covers more than
+    // this service. Both stores require an absolute URL in the listing itself.
+    privacyPolicyUrl: process.env.PRIVACY_POLICY_URL || '/privacy',
     iosTestFlightUrl: process.env.IOS_TESTFLIGHT_PUBLIC_URL || '',
     androidTestingUrl: process.env.ANDROID_TESTING_URL || '',
     // The signature demo lives inside the Business Expenses app.

@@ -1,0 +1,292 @@
+{{!--
+  The privacy policy. Both stores require a URL for one, and it is public for
+  the same reason /support is — somebody deciding whether to install the wallet
+  does not have an account yet.
+
+  Everything here describes what the code actually does. Where a fact depends
+  on a deployment's own configuration (which mailbox, which SMTP provider) the
+  page says so rather than asserting something it cannot know.
+--}}
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Privacy</p>
+  <h1>What we collect, and what never leaves your device.</h1>
+  <p>
+    Aegis ID exists so an organization can be certain who approved something.
+    That needs less personal information than most systems, not more, and the
+    parts that matter most never reach us at all.
+  </p>
+  <p class="form-footnote">Last updated {{lastUpdated}}.</p>
+</section>
+
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">In short</p>
+    <h2>The version that fits on one screen.</h2>
+  </div>
+
+  <div class="assurance-grid">
+    <article class="assurance-card">
+      <h3>Your wallet keys stay on your phone</h3>
+      <p>
+        The private key behind your wallet is generated on the device, cannot be
+        extracted from it, and is excluded from backups. We never hold it, so we
+        cannot approve anything as you and cannot restore it for you.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>No analytics, no tracking, no advertising</h3>
+      <p>
+        There is no analytics SDK in either wallet and no tracking on this site.
+        Nothing about you is sold, shared for advertising, or used to build a
+        profile.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Card details never reach us</h3>
+      <p>
+        {{#if checkoutEnabled}}
+          Payments run through Stripe's own hosted checkout. Card numbers are
+          entered on Stripe's page, not ours, and this application never sees or
+          stores them.
+        {{else}}
+          No payments are taken on this deployment.
+        {{/if}}
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Your organization sees its own work</h3>
+      <p>
+        An organization that issues you a credential sees that credential and
+        the approvals it asked for. It does not see credentials from other
+        organizations, or the list of who else you hold one from.
+      </p>
+    </article>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="section-heading">
+    <p class="eyebrow">What is collected</p>
+    <h2>Everything held, and why.</h2>
+    <p>
+      There is no other category. If something is not on this list, it is not
+      collected.
+    </p>
+  </div>
+
+  <div class="assurance-grid">
+    <article class="assurance-card">
+      <h3>In the wallet</h3>
+      <p>
+        An <strong>email address</strong>, and a <strong>mobile number</strong>
+        if you chose to give one. Both are entered by you, and both exist so an
+        organization can address an invitation to the right person. The number
+        is optional and only used if an organization sends an invitation by SMS.
+      </p>
+      <p>
+        A <strong>Wallet ID</strong> is generated for your device. It is an
+        identifier rather than a secret — it names your wallet so a credential
+        can be issued to it.
+      </p>
+      <p>
+        The <strong>public half</strong> of your device key, so a signature from
+        your wallet can be checked. The private half never leaves the device.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>If you have an account on this site</h3>
+      <p>
+        Your <strong>email address</strong>, a <strong>display name</strong>,
+        an optional <strong>phone number</strong>, and, unless your account is
+        passwordless, a <strong>bcrypt hash</strong> of your password. The
+        password itself is never stored.
+      </p>
+      <p>
+        Which sign-in methods you have enrolled, and for a passwordless account
+        the hashes of your single-use recovery codes.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Credentials and approvals</h3>
+      <p>
+        The credentials an organization issued you, and a record of each
+        approval and decline: what was asked, when, and what you answered.
+      </p>
+      <p>
+        Both answers are recorded. A decline is a real answer and is kept the
+        same way an approval is.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>The evidence chain</h3>
+      <p>
+        Actions that change who can do what — issuing, revoking, recovering,
+        administering — are written to an append-only, hash-chained log so they
+        cannot be quietly altered afterwards.
+      </p>
+      <p>
+        Values recognised as sensitive are replaced with
+        <code>[redacted]</code> before an entry is written. Codes, secrets and
+        credentials do not enter the log in the first place.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Ordinary server logs</h3>
+      <p>
+        Request logs and error diagnostics, of the kind any web service keeps to
+        stay running and to investigate a fault.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Passkeys, if you use them</h3>
+      <p>
+        Where the wallet holds a passkey for another site, the key is generated
+        on the device and is not extractable. Neither the key nor the list of
+        sites it covers is sent to us.
+      </p>
+    </article>
+  </div>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="section-heading">
+      <p class="eyebrow">Who else is involved</p>
+      <h2>Where data goes.</h2>
+      <p>
+        Nothing is sold, and nothing is shared for advertising. Data reaches
+        somebody other than us in exactly these cases.
+      </p>
+      <ul class="help-list">
+        <li>
+          <strong>The organization that issued your credential.</strong> It sees
+          what it issued and the approvals it asked for.
+        </li>
+        <li>
+          <strong>Microsoft Azure</strong>, which hosts the service. Data is
+          held in the region the deployment runs in.
+        </li>
+        {{#if checkoutEnabled}}
+          <li>
+            <strong>Stripe</strong>, for subscription payments. Stripe handles
+            card details directly; we hold a customer reference and the status
+            of a subscription.
+          </li>
+        {{/if}}
+        <li>
+          <strong>An email or SMS provider</strong>, configured by whoever runs
+          this deployment, to deliver sign-in codes, invitations and recovery
+          links.
+        </li>
+        <li>
+          <strong>Your own identity provider</strong>, if your organization signs
+          you in through one. Aegis links an existing account; it never creates
+          one from an upstream sign-in.
+        </li>
+        <li>
+          <strong>Anybody a law requires</strong>, where we are obliged to
+          respond to a valid legal demand.
+        </li>
+      </ul>
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-panel__form">
+        <h2>Your choices</h2>
+        <p class="form-footnote">
+          <strong>See what is held.</strong> Your wallet's Ledger tab shows your
+          own history. Ask us or your administrator for the rest.
+        </p>
+        <p class="form-footnote">
+          <strong>Correct it.</strong> Contact details are editable in the
+          wallet and in your account.
+        </p>
+        <p class="form-footnote">
+          <strong>Delete it.</strong> Ask the organization that issued to you, or
+          contact support. A wallet that never held a credential is erased
+          entirely. Where one did, the credential record and its evidence entries
+          are kept — an audit trail that could be deleted on request would not be
+          an audit trail, and it is what protects you in a dispute as much as it
+          protects anybody else.
+        </p>
+        <p class="form-footnote">
+          <strong>Withdraw.</strong> Declining a request is always available and
+          is recorded as your answer.
+        </p>
+
+        <h2>Contact</h2>
+        {{#if hasSupportEmail}}
+          <p><a class="button button--primary" href="mailto:{{supportEmail}}">Email {{supportEmail}}</a></p>
+        {{else}}
+          <p class="form-alert">No contact address is configured for this deployment.</p>
+          <p class="form-footnote">
+            Contact the administrator at the organization that issued your
+            credential.
+          </p>
+        {{/if}}
+        <p class="form-footnote"><a href="/support">Support and recovery help</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band--light">
+  <div class="section-heading">
+    <p class="eyebrow">Keeping it</p>
+    <h2>How long, and what happens at the end.</h2>
+  </div>
+
+  <div class="assurance-grid">
+    <article class="assurance-card">
+      <h3>While you hold a credential</h3>
+      <p>
+        Your wallet record and your credentials are kept while an organization
+        still issues to you, and are removed on request afterwards.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Evidence entries</h3>
+      <p>
+        Kept for as long as the organization they belong to needs them, because
+        they are the record of who approved what. Revoking or deleting a wallet
+        does not erase the trail — that is deliberate, and a revoked wallet is
+        exactly the case where it matters.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Children</h3>
+      <p>
+        Aegis ID is workplace software and is not directed at children. Accounts
+        exist because an organization created one or invited somebody to hold a
+        credential.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Changes to this policy</h3>
+      <p>
+        Material changes will be announced through the service before they take
+        effect. This page always describes the version currently running.
+      </p>
+    </article>
+  </div>
+
+  {{#if isNonProd}}
+    <div class="callout callout--warning">
+      <p>
+        You are on the <strong>{{deployEnv}}</strong> environment. It is used for
+        testing and the credentials in it are not real.
+      </p>
+    </div>
+  {{/if}}
+</section>

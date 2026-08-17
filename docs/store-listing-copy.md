@@ -108,6 +108,23 @@ keeps it.
 https://vanguard-aegis-id-0e75d1.azurewebsites.net/
 ```
 
+## Privacy Policy URL
+
+Required by both stores.
+
+```
+https://vanguard-aegis-id-0e75d1.azurewebsites.net/privacy
+```
+
+Public and unauthenticated, like the support page. `PRIVACY_POLICY_URL` defaults
+to this page — set the variable only to point at a different policy, such as a
+corporate one covering more than this service.
+
+**It has not been through legal review.** It describes what the code actually
+does, which is the hard part, but the retention periods, the governing law and
+the controller's legal name are business decisions rather than technical ones.
+Have somebody qualified read it before submitting.
+
 ---
 
 ## Version

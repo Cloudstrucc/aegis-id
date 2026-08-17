@@ -406,6 +406,28 @@ router.get('/support', authorize('public.home'), (req, res) => {
   });
 });
 
+// The privacy policy, which the App Store and Play both require a URL for.
+//
+// Public for the same reason /support is: a store listing cannot point at a
+// page behind a login, and somebody deciding whether to install the wallet has
+// no account yet.
+router.get('/privacy', authorize('public.home'), (req, res) => {
+  res.render('pages/privacy', {
+    // Updated by hand when the policy changes, which is the point — it should
+    // not move because a deployment happened.
+    lastUpdated: '17 August 2026',
+    title: 'Privacy policy',
+    description: 'What Vanguard Aegis ID collects, why, and what stays on your device.',
+    supportEmail: config.app.supportEmail,
+    hasSupportEmail: Boolean(config.app.supportEmail),
+    // Billing only exists where there is a key to take a payment with, so the
+    // page does not describe a payment processor that is not in the picture.
+    checkoutEnabled: config.billing.checkoutEnabled,
+    deployEnv: config.app.deployEnv,
+    isNonProd: config.app.deployEnv !== 'prod'
+  });
+});
+
 // Sideloading instructions for the Android wallet. Public, because the badge
 // that links here is on the public home page — but deliberately a page rather
 // than a bare link to the .apk, so nobody meets Android's "unknown source"
