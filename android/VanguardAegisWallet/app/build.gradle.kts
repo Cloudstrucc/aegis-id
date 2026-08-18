@@ -75,7 +75,11 @@ android {
         // minutes elapsed since 2020-01-01, which is monotonic, ~3.4 million
         // today, and good until the year 5000.
         versionCode = resolveVersionCode()
-        versionName = (project.findProperty("aegisVersionName") as String?) ?: "0.1.1"
+        // Keep in step with MARKETING_VERSION in the iOS project. The two
+        // stores show this to the same people, and a wallet that calls itself
+        // 1.0 on iPhone and 0.1.1 on Android reads as the Android one being
+        // the unfinished afterthought.
+        versionName = (project.findProperty("aegisVersionName") as String?) ?: "1.0"
     }
 
     // One flavour per environment, mirroring the iOS build configurations, so

@@ -212,18 +212,39 @@ for env in "${ENVIRONMENTS[@]}"; do
   tasks=("bundle${flavour}${BUILD_TYPE}")
   [[ "$BUILD_APK" == "1" || "$BUILD_DEBUG" == "1" ]] && tasks+=("assemble${flavour}${BUILD_TYPE}")
 
+  # Anything older than this did not come out of the build below.
+  started_at="$(date +%s)"
+
   ./gradlew "${tasks[@]}" "${gradle_args[@]}"
 
   lower_type="$(echo "$BUILD_TYPE" | tr '[:upper:]' '[:lower:]')"
-  for artifact in \
-    "app/build/outputs/bundle/${env}${BUILD_TYPE}/app-${env}-${lower_type}.aab" \
-    "app/build/outputs/apk/${env}/${lower_type}/app-${env}-${lower_type}.apk"
-  do
-    if [[ -f "$artifact" ]]; then
-      target="$OUTPUT_DIR/$(basename "${artifact%.*}")-$VERSION_CODE.${artifact##*.}"
-      cp "$artifact" "$target"
-      log "Built: ${target#$ROOT_DIR/}"
+
+  outputs=("app/build/outputs/bundle/${env}${BUILD_TYPE}/app-${env}-${lower_type}.aab")
+  # Only when the APK was actually asked for. Gradle leaves the previous one in
+  # place otherwise, and copying it stamped it with the new versionCode — an
+  # artifact whose filename claimed to be today's build and whose contents were
+  # weeks old. Play only takes the .aab, so this went unnoticed; the sideload
+  # page on /downloads/android serves the .apk, and it was serving the stale one.
+  if [[ "$BUILD_APK" == "1" || "$BUILD_DEBUG" == "1" ]]; then
+    outputs+=("app/build/outputs/apk/${env}/${lower_type}/app-${env}-${lower_type}.apk")
+  fi
+
+  for artifact in "${outputs[@]}"; do
+    if [[ ! -f "$artifact" ]]; then
+      die "Expected build output is missing: $artifact"
     fi
+
+    # Belt and braces: a task that was UP-TO-DATE against a stale input would
+    # still leave a file here, and shipping the wrong binary is worse than
+    # failing the release.
+    modified_at="$(stat -f %m "$artifact" 2>/dev/null || stat -c %Y "$artifact")"
+    if (( modified_at < started_at )); then
+      die "$artifact was not produced by this run (last modified before the build started). Try: ./gradlew clean"
+    fi
+
+    target="$OUTPUT_DIR/$(basename "${artifact%.*}")-$VERSION_CODE.${artifact##*.}"
+    cp "$artifact" "$target"
+    log "Built: ${target#$ROOT_DIR/}"
   done
 done
 
