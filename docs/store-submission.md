@@ -17,9 +17,11 @@ Drives a booted simulator through the wallet, captures each screen, and writes
 |---|---|
 | `ios-6.7-1284x2778/` | iPhone 14/15/16 Pro Max — the size App Store Connect asks for first |
 | `ios-6.5-1242x2688/` | iPhone 11 Pro Max / XS Max — the older required size |
+| `ios-ipad-13-2064x2752/` | iPad Pro 13-inch — required, see below |
 | `play-phone-1080x1920/` | Play phone screenshots, 9:16 |
 | `play-graphics/` | Play feature graphic (1024×500) and icon (512×512) |
-| `raw/` | Untouched captures at the simulator's native 1320×2868 |
+| `raw/` | Untouched iPhone captures at the simulator's native 1320×2868 |
+| `raw-ipad/` | Untouched iPad captures, already 2064×2752 |
 
 `artifacts/` is not in version control, so these are rebuilt rather than
 committed — the screens change and a stale screenshot in a store listing is
@@ -60,6 +62,38 @@ The captured screens, in the order that reads best:
 `05-passkeys.png` is **not** in the 1.0 set. That screen is hidden in this build
 — see below — so a screenshot of it would advertise something the binary does
 not do.
+
+#### The iPad set
+
+**App Store Connect will not accept a submission without it**, because the
+project declares `TARGETED_DEVICE_FAMILY = "1,2"`. Upload
+`ios-ipad-13-2064x2752/` into the 13-inch iPad slot.
+
+Capture these on an **iPad Pro 13-inch** simulator, not by padding the iPhone
+ones — a 13-inch capture is natively 2064×2752, so nothing is resampled, and the
+two aspect ratios are far enough apart that padding is obvious.
+
+```bash
+xcrun simctl boot "iPad Pro 13-inch (M4)"
+xcodebuild -project ios/VanguardAegisWallet/VanguardAegisWallet.xcodeproj \
+  -scheme "VanguardAegisWallet Local" -configuration Debug-Local \
+  -sdk iphonesimulator -destination 'name=iPad Pro 13-inch (M4)' build
+```
+
+`-configuration Debug-Local` matters. The scheme's own configuration is not
+`Debug`, and building `Debug` gives a wallet pointed at **production** — which
+registers a real wallet on prod rather than against a local server.
+
+Three screens are in the current set: Home, the Wallet ID, and the recovery
+codes. Settings and the Getting started guide were captured and dropped, because
+a local build prints `localhost` where the service name goes and that has no
+place in a listing. Capture those two against a hosted environment if a longer
+iPad set is wanted.
+
+**The layout is a phone layout on a 13-inch display.** It is not broken, but the
+setup screens leave a wide empty band. Worth deciding whether iPad support earns
+its place at all — dropping to `TARGETED_DEVICE_FAMILY = "1"` removes both the
+screenshot requirement and the chance of a reviewer finding a stretched screen.
 
 App previews (video) are optional and none are generated. The onboarding video
 at `public/videos/setup-walkthrough.mp4` is 1280×720 and the wrong shape for a

@@ -9,7 +9,12 @@
 #   1. Boot a 6.7" simulator (iPhone 16 Pro Max) and set the wallet up in it
 #   2. Capture each screen you want:
 #        xcrun simctl io booted screenshot artifacts/store-assets/raw/01-home.png
-#   3. Run this
+#   3. For iPad, do the same on an iPad Pro 13-inch into raw-ipad/. Apple asks
+#      for iPad screenshots because the app declares TARGETED_DEVICE_FAMILY
+#      "1,2"; a 13-inch capture is already 2064x2752, so nothing is resampled.
+#      Do not pad iPhone captures to fit — the aspect ratios are nowhere near
+#      each other and it shows.
+#   4. Run this
 #
 # ffmpeg rather than Python imaging: it is already required by the walkthrough
 # video generator, and the system Python here has an architecture mismatch that
@@ -18,6 +23,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RAW="$ROOT/artifacts/store-assets/raw"
+RAW_IPAD="$ROOT/artifacts/store-assets/raw-ipad"
 OUT="$ROOT/artifacts/store-assets"
 
 command -v ffmpeg >/dev/null || { echo "ffmpeg not found (brew install ffmpeg)"; exit 1; }
@@ -57,9 +63,30 @@ play() {
   echo "  $folder: ${#captures[@]} files"
 }
 
+# Apple's 13-inch iPad slot. Passed the captures explicitly rather than through
+# the shared `captures` array, because these come from a different simulator.
+ipad() {
+  local folder="$1" width="$2" height="$3"
+  shopt -s nullglob
+  local sources=("$RAW_IPAD"/*.png)
+  if [[ ${#sources[@]} -eq 0 ]]; then
+    echo "  $folder: skipped, no captures in artifacts/store-assets/raw-ipad/"
+    return
+  fi
+
+  mkdir -p "$OUT/$folder"
+  for src in "${sources[@]}"; do
+    ffmpeg -v error -y -i "$src" \
+      -vf "scale=${width}:-1,crop=${width}:${height}" \
+      "$OUT/$folder/$(basename "$src")"
+  done
+  echo "  $folder: ${#sources[@]} files"
+}
+
 echo "Writing store assets:"
 apple "ios-6.7-1284x2778" 1284 2778
 apple "ios-6.5-1242x2688" 1242 2688
+ipad  "ios-ipad-13-2064x2752" 2064 2752
 play  "play-phone-1080x1920" 1080 1920
 
 ICON="$ROOT/ios/VanguardAegisWallet/VanguardAegisWallet/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png"
