@@ -60,6 +60,7 @@ class PasskeyConsentActivity : FragmentActivity() {
 
         val callingRequest = request.callingRequest
         if (callingRequest !is androidx.credentials.CreatePublicKeyCredentialRequest) {
+            trace("create refused: not a public key request (${callingRequest.type})")
             finishCancelled()
             return
         }
@@ -75,9 +76,11 @@ class PasskeyConsentActivity : FragmentActivity() {
         // relying party rejects afterwards.
         val supportsEs256 = options.pubKeyCredParams.any { it.alg == -7L }
         if (!supportsEs256) {
+            trace("create refused: site did not offer ES256")
             finishCancelled()
             return
         }
+        trace("create asked for ${options.rp.id}")
 
         verifyHolder("Create a passkey for ${options.rp.id}") { verified ->
             if (!verified) {
@@ -131,6 +134,15 @@ class PasskeyConsentActivity : FragmentActivity() {
                             put("clientDataJSON", Base64Url.encode(clientDataJson))
                             put("attestationObject", Base64Url.encode(registration.attestationObject))
                             put("transports", org.json.JSONArray(listOf("internal")))
+                            // The rest of AuthenticatorAttestationResponseJSON.
+                            // Chrome's CredMan-to-Mojo converter reads these
+                            // three directly and fails the whole registration
+                            // with "field missing or invalid: publicKeyAlgorithm"
+                            // rather than unpacking them from the attestation
+                            // object, which is where they also live.
+                            put("authenticatorData", Base64Url.encode(registration.authenticatorData))
+                            put("publicKeyAlgorithm", -7)
+                            put("publicKey", Base64Url.encode(registration.publicKeySpki))
                         }
                     )
                     put("clientExtensionResults", JSONObject())
@@ -141,9 +153,11 @@ class PasskeyConsentActivity : FragmentActivity() {
                     result,
                     CreatePublicKeyCredentialResponse(json.toString())
                 )
+                trace("create completed for ${options.rp.id}")
                 setResult(Activity.RESULT_OK, result)
                 finish()
             }.onFailure {
+                trace("create failed: $it")
                 finishCancelled()
             }
         }
@@ -231,9 +245,11 @@ class PasskeyConsentActivity : FragmentActivity() {
                     result,
                     GetCredentialResponse(PublicKeyCredential(json.toString()))
                 )
+                trace("assertion completed for ${passkey.rpId}")
                 setResult(Activity.RESULT_OK, result)
                 finish()
             }.onFailure {
+                trace("assertion failed: $it")
                 finishCancelled()
             }
         }
@@ -249,7 +265,7 @@ class PasskeyConsentActivity : FragmentActivity() {
      * what makes the key usable at all.
      */
     private fun verifyHolder(reason: String, onResult: (Boolean) -> Unit) {
-        authenticate(reason, null) { onResult(it != null) }
+        authenticate(reason, null) { verified, _ -> onResult(verified) }
     }
 
     /**
@@ -264,13 +280,24 @@ class PasskeyConsentActivity : FragmentActivity() {
         operation: java.security.Signature,
         onResult: (java.security.Signature?) -> Unit
     ) {
-        authenticate(reason, operation) { onResult(it) }
+        authenticate(reason, operation) { verified, signature ->
+            onResult(if (verified) signature else null)
+        }
     }
 
+    /**
+     * Reports whether the holder verified *and*, separately, the Signature they
+     * authorised.
+     *
+     * The two have to be separate. Registration authorises no operation, so it
+     * passes no Signature and gets none back — collapsing the two into "did a
+     * Signature come back" read every successful registration as a refusal, and
+     * the holder saw the prompt accept their PIN and the request cancel anyway.
+     */
     private fun authenticate(
         reason: String,
         operation: java.security.Signature?,
-        onResult: (java.security.Signature?) -> Unit
+        onResult: (Boolean, java.security.Signature?) -> Unit
     ) {
         val manager = BiometricManager.from(this)
         // A CryptoObject cannot travel with DEVICE_CREDENTIAL, so an operation
@@ -283,21 +310,33 @@ class PasskeyConsentActivity : FragmentActivity() {
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL
         }
 
-        if (manager.canAuthenticate(allowed) != BiometricManager.BIOMETRIC_SUCCESS) {
-            onResult(null)
+        val canAuthenticate = manager.canAuthenticate(allowed)
+        if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
+            trace("cannot verify the holder: canAuthenticate=$canAuthenticate, allowed=$allowed")
+            onResult(false, null)
             return
         }
+        trace("asking the holder to verify (allowed=$allowed, operation=${operation != null})")
 
         val prompt = BiometricPrompt(
             this,
             ContextCompat.getMainExecutor(this),
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    onResult(result.cryptoObject?.signature ?: operation)
+                    trace("holder verified (type ${result.authenticationType})")
+                    onResult(true, result.cryptoObject?.signature ?: operation)
                 }
 
                 override fun onAuthenticationError(code: Int, message: CharSequence) {
-                    onResult(null)
+                    // The one line that separates "the holder said no" from
+                    // "the platform refused", which reach the relying party as
+                    // the same flat failure.
+                    trace("holder verification failed: code $code, $message")
+                    onResult(false, null)
+                }
+
+                override fun onAuthenticationFailed() {
+                    trace("holder not recognised, prompt still open")
                 }
             }
         )
@@ -341,11 +380,28 @@ class PasskeyConsentActivity : FragmentActivity() {
         }.toString().toByteArray()
 
     private fun finishCancelled() {
+        trace("cancelled")
         setResult(Activity.RESULT_CANCELED)
         finish()
     }
 
+    /**
+     * The provider's own trail through a flow the system otherwise reports as a
+     * single yes or no.
+     *
+     * WebAuthn gives a relying party one failure and no reason, and the platform
+     * logs stop at its own boundary — so without this there is no way to tell a
+     * declined prompt from a rejected request from a signature the keystore
+     * would not produce. iOS has PasskeyDiagnostics for the same reason.
+     *
+     *   adb logcat -s AegisPasskey
+     */
+    private fun trace(message: String) {
+        android.util.Log.i(TRACE_TAG, message)
+    }
+
     companion object {
+        const val TRACE_TAG = "AegisPasskey"
         const val ACTION_CREATE = "ca.vanguardcs.aegisid.wallet.PASSKEY_CREATE"
         const val ACTION_GET = "ca.vanguardcs.aegisid.wallet.PASSKEY_GET"
         const val EXTRA_CREDENTIAL_ID = "credentialId"

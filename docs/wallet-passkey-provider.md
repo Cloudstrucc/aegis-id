@@ -173,6 +173,59 @@ one throws `UserNotAuthenticatedException`. A CryptoObject also cannot travel
 with `DEVICE_CREDENTIAL`, so an assertion asks for a biometric specifically
 while registration, which authorises nothing, still accepts either.
 
+## Android, exercised on a device
+
+Driven end to end against `https://webauthn.io` on a Pixel 8 emulator (API 37,
+Play services), with Aegis ID as the only enabled credential provider.
+
+**Registration works.** The system offers Aegis ID, the consent activity parses
+the request, the holder verifies, and the site reports success.
+
+**Assertion does not.** The provider signs and returns, Chrome accepts the
+response, and the relying party answers *"Could not verify authentication
+signature"*. What has been ruled out by inspection: the signature covers
+`authenticatorData ‖ clientDataHash` in that order; the coordinates are padded
+to exactly 32 bytes; the COSE key is EC2/ES256/P-256; the bytes signed are the
+bytes returned. The remaining suspect is the public key the relying party stored
+at registration, which nothing verifies at registration time because attestation
+is `none` — a wrong key there fails every assertion afterwards and nothing
+earlier. Verify a captured registration and assertion against
+`@simplewebauthn/server`, as was done for iOS, to localise it.
+
+Two bugs were found and fixed on the way, both of which had made the feature
+impossible rather than unreliable:
+
+**Success was read as refusal.** `verifyHolder` collapsed "did the holder
+verify" into "did a Signature come back". Registration authorises no operation,
+so it passes no Signature and gets none back — every successful registration was
+treated as a refusal. The holder watched the prompt accept their PIN and the
+request cancel anyway. The two are now reported separately.
+
+**Chrome needs more of the response than the spec strictly requires it to
+read.** Its CredMan-to-Mojo converter reads `publicKeyAlgorithm`, `publicKey`
+and `authenticatorData` as their own JSON fields rather than unpacking them from
+the attestation object, and fails the whole registration with
+`field missing or invalid: publicKeyAlgorithm` when they are absent. All three
+are now in `AuthenticatorAttestationResponseJSON`.
+
+**A holder with no biometric enrolled can create a passkey and never use it.**
+Assertion asks for `BIOMETRIC_STRONG` alone, because a `CryptoObject` cannot
+travel with `DEVICE_CREDENTIAL` — so on a device with a PIN and no fingerprint,
+`canAuthenticate` returns `BIOMETRIC_ERROR_NONE_ENROLLED` and the request is
+cancelled. Registration accepts either factor, so the passkey is created and
+then permanently unusable. Fixing it means generating keys with a short
+authentication validity window instead of per-use authorisation, which trades a
+little of the key's strictness for the feature working at all for anyone who has
+not enrolled a biometric. That is a security decision, so it is stated here
+rather than made quietly.
+
+Diagnosis goes through the provider's own trail, which mirrors iOS's
+`PasskeyDiagnostics`:
+
+```bash
+adb logcat -s AegisPasskey
+```
+
 ## What has been verified, and what has not
 
 Registration on iOS currently reaches `handed to iOS` — the extension builds a

@@ -44,7 +44,17 @@ object PasskeyAuthenticator {
     data class Registration(
         val credentialId: ByteArray,
         val attestationObject: ByteArray,
-        val publicKey: ByteArray
+        val publicKey: ByteArray,
+        /**
+         * The same authenticator data that is inside the attestation object.
+         *
+         * Chrome's CredMan bridge reads it from the response JSON as its own
+         * field rather than unpacking the CBOR, and rejects the whole
+         * registration if it is absent.
+         */
+        val authenticatorData: ByteArray,
+        /** X.509 SubjectPublicKeyInfo DER, which is what the JSON `publicKey` field is. */
+        val publicKeySpki: ByteArray
     )
 
     data class Assertion(
@@ -93,7 +103,13 @@ object PasskeyAuthenticator {
             )
         )
 
-        return Registration(credentialId, attestationObject, publicKey)
+        return Registration(
+            credentialId = credentialId,
+            attestationObject = attestationObject,
+            publicKey = publicKey,
+            authenticatorData = authData,
+            publicKeySpki = pair.public.encoded
+        )
     }
 
     // --- assertion -----------------------------------------------------------
