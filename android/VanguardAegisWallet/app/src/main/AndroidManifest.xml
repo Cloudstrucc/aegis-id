@@ -73,10 +73,15 @@
         <!-- The wallet as a FIDO2 passkey provider.
              API 34+ only: CredentialProviderService did not exist before, and
              the manifest entry is guarded so older devices install the app and
-             simply do not offer it. -->
+             simply do not offer it.
+
+             Disabled in 1.0 via passkeyProviderEnabled in build.gradle.kts. A
+             disabled service is not listed by Android, so the wallet does not
+             appear as a passkey provider at all — which is the point, because
+             the assertion path does not yet work. -->
         <service
             android:name=".passkey.AegisCredentialProviderService"
-            android:enabled="true"
+            android:enabled="${passkeyProviderEnabled}"
             android:exported="true"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE">

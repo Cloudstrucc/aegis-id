@@ -1,5 +1,12 @@
 # The wallet as a FIDO2 passkey provider
 
+> **Neither wallet ships this in 1.0.** On Android it is disabled through
+> `passkeyProviderEnabled` in `app/build.gradle.kts`, which sets
+> `android:enabled="false"` on the service and hides the Passkeys screen behind
+> `BuildConfig.PASSKEY_PROVIDER_ENABLED`. Registration works there; the
+> assertion does not, which is worse than failing outright — see the Android
+> section below.
+>
 > **iOS 1.0 ships without this.** The extension is built but not embedded, the
 > app's autofill entitlement is removed and the Passkeys screen is hidden behind
 > `AegisWalletEnvironment.providesPasskeysForOtherServices`, because the failure

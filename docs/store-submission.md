@@ -59,9 +59,11 @@ The captured screens, in the order that reads best:
 4. `04-settings.png` — settings, showing what the wallet holds
 5. `03-recovery-codes.png` — recovery codes, shown once
 
-`05-passkeys.png` is **not** in the 1.0 set. That screen is hidden in this build
-— see below — so a screenshot of it would advertise something the binary does
-not do.
+`05-passkeys.png` is **not** in the 1.0 set, on either platform. The screen is
+hidden in both builds — see below — so a screenshot of it would advertise
+something neither binary does. The raw capture is deleted rather than merely
+left out of the listing, and `npm run store:assets` rebuilds each output folder
+from scratch, so it cannot come back on the next run.
 
 #### The iPad set
 
@@ -172,9 +174,11 @@ scripts/release-android.sh --env prod -PaegisVersionCode=$(( ($(date +%s) - 1577
   transit, deletable by the holder. Passkeys are on-device and not collected.
 - **Target audience.** Not directed at children.
 - **The credential provider.** Play asks about services with sensitive
-  permissions. `BIND_CREDENTIAL_PROVIDER_SERVICE` is declared because the app is
-  a passkey provider under the Credential Manager API; it is bound by the system
-  only, and is API 34+.
+  permissions. `BIND_CREDENTIAL_PROVIDER_SERVICE` still appears in the manifest,
+  but the service ships **disabled** in 1.0, so nothing binds it and the app is
+  not offered as a passkey provider. If Play queries it: the permission guards a
+  `CredentialProviderService` that only the system may bind, it is API 34+, and
+  it is inactive in this release.
 - **Financial features.** None. The wallet holds identity credentials, not
   payment instruments — worth stating, because "wallet" invites the question.
 
@@ -200,9 +204,24 @@ entitlement is gone, and the Passkeys screen is hidden behind
 flipping that flag back and restoring two `project.pbxproj` entries ships it,
 once a real device completes a registration.
 
-**Android still ships its provider.** The failure documented above is iOS-only,
-and the Android path was never observed failing. If it has not been exercised on
-a device either, hold it back the same way rather than assuming.
+**Android holds its provider back too, for a worse reason.** Exercised on a
+device, Android registration succeeds and the assertion is rejected by the
+relying party — so a holder creates a passkey the site confirms, may drop their
+password on the strength of it, and then cannot sign in. Deleting the passkey in
+the wallet does not tell the site either. A feature that fails is one thing; one
+that can take away access to somebody else's account and not give it back is
+another.
+
+It is disabled through `passkeyProviderEnabled` in
+`android/VanguardAegisWallet/app/build.gradle.kts`, which feeds both a manifest
+placeholder and `BuildConfig.PASSKEY_PROVIDER_ENABLED`. The service ships
+`android:enabled="false"`, so Android does not list Aegis ID as a provider at
+all, and the Passkeys screen is hidden — it does not merely list passkeys, it
+offers to open Android settings and turn the provider on.
+
+Verified on a device: with `credential_service` pointed at the Aegis component
+and nothing else, the provider never bound and Credential Manager fell through
+to Google Password Manager.
 
 **Cross-device sign-in cannot be claimed.** The listing must not say the wallet
 signs you in on a computer by scanning a code. That is the hybrid transport, it

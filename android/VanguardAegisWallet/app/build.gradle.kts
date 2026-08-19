@@ -59,6 +59,23 @@ fun com.android.build.api.dsl.ApplicationProductFlavor.aegisEnvironment(
     manifestPlaceholders["aegisAppLinkHost"] = appLinkHost
 }
 
+/**
+ * Whether this build offers the wallet to Android as a system passkey provider.
+ *
+ * False for 1.0. Registration works, but the relying party rejects the
+ * assertion — so a holder can create a passkey the site believes in and then
+ * never sign in with it, having possibly already dropped their password. A
+ * feature that fails is one thing; one that can take away access to somebody
+ * else's account and not give it back is another. See
+ * docs/wallet-passkey-provider.md.
+ *
+ * One flag, two consumers: the manifest uses it to disable the service so
+ * Android stops listing Aegis ID as a provider, and the app uses it to hide the
+ * screen that invites people to turn it on. Nothing is deleted — shipping it in
+ * a later release is flipping this to true.
+ */
+val passkeyProviderEnabled = false
+
 android {
     namespace = "ca.vanguardcs.aegisid.wallet"
     compileSdk = 35
@@ -80,6 +97,9 @@ android {
         // 1.0 on iPhone and 0.1.1 on Android reads as the Android one being
         // the unfinished afterthought.
         versionName = (project.findProperty("aegisVersionName") as String?) ?: "1.0"
+
+        buildConfigField("boolean", "PASSKEY_PROVIDER_ENABLED", passkeyProviderEnabled.toString())
+        manifestPlaceholders["passkeyProviderEnabled"] = passkeyProviderEnabled.toString()
     }
 
     // One flavour per environment, mirroring the iOS build configurations, so

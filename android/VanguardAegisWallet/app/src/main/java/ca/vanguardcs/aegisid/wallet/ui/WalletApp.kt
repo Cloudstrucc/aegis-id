@@ -504,7 +504,12 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
         // Passkeys this wallet holds for other people's sites, as opposed to
         // the wallet passkey settings further down, which are about approving
         // Aegis challenges.
-        item {
+        //
+        // Hidden while the provider is disabled. This screen does not merely
+        // list passkeys — it offers to open Android's settings and turn Aegis ID
+        // on as a provider, so leaving it in would recruit holders into a flow
+        // the build cannot complete.
+        if (BuildConfig.PASSKEY_PROVIDER_ENABLED) item {
             AegisCard {
                 Text("Passkeys for other services", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
                 Text(

@@ -19,6 +19,9 @@
 # ffmpeg rather than Python imaging: it is already required by the walkthrough
 # video generator, and the system Python here has an architecture mismatch that
 # breaks Pillow when npm invokes it.
+# Each output folder is rebuilt from scratch, so removing a capture removes it
+# from the store sets too. Leaving stale files behind is how a screenshot of a
+# withdrawn feature outlives the feature.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -41,6 +44,7 @@ fi
 # extra rows at the centre.
 apple() {
   local folder="$1" width="$2" height="$3"
+  rm -rf "$OUT/$folder"
   mkdir -p "$OUT/$folder"
   for src in "${captures[@]}"; do
     ffmpeg -v error -y -i "$src" \
@@ -54,6 +58,7 @@ apple() {
 # the content out — so pad at the sides instead.
 play() {
   local folder="$1" width="$2" height="$3"
+  rm -rf "$OUT/$folder"
   mkdir -p "$OUT/$folder"
   for src in "${captures[@]}"; do
     ffmpeg -v error -y -i "$src" \
@@ -74,6 +79,7 @@ ipad() {
     return
   fi
 
+  rm -rf "$OUT/$folder"
   mkdir -p "$OUT/$folder"
   for src in "${sources[@]}"; do
     ffmpeg -v error -y -i "$src" \
