@@ -401,6 +401,35 @@ if [[ "$VERIFY_ONLY" != "1" ]]; then
     -x "*.zip" \
     >/dev/null
 
+  # A stopped or quota-stopped app refuses the upload, and Kudu answers with a
+  # page of HTML rather than a reason — "Status Code: 403" and a stylesheet.
+  # Asking first turns that into the actual cause.
+  site_state="$(
+    az webapp show \
+      --resource-group "$AZURE_RESOURCE_GROUP" \
+      --name "$AZURE_WEBAPP_NAME" \
+      --query state --output tsv 2>/dev/null || true
+  )"
+  case "$site_state" in
+    QuotaExceeded)
+      fail "$AZURE_WEBAPP_NAME has exceeded its App Service plan quota, so it is stopped and will refuse this deployment.
+
+A Free (F1) plan allows 60 CPU-minutes a day and stops every app on the plan
+once they are spent. The quota resets at 00:00 UTC, but a plan that ran out
+once will run out again — and a production host backing a store listing cannot
+be down for the rest of the day.
+
+Move the plan to Basic, which has no CPU quota:
+
+  az appservice plan update --name <plan> --resource-group $AZURE_RESOURCE_GROUP --sku B1"
+      ;;
+    Stopped)
+      fail "$AZURE_WEBAPP_NAME is stopped and will refuse this deployment. Start it with:
+
+  az webapp start --resource-group $AZURE_RESOURCE_GROUP --name $AZURE_WEBAPP_NAME"
+      ;;
+  esac
+
   log "Deploying zip package to Azure App Service"
   az webapp deploy \
     --resource-group "$AZURE_RESOURCE_GROUP" \
