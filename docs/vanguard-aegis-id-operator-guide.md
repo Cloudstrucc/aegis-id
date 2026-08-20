@@ -682,6 +682,27 @@ Expected. YubiKey is for FIDO2/passkey authentication. Microsoft Authenticator i
 
 ---
 
+## Public Pages
+
+Three pages are reachable without signing in, because the people who need them
+most are the ones who cannot. Two of them are what the App Store and Play point
+at, so they cannot sit behind a login.
+
+| Page | What it is for |
+|---|---|
+| `/support` | How to set a wallet up, redeem an invitation, and recover a lost device. Shows the `SUPPORT_EMAIL` address, or says plainly that none is configured. |
+| `/privacy` | What is collected and what never leaves the device. Both stores require a privacy policy URL; `PRIVACY_POLICY_URL` defaults to this page. |
+| `/downloads/android` | Sideload instructions for the Android testing build. |
+
+`SUPPORT_EMAIL` is production-only and blanked on dev and qa — see
+[`azure-deployment.md`](azure-deployment.md). Set it before submitting to either
+store: review checks the support URL, and a page saying no address is configured
+is honest but is not support.
+
+The privacy policy has **not been through legal review**. It describes what the
+code does, which is the hard part, but retention periods, governing law and the
+controller's legal name are business decisions.
+
 ## Reference Links
 
 - Microsoft Entra Verified ID Request Service REST API: https://learn.microsoft.com/en-us/entra/verified-id/get-started-request-api

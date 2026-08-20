@@ -22,6 +22,57 @@ Items that can move the solution out of free-tier territory:
 - Scale-out, deployment slots, Always On, or higher App Service SKUs.
 - Verified ID tenant and request volume requirements beyond free allowances.
 
+### F1 is a pilot tier, not a production one
+
+`F1` allows **60 CPU-minutes per day across the whole plan**, and when they are
+spent Azure stops every app on it until 00:00 UTC. A stopped app serves a 403
+page and refuses deployments — the visible symptom is
+`Error 403 - This web app is stopped` in the middle of a deploy.
+
+Two apps share the VanguardCS plan (Aegis ID and Business Expenses), so the
+quota goes roughly twice as fast as a single-app pilot would suggest.
+
+Waiting for the reset is not a fix. Anything with a public commitment behind it —
+a store listing whose support and privacy URLs point at the host, a wallet that
+cannot reach its service — needs `B1` or better, which has no CPU quota and adds
+Always On:
+
+```bash
+az appservice plan update --name <plan> --resource-group <rg> --sku B1
+```
+
+`scripts/deploy-azure-webapp.sh` now checks the site state before uploading and
+names the cause, rather than passing Azure's error page through.
+
+## Settings that belong to production only
+
+Four settings describe the published apps rather than a deployment, and the
+deploy script **blanks them on any `--env` that is not `prod`**:
+
+| Setting | What it is |
+|---|---|
+| `SUPPORT_EMAIL` | The address on `/support`, and the one Apple requires behind the Support URL |
+| `APP_STORE_URL` | The public App Store listing, once live |
+| `PLAY_STORE_URL` | The public Play listing, once live |
+| `PRIVACY_POLICY_URL` | Defaults to the `/privacy` page this app serves |
+
+A dev or qa site carrying these sends a tester to the public build, which does
+not talk to the site they were asked to test, and points them at a support
+mailbox for a release they are not on.
+
+They are **blanked rather than skipped**, and the distinction is the whole
+point: omitting a setting does not remove it, because App Service keeps whatever
+the last deployment left. A value that reached dev once would stay there for
+good. The script sends an explicit empty string, and says which settings it
+withheld.
+
+They are tenant-scoped like everything else, so `TENANT_VANGUARDCS_SUPPORT_EMAIL`
+reaches the VanguardCS production app.
+
+Left unset, `/support` says plainly that no address is configured rather than
+printing a mailbox nobody reads — honest, but not a support page as far as
+review is concerned. Set it before submitting to either store.
+
 ## Environment Files
 
 The deploy scripts choose an env file and push the relevant non-empty values into Azure App Service settings.

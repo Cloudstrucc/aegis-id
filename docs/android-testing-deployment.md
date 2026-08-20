@@ -106,22 +106,48 @@ az webapp config appsettings set \
 
 The web deploy script also reads `ANDROID_TESTING_URL` from `.env`, `.env.dev`, or `.env.qa`. Keep the env value blank if you prefer managing the testing link only in Azure App Service settings.
 
-## 6. Use a Proper QA Track
+## 6. Build a signed release
 
-Use this when testing with a stable group of Android users.
+Use the release script rather than Android Studio's dialog. It signs from an
+untracked `.env.android`, stamps a shared version code across every flavour in
+one run, and writes to `artifacts/android/`.
 
-1. In Android Studio, choose **Build > Generate Signed App Bundle / APK**.
-2. Select **Android App Bundle**.
-3. Create or select a Vanguard upload key.
-4. Build the release `.aab`.
-5. In Google Play Console, go to **Testing > Internal testing**.
-6. Add tester email addresses.
-7. Upload the signed `.aab`.
-8. Roll out the test release.
-9. Copy the opt-in link.
-10. Set `ANDROID_TESTING_URL` in Azure to that opt-in link.
+```bash
+scripts/release-android.sh --env prod              # bundle only
+scripts/release-android.sh --env prod --apk        # bundle and APK
+scripts/release-android.sh --env dev --env qa      # repeatable
+```
 
-## 7. What QA Should Test
+Two things worth knowing:
+
+- **Play takes the `.aab`.** New apps have required an App Bundle since 2021.
+  The `.apk` is only for the sideload page at `/downloads/android`.
+- **`--apk` is not cosmetic.** Without it Gradle never runs `assemble`, so the
+  APK is only built when asked for. The script refuses to copy an artifact
+  older than the build that supposedly produced it, which is what stops a
+  weeks-old APK being handed back under today's filename.
+
+`versionCode` is minutes since 2020-01-01 — monotonic, and it fits inside
+Play's 2,100,000,000 ceiling where a `YYYYMMDDHHMM` stamp does not. Override it
+with `-PaegisVersionCode=`. `versionName` defaults to `1.0` and is kept in step
+with `MARKETING_VERSION` in the iOS project.
+
+Signing comes from `.env.android` (template `.env.android.example`); one
+keystore covers every environment. With no credentials, release builds stay
+unsigned rather than silently falling back to the debug key — an artifact that
+looks releasable and is not.
+
+## 7. Use a Proper QA Track
+
+1. Build the bundle as above.
+2. In Google Play Console, go to **Testing > Internal testing**.
+3. Add tester email addresses.
+4. Upload the signed `.aab`.
+5. Roll out the test release.
+6. Copy the opt-in link.
+7. Set `ANDROID_TESTING_URL` in Azure to that opt-in link.
+
+## 8. What QA Should Test
 
 1. Install the wallet.
 2. Open the Aegis ID web app.
@@ -135,8 +161,16 @@ Use this when testing with a stable group of Android users.
 10. Confirm the Organizations tab shows roles, claims, and revocation state.
 11. Optional passkey test: open wallet **Settings > Wallet passkey assurance**, register a passkey, set the org **YubiKey > Wallet approval passkey policy** to **Required**, and approve a Business Expenses decision. The Ledger action should require passkey verification before acceptance.
 
+This is the wallet's *own* passkey assurance, which works. It is not the same
+feature as the wallet acting as a passkey provider for other sites — that is
+disabled in 1.0, so Aegis ID does not appear under **Settings > Passwords,
+passkeys and data services** and there is nothing to test there. See
+[`wallet-passkey-provider.md`](wallet-passkey-provider.md).
+
 ## Notes
 
-- The Android wallet is currently a lab wallet, not a production DIDComm wallet engine.
+- The wallet is a shipping application at version 1.0. The Aries protocols apply
+  only to lab connections; credentials and challenges go through the Aegis ID
+  service directly.
 - Use Google Play testing links for business partners. Avoid public APK download links for non-technical users because sideloading causes security prompts.
 - For production release, use a signed release app bundle, privacy policy, app content declarations, and closed testing before public Play Store release.
