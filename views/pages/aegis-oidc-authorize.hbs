@@ -1,48 +1,74 @@
+{{!--
+  Signing in to a connected application with the wallet.
+
+  Nothing on this page asks the holder to identify themselves. The browser shows
+  a challenge; the wallet answers it with its own Wallet ID. The page then posts
+  the challenge — not a subject — back to the authorization endpoint.
+
+  Wallet is the only method offered. Passkey, Verified ID and YubiKey are real
+  sign-in methods elsewhere in the platform, but they are not wired into this
+  endpoint yet and a button that cannot finish is worse than no button at all.
+--}}
 <section class="page-hero page-hero--compact">
-  <p class="eyebrow">Aegis ID OIDC</p>
-  <h1>Authorize {{appName}}.</h1>
-  <p>This lab authorization screen simulates Aegis ID as an OIDC provider. The connected application will still require a wallet challenge before access is granted.</p>
+  <p class="eyebrow">Aegis ID</p>
+  <h1>Approve this sign-in from your wallet.</h1>
+  <p>
+    <strong>{{appName}}</strong> wants to know it is really you. Scan the code
+    below, or open the link on the phone your wallet is installed on.
+  </p>
 </section>
 
 <section class="band band--white">
-  <div class="subscription-layout">
-    <article class="subscribe-card">
-      <p class="eyebrow">OIDC request</p>
-      <h2>{{appName}}</h2>
-      <dl class="claim-list">
-        <div>
-          <dt>Client</dt>
-          <dd>{{clientId}}</dd>
-        </div>
-        <div>
-          <dt>Scope</dt>
-          <dd>{{scope}}</dd>
-        </div>
-        <div>
-          <dt>Redirect</dt>
-          <dd>{{redirectUri}}</dd>
-        </div>
-      </dl>
-    </article>
+  <div class="auth-grid auth-grid--compact">
+    <div class="auth-panel">
+      <div class="auth-panel__form" data-wallet-signin="{{challengeId}}">
+        <h2>Scan with the Aegis ID wallet</h2>
 
-    <form class="subscribe-form" action="/oidc/authorize" method="post">
-      <input type="hidden" name="clientId" value="{{clientId}}">
-      <input type="hidden" name="redirectUri" value="{{redirectUri}}">
-      <input type="hidden" name="responseType" value="{{responseType}}">
-      <input type="hidden" name="scope" value="{{scope}}">
-      <input type="hidden" name="state" value="{{state}}">
-      <input type="hidden" name="nonce" value="{{nonce}}">
-      <input type="hidden" name="organizationId" value="{{organizationId}}">
+        <div class="wallet-signin__qr">
+          <img src="{{qrCodeDataUrl}}" alt="QR code containing this sign-in request" width="240" height="240">
+        </div>
 
-      <div class="field-group">
-        <label for="oidcEmail">Email</label>
-        <input id="oidcEmail" name="email" type="email" value="identity@vanguardcs.ca" required>
+        <p class="form-footnote wallet-signin__link">{{deepLink}}</p>
+
+        <p>
+          <a class="button button--primary" href="{{deepLink}}">Open in my wallet</a>
+        </p>
+
+        <p class="form-footnote" data-wallet-signin-status role="status" aria-live="polite">
+          Waiting for your wallet. This request expires in about {{expiresInMinutes}} minutes.
+        </p>
+
+        {{!--
+          The values the completion call needs. Held as data rather than as a
+          form, because the authorization endpoint answers with a redirect to
+          the relying party's origin and `form-action 'self'` would block that
+          whole chain. The page navigates itself instead.
+        --}}
+        <span hidden
+          data-wallet-signin-client="{{clientId}}"
+          data-wallet-signin-redirect="{{redirectUri}}"
+          data-wallet-signin-response="{{responseType}}"
+          data-wallet-signin-org="{{organizationId}}"></span>
       </div>
-      <div class="field-group">
-        <label for="oidcName">Name</label>
-        <input id="oidcName" name="name" type="text" value="Vanguard Demo User" required>
-      </div>
-      <button class="button button--primary button--blue" type="submit">Authorize and Return</button>
-    </form>
+    </div>
+
+    <div class="section-heading">
+      <p class="eyebrow">Why there is nothing to fill in</p>
+      <h2>Your device answers, not a form.</h2>
+      <p>
+        Your wallet presents its own Wallet ID from its own storage. Nothing in
+        the code above names you, which is what makes it safe to show on a
+        screen anyone can photograph — somebody else scanning it signs in as
+        themselves, not as you.
+      </p>
+      <p>
+        Once approved, you will be able to choose which of your organizations to
+        act in. One wallet holds credentials from as many organizations as have
+        issued to you.
+      </p>
+      <p class="form-footnote">
+        No wallet yet? <a href="/support">Support</a> explains how to set one up.
+      </p>
+    </div>
   </div>
 </section>

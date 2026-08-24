@@ -175,6 +175,11 @@ app.get('/auth/callback', async (req, res, next) => {
       sub: token.claims.sub,
       email: token.claims.email,
       name: token.claims.name,
+      // The device that approved the sign-in. Shown back to the holder so they
+      // can see which wallet this session is acting from — the same wallet may
+      // hold credentials from several organizations.
+      walletId: token.claims.wallet_id || '',
+      acr: token.claims.acr || '',
       organizationId: token.claims.organization_id,
       // Every organization this holder belongs to, so they can choose one
       // instead of the app being pinned to a configured organization.
@@ -243,6 +248,7 @@ app.get('/challenge/:challengeId', requireKnownChallenge, async (req, res, next)
     res.render('pages/challenge', {
       title: 'Wallet Challenge',
       challenge,
+      challengePayloadJson: challengePayload(req, challenge),
       returnTo: req.query.returnTo || '/expenses'
     });
   } catch (error) {
@@ -653,6 +659,35 @@ function registerHandlebars() {
 
     return new hbs.SafeString(json);
   });
+}
+
+/**
+ * The statement the holder is being asked to sign, as they can read it.
+ *
+ * Rendered from what the challenge already carries rather than from a second
+ * source, so what is shown is what is actually in play. Nothing about the
+ * holder's other organizations appears here, because nothing about them is
+ * shared.
+ */
+function challengePayload(req, challenge = {}) {
+  const org = activeOrganization(req);
+  return JSON.stringify(
+    {
+      iss: config.aegisBaseUrl,
+      aud: config.clientId,
+      sub: req.session.user?.walletId || req.session.user?.sub || '',
+      email: req.session.user?.email || '',
+      organization_id: org?.id || '',
+      organization_name: org?.name || '',
+      challenge_id: challenge.id || '',
+      action: challenge.action || '',
+      subject: challenge.subject || '',
+      nonce: challenge.nonce || '',
+      acr: req.session.user?.acr || ''
+    },
+    null,
+    2
+  );
 }
 
 function normalizeAuthMethod(value) {

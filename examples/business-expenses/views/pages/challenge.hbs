@@ -18,6 +18,35 @@
             <dt class="col-sm-3">Nonce</dt>
             <dd class="col-sm-9"><code>{{challenge.nonce}}</code></dd>
           </dl>
+          {{!--
+            What is actually being shared, in both registers: plain English for
+            the person deciding, and the payload itself for anyone who needs to
+            check it. A wallet challenge asks somebody to sign a statement, and
+            they cannot weigh that without seeing what the statement says.
+          --}}
+          <div class="border rounded p-3 mb-3 bg-light-subtle">
+            <div class="text-muted small text-uppercase mb-2" style="letter-spacing:.06em">
+              What this shares with {{challenge.appName}}
+            </div>
+            <ul class="mb-3 small">
+              <li>Your <strong>Wallet ID</strong>, so the answer is bound to your device</li>
+              {{#if activeOrganization}}
+                <li>That you are acting in <strong>{{activeOrganization.name}}</strong></li>
+              {{/if}}
+              <li>The <strong>action</strong> being approved &mdash; {{challenge.action}}</li>
+              <li>How you proved it was you</li>
+            </ul>
+            <details>
+              <summary class="small text-muted" style="cursor:pointer">Show the challenge payload</summary>
+              <pre class="mt-2 mb-0 p-3 rounded small text-break"
+                   style="background:#0d1b2a;color:#cfe0f2;overflow-x:auto"><code>{{challengePayloadJson}}</code></pre>
+            </details>
+            <p class="small text-muted mt-2 mb-0">
+              Your other organizations are not in this payload and are not told about it.
+              Declining is recorded exactly as an approval is.
+            </p>
+          </div>
+
           <div class="alert alert-secondary" data-challenge-status>
             Waiting for wallet acceptance.
           </div>

@@ -20,12 +20,18 @@ async function createAuthorizationCode(input = {}) {
     sub: normalizeSubject(input.email),
     aud: normalizeText(input.clientId, 160),
     email: normalizeEmail(input.email),
+    // The device that approved the sign-in. A relying party can show it back to
+    // the holder so they can see which wallet they are acting from, and it is
+    // what ties the session to a device rather than to an address.
+    wallet_id: normalizeText(input.walletId, 64),
     name: normalizeText(input.name, 160) || 'Aegis ID User',
     organization_id: normalizeText(input.organizationId, 120),
     // The organizations this holder actually belongs to, so a relying party can
     // offer a choice instead of being pinned to one organization by configuration.
     organizations: Array.isArray(input.organizations) ? input.organizations : [],
-    acr: 'urn:vanguard:aegis-id:auth:oidc-wallet-required',
+    acr: input.walletId
+      ? 'urn:vanguard:aegis-id:auth:wallet-approved'
+      : 'urn:vanguard:aegis-id:auth:oidc-wallet-required',
     nonce: normalizeText(input.nonce, 180),
     auth_time: Math.floor(Date.now() / 1000)
   };

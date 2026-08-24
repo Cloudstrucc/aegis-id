@@ -28,7 +28,27 @@
               <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 {{user.email}}
               </button>
-              <div class="dropdown-menu dropdown-menu-end shadow-sm">
+              <div class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:19rem">
+                {{!--
+                  Who you are and where you are acting. One wallet holds
+                  credentials from several organizations, so the org you are in
+                  matters as much as the identity you signed in with.
+                --}}
+                <div class="px-3 py-2">
+                  <div class="text-muted small text-uppercase" style="letter-spacing:.06em">Signed in</div>
+                  <div class="fw-semibold">{{user.email}}</div>
+                  {{#if user.walletId}}
+                    <div class="text-muted small mt-2">Wallet ID</div>
+                    <code class="small">{{user.walletId}}</code>
+                  {{/if}}
+                  {{#if activeOrganization}}
+                    <div class="text-muted small mt-2">Acting in</div>
+                    <div class="small fw-semibold">{{activeOrganization.name}}</div>
+                  {{/if}}
+                </div>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="/organizations">Switch organization</a>
+                <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="/apps/expenses">Business Expenses</a>
                 <a class="dropdown-item" href="/apps/signatures">E-Signatures</a>
                 <a class="dropdown-item" href="/apps/ledger">Ledger</a>

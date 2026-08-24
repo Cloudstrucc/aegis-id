@@ -1,0 +1,26 @@
+{{!--
+  What a wallet holder sees if they open an approval link in a browser rather
+  than in the wallet. The wallet itself gets JSON from the same route.
+--}}
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">Aegis ID</p>
+  {{#if declined}}
+    <h1>Sign-in declined.</h1>
+    <p>Nothing was shared with {{appName}}. Your answer has been recorded.</p>
+  {{else}}
+    <h1>Sign-in approved.</h1>
+    <p>
+      You can go back to <strong>{{appName}}</strong> on the device you started
+      from — it is already continuing.
+    </p>
+  {{/if}}
+</section>
+
+<section class="band band--white">
+  <div class="section-heading">
+    {{#unless declined}}
+      <p class="form-footnote">Approved from wallet <code>{{walletId}}</code>.</p>
+    {{/unless}}
+    <p><a class="button button--secondary" href="/support">Get help</a></p>
+  </div>
+</section>

@@ -8057,3 +8057,29 @@ body:has(.workspace-blade) .site-footer div span {
     min-width: 0;
   }
 }
+
+/* Wallet sign-in for connected applications. */
+.wallet-signin__qr {
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  margin: 6px 0 12px;
+  background: #fff;
+  border: 1px solid var(--line, #d8e2ec);
+  border-radius: 10px;
+}
+
+.wallet-signin__qr img {
+  display: block;
+  width: 240px;
+  height: 240px;
+  max-width: 100%;
+}
+
+/* The deep link is shown so it can be read or copied on a second device, so it
+   has to wrap rather than run off the panel. */
+.wallet-signin__link {
+  word-break: break-all;
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 12px;
+}

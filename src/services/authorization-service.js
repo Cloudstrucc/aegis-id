@@ -219,6 +219,16 @@ const POLICIES = Object.freeze({
     description: 'External app challenge API. Production deployments should pair this with client authentication.'
   }),
   'api.oidcProvider.external': policy('api.oidcProvider.external', 'external', 'oidc-provider', 'execute'),
+  'api.oidcProvider.walletSignIn': policy(
+    'api.oidcProvider.walletSignIn',
+    'external',
+    'oidc-provider',
+    'approve',
+    {
+      description:
+        'A wallet answering a sign-in challenge for a connected application. Authorization is the wallet presenting its own Wallet ID against a challenge it was shown — nothing in the link names a holder, so a forwarded link signs its finder in as themselves.'
+    }
+  ),
   'api.connectedApps.oauth': policy('api.connectedApps.oauth', 'external', 'connected-app-oauth', 'execute', {
     description: 'OIDC/OAuth endpoints used by registered relying-party applications.'
   }),

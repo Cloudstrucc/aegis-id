@@ -203,6 +203,10 @@ const config = {
     connectedAppUpstreamStates: resolveFromRoot(process.env.CONNECTED_APP_UPSTREAM_STATE_STORE_PATH, 'data/connected-app-upstream-states.json'),
     oidcWalletSessions: resolveFromRoot(process.env.OIDC_WALLET_SESSION_STORE_PATH, 'data/oidc-wallet-sessions.json'),
     oidcCodes: resolveFromRoot(process.env.OIDC_CODE_STORE_PATH, 'data/oidc-codes.json'),
+    oidcWalletSignIns: resolveFromRoot(
+      process.env.OIDC_WALLET_SIGNIN_STORE_PATH,
+      'data/oidc-wallet-signins.json'
+    ),
     walletChallenges: resolveFromRoot(process.env.WALLET_CHALLENGE_STORE_PATH, 'data/wallet-challenges.json'),
     walletPasskeys: resolveFromRoot(process.env.WALLET_PASSKEY_STORE_PATH, 'data/wallet-passkeys.json'),
     audit: resolveFromRoot(process.env.AUDIT_STORE_PATH, 'data/audit-events.json'),

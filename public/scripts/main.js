@@ -233,6 +233,7 @@ initWorkspaceBlade();
 initOrgChart();
 initAdminIdvWizard(document.querySelector('[data-idv-form]'));
 openInviteModalFromHash();
+watchWalletSignIn();
 
 function openVideoModal() {
   videoModal.hidden = false;
@@ -1669,4 +1670,89 @@ function bufferToBase64url(buffer) {
     binary += String.fromCharCode(byte);
   }
   return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+/* Waiting for a wallet to answer a sign-in.
+   
+   The page holding the QR cannot know when the phone approves, so it asks.
+   Polling rather than a socket because the answer arrives once, within a few
+   minutes, and a dropped connection here should cost a retry rather than the
+   sign-in. */
+function watchWalletSignIn() {
+  const panel = document.querySelector('[data-wallet-signin]');
+  if (!panel) {
+    return;
+  }
+
+  const challengeId = panel.dataset.walletSignin;
+  const status = panel.querySelector('[data-wallet-signin-status]');
+  const values = panel.querySelector('[data-wallet-signin-client]');
+  if (!challengeId || !values) {
+    return;
+  }
+
+  const say = (message) => {
+    if (status) {
+      status.textContent = message;
+    }
+  };
+
+  let stopped = false;
+
+  // Completing by fetch and then navigating, rather than by submitting a form.
+  // The authorization endpoint answers with the relying party's own origin, and
+  // `form-action 'self'` blocks a form whose redirect chain leaves this site.
+  const complete = async () => {
+    const response = await fetch('/oidc/authorize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        challengeId,
+        clientId: values.dataset.walletSigninClient,
+        redirectUri: values.dataset.walletSigninRedirect,
+        responseType: values.dataset.walletSigninResponse,
+        organizationId: values.dataset.walletSigninOrg
+      })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.redirectTo) {
+      say('That approval could not be completed. Start again from the application.');
+      return;
+    }
+    window.location.assign(result.redirectTo);
+  };
+
+  const poll = async () => {
+    if (stopped) {
+      return;
+    }
+    try {
+      const response = await fetch(`/oidc/authorize/wallet/${encodeURIComponent(challengeId)}/status`, {
+        headers: { Accept: 'application/json' }
+      });
+      const result = await response.json();
+
+      if (result.status === 'approved') {
+        stopped = true;
+        say('Approved. Signing you in…');
+        await complete();
+        return;
+      }
+      if (result.status === 'declined') {
+        stopped = true;
+        say('You declined this sign-in from your wallet. Start again from the application if that was a mistake.');
+        return;
+      }
+      if (result.status === 'expired' || result.status === 'unknown') {
+        stopped = true;
+        say('This sign-in request has expired. Start again from the application.');
+        return;
+      }
+    } catch (error) {
+      // A failed poll is not a failed sign-in — keep waiting.
+    }
+    window.setTimeout(poll, 2000);
+  };
+
+  window.setTimeout(poll, 1200);
 }
