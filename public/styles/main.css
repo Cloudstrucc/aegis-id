@@ -8017,3 +8017,43 @@ body:has(.workspace-blade) .site-footer div span {
 .capacity-bar {
   margin: 0 0 22px;
 }
+
+/* The workspace shell collapses to one column as soon as the icon rail is
+   hidden.
+   
+   It already tried to, at max-width: 980px, but two later rules re-declare
+   .workspace-blade with the three-column desktop template — so between 781px
+   and 980px the rail and nav were moved into column 1 while the grid still
+   reserved three tracks. Column 1 is 60px, which is where the content ended up:
+   a dashboard heading rendered one word per line with two empty columns beside
+   it. Below 781px a separate block happened to fix it, which is why this only
+   showed on tablets, split-screen windows, and phones asking for the desktop
+   site.
+   
+   Kept at the end of the file deliberately. The collapse has to outrank every
+   earlier .workspace-blade declaration, and source order is what decides that
+   between rules of equal specificity. */
+@media (max-width: 980px) {
+  .workspace-blade {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .workspace-blade__rail {
+    display: none;
+  }
+
+  /* Both carry an explicit grid-area at every width, so neither lands in the
+     single column without being told to. */
+  .workspace-blade__nav,
+  .workspace-blade__content {
+    grid-column: 1;
+    grid-row: auto;
+    max-height: none;
+    position: static;
+  }
+
+  .workspace-blade__content {
+    min-width: 0;
+  }
+}
