@@ -1,7 +1,19 @@
 import SwiftUI
 
+private enum SettingsRoute: Hashable {
+    case connections
+    case profile
+    case passkeys
+}
+
 struct SettingsView: View {
     @EnvironmentObject private var store: WalletStore
+    @EnvironmentObject private var router: AppRouter
+
+    /// Path-driven for the same reason Organizations is: the Home screen can
+    /// send somebody straight to Connections, which lives in here rather than
+    /// on a tab of its own.
+    @State private var path: [SettingsRoute] = []
     @State private var passkeySubject = ""
     @State private var isRegisteringPasskey = false
     @State private var passkeyPreference: WalletPasskeyCredentialPreference = .securityKey
@@ -9,6 +21,7 @@ struct SettingsView: View {
     @State private var showWebApp = false
 
     var body: some View {
+        NavigationStack(path: $path) {
         List {
             // First, above the wallet itself. Everything below assumes the
             // holder already knows what this app is for; this is where they
@@ -28,9 +41,7 @@ struct SettingsView: View {
             }
 
             Section("My wallet") {
-                NavigationLink {
-                    WalletProfileView()
-                } label: {
+                NavigationLink(value: SettingsRoute.profile) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(store.identity?.walletId ?? "Not registered")
                             .font(.system(.subheadline, design: .monospaced).bold())
@@ -42,9 +53,7 @@ struct SettingsView: View {
             }
 
             Section("Connections") {
-                NavigationLink {
-                    ConnectionsView()
-                } label: {
+                NavigationLink(value: SettingsRoute.connections) {
                     LabeledContent("Connections", value: "\(store.connections.count)")
                 }
             }
@@ -58,9 +67,7 @@ struct SettingsView: View {
             // build cannot keep.
             if AegisWalletEnvironment.providesPasskeysForOtherServices {
                 Section("Passkeys for other services") {
-                    NavigationLink {
-                        PasskeysView()
-                    } label: {
+                    NavigationLink(value: SettingsRoute.passkeys) {
                         LabeledContent("Saved passkeys", value: "\(PasskeyStore.shared.all().count)")
                     }
                 }
@@ -172,6 +179,20 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .navigationDestination(for: SettingsRoute.self) { route in
+            switch route {
+            case .connections: ConnectionsView()
+            case .profile: WalletProfileView()
+            case .passkeys: PasskeysView()
+            }
+        }
+        }
+        .onChange(of: router.wantsConnections) { _, _ in
+            openConnectionsIfRequested()
+        }
+        .onAppear {
+            openConnectionsIfRequested()
+        }
         .sheet(isPresented: $showHelp) {
             WalletHelpView()
         }
@@ -182,6 +203,11 @@ struct SettingsView: View {
             passkeySubject = store.walletPasskeySubject
             Task { await store.refreshWalletPasskeyStatus() }
         }
+    }
+
+    private func openConnectionsIfRequested() {
+        guard router.consumeConnections() else { return }
+        path = [.connections]
     }
 }
 

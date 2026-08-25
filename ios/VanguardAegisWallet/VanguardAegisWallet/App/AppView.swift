@@ -180,7 +180,7 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     /// True where the tab manages its own navigation path.
     var providesOwnNavigationStack: Bool {
-        self == .organizations
+        self == .organizations || self == .settings
     }
 
     @ViewBuilder

@@ -21,6 +21,11 @@ final class AppRouter: ObservableObject {
     /// rather than trapping the holder in one organization.
     @Published var focusedOrganizationId: String?
 
+    /// Set when somewhere else wants the Connections list, which lives inside
+    /// Settings rather than on a tab of its own. Consumed like the focused
+    /// organization, so going back returns to Settings.
+    @Published var wantsConnections = false
+
     /// A short-lived confirmation, shown over whichever tab is on screen.
     ///
     /// Separate from the wallet challenge banner: that one waits for an answer
@@ -37,6 +42,16 @@ final class AppRouter: ObservableObject {
     func openOrganization(_ organizationId: String) {
         focusedOrganizationId = organizationId
         selectedTab = .organizations
+    }
+
+    func openConnections() {
+        wantsConnections = true
+        selectedTab = .settings
+    }
+
+    func consumeConnections() -> Bool {
+        defer { wantsConnections = false }
+        return wantsConnections
     }
 
     func consumeFocusedOrganization() -> String? {

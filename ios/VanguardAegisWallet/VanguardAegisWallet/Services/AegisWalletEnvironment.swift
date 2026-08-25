@@ -5,6 +5,15 @@ enum AegisWalletEnvironment {
         infoKey: "AEGIS_WEB_APP_BASE_URL",
         fallback: "https://vanguard-aegis-id-0e75d1.azurewebsites.net"
     )
+    /// What the wallet links to when a holder wants to know what Aegis ID is.
+    ///
+    /// The product brief rather than the sign-in page: somebody opening this
+    /// from the wallet is asking what the service does, not trying to
+    /// administer an organization.
+    static var productBriefURL: URL {
+        webAppURL.appendingPathComponent("docs/aegis-id-overview.html")
+    }
+
     static let holderAdminURL = URL(string: "http://localhost:6011")!
     static let issuerAdminURL = URL(string: "http://localhost:4011")!
     static let verifierAdminURL = URL(string: "http://localhost:5011")!

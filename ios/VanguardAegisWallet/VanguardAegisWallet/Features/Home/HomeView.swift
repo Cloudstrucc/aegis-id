@@ -7,6 +7,7 @@ struct HomeView: View {
     @State private var pastedInvitation = ""
     @State private var isImportFieldShown = false
     @State private var importResult: ImportResult?
+    @State private var showProductBrief = false
     // A TextEditor has no return key to dismiss with, so the keyboard needs an
     // explicit way out or it covers the Import button and never goes away.
     @FocusState private var invitationFieldFocused: Bool
@@ -42,6 +43,9 @@ struct HomeView: View {
         // title only repeated it and pushed the content down.
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $showProductBrief) {
+            SafariView(url: AegisWalletEnvironment.productBriefURL).ignoresSafeArea()
+        }
         .alert(
             importResult?.succeeded == true ? "Invitation imported" : "That did not work",
             isPresented: Binding(
@@ -65,7 +69,7 @@ struct HomeView: View {
                     Text("Aegis ID Wallet")
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
-                    Text("Hold lab credentials, accept issuer invitations, and sign Aegis wallet challenges after Verified ID or YubiKey web assurance.")
+                    Text("Your personal vault for digital identity. Hold the credentials your organizations issue you, and approve the sign-ins, consents, signatures and authorizations they ask for — from this device, with your own biometric.")
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.84))
                 }
@@ -80,10 +84,18 @@ struct HomeView: View {
                     .font(.title2)
             }
 
+            // Counts that were only counts. Each is a summary of a screen that
+            // already exists, so each opens it.
             HStack(spacing: 10) {
-                HeroPill(value: "\(store.connections.count)", label: "Connections")
-                HeroPill(value: "\(store.credentialOrganizations.count)", label: "Orgs")
-                HeroPill(value: "\(store.transactions.count)", label: "Events")
+                HeroPill(value: "\(store.connections.count)", label: "Connections") {
+                    router.openConnections()
+                }
+                HeroPill(value: "\(store.credentialOrganizations.count)", label: "Orgs") {
+                    router.show(.organizations)
+                }
+                HeroPill(value: "\(store.transactions.count)", label: "Events") {
+                    router.show(.ledger)
+                }
             }
         }
         .padding(22)
@@ -124,17 +136,17 @@ struct HomeView: View {
         VanguardCard {
             VStack(alignment: .leading, spacing: 14) {
                 StatusBadge(
-                    text: store.credentialOrganizations.isEmpty ? "Nothing here yet" : "Add another organization",
-                    systemImage: "sparkles",
+                    text: store.credentialOrganizations.isEmpty ? "Nothing here yet" : "Ready",
+                    systemImage: "qrcode.viewfinder",
                     tint: VanguardTheme.green
                 )
 
                 Text(store.credentialOrganizations.isEmpty
                      ? "Start with an invitation"
-                     : "Join another organization")
+                     : "Scan or paste anything Aegis sends you")
                     .font(.title3.bold())
 
-                Text("An organization sends you an invitation. Scan it if it is on another screen, or paste the link if it arrived on this phone — you cannot scan a code with the device showing it.")
+                Text("An invitation to join an organization, a request to approve something, a document to sign, or a sign-in to confirm — they all arrive the same way. Scan the code if it is on another screen, or paste the link if it reached this phone; you cannot scan a code with the device showing it.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
@@ -169,6 +181,26 @@ struct HomeView: View {
                     importField
                         .transition(.move(edge: .top).combined(with: .opacity))
                 }
+
+                Divider()
+                    .padding(.top, 2)
+
+                // Somebody who arrived from the App Store has no idea what the
+                // service behind this app is. The brief answers that; the
+                // sign-in page would not.
+                Button {
+                    showProductBrief = true
+                } label: {
+                    Label("Open the web app", systemImage: "safari")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(VanguardTheme.navy)
+
+                Text("Read what Aegis ID does and how your organization uses it.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
     }
@@ -253,20 +285,34 @@ struct HomeView: View {
 private struct HeroPill: View {
     var value: String
     var label: String
+    var open: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value)
-                .font(.headline.bold())
-                .foregroundStyle(.white)
-            Text(label)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.72))
+        Button(action: open) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.headline.bold())
+                    .foregroundStyle(.white)
+                HStack(spacing: 3) {
+                    Text(label)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.72))
+                    // Small, but it is the difference between a statistic and
+                    // a control.
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(.white.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(.white.opacity(0.10))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(value) \(label)")
+        .accessibilityHint("Opens \(label)")
     }
 }
 
