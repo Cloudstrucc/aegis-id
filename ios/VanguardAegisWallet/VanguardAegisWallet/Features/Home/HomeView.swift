@@ -3,19 +3,30 @@ import UIKit
 
 struct HomeView: View {
     @EnvironmentObject private var store: WalletStore
+    @EnvironmentObject private var router: AppRouter
     @State private var pastedInvitation = ""
-    @State private var isAcceptingInvitation = false
+    @State private var isImportFieldShown = false
+    @State private var importResult: ImportResult?
     // A TextEditor has no return key to dismiss with, so the keyboard needs an
     // explicit way out or it covers the Import button and never goes away.
     @FocusState private var invitationFieldFocused: Bool
+
+    /// The outcome of an import, held so it can be reported once and then
+    /// cleared. The store's own message properties persist until the next
+    /// import, which made an old result reappear the next time this screen was
+    /// visited.
+    private struct ImportResult: Identifiable {
+        let id = UUID()
+        var succeeded: Bool
+        var message: String
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 landingHero
                 statusGrid
-                nextActionCard
-                importCard
+                gettingStartedCard
             }
             .padding()
         }
@@ -31,6 +42,18 @@ struct HomeView: View {
         // title only repeated it and pushed the content down.
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        .alert(
+            importResult?.succeeded == true ? "Invitation imported" : "That did not work",
+            isPresented: Binding(
+                get: { importResult != nil },
+                set: { if !$0 { importResult = nil } }
+            ),
+            presenting: importResult
+        ) { _ in
+            Button("OK", role: .cancel) { importResult = nil }
+        } message: { result in
+            Text(result.message)
+        }
     }
 
     private var landingHero: some View {
@@ -91,127 +114,138 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
-    private var nextActionCard: some View {
-        if let connection = store.latestPendingInvitation {
-            VanguardCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    StatusBadge(text: "Ready to accept", systemImage: "tray.and.arrow.down", tint: VanguardTheme.blue)
-
-                    Text(connection.invitation.label)
-                        .font(.title3.bold())
-
-                    Text("This invitation is saved locally. Accept it through the lab bridge before issuing credentials or fetching web app wallet challenges.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    Button {
-                        acceptLatestInvitation()
-                    } label: {
-                        Label("Accept invitation in lab", systemImage: "arrow.triangle.2.circlepath")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(VanguardTheme.blue)
-                    .disabled(isAcceptingInvitation)
-                }
-            }
-        } else {
-            VanguardCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    StatusBadge(text: "Ready for QR import", systemImage: "qrcode.viewfinder", tint: VanguardTheme.green)
-                    Text("Start with a wallet invitation")
-                        .font(.title3.bold())
-                    Text("Scan or paste an Aegis ID credential invitation, OpenID VC presentation request, or Aries lab issuer invitation from the web dashboard. Organizations appear in the Organizations tab.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
-    private var importCard: some View {
+    /// What to do next, and the two ways to do it.
+    ///
+    /// This replaced a card that showed the pending invitation's own label —
+    /// which on a lab connection is the ACA-Py agent's name, so the first thing
+    /// a holder read on the home screen was "VCS Issuer". It named an
+    /// implementation detail and told them nothing about what to do.
+    private var gettingStartedCard: some View {
         VanguardCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Label("Paste invitation", systemImage: "link.badge.plus")
-                    .font(.headline)
+            VStack(alignment: .leading, spacing: 14) {
+                StatusBadge(
+                    text: store.credentialOrganizations.isEmpty ? "Nothing here yet" : "Add another organization",
+                    systemImage: "sparkles",
+                    tint: VanguardTheme.green
+                )
 
-                TextEditor(text: $pastedInvitation)
-                    .focused($invitationFieldFocused)
-                    .frame(minHeight: 92)
-                    .padding(8)
-                    .background(VanguardTheme.mist)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(VanguardTheme.line)
-                    )
-                    .toolbar {
-                        ToolbarItemGroup(placement: .keyboard) {
-                            Spacer()
-                            Button("Done") { invitationFieldFocused = false }
-                        }
-                    }
+                Text(store.credentialOrganizations.isEmpty
+                     ? "Start with an invitation"
+                     : "Join another organization")
+                    .font(.title3.bold())
+
+                Text("An organization sends you an invitation. Scan it if it is on another screen, or paste the link if it arrived on this phone — you cannot scan a code with the device showing it.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
                 Button {
                     invitationFieldFocused = false
-                    store.importInvitation(from: pastedInvitation)
-                    pastedInvitation = ""
+                    router.show(.scan)
                 } label: {
-                    Label("Import invitation", systemImage: "square.and.arrow.down")
+                    Label("Scan a QR code", systemImage: "qrcode.viewfinder")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(VanguardTheme.blue)
 
-                feedbackMessage
+                Button {
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                        isImportFieldShown.toggle()
+                    }
+                    if isImportFieldShown {
+                        invitationFieldFocused = true
+                    }
+                } label: {
+                    Label(
+                        isImportFieldShown ? "Hide the invitation box" : "Import invitation",
+                        systemImage: isImportFieldShown ? "chevron.up" : "link.badge.plus"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(VanguardTheme.blue)
+
+                if isImportFieldShown {
+                    importField
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
             }
         }
     }
 
-    @ViewBuilder
-    private var feedbackMessage: some View {
-        if let message = store.lastImportMessage {
-            Label(message, systemImage: "checkmark.circle")
-                .foregroundStyle(VanguardTheme.green)
-                .font(.subheadline.weight(.semibold))
-        }
+    /// Revealed by the button above rather than always present, so the screen
+    /// leads with what to do instead of with an empty box.
+    private var importField: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextEditor(text: $pastedInvitation)
+                .focused($invitationFieldFocused)
+                .font(.system(.footnote, design: .monospaced))
+                // An invitation is a URL, and iOS treats it as prose without
+                // these: "aegisid-local://" is autocorrected to "Aegis
+                // is-local://" and the import fails on a link the holder pasted
+                // correctly.
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(.URL)
+                .frame(minHeight: 92)
+                .padding(8)
+                .background(VanguardTheme.mist)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(VanguardTheme.line)
+                )
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { invitationFieldFocused = false }
+                    }
+                }
 
-        if let error = store.lastImportError {
-            Label(error, systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.red)
-                .font(.subheadline.weight(.semibold))
-        }
-
-        if isAcceptingInvitation {
-            Label("Accepting invitation through the local holder...", systemImage: "hourglass")
+            Text("Paste the aegisid:// link from the invitation.")
+                .font(.caption)
                 .foregroundStyle(.secondary)
-                .font(.subheadline.weight(.semibold))
-        }
 
-        if let message = store.lastLabMessage {
-            Label(message, systemImage: "checkmark.circle")
-                .foregroundStyle(VanguardTheme.green)
-                .font(.subheadline.weight(.semibold))
-        }
-
-        if let error = store.lastLabError {
-            Label(error, systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.red)
-                .font(.subheadline.weight(.semibold))
-                .textSelection(.enabled)
+            Button {
+                performImport()
+            } label: {
+                Label("Import", systemImage: "square.and.arrow.down")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(VanguardTheme.green)
+            .disabled(pastedInvitation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
     }
 
-    private func acceptLatestInvitation() {
-        guard !isAcceptingInvitation else {
-            return
-        }
+    /// Import, then report once.
+    ///
+    /// The store reports asynchronously for the product path — an organization
+    /// invite is accepted over the network — so the outcome is read after the
+    /// call settles rather than assumed from it returning.
+    private func performImport() {
+        invitationFieldFocused = false
+        let pasted = pastedInvitation.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !pasted.isEmpty else { return }
 
-        isAcceptingInvitation = true
-        Task {
-            await store.acceptLatestInvitationInLab()
-            isAcceptingInvitation = false
+        store.importInvitation(from: pasted)
+
+        Task { @MainActor in
+            // Long enough for the network path to settle, short enough that the
+            // holder is still looking at the screen they tapped on.
+            try? await Task.sleep(nanoseconds: 900_000_000)
+
+            if let error = store.lastImportError ?? store.lastLabError {
+                importResult = ImportResult(succeeded: false, message: error)
+                return
+            }
+
+            let message = store.lastImportMessage ?? store.lastLabMessage ?? "Invitation imported."
+            importResult = ImportResult(succeeded: true, message: message)
+            pastedInvitation = ""
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+                isImportFieldShown = false
+            }
         }
     }
 }
@@ -287,5 +321,6 @@ private struct StatusMetricCard: View {
     NavigationStack {
         HomeView()
             .environmentObject(WalletStore())
+            .environmentObject(AppRouter())
     }
 }

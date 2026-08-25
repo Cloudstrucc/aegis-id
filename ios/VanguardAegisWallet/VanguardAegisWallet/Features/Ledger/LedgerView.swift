@@ -246,7 +246,11 @@ private struct LedgerDetailView: View {
         guard let resourceType = transaction.resourceType?.trimmingCharacters(in: .whitespacesAndNewlines),
               !resourceType.isEmpty
         else {
-            return "Accept \(action.lowercased()) challenge"
+            // A challenge with no action of its own already labels itself
+            // "challenge", and "Accept challenge challenge" is what came out of
+            // gluing the two together.
+            let verb = action.lowercased()
+            return verb == "challenge" ? "Accept challenge" : "Accept \(verb) challenge"
         }
         return "\(action) \(resourceType.lowercased())"
     }

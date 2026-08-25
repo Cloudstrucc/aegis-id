@@ -74,7 +74,7 @@ enum AegisCredentialInviteParser {
 
     private static func queryValue(_ names: [String], in items: [URLQueryItem]) -> String? {
         for name in names {
-            if let value = items.first(where: { $0.name == name })?.value, !value.isEmpty {
+            if let value = items.first(where: { $0.name == name })?.aegisDecodedValue, !value.isEmpty {
                 return value
             }
         }
@@ -247,7 +247,7 @@ enum OOBInvitationParser {
 
     private static func queryValue(_ names: [String], in items: [URLQueryItem]) -> String? {
         for name in names {
-            if let value = items.first(where: { $0.name == name })?.value, !value.isEmpty {
+            if let value = items.first(where: { $0.name == name })?.aegisDecodedValue, !value.isEmpty {
                 return value
             }
         }
@@ -416,7 +416,7 @@ enum AegisOrganizationInviteParser {
 
     private static func value(_ names: [String], in items: [URLQueryItem]) -> String? {
         for name in names {
-            if let found = items.first(where: { $0.name == name })?.value, !found.isEmpty {
+            if let found = items.first(where: { $0.name == name })?.aegisDecodedValue, !found.isEmpty {
                 return found
             }
         }
@@ -569,7 +569,7 @@ enum AegisRootWalletLinkParser {
 
     private static func value(_ names: [String], in items: [URLQueryItem]) -> String? {
         for name in names {
-            if let found = items.first(where: { $0.name == name })?.value, !found.isEmpty {
+            if let found = items.first(where: { $0.name == name })?.aegisDecodedValue, !found.isEmpty {
                 return found
             }
         }
@@ -588,5 +588,20 @@ enum AegisRootWalletLinkParser {
                 return "This root wallet link is missing its confirmation token."
             }
         }
+    }
+}
+
+
+/// Query values as the server actually encoded them.
+///
+/// The web app builds invitation links with `URLSearchParams`, which encodes a
+/// space as `+`. `URLQueryItem.value` decodes percent escapes but leaves `+`
+/// alone, because a plus is only a space under form encoding — so an
+/// organization called "Northwind Logistics" arrived, and was displayed, as
+/// "Northwind+Logistics".
+extension URLQueryItem {
+    var aegisDecodedValue: String? {
+        guard let value else { return nil }
+        return value.replacingOccurrences(of: "+", with: " ")
     }
 }

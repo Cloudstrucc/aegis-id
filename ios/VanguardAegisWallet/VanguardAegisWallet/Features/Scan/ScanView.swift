@@ -2,11 +2,12 @@ import SwiftUI
 
 struct ScanView: View {
     @EnvironmentObject private var store: WalletStore
+    @EnvironmentObject private var router: AppRouter
 
     var body: some View {
         VStack(spacing: 16) {
             QRCodeScannerView { value in
-                store.importInvitation(from: value)
+                handleScan(value)
             }
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(alignment: .center) {
@@ -26,6 +27,30 @@ struct ScanView: View {
         .background(VanguardTheme.navy)
         .navigationTitle("Scan")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// A successful scan leaves the camera and says so.
+    ///
+    /// Standing on a viewfinder that has already done its job is not a result.
+    /// The ledger is where the thing that just arrived actually lives, so that
+    /// is where this goes, with a notice that clears itself.
+    private func handleScan(_ value: String) {
+        store.importInvitation(from: value)
+
+        Task { @MainActor in
+            // The product path accepts an invitation over the network, so the
+            // outcome is read once it has settled rather than assumed.
+            try? await Task.sleep(nanoseconds: 900_000_000)
+
+            if let error = store.lastImportError ?? store.lastLabError {
+                router.flash(FlashNotice(tone: .failure, message: error))
+                return
+            }
+
+            let message = store.lastImportMessage ?? store.lastLabMessage ?? "Invitation imported."
+            router.flash(FlashNotice(tone: .success, message: message))
+            router.show(.ledger)
+        }
     }
 
     @ViewBuilder

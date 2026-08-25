@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ConnectionsView: View {
     @EnvironmentObject private var store: WalletStore
+    @EnvironmentObject private var router: AppRouter
 
     var body: some View {
         List {
@@ -12,10 +13,24 @@ struct ConnectionsView: View {
                     description: Text("Import an Aegis credential invitation, OpenID VC request, or Aries lab out-of-band invitation.")
                 )
             } else {
+                // Choosing a connection here means "show me this organization",
+                // and the organization lives on its own tab with its credentials,
+                // roles and ledger. Pushing a second, thinner detail view inside
+                // Settings only made a holder find the real one afterwards.
                 ForEach(store.connections) { connection in
-                    NavigationLink(value: connection.id) {
-                        ConnectionRow(connection: connection)
+                    Button {
+                        router.openOrganization(store.organizationId(for: connection))
+                    } label: {
+                        HStack {
+                            ConnectionRow(connection: connection)
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
                 .onDelete(perform: store.deleteConnections)
             }

@@ -3,8 +3,15 @@ import UIKit
 
 struct OrganizationsView: View {
     @EnvironmentObject private var store: WalletStore
+    @EnvironmentObject private var router: AppRouter
+
+    /// Driven by a path rather than by NavigationLink alone, so another tab can
+    /// open one organization directly — picking a connection in Settings lands
+    /// on that organization rather than on the list.
+    @State private var path: [String] = []
 
     var body: some View {
+        NavigationStack(path: $path) {
         List {
             if store.credentialOrganizations.isEmpty {
                 ContentUnavailableView(
@@ -15,13 +22,7 @@ struct OrganizationsView: View {
             } else {
                 Section("Credential organizations") {
                     ForEach(store.credentialOrganizations) { organization in
-                        NavigationLink {
-                            OrganizationDetailView(
-                                organization: organization,
-                                profile: store.organizationProfile(for: organization.id),
-                                transactions: store.transactions(forOrganizationId: organization.id)
-                            )
-                        } label: {
+                        NavigationLink(value: organization.id) {
                             OrganizationRow(
                                 organization: organization,
                                 profile: store.organizationProfile(for: organization.id)
@@ -42,9 +43,34 @@ struct OrganizationsView: View {
                 .accessibilityLabel("Refresh organization profiles")
             }
         }
+        .navigationDestination(for: String.self) { organizationId in
+            if let organization = store.credentialOrganizations.first(where: { $0.id == organizationId }) {
+                OrganizationDetailView(
+                    organization: organization,
+                    profile: store.organizationProfile(for: organizationId),
+                    transactions: store.transactions(forOrganizationId: organizationId)
+                )
+            }
+        }
         .task {
             await store.refreshOrganizationProfiles()
         }
+        }
+        // Consumed rather than observed, so going back shows the list again
+        // instead of bouncing straight into the same organization.
+        .onChange(of: router.focusedOrganizationId) { _, _ in
+            openFocusedOrganizationIfNeeded()
+        }
+        .onAppear {
+            openFocusedOrganizationIfNeeded()
+        }
+    }
+
+    private func openFocusedOrganizationIfNeeded() {
+        guard let organizationId = router.consumeFocusedOrganization() else {
+            return
+        }
+        path = [organizationId]
     }
 }
 
@@ -95,6 +121,7 @@ private struct OrganizationRow: View {
 }
 
 private struct OrganizationDetailView: View {
+    @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var store: WalletStore
 
     var organization: CredentialOrganization
@@ -113,6 +140,33 @@ private struct OrganizationDetailView: View {
                 OrganizationMetricRow(value: organization.connectionCount, label: "Connections", systemImage: "link")
                 OrganizationMetricRow(value: profile?.credentials.count ?? organization.credentialCount, label: "Issued credentials", systemImage: "person.text.rectangle")
                 OrganizationMetricRow(value: transactions.filter { $0.status == .pendingAcceptance }.count, label: "Pending actions", systemImage: "bolt.shield")
+
+                // This organization's own history. The Ledger tab answers
+                // "what have I ever approved"; here the question is "what has
+                // this organization asked me for".
+                NavigationLink {
+                    OrganizationLedgerView(
+                        organizationId: organization.id,
+                        organizationName: organization.name
+                    )
+                } label: {
+                    Label {
+                        LabeledContent("Ledger", value: "\(transactions.count)")
+                    } icon: {
+                        Image(systemName: "list.bullet.rectangle.portrait")
+                            .foregroundStyle(VanguardTheme.blue)
+                    }
+                }
+            }
+
+            Section {
+                Button {
+                    raiseTestChallenge()
+                } label: {
+                    Label("Raise a test challenge", systemImage: "bolt.badge.clock")
+                }
+            } footer: {
+                Text("Adds a pending approval to this organization's ledger so the wallet can be exercised without a connected application. It is recorded exactly as a real decision is.")
             }
 
             if let profile {
@@ -199,6 +253,23 @@ private struct OrganizationDetailView: View {
                 }
                 .accessibilityLabel("Refresh organization profile")
             }
+        }
+    }
+    /// Raise a pending approval against this organization.
+    ///
+    /// Reports through the same flash notice the rest of the wallet uses, and
+    /// sends the holder to the ledger where the new item is, because an
+    /// approval they cannot find is not much of a test.
+    private func raiseTestChallenge() {
+        let created = store.createMockWalletChallenge(forOrganizationId: organization.id)
+        if created {
+            router.flash(FlashNotice(tone: .success, message: "Test challenge added to your ledger."))
+            router.show(.ledger)
+        } else {
+            router.flash(FlashNotice(
+                tone: .failure,
+                message: store.lastLabError ?? "That challenge could not be raised."
+            ))
         }
     }
 }

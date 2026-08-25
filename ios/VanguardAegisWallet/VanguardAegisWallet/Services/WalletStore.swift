@@ -292,6 +292,15 @@ final class WalletStore: ObservableObject {
         return transactions.filter { connectionIds.contains($0.connectionId) }
     }
 
+    /// The organization a connection belongs to.
+    ///
+    /// Organizations are a grouping over connections rather than a stored
+    /// entity, so this is the one place the key is derived for callers outside
+    /// the store.
+    func organizationId(for connection: WalletConnection) -> String {
+        organizationKey(for: connection)
+    }
+
     func organizationProfile(for organizationId: String) -> OrganizationProfile? {
         organizationProfiles[organizationId]
     }
@@ -817,6 +826,35 @@ final class WalletStore: ObservableObject {
             title: transactions.count == 1 ? latest.title : "\(transactions.count) wallet challenges received",
             detail: latest.detail
         )
+    }
+
+    /// Raise a challenge against this organization without a relying party.
+    ///
+    /// Every other challenge arrives from an application asking for a decision.
+    /// This one exists so an organization can be exercised on its own — issuing
+    /// a credential, checking the ledger, approving something — before a real
+    /// application is pointed at it.
+    ///
+    /// Deliberately local: it is marked as a drill in its own detail, and it
+    /// creates the same pending item a real challenge would, so approving it
+    /// walks the same path rather than a special one.
+    @discardableResult
+    func createMockWalletChallenge(forOrganizationId organizationId: String) -> Bool {
+        guard let connection = connections.first(where: { organizationKey(for: $0) == organizationId }) else {
+            lastLabError = "Accept an invitation from this organization before raising a challenge."
+            return false
+        }
+
+        clearLabMessages()
+        addTransaction(
+            connectionId: connection.id,
+            type: .challenge,
+            status: .pendingAcceptance,
+            title: "Approval requested",
+            detail: "Test challenge raised from the wallet. Approving or declining it is recorded exactly as a real decision is."
+        )
+        lastLabMessage = "Test challenge added to your ledger."
+        return true
     }
 
     private func organizationKey(for connection: WalletConnection) -> String {

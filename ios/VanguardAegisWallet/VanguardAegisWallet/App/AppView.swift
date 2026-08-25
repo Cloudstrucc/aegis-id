@@ -3,11 +3,12 @@ import SwiftUI
 struct AppView: View {
     @EnvironmentObject private var store: WalletStore
     @Environment(\.scenePhase) private var scenePhase
-    @State private var selectedTab: AppTab = .home
+    @StateObject private var router = AppRouter()
 
     var body: some View {
         if store.isWalletRegistered {
             walletTabs
+                .environmentObject(router)
                 // Confirm the server still knows this wallet whenever the app
                 // comes to the foreground, so a wiped environment sends the
                 // holder back to setup instead of failing every request.
@@ -22,11 +23,40 @@ struct AppView: View {
         }
     }
 
+    /// Waits for an answer, so unlike a flash notice it never dismisses itself.
+    @ViewBuilder
+    private var challengeBanner: some View {
+        if let banner = store.challengeBanner {
+            WalletChallengeBannerView(
+                banner: banner,
+                openLedger: {
+                    router.show(.ledger)
+                    store.dismissChallengeBanner()
+                },
+                dismiss: {
+                    store.dismissChallengeBanner()
+                }
+            )
+            .padding(.horizontal, 14)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
     private var walletTabs: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $router.selectedTab) {
             ForEach(AppTab.allCases) { tab in
-                NavigationStack {
-                    tab.content
+                Group {
+                    // Organizations brings its own stack, because it drives a
+                    // navigation path — another tab can open one organization
+                    // directly. Nesting a second stack around it would swallow
+                    // that path.
+                    if tab.providesOwnNavigationStack {
+                        tab.content
+                    } else {
+                        NavigationStack {
+                            tab.content
+                        }
+                    }
                 }
                 .tabItem { tab.label }
                 .tag(tab)
@@ -34,27 +64,20 @@ struct AppView: View {
             }
         }
         .safeAreaInset(edge: .top) {
-            if let banner = store.challengeBanner {
-                WalletChallengeBannerView(
-                    banner: banner,
-                    openLedger: {
-                        selectedTab = .ledger
-                        store.dismissChallengeBanner()
-                    },
-                    dismiss: {
-                        store.dismissChallengeBanner()
-                    }
-                )
-                .padding(.horizontal, 14)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
-                .transition(.move(edge: .top).combined(with: .opacity))
+            VStack(spacing: 8) {
+                if let flash = router.flash {
+                    FlashNoticeView(notice: flash) { router.dismissFlash() }
+                        .padding(.horizontal, 14)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                challengeBanner
             }
+            .animation(.spring(response: 0.32, dampingFraction: 0.88), value: router.flash)
+            .animation(.spring(response: 0.32, dampingFraction: 0.88), value: store.challengeBanner?.id)
         }
-        .animation(.spring(response: 0.32, dampingFraction: 0.88), value: store.challengeBanner?.id)
         .onOpenURL { url in
             store.importInvitation(from: url.absoluteString)
-            selectedTab = .home
+            router.show(.home)
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else {
@@ -153,6 +176,11 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .settings:
             SettingsView()
         }
+    }
+
+    /// True where the tab manages its own navigation path.
+    var providesOwnNavigationStack: Bool {
+        self == .organizations
     }
 
     @ViewBuilder

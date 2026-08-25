@@ -23,15 +23,7 @@ struct SettingsView: View {
                 Button {
                     showWebApp = true
                 } label: {
-                    HStack {
-                        Label("Open the web app", systemImage: "safari")
-                        Spacer()
-                        Text(AegisWalletEnvironment.webAppDisplayValue)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.head)
-                    }
+                    Label("Open the web app", systemImage: "safari")
                 }
             }
 
@@ -197,6 +189,7 @@ struct SettingsView: View {
     NavigationStack {
         SettingsView()
             .environmentObject(WalletStore())
+            .environmentObject(AppRouter())
     }
 }
 
