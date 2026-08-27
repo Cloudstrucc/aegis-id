@@ -297,6 +297,10 @@ private struct HeroPill: View {
                     Text(label)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.72))
+                        // Three equal tiles leave "Connections" a hair short of
+                        // fitting, and it broke to "Connec-/tions".
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                     // Small, but it is the difference between a statistic and
                     // a control.
                     Image(systemName: "chevron.right")
