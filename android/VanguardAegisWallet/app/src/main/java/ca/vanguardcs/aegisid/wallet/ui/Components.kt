@@ -2,6 +2,8 @@ package ca.vanguardcs.aegisid.wallet.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -98,7 +100,10 @@ fun VanguardLogo(
 fun HeroPanel(
     connections: Int,
     organizations: Int,
-    events: Int
+    events: Int,
+    onConnections: () -> Unit = {},
+    onOrganizations: () -> Unit = {},
+    onEvents: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -121,29 +126,57 @@ fun HeroPanel(
                 lineHeight = 36.sp
             )
             Text(
-                text = "Hold lab credentials, accept issuer invitations, and sign Aegis wallet challenges after Verified ID or YubiKey web assurance.",
+                text = "Your personal vault for digital identity. Hold the credentials your organizations issue you, and approve the sign-ins, consents, signatures and authorizations they ask for — from this device, with your own biometric.",
                 color = Color.White.copy(alpha = 0.84f),
                 style = MaterialTheme.typography.bodyMedium
             )
+            // Counts that were only counts. Each summarises a screen that
+            // already exists, so each opens it.
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                HeroMetric("$connections", "Connections", Modifier.weight(1f))
-                HeroMetric("$organizations", "Orgs", Modifier.weight(1f))
-                HeroMetric("$events", "Events", Modifier.weight(1f))
+                HeroMetric("$connections", "Connections", Modifier.weight(1f), onConnections)
+                HeroMetric("$organizations", "Orgs", Modifier.weight(1f), onOrganizations)
+                HeroMetric("$events", "Events", Modifier.weight(1f), onEvents)
             }
         }
     }
 }
 
 @Composable
-fun HeroMetric(value: String, label: String, modifier: Modifier = Modifier) {
+fun HeroMetric(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(Color.White.copy(alpha = 0.1f))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(12.dp)
     ) {
         Text(value, color = Color.White, fontWeight = FontWeight.Bold)
-        Text(label, color = Color.White.copy(alpha = 0.72f), style = MaterialTheme.typography.labelSmall)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                color = Color.White.copy(alpha = 0.72f),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1
+            )
+            if (onClick != null) {
+                // Small, but it is the difference between a statistic and a
+                // control.
+                Icon(
+                    Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.5f),
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+        }
     }
 }
 

@@ -1,6 +1,16 @@
 package ca.vanguardcs.aegisid.wallet.ui
 
 import androidx.compose.foundation.background
+import kotlinx.coroutines.launch
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.remember
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.clickable
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +33,7 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.ListAlt
+import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Settings
@@ -103,8 +114,17 @@ private fun WalletTabs(
     onCreatePasskey: suspend (String) -> JSONObject,
     onGetPasskey: suspend (String) -> JSONObject
 ) {
-    var selectedTab by rememberSaveable { mutableStateOf(WalletTab.Home) }
+    val router = remember { WalletRouter() }
     var showHelp by rememberSaveable { mutableStateOf(false) }
+
+    // The flash clears itself; the challenge banner never does, because that one
+    // is waiting for an answer.
+    LaunchedEffect(router.flash) {
+        if (router.flash != null) {
+            kotlinx.coroutines.delay(3_400)
+            router.dismissFlash()
+        }
+    }
 
     LaunchedEffect(Unit) {
         store.autoRefreshOidcWalletChallenges()
@@ -116,7 +136,7 @@ private fun WalletTabs(
                 TopAppBar(
                     title = {
                         Text(
-                            if (showHelp) "Getting started" else selectedTab.title,
+                            if (showHelp) "Getting started" else router.selectedTab.title,
                             fontWeight = FontWeight.Bold
                         )
                     },
@@ -142,8 +162,8 @@ private fun WalletTabs(
                 NavigationBar(containerColor = Color.White) {
                     WalletTab.entries.forEach { tab ->
                         NavigationBarItem(
-                            selected = selectedTab == tab,
-                            onClick = { selectedTab = tab },
+                            selected = router.selectedTab == tab,
+                            onClick = { router.show(tab) },
                             icon = {
                                 Box {
                                     Icon(tab.icon, contentDescription = null)
@@ -174,13 +194,19 @@ private fun WalletTabs(
             ) {
                 if (showHelp) {
                     WalletHelpScreen()
-                } else when (selectedTab) {
-                    WalletTab.Home -> HomeScreen(store)
-                    WalletTab.Scan -> ScanScreen(store)
-                    WalletTab.Organizations -> OrganizationsScreen(store)
+                } else when (router.selectedTab) {
+                    WalletTab.Home -> HomeScreen(store, router)
+                    WalletTab.Scan -> ScanScreen(store, router)
+                    WalletTab.Organizations -> OrganizationsScreen(store, router)
                     WalletTab.Ledger -> LedgerScreen(store, onGetPasskey)
-                    WalletTab.Connections -> ConnectionsScreen(store)
-                    WalletTab.Settings -> SettingsScreen(store, onCreatePasskey)
+                    WalletTab.Connections -> ConnectionsScreen(store, router)
+                    WalletTab.Settings -> SettingsScreen(store, onCreatePasskey, router)
+                }
+
+                router.flash?.let { notice ->
+                    Box(modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp)) {
+                        FlashNoticeBanner(notice) { router.dismissFlash() }
+                    }
                 }
 
                 store.challengeBanner?.let { banner ->
@@ -196,7 +222,7 @@ private fun WalletTabs(
                                 Text(banner.detail, color = Color.Gray, style = MaterialTheme.typography.bodySmall, maxLines = 2)
                             }
                             Button(onClick = {
-                                selectedTab = WalletTab.Ledger
+                                router.show(WalletTab.Ledger)
                                 store.dismissChallengeBanner()
                             }) {
                                 Text("Open")
@@ -210,8 +236,23 @@ private fun WalletTabs(
 }
 
 @Composable
-private fun HomeScreen(store: WalletStore) {
+private fun HomeScreen(store: WalletStore, router: WalletRouter) {
     var pastedInvitation by rememberSaveable { mutableStateOf("") }
+    var isImportFieldShown by rememberSaveable { mutableStateOf(false) }
+    var importResult by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    importResult?.let { (succeeded, message) ->
+        AlertDialog(
+            onDismissRequest = { importResult = null },
+            title = { Text(if (succeeded) "Invitation imported" else "That did not work") },
+            text = { Text(message) },
+            confirmButton = {
+                TextButton(onClick = { importResult = null }) { Text("OK") }
+            }
+        )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -222,7 +263,10 @@ private fun HomeScreen(store: WalletStore) {
             HeroPanel(
                 connections = store.connections.size,
                 organizations = store.credentialOrganizations.size,
-                events = store.transactions.size
+                events = store.transactions.size,
+                onConnections = { router.openConnections() },
+                onOrganizations = { router.show(WalletTab.Organizations) },
+                onEvents = { router.show(WalletTab.Ledger) }
             )
         }
 
@@ -233,70 +277,120 @@ private fun HomeScreen(store: WalletStore) {
             }
         }
 
-        item {
-            val pending = store.latestPendingInvitation
-            if (pending != null) {
-                AegisCard {
-                    StatusBadge("Ready to accept")
-                    Text(pending.invitation.label, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(
-                        "This invitation is saved locally. Accept it through the hosted lab bridge before issuing credentials or fetching web app wallet challenges.",
-                        color = Color.Gray
-                    )
-                    Button(
-                        onClick = { store.acceptLatestInvitationInLab() },
-                        enabled = !store.isWorking,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Accept invitation in lab")
-                    }
-                    FeedbackMessages(
-                        isWorking = store.isWorking,
-                        importMessage = store.lastImportMessage,
-                        importError = store.lastImportError,
-                        labMessage = store.lastLabMessage,
-                        labError = store.lastLabError
-                    )
-                }
-            } else {
-                AegisCard {
-                    StatusBadge("Ready for QR import", VanguardColors.Green)
-                    Text("Start with a wallet invitation", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(
-                        "Scan a QR deep link or paste an Aegis ID credential invitation, OpenID VC presentation request, or Aries lab issuer invitation from the web dashboard. Organizations appear in the Organizations tab.",
-                        color = Color.Gray
-                    )
-                }
-            }
-        }
-
+        // What to do next, and the ways to do it.
+        //
+        // This replaced a card that showed the pending invitation's own label —
+        // which on a lab connection is the ACA-Py agent's name, so the first
+        // thing a holder read was "VCS Issuer". It named an implementation
+        // detail and told them nothing about what to do.
         item {
             AegisCard {
-                Text("Paste invitation", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = pastedInvitation,
-                    onValueChange = { pastedInvitation = it },
-                    minLines = 4,
-                    placeholder = { Text("aegisid://credential-invite?... openid-vc://?... or aegisid://invite?oob=...") },
-                    modifier = Modifier.fillMaxWidth()
+                StatusBadge(
+                    if (store.credentialOrganizations.isEmpty()) "Nothing here yet" else "Ready",
+                    VanguardColors.Green
                 )
+                Text(
+                    if (store.credentialOrganizations.isEmpty())
+                        "Start with an invitation"
+                    else
+                        "Scan or paste anything Aegis sends you",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "An invitation to join an organization, a request to approve something, a document to " +
+                        "sign, or a sign-in to confirm — they all arrive the same way. Scan the code if it " +
+                        "is on another screen, or paste the link if it reached this phone; you cannot scan " +
+                        "a code with the device showing it.",
+                    color = Color.Gray
+                )
+
                 Button(
-                    onClick = {
-                        store.importInvitation(pastedInvitation)
-                        pastedInvitation = ""
-                    },
+                    onClick = { router.show(WalletTab.Scan) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Import invitation")
+                    Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("  Scan a QR code")
                 }
+
+                OutlinedButton(
+                    onClick = { isImportFieldShown = !isImportFieldShown },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (isImportFieldShown) "Hide the invitation box" else "Import invitation")
+                }
+
+                // Revealed by the button above rather than always present, so
+                // the screen leads with what to do instead of with an empty box.
+                AnimatedVisibility(visible = isImportFieldShown) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedTextField(
+                            value = pastedInvitation,
+                            onValueChange = { pastedInvitation = it },
+                            minLines = 4,
+                            placeholder = { Text("Paste the aegisid:// link from the invitation") },
+                            // An invitation is a URL, and autocorrect turns
+                            // "aegisid-local://" into prose.
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Uri,
+                                autoCorrectEnabled = false,
+                                capitalization = KeyboardCapitalization.None
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Button(
+                            onClick = {
+                                val pasted = pastedInvitation.trim()
+                                store.importInvitation(pasted)
+                                scope.launch {
+                                    // The product path accepts over the network,
+                                    // so the outcome is read once it settles.
+                                    kotlinx.coroutines.delay(900)
+                                    val error = store.lastImportError ?: store.lastLabError
+                                    if (error != null) {
+                                        importResult = false to error
+                                    } else {
+                                        importResult = true to (store.lastImportMessage
+                                            ?: store.lastLabMessage ?: "Invitation imported.")
+                                        pastedInvitation = ""
+                                        isImportFieldShown = false
+                                    }
+                                }
+                            },
+                            enabled = pastedInvitation.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Import")
+                        }
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Somebody who arrived from the Play listing has no idea what
+                // the service behind this app is. The brief answers that; the
+                // sign-in page would not.
+                OutlinedButton(
+                    onClick = { openProductBrief(context) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Outlined.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("  Open the web app")
+                }
+                Text(
+                    "Read what Aegis ID does and how your organization uses it.",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ScanScreen(store: WalletStore) {
+private fun ScanScreen(store: WalletStore, router: WalletRouter) {
     var value by rememberSaveable { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -321,6 +415,23 @@ private fun ScanScreen(store: WalletStore) {
                     onClick = {
                         store.importInvitation(value)
                         value = ""
+                        // A successful import leaves this screen. The ledger is
+                        // where the thing that just arrived actually lives.
+                        scope.launch {
+                            kotlinx.coroutines.delay(900)
+                            val error = store.lastImportError ?: store.lastLabError
+                            if (error != null) {
+                                router.flash(FlashNotice(error, succeeded = false))
+                            } else {
+                                router.flash(
+                                    FlashNotice(
+                                        store.lastImportMessage ?: store.lastLabMessage
+                                            ?: "Invitation imported."
+                                    )
+                                )
+                                router.show(WalletTab.Ledger)
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -339,9 +450,39 @@ private fun ScanScreen(store: WalletStore) {
 }
 
 @Composable
-private fun OrganizationsScreen(store: WalletStore) {
+private fun OrganizationsScreen(store: WalletStore, router: WalletRouter) {
+    var openedOrganizationId by rememberSaveable { mutableStateOf<String?>(null) }
+    var ledgerOrganizationId by rememberSaveable { mutableStateOf<String?>(null) }
+
     LaunchedEffect(Unit) {
         store.refreshOrganizationProfiles()
+    }
+
+    // Another tab can open one organization directly — picking a connection in
+    // Settings lands here rather than on the list.
+    LaunchedEffect(router.focusedOrganizationId) {
+        router.consumeFocusedOrganization()?.let { openedOrganizationId = it }
+    }
+
+    val opened = openedOrganizationId?.let { id ->
+        store.credentialOrganizations.firstOrNull { it.id == id }
+    }
+
+    ledgerOrganizationId?.let { id ->
+        val name = store.credentialOrganizations.firstOrNull { it.id == id }?.name ?: "Organization"
+        OrganizationLedgerScreen(store, id, name) { ledgerOrganizationId = null }
+        return
+    }
+
+    if (opened != null) {
+        OrganizationDetailScreen(
+            store = store,
+            router = router,
+            organization = opened,
+            onBack = { openedOrganizationId = null },
+            onOpenLedger = { ledgerOrganizationId = opened.id }
+        )
+        return
     }
 
     LazyColumn(
@@ -367,10 +508,93 @@ private fun OrganizationsScreen(store: WalletStore) {
             }
         } else {
             items(store.credentialOrganizations, key = { it.id }) { organization ->
-                OrganizationCard(
-                    organization = organization,
-                    profile = store.organizationProfile(organization.id),
-                    transactions = store.transactionsForOrganization(organization.id)
+                Box(modifier = Modifier.clickable { openedOrganizationId = organization.id }) {
+                    OrganizationCard(
+                        organization = organization,
+                        profile = store.organizationProfile(organization.id),
+                        transactions = store.transactionsForOrganization(organization.id)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * One organization, with the two things the iOS wallet gained: its own ledger,
+ * and a way to raise a challenge without a relying party.
+ */
+@Composable
+private fun OrganizationDetailScreen(
+    store: WalletStore,
+    router: WalletRouter,
+    organization: CredentialOrganization,
+    onBack: () -> Unit,
+    onOpenLedger: () -> Unit
+) {
+    val transactions = store.transactionsForOrganization(organization.id)
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            TextButton(onClick = onBack) { Text("< Organizations") }
+        }
+
+        item {
+            OrganizationCard(
+                organization = organization,
+                profile = store.organizationProfile(organization.id),
+                transactions = transactions
+            )
+        }
+
+        item {
+            AegisCard {
+                Text("Wallet dashboard", color = Color.Gray, style = MaterialTheme.typography.labelLarge)
+                KeyValue("Connections", organization.connectionCount.toString())
+                KeyValue("Issued credentials", organization.credentialCount.toString())
+                KeyValue(
+                    "Pending actions",
+                    transactions.count { it.status == WalletTransactionStatus.PendingAcceptance }.toString()
+                )
+                // This organization's own history. The Ledger tab answers "what
+                // have I ever approved"; here the question is "what has this
+                // organization asked me for".
+                Button(onClick = onOpenLedger, modifier = Modifier.fillMaxWidth()) {
+                    Text("Ledger (${transactions.size})")
+                }
+            }
+        }
+
+        item {
+            AegisCard {
+                OutlinedButton(
+                    onClick = {
+                        if (store.createMockWalletChallenge(organization.id)) {
+                            router.flash(FlashNotice("Test challenge added to your ledger."))
+                            router.show(WalletTab.Ledger)
+                        } else {
+                            router.flash(
+                                FlashNotice(
+                                    store.lastLabError ?: "That challenge could not be raised.",
+                                    succeeded = false
+                                )
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Raise a test challenge")
+                }
+                Text(
+                    "Adds a pending approval to this organization's ledger so the wallet can be " +
+                        "exercised without a connected application. It is recorded exactly as a real " +
+                        "decision is.",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -409,7 +633,7 @@ private fun LedgerScreen(store: WalletStore, onGetPasskey: suspend (String) -> J
 }
 
 @Composable
-private fun ConnectionsScreen(store: WalletStore) {
+private fun ConnectionsScreen(store: WalletStore, router: WalletRouter) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -420,15 +644,24 @@ private fun ConnectionsScreen(store: WalletStore) {
                 EmptyState("No connections", "Import an Aegis credential invitation, OpenID VC presentation request, or Aries lab out-of-band invitation from the web dashboard.")
             }
         } else {
+            // Choosing a connection means "show me this organization", and the
+            // organization lives on its own tab with its credentials, roles and
+            // ledger.
             items(store.connections, key = { it.id }) { connection ->
-                ConnectionCard(connection = connection, store = store)
+                Box(
+                    modifier = Modifier.clickable {
+                        router.openOrganization(store.organizationIdFor(connection))
+                    }
+                ) {
+                    ConnectionCard(connection = connection, store = store)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String) -> JSONObject) {
+private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String) -> JSONObject, router: WalletRouter) {
     var passkeySubject by rememberSaveable { mutableStateOf(store.walletPasskeySubject) }
     var showProfile by rememberSaveable { mutableStateOf(false) }
     var showPasskeys by rememberSaveable { mutableStateOf(false) }
@@ -873,7 +1106,7 @@ private fun actionButtonTitle(transaction: WalletTransaction): String {
 private fun formatDate(timestamp: Long): String =
     DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(timestamp))
 
-private enum class WalletTab(
+enum class WalletTab(
     val title: String,
     val navLabel: String,
     val icon: ImageVector

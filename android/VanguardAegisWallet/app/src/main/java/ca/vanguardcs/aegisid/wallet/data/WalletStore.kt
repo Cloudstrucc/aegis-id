@@ -201,6 +201,44 @@ class WalletStore(
 
     fun organizationProfile(organizationId: String): OrganizationProfile? = organizationProfiles[organizationId]
 
+    /**
+     * The organization a connection belongs to.
+     *
+     * Organizations are a grouping over connections rather than a stored entity,
+     * so this is the one place the key is derived for callers outside the store.
+     */
+    fun organizationIdFor(connection: WalletConnection): String = organizationKey(connection)
+
+    /**
+     * Raise a challenge against this organization without a relying party.
+     *
+     * Every other challenge arrives from an application asking for a decision.
+     * This one exists so an organization can be exercised on its own — issuing a
+     * credential, checking the ledger, approving something — before a real
+     * application is pointed at it.
+     *
+     * Deliberately local, and it creates the same pending item a real challenge
+     * would, so approving it walks the same path rather than a special one.
+     */
+    fun createMockWalletChallenge(organizationId: String): Boolean {
+        val connection = connections.firstOrNull { organizationKey(it) == organizationId }
+        if (connection == null) {
+            lastLabError = "Accept an invitation from this organization before raising a challenge."
+            return false
+        }
+
+        clearLabMessages()
+        addTransaction(
+            connectionId = connection.id,
+            type = WalletTransactionType.Challenge,
+            status = WalletTransactionStatus.PendingAcceptance,
+            title = "Approval requested",
+            detail = "Test challenge raised from the wallet. Approving or declining it is recorded exactly as a real decision is."
+        )
+        lastLabMessage = "Test challenge added to your ledger."
+        return true
+    }
+
     fun dismissChallengeBanner() {
         challengeBanner = null
     }

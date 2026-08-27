@@ -245,8 +245,21 @@ private fun WebAppPanel(context: Context) {
  * when nothing on the device supports one; the catch below covers a device with
  * no browser at all, where a crash would be a poor answer to a help screen.
  */
+/**
+ * The product brief rather than the sign-in page: somebody opening this from the
+ * wallet is asking what the service does, not trying to administer an
+ * organization.
+ */
+fun openProductBrief(context: Context) {
+    openUrl(context, BuildConfig.AEGIS_WEB_APP_BASE_URL.trimEnd('/') + "/docs/aegis-id-overview.html")
+}
+
 fun openWebApp(context: Context) {
-    val uri = Uri.parse(BuildConfig.AEGIS_WEB_APP_BASE_URL)
+    openUrl(context, BuildConfig.AEGIS_WEB_APP_BASE_URL)
+}
+
+private fun openUrl(context: Context, url: String) {
+    val uri = Uri.parse(url)
     try {
         CustomTabsIntent.Builder()
             .setShowTitle(true)
