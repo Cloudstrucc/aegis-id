@@ -59,37 +59,12 @@
               </div>
             </div>
           {{else}}
-            <div class="dropdown">
-              <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Sign in
-              </button>
-              <div class="dropdown-menu dropdown-menu-end auth-menu shadow-sm">
-                <form action="/auth/start" method="post">
-                  <input type="hidden" name="intent" value="sign-in">
-                  <input type="hidden" name="authMethod" value="verified-id">
-                  <input type="hidden" name="returnTo" value="{{authReturnTo}}">
-                  <button class="dropdown-item" type="submit">Sign in with Verified ID</button>
-                </form>
-                <form action="/auth/start" method="post">
-                  <input type="hidden" name="intent" value="register">
-                  <input type="hidden" name="authMethod" value="verified-id">
-                  <input type="hidden" name="returnTo" value="{{authReturnTo}}">
-                  <button class="dropdown-item" type="submit">Register with Verified ID</button>
-                </form>
-                <form action="/auth/start" method="post">
-                  <input type="hidden" name="intent" value="sign-in">
-                  <input type="hidden" name="authMethod" value="yubikey">
-                  <input type="hidden" name="returnTo" value="{{authReturnTo}}">
-                  <button class="dropdown-item" type="submit">Sign in with YubiKey</button>
-                </form>
-                <form action="/auth/start" method="post">
-                  <input type="hidden" name="intent" value="sign-in">
-                  <input type="hidden" name="authMethod" value="wallet">
-                  <input type="hidden" name="returnTo" value="{{authReturnTo}}">
-                  <button class="dropdown-item" type="submit">Use wallet-only lab</button>
-                </form>
-              </div>
-            </div>
+            <form action="/auth/start" method="post" class="d-inline">
+              <input type="hidden" name="intent" value="sign-in">
+              <input type="hidden" name="authMethod" value="wallet">
+              <input type="hidden" name="returnTo" value="{{authReturnTo}}">
+              <button class="btn btn-primary" type="submit">Sign in</button>
+            </form>
           {{/if}}
         </div>
       </div>

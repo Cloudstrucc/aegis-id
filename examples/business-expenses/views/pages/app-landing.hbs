@@ -14,37 +14,25 @@
           {{#if isAuthenticated}}
             <a class="btn btn-primary w-100" href="{{exampleApp.path}}">Open {{exampleApp.title}}</a>
           {{else}}
-            <div class="dropdown w-100">
-              <button class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Authenticate to continue
+            {{!--
+              One button, because there is one way in. The dropdown behind it
+              offered Verified ID, YubiKey and "wallet-only lab" — two methods
+              that are not wired into this application, and a third whose name
+              described the plumbing rather than what the person does. Signing
+              in is scanning a code with the wallet; the picker is on the Aegis
+              side, where the sign-in methods are actually configured.
+            --}}
+            <form action="/auth/start" method="post">
+              <input type="hidden" name="intent" value="sign-in">
+              <input type="hidden" name="authMethod" value="wallet">
+              <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
+              <button class="btn btn-primary w-100" type="submit">
+                <i class="bi bi-qr-code-scan me-2"></i>Sign in with your wallet
               </button>
-              <div class="dropdown-menu auth-menu w-100 shadow-sm">
-                <form action="/auth/start" method="post">
-                  <input type="hidden" name="intent" value="sign-in">
-                  <input type="hidden" name="authMethod" value="verified-id">
-                  <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
-                  <button class="dropdown-item" type="submit">Sign in with Verified ID</button>
-                </form>
-                <form action="/auth/start" method="post">
-                  <input type="hidden" name="intent" value="register">
-                  <input type="hidden" name="authMethod" value="verified-id">
-                  <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
-                  <button class="dropdown-item" type="submit">Register with Verified ID</button>
-                </form>
-                <form action="/auth/start" method="post">
-                  <input type="hidden" name="intent" value="sign-in">
-                  <input type="hidden" name="authMethod" value="yubikey">
-                  <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
-                  <button class="dropdown-item" type="submit">Sign in with YubiKey</button>
-                </form>
-                <form action="/auth/start" method="post">
-                  <input type="hidden" name="intent" value="sign-in">
-                  <input type="hidden" name="authMethod" value="wallet">
-                  <input type="hidden" name="returnTo" value="{{exampleApp.path}}">
-                  <button class="dropdown-item" type="submit">Use wallet-only lab</button>
-                </form>
-              </div>
-            </div>
+            </form>
+            <p class="small text-muted mt-2 mb-0">
+              You will scan a code with the Aegis ID wallet. Nothing to type, and no password.
+            </p>
           {{/if}}
         </div>
       </div>
