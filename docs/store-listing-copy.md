@@ -96,7 +96,7 @@ plainly that no address is configured, which is honest but is not a support
 page. Review does check this URL.
 
 ```bash
-az webapp config appsettings set --name vanguard-aegis-id-65067d --resource-group <rg> --settings SUPPORT_EMAIL=support@example.com
+az webapp config appsettings set --name vanguard-aegis-id-65067d --resource-group <rg> --settings SUPPORT_EMAIL=contact-aegis-id@vanguardcs.ca
 ```
 
 `scripts/deploy-azure-webapp.sh` forwards the setting, so a later deployment
