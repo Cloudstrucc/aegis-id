@@ -185,20 +185,37 @@ verified against a directory, and no mail is sent to you.
 
 HOW TO SEE THE FULL FUNCTIONALITY
 
+Each invitation below is addressed to one email address and can be redeemed
+once, so we have prepared several. Use the first pair; if the app says that
+address is already registered, move to the next pair.
+
 1. Launch the app and tap "Get started".
-2. Enter any email address - for example appreview@example.com - and tap
-   "Create my wallet".
+2. Enter the email address from a pair below and tap "Create my wallet".
 3. You are shown a Wallet ID, then ten recovery codes. Turn on "I have saved
    these codes" and tap "Finish setup".
-4. On the Home tab, scroll to "Paste invitation" and paste this link:
+4. On the Home tab, tap "Import invitation" and paste the link from the same
+   pair. Tap "Import".
+5. The wallet joins the demo organization and the credential appears under the
+   Orgs tab. Open it to see "Raise a test challenge", which creates an approval
+   you can accept or decline on the Ledger tab.
 
-   <INVITATION LINK>
+   Pair 1 - appreview1@example.com
+   <INVITATION LINK 1>
 
-5. Submit it. The wallet joins the demo organization and the credential appears
-   under the Organizations tab.
-6. The Ledger tab shows the record of what was accepted and when.
+   Pair 2 - appreview2@example.com
+   <INVITATION LINK 2>
 
-The invitation is valid until <DATE> and can be used more than once.
+   Pair 3 - appreview3@example.com
+   <INVITATION LINK 3>
+
+   Pair 4 - appreview4@example.com
+   <INVITATION LINK 4>
+
+   Pair 5 - appreview5@example.com
+   <INVITATION LINK 5>
+
+Every invitation is valid until <DATE>. No mail is sent to any of these
+addresses and none of them needs to exist.
 
 PRIVACY
 
@@ -210,19 +227,39 @@ material stay on the device.
 We are happy to give a live walkthrough on request.
 ```
 
-### Generating the invitation link
+### Generating the invitation links
 
-Do this before submitting, on **prod**:
+**Why five, and why each has its own address.** A credential invitation is
+bound to the email it was issued to — `assertBinding` resolves the wallet by
+that address and refuses any other. And an address registers exactly once. So a
+single address in the Notes works for exactly one review attempt: the first
+reviewer registers it, and every attempt after that — a second reviewer, a
+resubmission, the same reviewer on a fresh device — is stopped at "A wallet is
+already registered with this email" with no way forward. That is the rejection
+this app already received once.
+
+An organization invitation would sidestep the email binding, but **accepting one
+makes that wallet the organization's first root wallet.** Handing Apple's
+reviewer recovery authority over the demo organization is not an acceptable
+trade for a smoother review.
+
+So: several credential invitations, each to a fresh address. Do this before
+submitting, on **prod**:
 
 1. Sign in and open the organization you want the reviewer to see.
-2. Credentials → invite a credential for `appreview@example.com`.
+2. Credentials → invite a credential for `appreview1@example.com`.
 3. **Set the invitation window to 365 days.** The default is 7, and an
    invitation that expires mid-review is a rejection that costs a full cycle.
 4. Copy the `aegisid://credential-invite?…` deep link from the invitation panel
    — not the QR image. A reviewer has one device and cannot scan a code shown on
    the screen they are holding.
-5. Paste it into the Notes in place of `<INVITATION LINK>`, and put the expiry
-   date in place of `<DATE>`.
+5. Repeat for `appreview2@example.com` through `appreview5@example.com`.
+6. Paste each link into the Notes under its pair, and put the expiry date in
+   place of `<DATE>`.
+
+**After any rejection**, check which pairs were consumed under
+`/admin/wallets` and top the Notes back up to five before resubmitting. Do not
+reuse `appreview@example.com` — it is spent.
 
 ### Attachment
 

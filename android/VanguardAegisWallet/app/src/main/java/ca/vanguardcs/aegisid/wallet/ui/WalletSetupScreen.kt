@@ -156,8 +156,23 @@ fun WalletSetupScreen(store: WalletStore, onRecoverInstead: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                errorMessage?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error)
+                errorMessage?.let { message ->
+                    Text(message, color = MaterialTheme.colorScheme.error)
+
+                    // A taken address is not a dead end, but it looked like
+                    // one: the only way past it was a link on the previous
+                    // screen. Say what to do instead. Matched loosely on the
+                    // server's wording so a rephrase degrades to the plain
+                    // error rather than hiding the way out.
+                    if (message.contains("already registered", ignoreCase = true)) {
+                        Text(
+                            "If this is your wallet on another device, recover it. Otherwise use a " +
+                                "different email address — any address works, and nothing is sent to it.",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        TextButton(onClick = onRecoverInstead) { Text("Recover that wallet") }
+                    }
                 }
 
                 Button(

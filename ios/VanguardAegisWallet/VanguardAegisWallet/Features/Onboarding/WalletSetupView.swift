@@ -156,6 +156,25 @@ struct WalletSetupView: View {
 
             if let errorMessage {
                 Text(errorMessage).font(.footnote).foregroundStyle(.red)
+
+                // A taken address is not a dead end, but it looked like one.
+                // The only way past it was a link on the previous screen — and
+                // App Review, following instructions that named a specific
+                // address, stopped exactly here. Say what to do instead.
+                if isAlreadyRegisteredError {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("If this is your wallet on another device, recover it. Otherwise use a different email address — any address works, and nothing is sent to it.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            showRecovery = true
+                        } label: {
+                            Label("Recover that wallet", systemImage: "arrow.counterclockwise")
+                                .font(.footnote.weight(.semibold))
+                        }
+                    }
+                    .padding(.top, 2)
+                }
             }
 
             Spacer()
@@ -250,6 +269,12 @@ struct WalletSetupView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    /// The server's own wording for a duplicate, matched loosely so a change
+    /// in phrasing degrades to the plain error rather than hiding the way out.
+    private var isAlreadyRegisteredError: Bool {
+        errorMessage?.localizedCaseInsensitiveContains("already registered") == true
     }
 
     private func register() {
