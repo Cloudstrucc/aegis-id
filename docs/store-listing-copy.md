@@ -195,8 +195,8 @@ address is already registered, move to the next pair.
    these codes" and tap "Finish setup".
 4. On the Home tab, tap "Import invitation" and paste the link from the same
    pair. Tap "Import".
-5. The wallet joins the demo organization and the credential appears under the
-   Orgs tab. Open it to see "Raise a test challenge", which creates an approval
+5. The wallet joins the "Vanguard CS" organization and the credential appears
+   under the Orgs tab. Open it to see "Raise a test challenge", which creates an approval
    you can accept or decline on the Ledger tab.
 
    Pair 1 - appreview1@example.com
@@ -210,9 +210,6 @@ address is already registered, move to the next pair.
 
    Pair 4 - appreview4@example.com
    <INVITATION LINK 4>
-
-   Pair 5 - appreview5@example.com
-   <INVITATION LINK 5>
 
 Every invitation is valid until <DATE>. No mail is sent to any of these
 addresses and none of them needs to exist.
@@ -244,7 +241,16 @@ reviewer recovery authority over the demo organization is not an acceptable
 trade for a smoother review.
 
 So: several credential invitations, each to a fresh address. Do this before
-submitting, on **prod**:
+submitting, on **prod**, signed in as an *administrator* of the organization —
+a holder credential in an organization (the Contractor role, say) cannot issue,
+and the request answers "Organization workspace not found for this subscriber".
+
+The organization also needs a confirmed root wallet first, or
+`ROOT_WALLET_POLICY_ENFORCED` blocks issuance. And mind the plan: a Trial
+subscription caps credentials, so the fifth invitation was refused with a 402
+on the first run — four pairs is what is in the Notes today, issued 2026-09-11
+against **Vanguard CS** (`8ab6c114-61ff-4723-9e8c-c7e15e472afd`) and valid to
+**2027-09-11**.
 
 1. Sign in and open the organization you want the reviewer to see.
 2. Credentials → invite a credential for `appreview1@example.com`.
@@ -253,12 +259,12 @@ submitting, on **prod**:
 4. Copy the `aegisid://credential-invite?…` deep link from the invitation panel
    — not the QR image. A reviewer has one device and cannot scan a code shown on
    the screen they are holding.
-5. Repeat for `appreview2@example.com` through `appreview5@example.com`.
+5. Repeat for `appreview2@example.com` onward — as many as the plan allows.
 6. Paste each link into the Notes under its pair, and put the expiry date in
    place of `<DATE>`.
 
 **After any rejection**, check which pairs were consumed under
-`/admin/wallets` and top the Notes back up to five before resubmitting. Do not
+`/admin/wallets` and top the Notes back up before resubmitting. Do not
 reuse `appreview@example.com` — it is spent.
 
 ### Attachment
