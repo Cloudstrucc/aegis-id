@@ -203,7 +203,14 @@ test('the issue form needs only a contact; name and role are defaulted', async (
 test('the test-data fill is off wherever NODE_ENV is production unless switched on', () => {
   const previousEnv = process.env.NODE_ENV;
   const previousFlag = process.env.TEST_FIXTURES_ENABLED;
+  const previousAppEnv = process.env.APP_ENV;
+  const previousDeployEnv = process.env.DEPLOY_ENV;
   try {
+    // Loading config reads an env file, and .env.local sets the flag on —
+    // which is exactly the value this test needs to be absent. Point it at a
+    // file that does not exist so only what is set here counts.
+    process.env.APP_ENV = 'no-such-env-file';
+    delete process.env.DEPLOY_ENV;
     process.env.NODE_ENV = 'production';
     delete process.env.TEST_FIXTURES_ENABLED;
     delete require.cache[require.resolve('../src/config')];
@@ -220,6 +227,8 @@ test('the test-data fill is off wherever NODE_ENV is production unless switched 
   } finally {
     restoreEnv('NODE_ENV', previousEnv);
     restoreEnv('TEST_FIXTURES_ENABLED', previousFlag);
+    restoreEnv('APP_ENV', previousAppEnv);
+    restoreEnv('DEPLOY_ENV', previousDeployEnv);
     delete require.cache[require.resolve('../src/config')];
   }
 });
