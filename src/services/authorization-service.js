@@ -144,6 +144,12 @@ const POLICIES = Object.freeze({
     privilegeId: 'credentials.issue',
     fields: ['holderEmail', 'displayName', 'personType', 'divisionId', 'roleIds', 'requestedClaimKeys', 'inviteTtlDays']
   }),
+  // The same privilege as issuing one at a time: a file is a faster hand,
+  // not a wider one.
+  'org.credentials.import': policy('org.credentials.import', 'orgPrivilege', 'credential', 'create', {
+    privilegeId: 'credentials.issue',
+    fields: ['csv']
+  }),
   'org.credentials.accept': policy('org.credentials.accept', 'orgPrivilege', 'credential', 'update', {
     privilegeId: 'credentials.update'
   }),

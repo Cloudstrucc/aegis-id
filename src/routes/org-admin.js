@@ -31,6 +31,7 @@ const {
   updateRole
 } = require('../services/org-admin-service');
 const { writeAuditEvent } = require('../services/audit-service');
+const credentialImports = require('../services/credential-import-service');
 const {
   approveOrgAttestation,
   rejectOrgAttestation
@@ -43,6 +44,41 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials', au
   const credential = await issueCredential(workspace, subscription, req.body);
   await audit('org.credential.invited', subscription, workspace, { credentialId: credential.id });
   res.redirect(303, orgAdminPath(subscription.id, workspace.id, credential.id));
+}));
+
+// Bulk invitations from a CSV. These answer JSON rather than redirecting,
+// because the page drives them from a modal that reports validation problems
+// row by row and then polls the job for a progress bar.
+router.get('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/import/template.csv', authorize('org.credentials.import'), withOrg(async ({ workspace, res }) => {
+  const csv = await credentialImports.buildTemplateCsv(workspace);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="aegis-credentials-${slug(workspace.organization)}.csv"`);
+  res.send(csv);
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/import/validate', authorize('org.credentials.import'), withOrgJson(async ({ subscription, workspace, req }) => {
+  const result = await credentialImports.validateCsv(workspace, subscription, String(req.body.csv || ''));
+  return { ok: result.errors.length === 0, total: result.total || 0, errors: result.errors };
+}));
+
+router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/import', authorize('org.credentials.import'), withOrgJson(async ({ subscription, workspace, req }) => {
+  const job = await credentialImports.startImport(workspace, subscription, String(req.body.csv || ''));
+  await audit('org.credential.import.started', subscription, workspace, { jobId: job.id, total: job.total });
+  return { job };
+}));
+
+router.get('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/import/latest', authorize('org.credentials.import'), withOrgJson(async ({ workspace }) => {
+  return { job: await credentialImports.getLatestJob(workspace.id) };
+}));
+
+router.get('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/import/:jobId', authorize('org.credentials.import'), withOrgJson(async ({ workspace, req }) => {
+  const job = await credentialImports.getJob(workspace.id, req.params.jobId);
+  if (!job) {
+    const error = new Error('Import not found.');
+    error.status = 404;
+    throw error;
+  }
+  return { job };
 }));
 
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/credentials/:credentialId/accept', authorize('org.credentials.accept'), withOrg(async ({ subscription, workspace, req, res }) => {
@@ -234,6 +270,31 @@ function withOrg(handler) {
       next(error);
     }
   };
+}
+
+// The dashboard's error handler renders a page. The import endpoints are
+// called from script, so they answer JSON — including the row-level details
+// a validation refusal carries.
+function withOrgJson(handler) {
+  return async (req, res) => {
+    try {
+      const subscription = await loadSubscription(req);
+      const workspace = await loadWorkspace(subscription, req.params.workspaceId);
+      res.json(await handler({ subscription, workspace, req, res }));
+    } catch (error) {
+      const status = error.status || 500;
+      res.status(status).json({
+        error: {
+          message: status < 500 ? error.message : 'Something went wrong.',
+          details: status < 500 ? error.details : undefined
+        }
+      });
+    }
+  };
+}
+
+function slug(value = '') {
+  return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'organization';
 }
 
 async function loadSubscription(req) {

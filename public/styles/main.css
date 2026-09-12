@@ -8083,3 +8083,93 @@ body:has(.workspace-blade) .site-footer div span {
   font-family: "SFMono-Regular", Menlo, Consolas, monospace;
   font-size: 12px;
 }
+
+/* Bulk credential import: the modal's validation report and the progress
+   panel that stays on the people directory while a job runs. */
+.people-directory__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.import-progress {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #f6fbff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.import-progress__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+.import-progress__head span {
+  color: var(--muted);
+}
+
+.import-progress__head .link-button {
+  margin-left: auto;
+}
+
+.import-progress--done .progress-bar span {
+  background: var(--green-500);
+}
+
+.import-progress--failed .progress-bar span,
+.import-progress--interrupted .progress-bar span {
+  background: #c0392b;
+}
+
+.import-progress__failures {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #8a2a1f;
+}
+
+.link-button {
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--blue-600);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.note-panel--error {
+  color: #6e1f14;
+  background: #fff4f2;
+  border-color: #f0c2b8;
+}
+
+.note-panel--success {
+  color: #145c3a;
+  background: #f1fbf5;
+  border-color: #bfe6cf;
+}
+
+.note-panel--error .people-table {
+  min-width: 0;
+}
+
+.note-panel--error .people-table-wrap {
+  max-height: 260px;
+  background: #ffffff;
+}
+
+.import-progress[hidden],
+.import-progress__failures[hidden],
+[data-import-result][hidden],
+[data-import-errors][hidden],
+[data-import-ready][hidden] {
+  display: none;
+}

@@ -412,6 +412,7 @@ function createApp() {
     res.locals.appName = config.app.name;
     res.locals.currentPath = req.path;
     res.locals.verifiedIdMode = config.verifiedId.mode;
+    res.locals.testFixturesEnabled = config.app.testFixturesEnabled;
     next();
   });
   app.use(attachLocalTestMode);

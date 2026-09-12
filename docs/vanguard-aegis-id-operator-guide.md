@@ -420,12 +420,48 @@ Every wallet now registers on first launch and receives a **Wallet ID** in the
 form `AEG-XXXX-XXXX-XXXX-XXXX`. Holders share it with an administrator so
 credentials can be issued to that specific wallet.
 
-**Issuing a credential.** The issue form takes an optional Wallet ID and mobile
-number alongside the holder email. Binding to a Wallet ID is the strongest
-option and lets the credential email differ from the email the holder registered
-on their wallet, which is what supports people who work with several
+**Issuing a credential.** Only a contact is required on the issue form — an
+email, a Wallet ID, or a mobile number. Everything else defaults: the display
+name is derived from the address, the role follows the person type (employee →
+Employee, contractor → Contractor; administrator gets no role, because admin
+eligibility is granted, never assumed), the division is the organization root,
+the claims take the organization's defaults. Binding to a Wallet ID is the
+strongest option and lets the credential email differ from the email the holder
+registered on their wallet, which is what supports people who work with several
 organizations. Email- and phone-bound invitations must match the contact
 registered on the wallet and are flagged **Lower assurance** in the people table.
+
+**How an email-bound invitation finds the wallet.** The holder installs the
+wallet and registers it with the same email the invitation names. When they
+redeem the invitation the server looks that address up in the wallet registry
+and binds the credential to whichever wallet it finds. No Wallet ID changes
+hands; the address is the link. An invitation to an address nobody has
+registered a wallet under is refused at redemption, not at issue.
+
+**Importing from a spreadsheet.** *People → Import CSV.* Download the template
+(one row per person; the columns are `email`, `display_name`, `wallet_id`,
+`phone`, `person_type`, `division`, `roles`, `invite_ttl_days`, plus one
+`claim_<key>` column per claim the organization defines), fill it, upload it,
+and press **Validate file**. Every problem is listed by spreadsheet row and
+column — an address that already holds a credential, a repeated row, a role the
+organization does not have, a window outside 1–365 days — and nothing is issued
+until the file is clean. The plan ceiling is checked against the whole file
+before the first row, so a file that would cross it is refused up front rather
+than at the row that crosses it. **Import** then runs in the background; a
+progress bar sits on the people directory, survives leaving the page and
+coming back, and the directory reloads when the job finishes. **Refresh** on
+the directory reloads it on demand. A job interrupted by a restart reports how
+many rows had been issued so the rest can be re-imported without duplicates.
+Up to 1,000 rows and 1 MB per file.
+
+**Test fixtures.** Where `TEST_FIXTURES_ENABLED` is on (`.env.local` and
+`.env.dev`; off on qa and prod), the issue form shows **Fill with test data**,
+which fills a unique `example.com` address and defaults. For a batch of test
+invitations from the browser console, paste
+`scripts/dev/issue-test-credentials.js` into the console on an organization
+dashboard and run `await issueTestCredentials({ count: 3 })`; it drives the
+same form with the signed-in session and prints the invitation links. Neither
+is a substitute for Import CSV on a real onboarding.
 
 **Approving a recovery.** Administrators holding the **Approve wallet recovery**
 privilege see a **Wallet recovery** panel in the dashboard. Re-verify the person

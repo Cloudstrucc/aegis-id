@@ -515,14 +515,31 @@ async function issueCredential(workspace, subscription, input = {}) {
   // issued to. Enforced here, at the same single point, rather than in the form.
   await assertRootWalletPolicy(workspace.id);
 
-  const roleIds = normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
-  const claims = buildClaims(state.claimDefinitions, input);
+  const personType = normalizePersonType(input.personType);
+  // A contact is the only thing an invitation genuinely needs. Everything
+  // else has a sensible answer the issuer should not have to type: the role
+  // follows the person type, the display name follows the address.
+  const roleIds = defaultRoleIds(state, normalizeArray(input.roleIds), personType);
   // Distinguish an email the admin actually supplied from one defaulted by the
   // claim definitions, so a phone-only invite is not misread as email-bound.
   const explicitEmail = normalizeEmail(input.holderEmail || '');
-  const holderEmail = explicitEmail || normalizeEmail(claims.email);
   const walletId = parseWalletId(input.walletId) || null;
   const holderPhone = normalizeText(input.holderPhone, 40) || null;
+  const displayName = normalizeText(
+    input.displayName || input.claim_displayName || displayNameFromEmail(explicitEmail),
+    180
+  );
+  const claims = buildClaims(state.claimDefinitions, {
+    ...input,
+    // The sample defaults on the claim definitions are placeholders; a real
+    // name and address beat them whenever the issuer gave one.
+    claim_displayName: input.claim_displayName || displayName || input.claim_displayName,
+    claim_email: input.claim_email || explicitEmail || input.claim_email
+  });
+  // An email the issuer typed into the claim counts as a contact; the sample
+  // default on the claim definition does not, or an empty form would issue a
+  // credential to the placeholder address.
+  const holderEmail = explicitEmail || normalizeEmail(input.claim_email || '');
   if (!holderEmail && !walletId && !holderPhone) {
     throw validationError('A Wallet ID, holder email, or holder phone is required.');
   }
@@ -553,8 +570,8 @@ async function issueCredential(workspace, subscription, input = {}) {
       roleNames: roleIds
         .map((roleId) => state.roles.find((role) => role.id === roleId)?.name || roleId)
     }),
-    displayName: normalizeText(input.displayName || claims.displayName || holderEmail, 180),
-    personType: normalizePersonType(input.personType),
+    displayName: displayName || normalizeText(claims.displayName || holderEmail, 180),
+    personType,
     divisionId: normalizeOrgUnitId(state, input.divisionId),
     status: 'invited',
     roleIds,
@@ -2750,6 +2767,30 @@ function normalizeClaimSelection(claimDefinitions, value, fallback) {
   return claimDefinitions.filter((claim) => claim.required).map((claim) => claim.key);
 }
 
+// The role an invitation gets when the issuer picked none: the one that
+// matches the person type, if the organization still has it. Administrator
+// deliberately maps to nothing — admin eligibility is granted, never assumed.
+function defaultRoleIds(state, requested, personType) {
+  const valid = requested.filter((roleId) => state.roles.some((role) => role.id === roleId));
+  if (valid.length > 0 || personType === 'administrator') {
+    return valid;
+  }
+  const match = state.roles.find((role) => role.id === `role-${personType}`)
+    || state.roles.find((role) => role.name.toLowerCase() === personType);
+  return match ? [match.id] : [];
+}
+
+// "jordan.smith@example.com" → "Jordan Smith". Good enough for a directory
+// entry the holder can correct later; far better than a blank.
+function displayNameFromEmail(email = '') {
+  const local = String(email).split('@')[0] || '';
+  return local
+    .split(/[._\-+]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 function normalizePersonType(value = '') {
   const normalized = String(value || '').trim();
   return PERSON_TYPES.some((personType) => personType.id === normalized) ? normalized : 'employee';
@@ -3000,6 +3041,9 @@ async function countCredentialsByWalletId() {
 
 module.exports = {
   acceptCoAdminChallenge,
+  getOrCreateState,
+  displayNameFromEmail,
+  PERSON_TYPES,
   countCredentialsByWalletId,
   countCredentialsByWorkspace,
   assertOrgPrivilege,

@@ -6,6 +6,7 @@ const oidcChallengeGate = document.querySelector('[data-oidc-session-id]');
 const mediaPipeFaceDetectionBase = '/vendor/mediapipe/face_detection';
 let lastVideoTrigger = null;
 let lastAppModalTrigger = null;
+let importWatchTimer = null;
 let faceDetectionLibraryPromise = null;
 let orgChartController = null;
 const idvWizardState = new WeakMap();
@@ -231,6 +232,8 @@ restoreDismissibleBanners();
 // initWorkspaceTour();
 initWorkspaceBlade();
 initOrgChart();
+initCredentialImport();
+initIssueFormHelpers();
 initAdminIdvWizard(document.querySelector('[data-idv-form]'));
 openInviteModalFromHash();
 watchWalletSignIn();
@@ -1755,4 +1758,298 @@ function watchWalletSignIn() {
   };
 
   window.setTimeout(poll, 1200);
+}
+
+
+// ---------------------------------------------------------------------------
+// Issue-credential form helpers
+
+function initIssueFormHelpers() {
+  const form = document.querySelector('[data-issue-form]');
+  if (!form) {
+    return;
+  }
+
+  // The server insists on a contact; say so before the round trip.
+  form.addEventListener('submit', (event) => {
+    const contact = ['holderEmail', 'walletId', 'holderPhone']
+      .map((name) => form.elements[name]?.value.trim())
+      .some(Boolean);
+    if (!contact) {
+      event.preventDefault();
+      form.elements.holderEmail?.focus();
+      form.elements.holderEmail?.setCustomValidity('Give an email, a Wallet ID or a mobile number.');
+      form.elements.holderEmail?.reportValidity();
+    }
+  });
+  form.elements.holderEmail?.addEventListener('input', () => form.elements.holderEmail.setCustomValidity(''));
+
+  // Rendered only where the server turned it on; a customer never sees it.
+  form.querySelector('[data-fill-test-data]')?.addEventListener('click', () => {
+    const stamp = Date.now().toString(36);
+    const first = ['Avery', 'Jordan', 'Sam', 'Riley', 'Casey', 'Morgan'][Math.floor(Math.random() * 6)];
+    const last = ['Chen', 'Patel', 'Okafor', 'Nguyen', 'Silva', 'Novak'][Math.floor(Math.random() * 6)];
+    const email = `${first}.${last}.${stamp}@example.com`.toLowerCase();
+    form.elements.holderEmail.value = email;
+    form.elements.displayName.value = `${first} ${last}`;
+    form.elements.walletId.value = '';
+    form.elements.holderPhone.value = '';
+    form.elements.personType.value = 'employee';
+    form.elements.inviteTtlDays.value = '30';
+    const employeeRole = form.querySelector('input[name="roleIds"][value="role-employee"]');
+    if (employeeRole) {
+      employeeRole.checked = true;
+    }
+    const nameClaim = form.elements.claim_displayName;
+    if (nameClaim) {
+      nameClaim.value = `${first} ${last}`;
+    }
+    const emailClaim = form.elements.claim_email;
+    if (emailClaim) {
+      emailClaim.value = email;
+    }
+    const idClaim = form.elements.claim_employeeId;
+    if (idClaim) {
+      idClaim.value = `TEST-${stamp.toUpperCase()}`;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Bulk credential import
+
+function initCredentialImport() {
+  const directory = document.querySelector('#people-directory[data-import-base]');
+  if (!directory) {
+    return;
+  }
+  const base = directory.dataset.importBase;
+
+  directory.querySelector('[data-people-refresh]')?.addEventListener('click', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('blade', 'people');
+    url.hash = '';
+    window.location.assign(url.toString());
+  });
+
+  const progress = directory.querySelector('[data-import-progress]');
+  if (progress) {
+    watchImportProgress(base, progress);
+  }
+
+  const form = document.querySelector('[data-import-form]');
+  if (form) {
+    initImportForm(form, base, progress);
+  }
+}
+
+function initImportForm(form, base, progress) {
+  const fileInput = form.querySelector('[data-import-file]');
+  const summary = form.querySelector('[data-import-file-summary]');
+  const validateButton = form.querySelector('[data-import-validate]');
+  const startButton = form.querySelector('[data-import-start]');
+  const result = form.querySelector('[data-import-result]');
+  const errorsPanel = form.querySelector('[data-import-errors]');
+  const errorsTitle = form.querySelector('[data-import-errors-title]');
+  const errorsBody = form.querySelector('[data-import-errors-body]');
+  const readyPanel = form.querySelector('[data-import-ready]');
+  const readyTitle = form.querySelector('[data-import-ready-title]');
+  let csvText = '';
+  let validated = false;
+
+  const reset = () => {
+    validated = false;
+    startButton.disabled = true;
+    result.hidden = true;
+    errorsPanel.hidden = true;
+    readyPanel.hidden = true;
+    errorsBody.innerHTML = '';
+  };
+
+  fileInput.addEventListener('change', async () => {
+    reset();
+    const file = fileInput.files?.[0];
+    if (!file) {
+      csvText = '';
+      summary.textContent = 'No file chosen.';
+      validateButton.disabled = true;
+      return;
+    }
+    csvText = await file.text();
+    const rows = csvText.split(/\r?\n/).filter((line) => line.trim() !== '').length;
+    summary.textContent = `${file.name} — ${Math.max(0, rows - 1)} row${rows - 1 === 1 ? '' : 's'} plus the heading.`;
+    validateButton.disabled = false;
+  });
+
+  const showErrors = (errors, heading) => {
+    result.hidden = false;
+    readyPanel.hidden = true;
+    errorsPanel.hidden = false;
+    errorsTitle.textContent = heading || `${errors.length} problem${errors.length === 1 ? '' : 's'} to fix before importing.`;
+    errorsBody.innerHTML = '';
+    for (const entry of errors) {
+      const tr = document.createElement('tr');
+      const where = entry.row > 0 ? String(entry.row) : 'File';
+      [where, entry.column || '—', entry.message].forEach((text) => {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      errorsBody.appendChild(tr);
+    }
+  };
+
+  validateButton.addEventListener('click', async () => {
+    reset();
+    validateButton.disabled = true;
+    validateButton.textContent = 'Checking…';
+    try {
+      const response = await fetch(`${base}/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ csv: csvText })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        showErrors(payload.error?.details || [], payload.error?.message);
+        return;
+      }
+      if (!payload.ok) {
+        showErrors(payload.errors);
+        return;
+      }
+      validated = true;
+      result.hidden = false;
+      readyPanel.hidden = false;
+      readyTitle.textContent = `${payload.total} row${payload.total === 1 ? '' : 's'} ready to import.`;
+      startButton.disabled = false;
+    } catch (error) {
+      showErrors([{ row: 0, column: '', message: 'The file could not be checked. Try again.' }]);
+    } finally {
+      validateButton.disabled = false;
+      validateButton.textContent = 'Validate file';
+    }
+  });
+
+  startButton.addEventListener('click', async () => {
+    if (!validated) {
+      return;
+    }
+    startButton.disabled = true;
+    startButton.textContent = 'Starting…';
+    try {
+      const response = await fetch(base, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ csv: csvText })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        showErrors(payload.error?.details || [{ row: 0, column: '', message: payload.error?.message || 'The import could not start.' }], payload.error?.message);
+        return;
+      }
+      closeAppModal(form.closest('.app-modal'));
+      fileInput.value = '';
+      summary.textContent = 'No file chosen.';
+      validateButton.disabled = true;
+      reset();
+      if (progress) {
+        renderImportProgress(progress, payload.job);
+        watchImportProgress(base, progress, payload.job.id);
+      }
+    } catch (error) {
+      showErrors([{ row: 0, column: '', message: 'The import could not start. Try again.' }]);
+    } finally {
+      startButton.textContent = 'Import';
+    }
+  });
+}
+
+// Polls the job the page is interested in — the one just started, or on load
+// whatever ran most recently — and keeps the panel current. Stops when the job
+// settles; the directory is reloaded once so the new rows appear.
+function watchImportProgress(base, panel, jobId) {
+  window.clearTimeout(importWatchTimer);
+  const url = jobId ? `${base}/${encodeURIComponent(jobId)}` : `${base}/latest`;
+  const poll = async () => {
+    try {
+      const response = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!response.ok) {
+        return;
+      }
+      const { job } = await response.json();
+      if (!job) {
+        return;
+      }
+      const wasRunning = panel.dataset.status === 'running';
+      renderImportProgress(panel, job);
+      if (job.status === 'running') {
+        importWatchTimer = window.setTimeout(poll, 1500);
+      } else if (wasRunning) {
+        // Finished while we watched: show the new people.
+        window.setTimeout(() => {
+          const next = new URL(window.location.href);
+          next.searchParams.set('blade', 'people');
+          next.hash = '';
+          window.location.assign(next.toString());
+        }, 900);
+      }
+    } catch (error) {
+      importWatchTimer = window.setTimeout(poll, 4000);
+    }
+  };
+  poll();
+}
+
+function renderImportProgress(panel, job) {
+  const dismissedKey = `aegis:import-dismissed:${job.id}`;
+  if (job.status !== 'running') {
+    try {
+      if (window.sessionStorage.getItem(dismissedKey)) {
+        panel.hidden = true;
+        return;
+      }
+    } catch (error) {
+      // Storage unavailable: show it anyway.
+    }
+  }
+
+  const title = panel.querySelector('[data-import-title]');
+  const count = panel.querySelector('[data-import-count]');
+  const bar = panel.querySelector('[data-import-bar]');
+  const failures = panel.querySelector('[data-import-failures]');
+  const dismiss = panel.querySelector('[data-import-dismiss]');
+  const processed = job.done + job.failed;
+  const percent = job.total > 0 ? Math.round((processed / job.total) * 100) : 100;
+
+  panel.hidden = false;
+  panel.dataset.status = job.status;
+  panel.className = `import-progress${job.status === 'running' ? '' : job.status === 'completed' ? ' import-progress--done' : job.status === 'completed-with-errors' ? ' import-progress--done' : ` import-progress--${job.status}`}`;
+  bar.style.width = `${percent}%`;
+  count.textContent = `${processed} of ${job.total}`;
+  title.textContent = {
+    running: 'Importing credentials…',
+    completed: `Imported ${job.done} credential${job.done === 1 ? '' : 's'}.`,
+    'completed-with-errors': `Imported ${job.done} of ${job.total}; ${job.failed} could not be issued.`,
+    failed: `Import stopped after ${job.done} of ${job.total}.`,
+    interrupted: `Import interrupted after ${job.done} of ${job.total}.`
+  }[job.status] || job.status;
+
+  failures.innerHTML = '';
+  failures.hidden = !(job.failures && job.failures.length > 0);
+  for (const failure of job.failures || []) {
+    const li = document.createElement('li');
+    li.textContent = failure.row > 0 ? `Row ${failure.row} (${failure.label}): ${failure.message}` : failure.message;
+    failures.appendChild(li);
+  }
+
+  dismiss.hidden = job.status === 'running';
+  dismiss.onclick = () => {
+    try {
+      window.sessionStorage.setItem(dismissedKey, '1');
+    } catch (error) {
+      // Fine — it just comes back on the next load.
+    }
+    panel.hidden = true;
+  };
 }

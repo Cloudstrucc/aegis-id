@@ -204,7 +204,18 @@
     </article>
   {{/unless}}
 
-  <div id="people-directory" class="people-directory">
+  <div id="people-directory" class="people-directory" data-import-base="{{dashboardBasePath}}/admin/credentials/import">
+    {{#if orgAdmin.canManagePeople}}
+      <div class="import-progress" data-import-progress hidden>
+        <div class="import-progress__head">
+          <strong data-import-title>Importing credentials…</strong>
+          <span data-import-count></span>
+          <button class="link-button" type="button" data-import-dismiss hidden>Dismiss</button>
+        </div>
+        <div class="progress-bar"><span data-import-bar style="width: 0%"></span></div>
+        <ul class="import-progress__failures" data-import-failures hidden></ul>
+      </div>
+    {{/if}}
     <div class="people-directory__head">
       <div>
         <p class="eyebrow">People directory</p>
@@ -212,9 +223,13 @@
         <p>{{orgAdmin.peopleTable.pageSummary}} people shown. Invitations default to {{orgAdmin.orgPolicy.inviteTtlLabel}} unless overridden.</p>
       </div>
       <div class="people-directory__tools">
-        {{#if orgAdmin.canManagePeople}}
-          <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user" data-tour-anchor="add-user">Add User</button>
-        {{/if}}
+        <div class="people-directory__actions">
+          {{#if orgAdmin.canManagePeople}}
+            <button class="button button--primary button--blue" type="button" data-modal-target="#modal-add-user" data-tour-anchor="add-user">Add User</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-target="#modal-import-users">Import CSV</button>
+          {{/if}}
+          <button class="button button--secondary button--dark-text" type="button" data-people-refresh title="Reload the people directory">Refresh</button>
+        </div>
         <form class="people-filters" action="{{dashboardBasePath}}" method="get">
           <input type="hidden" name="blade" value="people">
           <input name="peopleSearch" type="search" value="{{orgAdmin.peopleTable.search}}" placeholder="Search people, email, role" aria-label="Search people">
@@ -408,15 +423,19 @@
           </div>
           <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
         </div>
-        <form class="wizard-form" action="{{dashboardBasePath}}/admin/credentials" method="post">
+        <form class="wizard-form" action="{{dashboardBasePath}}/admin/credentials" method="post" data-issue-form>
+          <p class="form-note">Only a contact is required — an email, a Wallet ID or a mobile number. Everything else has a default: the display name comes from the address, the role from the person type.</p>
+          {{#if testFixturesEnabled}}
+            <p><button class="button button--secondary button--dark-text" type="button" data-fill-test-data>Fill with test data</button> <span class="field-hint">Local and dev only. A unique example.com address and defaults.</span></p>
+          {{/if}}
           <div class="field-row">
             <div class="field-group">
               <label class="field-label" for="holderEmail">Holder email <span class="field-tooltip" tabindex="0" data-tooltip="The address this organization knows the holder by. With a Wallet ID this can differ from the email registered on their wallet.">?</span></label>
-              <input id="holderEmail" name="holderEmail" type="email" placeholder="person@example.com" required>
+              <input id="holderEmail" name="holderEmail" type="email" placeholder="person@example.com">
             </div>
             <div class="field-group">
-              <label class="field-label" for="displayName">Display name <span class="field-tooltip" tabindex="0" data-tooltip="The name shown in the admin dashboard and wallet credential profile.">?</span></label>
-              <input id="displayName" name="displayName" type="text" placeholder="Jordan Smith" required>
+              <label class="field-label" for="displayName">Display name <span class="field-tooltip" tabindex="0" data-tooltip="The name shown in the admin dashboard and wallet credential profile. Left blank, it is derived from the email address.">?</span></label>
+              <input id="displayName" name="displayName" type="text" placeholder="Derived from the email if blank">
             </div>
           </div>
           <div class="field-row">
@@ -495,6 +514,54 @@
             <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
           </div>
         </form>
+      </section>
+    </div>
+
+    <div class="app-modal" id="modal-import-users" hidden>
+      <div class="app-modal__backdrop" data-modal-close></div>
+      <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="modal-import-users-title">
+        <div class="app-modal__head">
+          <div>
+            <p class="eyebrow">Import credentials</p>
+            <h2 id="modal-import-users-title">Invite people from a spreadsheet</h2>
+            <p>Download the template, fill one row per person, and upload it. The file is checked in full before anything is issued, and every problem is listed by row and column.</p>
+          </div>
+          <button class="video-modal__close" type="button" data-modal-close aria-label="Close">×</button>
+        </div>
+        <div class="wizard-form" data-import-form data-import-base="{{dashboardBasePath}}/admin/credentials/import">
+          <div class="field-row">
+            <div class="field-group">
+              <p class="form-note">1. Template</p>
+              <a class="button button--secondary button--dark-text" href="{{dashboardBasePath}}/admin/credentials/import/template.csv" download>Download CSV template</a>
+              <p class="field-hint">One row per person. <code>email</code>, <code>wallet_id</code> or <code>phone</code> is required; the other columns are optional and take the organization's defaults.</p>
+            </div>
+            <div class="field-group">
+              <p class="form-note">2. File</p>
+              <input type="file" accept=".csv,text/csv" data-import-file>
+              <p class="field-hint" data-import-file-summary>No file chosen.</p>
+            </div>
+          </div>
+          <div data-import-result hidden>
+            <div class="note-panel note-panel--error" data-import-errors hidden>
+              <strong data-import-errors-title></strong>
+              <div class="people-table-wrap">
+                <table class="people-table">
+                  <thead><tr><th>Row</th><th>Column</th><th>Problem</th></tr></thead>
+                  <tbody data-import-errors-body></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="note-panel note-panel--success" data-import-ready hidden>
+              <strong data-import-ready-title></strong>
+              <span>Nothing has been issued yet. Import runs in the background; you can leave this page and the progress stays on the people directory.</span>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="button button--secondary button--dark-text" type="button" data-import-validate disabled>Validate file</button>
+            <button class="button button--primary button--blue" type="button" data-import-start disabled>Import</button>
+            <button class="button button--secondary button--dark-text" type="button" data-modal-close>Cancel</button>
+          </div>
+        </div>
       </section>
     </div>
 

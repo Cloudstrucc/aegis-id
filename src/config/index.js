@@ -155,6 +155,14 @@ const config = {
     // set but refused.
     localTestModeRequested,
     localTestMode: localTestModeAllowed,
+    // "Fill with test data" on the issue-credential form. Off wherever
+    // NODE_ENV is production — which is dev, qa and prod alike — unless an
+    // environment turns it on explicitly. It is a testing affordance, and a
+    // customer administrator should never see one.
+    testFixturesEnabled: booleanFlag(
+      process.env.TEST_FIXTURES_ENABLED,
+      (process.env.NODE_ENV || 'development') !== 'production'
+    ),
     businessExpensesUrl:
       process.env.BUSINESS_EXPENSES_APP_URL ||
       (process.env.NODE_ENV === 'production'
@@ -196,6 +204,7 @@ const config = {
     issuerOrganizations: resolveFromRoot(process.env.ISSUER_ORG_STORE_PATH, 'data/issuer-organizations.json'),
     orgAdmin: resolveFromRoot(process.env.ORG_ADMIN_STORE_PATH, 'data/org-admin.json'),
     orgAdminEvents: resolveFromRoot(process.env.ORG_ADMIN_EVENT_STORE_PATH, 'data/org-admin-events.json'),
+    credentialImports: resolveFromRoot(process.env.CREDENTIAL_IMPORT_STORE_PATH, 'data/credential-imports.json'),
     connectedApps: resolveFromRoot(process.env.CONNECTED_APP_STORE_PATH, 'data/connected-apps.json'),
     connectedAppLogs: resolveFromRoot(process.env.CONNECTED_APP_LOG_STORE_PATH, 'data/connected-app-logs.json'),
     connectedAppOAuthCodes: resolveFromRoot(process.env.CONNECTED_APP_OAUTH_CODE_STORE_PATH, 'data/connected-app-oauth-codes.json'),
