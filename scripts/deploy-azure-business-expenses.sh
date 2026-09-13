@@ -105,6 +105,61 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"
 }
 
+# Kudu's zip deploy runs an Oryx build (npm install on the App Service host),
+# and on the F1 tier that can take four or five minutes — longer than the
+# gateway in front of the synchronous deploy call is willing to wait. The call
+# then reports a 504 while the build carries on and succeeds, so a synchronous
+# deploy is a coin toss between "worked" and "worked, but the script said it
+# failed". Deploy asynchronously and watch the deployment itself instead.
+kudu_latest_deployment_field() {
+  local field="$1"
+  az rest --method get \
+    --url "https://${AZURE_WEBAPP_NAME}.scm.azurewebsites.net/api/deployments/latest" \
+    --resource https://management.azure.com/ \
+    --query "$field" --output tsv 2>/dev/null || true
+}
+
+wait_for_kudu_deployment() {
+  local previous_id="${1:-}"
+  local timeout_seconds="${2:-$DEPLOY_TIMEOUT_SECONDS}"
+  local started_at
+  started_at="$(date +%s)"
+  local kudu_url="https://${AZURE_WEBAPP_NAME}.scm.azurewebsites.net/api/deployments/latest"
+
+  while true; do
+    local id status complete message
+    id="$(kudu_latest_deployment_field id)"
+    # Until Kudu has registered the new deployment, "latest" is still the old
+    # one — which finished successfully, and must not be mistaken for this one.
+    if [[ -n "$id" && "$id" != "$previous_id" ]]; then
+      status="$(kudu_latest_deployment_field status)"
+      complete="$(kudu_latest_deployment_field complete)"
+      message="$(kudu_latest_deployment_field progress)"
+
+      # Kudu status codes: 0 Pending, 1 Building, 2 Deploying, 3 Failed, 4 Success.
+      if [[ "$complete" == "true" && "$status" == "4" ]]; then
+        printf '\n'
+        log "Kudu deployment succeeded"
+        return 0
+      fi
+      if [[ "$status" == "3" ]]; then
+        printf '\n'
+        fail "Kudu deployment failed. Read the log at ${kudu_url%/latest}"
+      fi
+    fi
+
+    local now
+    now="$(date +%s)"
+    if (( now - started_at >= timeout_seconds )); then
+      printf '\n'
+      fail "Timed out waiting for the Kudu deployment to finish. Check ${kudu_url}. Last status: ${status:-unknown} ${message:-}"
+    fi
+
+    printf '.'
+    sleep "$POLL_INTERVAL_SECONDS"
+  done
+}
+
 wait_for_http_status() {
   local url="$1"
   local expected_status="${2:-200}"
@@ -239,13 +294,21 @@ zip -r "$ZIP_PATH" . \
   >/dev/null
 
 log "Deploying zip package to Azure App Service"
+previous_deployment_id="$(kudu_latest_deployment_field id)"
+# --async: the call returns once the package is accepted; the build is
+# watched below. A failure here is still a failure — the package did not
+# get through — so it is not swallowed.
 az webapp deploy \
   --resource-group "$AZURE_RESOURCE_GROUP" \
   --name "$AZURE_WEBAPP_NAME" \
   --src-path "$ZIP_PATH" \
   --type zip \
   --restart true \
+  --async true \
   --output none
+
+log "Waiting for the Kudu build and deployment to finish"
+wait_for_kudu_deployment "$previous_deployment_id" "$DEPLOY_TIMEOUT_SECONDS"
 
 log "Polling deployed app"
 wait_for_http_status "$APP_PUBLIC_BASE_URL" 200 "$DEPLOY_TIMEOUT_SECONDS"

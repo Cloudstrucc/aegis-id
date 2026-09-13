@@ -221,6 +221,28 @@ az webapp browse \
   --name "<globally-unique-app-name>"
 ```
 
+### How the zip deploy is watched
+
+Kudu builds the package on the App Service host (`SCM_DO_BUILD_DURING_DEPLOYMENT`
+runs `npm install` there), and on F1 that build takes four to five minutes —
+longer than the gateway in front of a synchronous `az webapp deploy` will wait.
+The synchronous call then answers **504 GatewayTimeout** while the build carries
+on and, usually, succeeds; the Kudu log ends in "Deployment successful" and the
+script has already exited non-zero. That made every dev deploy a coin toss.
+
+Both deploy scripts therefore call `az webapp deploy --async true` and then poll
+Kudu's own record of the deployment
+(`https://<app>.scm.azurewebsites.net/api/deployments/latest`, read with
+`az rest` using the signed-in identity — Kudu accepts an ARM bearer token, so no
+publishing credentials are involved) until it reports `status 4` / `complete`.
+The deployment id is captured *before* the upload so the previous, already
+successful deployment cannot be mistaken for the new one. A `status 3` fails
+the script with the log URL; `DEPLOY_TIMEOUT_SECONDS` (default 900) bounds the
+wait. Only then do the health and asset checks run.
+
+If you ever see the 504 from an older copy of the script, check that URL before
+redeploying: the deployment has very likely landed.
+
 ## Provision Dev, QA, Or Prod From Scratch
 
 The deploy scripts refresh existing App Services. Use the provision script once per environment to create the resource group, App Services, ACA-Py Azure Container Instances, and env-file values. Then use the deploy scripts for normal code refreshes.
