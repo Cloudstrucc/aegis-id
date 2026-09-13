@@ -408,7 +408,15 @@ function createApp() {
     })
   );
 
+  // Static assets are cached for a day in production, which is right for
+  // the browser and wrong for a deploy: a customer kept the previous
+  // stylesheet for up to 24 hours after every release, and a template that
+  // needed the new one rendered broken. The layout appends this to the
+  // stylesheet and script URLs, so a changed file is a new URL.
+  const assetVersion = computeAssetVersion();
+
   app.use((req, res, next) => {
+    res.locals.assetVersion = assetVersion;
     res.locals.appName = config.app.name;
     res.locals.currentPath = req.path;
     res.locals.verifiedIdMode = config.verifiedId.mode;
@@ -526,6 +534,23 @@ function createApp() {
   });
 
   return app;
+}
+
+// A short digest of the two files the layout links, taken once at startup.
+// Content-based rather than a build number, so an unchanged asset keeps its
+// cached URL across deploys that did not touch it.
+function computeAssetVersion() {
+  const crypto = require('node:crypto');
+  const fs = require('node:fs');
+  const hash = crypto.createHash('sha1');
+  for (const relative of ['styles/main.css', 'scripts/main.js']) {
+    try {
+      hash.update(fs.readFileSync(path.join(config.paths.public, relative)));
+    } catch (error) {
+      hash.update(String(Date.now()));
+    }
+  }
+  return hash.digest('hex').slice(0, 10);
 }
 
 module.exports = { createApp };

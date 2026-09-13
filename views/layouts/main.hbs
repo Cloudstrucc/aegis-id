@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{description}}">
     <title>{{#if (eq title appName)}}{{appName}}{{else}}{{title}} | {{appName}}{{/if}}</title>
-    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/main.css?v={{assetVersion}}">
   </head>
   <body{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>
     {{> site-header}}
@@ -16,6 +16,6 @@
     {{#each pageScripts}}
       <script src="{{src}}" defer></script>
     {{/each}}
-    <script src="/scripts/main.js" defer></script>
+    <script src="/scripts/main.js?v={{assetVersion}}" defer></script>
   </body>
 </html>
