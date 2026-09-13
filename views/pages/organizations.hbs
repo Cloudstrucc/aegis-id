@@ -51,15 +51,20 @@
           <div class="organization-tile__body">
             <span class="track-label">{{roleLabel}} / {{statusLabel}}</span>
             <h3>{{organization}}</h3>
-            <p>{{#if updatedAt}}Updated {{updatedAt}}{{else}}Ready to configure{{/if}}</p>
+            <p>{{#if updatedLabel}}Updated {{updatedLabel}}{{else}}Ready to configure{{/if}}</p>
           </div>
+          {{!-- Two rows on purpose: what you do with the organization, then
+               what you do to it. Mixing Delete into the same wrap as Open put
+               it wherever the line break happened to fall. --}}
           <div class="organization-tile__actions">
             <a class="button button--blue" href="{{openPath}}">{{#if requiresWalletSetup}}Set up wallet{{else}}Open{{/if}}</a>
-            <a class="button button--outline-info" href="/organizations/{{subscriptionId}}/{{id}}/domain">
-              {{#if identity.isVerified}}✓ {{identity.domain}}{{else}}Verify domain{{/if}}
+            <a class="button button--outline-info" href="/organizations/{{subscriptionId}}/{{id}}/domain" title="{{#if identity.isVerified}}{{identity.domain}}{{else}}Verify domain{{/if}}">
+              <span class="organization-tile__truncate">{{#if identity.isVerified}}✓ {{identity.domain}}{{else}}Verify domain{{/if}}</span>
             </a>
             <a class="button button--outline-success" href="/organizations/{{subscriptionId}}/{{id}}/root-wallets">Root wallets</a>
-            {{#if canManageWorkspace}}
+          </div>
+          {{#if canManageWorkspace}}
+            <div class="organization-tile__manage">
               {{#if isDisabled}}
                 <form action="/organizations/{{subscriptionId}}/{{id}}/enable" method="post">
                   <button class="button button--outline-secondary" type="submit">Enable</button>
@@ -72,8 +77,8 @@
               <form action="/organizations/{{subscriptionId}}/{{id}}/delete" method="post" data-confirm-message="Delete this organization workspace from your list? Audit history is retained.">
                 <button class="button button--outline-danger" type="submit">Delete</button>
               </form>
-            {{/if}}
-          </div>
+            </div>
+          {{/if}}
         </article>
       {{/each}}
     </div>

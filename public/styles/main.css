@@ -2203,7 +2203,10 @@ textarea:focus {
 
 .organization-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* As many tiles as fit at a width the action row can live with, rather
+     than three regardless — three across at 800px left "Verify domain"
+     as a single character. */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 18px;
 }
 
@@ -7913,27 +7916,78 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 /* Organization tile actions.
-   One primary action, the rest quiet — previously five buttons of near-equal
-   weight, so nothing said where to go next. */
-.organization-tile__actions {
+   Two rows: the first is what you do with the organization (Open leads,
+   the rest quiet), the second what you do to it. Both are grids rather
+   than wrapping flex, so every button in a row is the same height and the
+   rows line up tile to tile no matter how long a verified domain is. */
+.organization-tile__actions,
+.organization-tile__manage {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  align-items: center;
-  margin-top: 16px;
+  align-items: stretch;
 }
 
+.organization-tile__actions {
+  margin-top: 12px;
+}
+
+/* Every button in the row shares the width; when the tile is too narrow
+   for three, they wrap and the wrapped ones still fill their line. */
 .organization-tile__actions .button {
-  min-height: 38px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.organization-tile__manage {
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.organization-tile__actions .button,
+.organization-tile__manage .button {
+  min-height: 40px;
   padding: 0 14px;
   font-size: 13.5px;
+  white-space: nowrap;
+}
+
+.organization-tile__manage form {
+  margin: 0;
+}
+
+/* A verified domain can be long; it truncates inside its button rather
+   than pushing the row apart. */
+.organization-tile__truncate {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* The one thing to do next. */
 .organization-tile__actions > .button--blue:first-child {
-  min-height: 42px;
   padding: 0 20px;
   font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  /* Open takes the whole first line; the two quiet actions share the next. */
+  .organization-tile__actions > .button--blue:first-child {
+    flex-basis: 100%;
+    min-height: 44px;
+  }
+
+  .organization-tile__manage form {
+    flex: 1 1 0;
+  }
+
+  .organization-tile__manage .button {
+    width: 100%;
+  }
 }
 
 /* Everything else recedes, and destructive actions further still. */
@@ -7949,16 +8003,6 @@ body:has(.workspace-blade) .site-footer div span {
   border-color: var(--blue-600);
 }
 
-/* A hairline before the destructive pair, so Delete is never a slip away from
-   the action beside it. */
-.organization-tile__actions form:last-of-type {
-  margin-left: auto;
-}
-
-.organization-tile__actions form:last-of-type .button--ghost:hover {
-  color: #a3382b;
-  border-color: #e0b4ac;
-}
 
 /* Bootstrap-5 outline variants.
    The tile actions were five near-identical white buttons, so nothing carried

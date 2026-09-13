@@ -23,6 +23,17 @@ const { writeAuditEvent } = require('../services/audit-service');
 const router = express.Router();
 router.use('/organizations', requireAuthenticated);
 
+function formatTileDate(value) {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+  return date.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 router.get('/organizations/:subscriptionId', authorize('workspace.view'), async (req, res, next) => {
   try {
     const subscription = await loadSubscription(req);
@@ -42,6 +53,9 @@ router.get('/organizations/:subscriptionId', authorize('workspace.view'), async 
     const identityByWorkspace = new Map(identities.map((entry) => [entry.workspaceId, entry]));
     for (const organization of organizations) {
       organization.identity = identityByWorkspace.get(organization.id) || null;
+      // A raw ISO stamp wrapped mid-string on a phone. A date is what the
+      // tile is telling you anyway.
+      organization.updatedLabel = formatTileDate(organization.updatedAt);
     }
 
     res.render('pages/organizations', {
