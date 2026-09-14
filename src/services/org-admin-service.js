@@ -1252,13 +1252,23 @@ async function updateBranding(workspace, subscription, input = {}) {
     accentColor: normalizeColor(useCustom ? input.accentColor : selectedPalette.accentColor, selectedPalette.accentColor),
     backgroundColor: normalizeColor(useCustom ? input.backgroundColor : selectedPalette.backgroundColor, selectedPalette.backgroundColor),
     textColor: normalizeColor(useCustom ? input.textColor : selectedPalette.textColor, selectedPalette.textColor),
-    logoDataUrl: normalizeLogoDataUrl(input.logoDataUrl) || state.branding.logoDataUrl || '',
+    logoDataUrl: input.removeLogo ? '' : normalizeLogoDataUrl(input.logoDataUrl) || state.branding.logoDataUrl || '',
+    // Site-wide identity: what replaces "Vanguard Cloud Services" and
+    // "Aegis ID" once the organization is served from its own host. Stored
+    // now so the blade can be set up ahead of the host going live.
+    displayName: normalizeText(input.displayName, 80) || '',
+    productName: normalizeText(input.productName, 80) || '',
+    faviconDataUrl: input.removeFavicon ? '' : normalizeFaviconDataUrl(input.faviconDataUrl) || state.branding.faviconDataUrl || '',
+    supportEmail: normalizeEmail(input.supportEmail || '').slice(0, 160),
+    poweredByHidden: booleanInput(input.poweredByHidden),
     updatedAt: new Date().toISOString()
   };
   await writeState(state);
   await appendWorkspaceEvent(workspace, subscription, 'branding.updated', {
     paletteId: state.branding.paletteId,
-    hasLogo: Boolean(state.branding.logoDataUrl)
+    hasLogo: Boolean(state.branding.logoDataUrl),
+    displayName: state.branding.displayName || null,
+    productName: state.branding.productName || null
   });
   return state.branding;
 }
@@ -1783,6 +1793,11 @@ function defaultBranding() {
     backgroundColor: PALETTES[0].backgroundColor,
     textColor: PALETTES[0].textColor,
     logoDataUrl: '',
+    displayName: '',
+    productName: '',
+    faviconDataUrl: '',
+    supportEmail: '',
+    poweredByHidden: false,
     updatedAt: new Date().toISOString()
   };
 }
@@ -2936,6 +2951,19 @@ function normalizeLogoDataUrl(value = '') {
     return '';
   }
   return /^data:image\/(png|jpeg|jpg|webp);base64,/i.test(text) && text.length < 900000 ? text : '';
+}
+
+// A favicon is tiny by nature; a PNG or ICO or SVG under 64 KB.
+function normalizeFaviconDataUrl(value = '') {
+  const text = String(value || '').trim();
+  if (!text) {
+    return '';
+  }
+  return /^data:image\/(png|x-icon|vnd\.microsoft\.icon|svg\+xml);base64,/i.test(text) && text.length < 90000 ? text : '';
+}
+
+function booleanInput(value) {
+  return ['1', 'true', 'on', 'yes'].includes(String(value || '').trim().toLowerCase());
 }
 
 function normalizeImageEvidence(value = '') {

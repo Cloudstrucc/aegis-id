@@ -8227,3 +8227,21 @@ body:has(.workspace-blade) .site-footer div span {
 [data-import-ready][hidden] {
   display: none;
 }
+
+/* A site with a name but no logo — an organization that has not uploaded
+   one yet — shows its name where the lockup would be. */
+.brand-wordmark {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.footer-wordmark {
+  display: block;
+  font-size: 16px;
+}
+
+.footer-powered-by {
+  color: var(--muted);
+}

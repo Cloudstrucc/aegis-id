@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{description}}">
     <title>{{#if (eq title appName)}}{{appName}}{{else}}{{title}} | {{appName}}{{/if}}</title>
+    {{#if site.branding.faviconUrl}}<link rel="icon" href="{{site.branding.faviconUrl}}">{{/if}}
     <link rel="stylesheet" href="/styles/main.css?v={{assetVersion}}">
   </head>
   <body{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>

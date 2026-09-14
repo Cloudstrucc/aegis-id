@@ -22,6 +22,57 @@
 
 const config = require('../config');
 
+/**
+ * What the platform host looks like. An organization's own branding (phase C)
+ * has the same shape, so a template never needs to know which it was given.
+ *
+ * `appName` is what goes in <title>; it is the pair joined, or one of them
+ * alone when they are the same — an organization that calls both itself and
+ * its portal "Contoso ID" does not want "Contoso ID - Contoso ID".
+ */
+function platformBranding() {
+  return normalizeBranding({
+    displayName: 'Vanguard Cloud Services',
+    productName: 'Aegis ID',
+    logoUrl: '/images/vanguard-cloud-services-logo.png',
+    faviconUrl: '',
+    supportEmail: config.app.supportEmail || '',
+    // The platform is Aegis ID; it does not say "powered by" itself.
+    poweredByHidden: true,
+    isPlatform: true
+  });
+}
+
+/**
+ * Fill in the derived fields of a branding record. Accepts the organization
+ * record from org-admin (`logoDataUrl`) as well as the platform's own
+ * (`logoUrl`), and always yields something a template can render.
+ */
+function normalizeBranding(input = {}) {
+  const platform = { displayName: 'Vanguard Cloud Services', productName: 'Aegis ID' };
+  const displayName = String(input.displayName || '').trim() || platform.displayName;
+  // A blank product name keeps "Aegis ID" — the blade says so — rather than
+  // leaving the sign-in page saying "Sign in to Contoso." for an
+  // organization that only set its name.
+  const productName = String(input.productName || '').trim() || platform.productName;
+  const logoUrl = String(input.logoDataUrl || input.logoUrl || '').trim();
+  return {
+    displayName,
+    productName,
+    appName: productName && productName !== displayName ? `${displayName} - ${productName}` : displayName,
+    // The short name for prose: "Sign in to Aegis ID", "Your Contoso ID code".
+    shortName: productName || displayName,
+    logoUrl,
+    logoAlt: displayName,
+    faviconUrl: String(input.faviconDataUrl || input.faviconUrl || '').trim(),
+    supportEmail: String(input.supportEmail || '').trim(),
+    poweredByHidden: Boolean(input.poweredByHidden),
+    isPlatform: Boolean(input.isPlatform),
+    primaryColor: input.primaryColor || '',
+    accentColor: input.accentColor || ''
+  };
+}
+
 /** The deployment's own public origin, without a trailing slash. */
 function platformBaseUrl() {
   return String(config.app.publicBaseUrl || '').replace(/\/+$/, '');
@@ -46,7 +97,7 @@ function resolveSite(hostname) {
     baseUrl: platformBaseUrl(),
     workspaceId: null,
     subscriptionId: null,
-    branding: null
+    branding: platformBranding()
   };
 }
 
@@ -60,6 +111,8 @@ async function baseUrlForWorkspace(workspaceId) { // eslint-disable-line no-unus
 
 module.exports = {
   baseUrlForWorkspace,
+  normalizeBranding,
+  platformBranding,
   platformBaseUrl,
   platformHost,
   resolveSite

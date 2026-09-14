@@ -1,7 +1,11 @@
 <header class="site-header" aria-label="Primary">
-  <a class="brand-lockup" href="/" aria-label="Go to Vanguard Cloud Services - Aegis ID home" title="Home">
-    <img class="brand-logo" src="/images/vanguard-cloud-services-logo.png" alt="Vanguard Cloud Services">
-    <span class="brand-product-pill">Aegis ID</span>
+  <a class="brand-lockup" href="/" aria-label="Go to {{site.branding.appName}} home" title="Home">
+    {{#if site.branding.logoUrl}}
+      <img class="brand-logo" src="{{site.branding.logoUrl}}" alt="{{site.branding.logoAlt}}">
+    {{else}}
+      <span class="brand-wordmark">{{site.branding.displayName}}</span>
+    {{/if}}
+    {{#if site.branding.productName}}<span class="brand-product-pill">{{site.branding.productName}}</span>{{/if}}
   </a>
   <nav class="site-nav" aria-label="Site">
     {{#if isAuthenticated}}

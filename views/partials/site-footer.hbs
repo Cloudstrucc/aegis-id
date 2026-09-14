@@ -1,14 +1,22 @@
 <footer class="site-footer">
   <div>
-    <img class="footer-logo" src="/images/vanguard-cloud-services-logo.png" alt="Vanguard Cloud Services">
-    <strong>Aegis ID</strong>
+    {{#if site.branding.logoUrl}}
+      <img class="footer-logo" src="{{site.branding.logoUrl}}" alt="{{site.branding.logoAlt}}">
+    {{else}}
+      <strong class="footer-wordmark">{{site.branding.displayName}}</strong>
+    {{/if}}
+    <strong>{{site.branding.shortName}}</strong>
     <span>Portable identity assurance, wallet challenges, and interoperability testing in one governed platform.</span>
   </div>
   <span>
-    <a href="/support">Support</a>
+    <a href="{{#if site.branding.supportEmail}}{{#unless site.branding.isPlatform}}mailto:{{site.branding.supportEmail}}{{else}}/support{{/unless}}{{else}}/support{{/if}}">Support</a>
     &middot;
     <a href="/privacy">Privacy</a>
     &middot;
-    &copy; {{year}} Vanguard Cloud Services
+    &copy; {{year}} {{site.branding.displayName}}
+    {{#unless site.branding.poweredByHidden}}
+      &middot;
+      <span class="footer-powered-by">Powered by Aegis ID</span>
+    {{/unless}}
   </span>
 </footer>

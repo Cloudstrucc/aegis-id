@@ -218,6 +218,10 @@ document.querySelectorAll('[data-logo-upload]').forEach((input) => {
   input.addEventListener('change', () => handleLogoUpload(input));
 });
 
+document.querySelectorAll('[data-favicon-upload]').forEach((input) => {
+  input.addEventListener('change', () => handleFaviconUpload(input));
+});
+
 document.querySelectorAll('[data-image-to-hidden]').forEach((input) => {
   input.addEventListener('change', () => handleImageEvidence(input));
 });
@@ -877,6 +881,29 @@ function renderDemoResult(payload, actionName) {
 
   cards.forEach((card) => demoResult.append(card));
   demoResult.hidden = false;
+}
+
+// Same shape as the logo, much smaller: a favicon over 64 KB is a mistake.
+function handleFaviconUpload(input) {
+  const file = input.files?.[0];
+  const hiddenInput = input.closest('form')?.querySelector('[data-favicon-data-url]');
+  if (!hiddenInput) {
+    return;
+  }
+  hiddenInput.value = '';
+  if (!file) {
+    return;
+  }
+  if (file.size > 64 * 1024) {
+    input.value = '';
+    window.alert('Please choose a favicon under 64 KB.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.addEventListener('load', () => {
+    hiddenInput.value = String(reader.result || '');
+  });
+  reader.readAsDataURL(file);
 }
 
 function handleLogoUpload(input) {

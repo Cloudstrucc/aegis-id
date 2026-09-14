@@ -52,7 +52,7 @@
 
       <label class="checkline">
         <input name="consent" type="checkbox" value="yes" required>
-        <span>Vanguard Cloud Services can contact me about Aegis ID onboarding for this organization.</span>
+        <span>{{site.branding.displayName}} can contact me about {{site.branding.shortName}} onboarding for this organization.</span>
       </label>
       {{#if formErrors.email}}<p class="field-error">{{formErrors.email}}</p>{{/if}}
       {{#if formErrors.consent}}<p class="field-error">{{formErrors.consent}}</p>{{/if}}

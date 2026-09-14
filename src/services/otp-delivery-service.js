@@ -12,6 +12,7 @@ const FileJsonStore = require('./file-json-store');
 const { channelAllowed, getNotificationSettings } = require('./notification-settings-service');
 const { sendEmail, sendSms, maskRecipient } = require('../adapters/notify/notification-adapter');
 const { writeAuditEvent } = require('./audit-service');
+const { normalizeBranding } = require('./site-context-service');
 
 const logStore = new FileJsonStore(config.paths.notificationLog, []);
 const LOG_LIMIT = 200;
@@ -21,21 +22,21 @@ const LOG_LIMIT = 200;
  * wording lives in one place rather than being spread across call sites.
  */
 const TEMPLATES = {
-  'mfa-otp': ({ code }) => ({
-    subject: 'Your Aegis ID sign-in code',
+  'mfa-otp': ({ brand, code }) => ({
+    subject: `Your ${brand} sign-in code`,
     text: [
-      `Your Aegis ID sign-in code is ${code}.`,
+      `Your ${brand} sign-in code is ${code}.`,
       '',
       'This code expires in 10 minutes and can only be used once.',
       '',
       'If you did not try to sign in, change your password immediately.'
     ].join('\n'),
-    sms: `Aegis ID sign-in code: ${code}`
+    sms: `${brand} sign-in code: ${code}`
   }),
-  'password-reset': ({ resetUrl, expiresInMinutes }) => ({
-    subject: 'Reset your Aegis ID password',
+  'password-reset': ({ brand, resetUrl, expiresInMinutes }) => ({
+    subject: `Reset your ${brand} password`,
     text: [
-      'Someone asked to reset the password on your Aegis ID account.',
+      `Someone asked to reset the password on your ${brand} account.`,
       '',
       resetUrl,
       '',
@@ -43,14 +44,14 @@ const TEMPLATES = {
       '',
       'If this was not you, no action is needed — your password has not changed.'
     ].join('\n'),
-    sms: `Reset your Aegis ID password: ${resetUrl}`
+    sms: `Reset your ${brand} password: ${resetUrl}`
   }),
-  'email-verification': ({ verifyUrl, expiresInHours, displayName }) => ({
-    subject: 'Confirm your Aegis ID email address',
+  'email-verification': ({ brand, verifyUrl, expiresInHours, displayName }) => ({
+    subject: `Confirm your ${brand} email address`,
     text: [
       `${displayName ? `Hello ${displayName},` : 'Hello,'}`,
       '',
-      'Confirm this address to finish setting up your Aegis ID account:',
+      `Confirm this address to finish setting up your ${brand} account:`,
       '',
       verifyUrl,
       '',
@@ -58,10 +59,10 @@ const TEMPLATES = {
       '',
       'If you did not create an account, you can ignore this message.'
     ].join('\n'),
-    sms: `Confirm your Aegis ID email: ${verifyUrl}`
+    sms: `Confirm your ${brand} email: ${verifyUrl}`
   }),
-  'account-reenrolment': ({ reenrolUrl, expiresInMinutes, displayName }) => ({
-    subject: 'Set up a new passkey for your Aegis ID account',
+  'account-reenrolment': ({ brand, reenrolUrl, expiresInMinutes, displayName }) => ({
+    subject: `Set up a new passkey for your ${brand} account`,
     text: [
       `${displayName ? `Hello ${displayName},` : 'Hello,'}`,
       '',
@@ -75,14 +76,14 @@ const TEMPLATES = {
       'If you did not ask for this, tell your administrator immediately —',
       'someone may be trying to take over your account.'
     ].join('\n'),
-    sms: `Set up a new Aegis ID passkey: ${reenrolUrl}`
+    sms: `Set up a new ${brand} passkey: ${reenrolUrl}`
   }),
-  'approver-recovery': ({ approvalUrl, expiresInHours, organizationName, requesterEmail }) => ({
+  'approver-recovery': ({ brand, approvalUrl, expiresInHours, organizationName, requesterEmail }) => ({
     subject: `Approve a recovery for ${organizationName || 'your organization'}`,
     text: [
       'Hello,',
       '',
-      `Your wallet is a root wallet of ${organizationName || 'an Aegis ID organization'}.`,
+      `Your wallet is a root wallet of ${organizationName || `a ${brand} organization`}.`,
       `${requesterEmail || 'An administrator'} has asked to recover their access,`,
       'and two root wallets have to approve before anything is issued.',
       '',
@@ -94,10 +95,10 @@ const TEMPLATES = {
       'If you were not expecting this, do not approve it. Someone may be trying',
       'to take over that account — tell the other root wallet holders.'
     ].join('\n'),
-    sms: `Approve an Aegis ID recovery for ${organizationName || 'your organization'}: ${approvalUrl}`
+    sms: `Approve an ${brand} recovery for ${organizationName || 'your organization'}: ${approvalUrl}`
   }),
-  'approver-recovery-status': ({ statusUrl, expiresInHours, organizationName, approvalsRequired }) => ({
-    subject: 'Your Aegis ID recovery is waiting on your root wallets',
+  'approver-recovery-status': ({ brand, statusUrl, expiresInHours, organizationName, approvalsRequired }) => ({
+    subject: `Your ${brand} recovery is waiting on your root wallets`,
     text: [
       'Hello,',
       '',
@@ -113,12 +114,12 @@ const TEMPLATES = {
       'wallet holders, not to you. If you did not ask for this, no action is',
       'needed; nothing can be issued without those approvals.'
     ].join('\n'),
-    sms: `Your Aegis ID recovery is waiting on root wallet approvals: ${statusUrl}`
+    sms: `Your ${brand} recovery is waiting on root wallet approvals: ${statusUrl}`
   }),
-  'wallet-recovery': ({ code, walletId }) => ({
-    subject: 'Your Aegis ID wallet recovery code',
+  'wallet-recovery': ({ brand, code, walletId }) => ({
+    subject: `Your ${brand} wallet recovery code`,
     text: [
-      `Your Aegis ID verification code is ${code}.`,
+      `Your ${brand} verification code is ${code}.`,
       '',
       `Wallet: ${walletId}`,
       'This code expires in 10 minutes and can only be used once.',
@@ -126,7 +127,7 @@ const TEMPLATES = {
       'If you did not request this, someone may be attempting to recover your wallet.',
       'Contact your organization administrator immediately.'
     ].join('\n'),
-    sms: `Aegis ID verification code: ${code}`
+    sms: `${brand} verification code: ${code}`
   })
 };
 
@@ -148,7 +149,11 @@ async function deliverMessage({ type, email, phone, variables = {}, context = {}
   }
 
   const settings = await getNotificationSettings();
-  const { subject, text, sms } = template(variables);
+  // Every message names the product. On the platform that is "Aegis ID"; a
+  // message sent on an organization's behalf carries its own name via
+  // context.branding, so a Contoso holder's code arrives from Contoso.
+  const brand = normalizeBranding(context.branding || {}).shortName;
+  const { subject, text, sms } = template({ ...variables, brand });
   const channels = [];
   const failures = [];
 

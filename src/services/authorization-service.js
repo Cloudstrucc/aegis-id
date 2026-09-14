@@ -194,7 +194,7 @@ const POLICIES = Object.freeze({
   }),
   'org.branding.manage': policy('org.branding.manage', 'orgPrivilege', 'branding', 'update', {
     privilegeId: 'branding.manage',
-    fields: ['paletteId', 'primaryColor', 'accentColor', 'backgroundColor', 'textColor', 'logoDataUrl']
+    fields: ['paletteId', 'primaryColor', 'accentColor', 'backgroundColor', 'textColor', 'logoDataUrl', 'displayName', 'productName', 'faviconDataUrl', 'supportEmail', 'poweredByHidden']
   }),
   'org.adminAssurance.manage': policy('org.adminAssurance.manage', 'orgPrivilege', 'admin-assurance', 'manage', {
     privilegeId: 'admin.assurance.manage'

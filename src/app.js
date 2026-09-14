@@ -421,7 +421,9 @@ function createApp() {
 
   app.use((req, res, next) => {
     res.locals.assetVersion = assetVersion;
-    res.locals.appName = config.app.name;
+    // The site's own name, so a page on an organization host is titled for
+    // that organization. The platform host still resolves to config.app.name.
+    res.locals.appName = req.site?.branding?.appName || config.app.name;
     res.locals.currentPath = req.path;
     res.locals.verifiedIdMode = config.verifiedId.mode;
     res.locals.testFixturesEnabled = config.app.testFixturesEnabled;

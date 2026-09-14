@@ -2058,8 +2058,8 @@
 <section id="org-branding" class="band band--white blade-panel" data-blade-panel="branding">
   <div class="section-heading">
     <p class="eyebrow">Organization branding</p>
-    <h2>Control the wallet context for this org.</h2>
-    <p>Choose a palette or upload a small logo. The org profile API exposes this branding to the iOS wallet when it is viewing this organization context.</p>
+    <h2>How this organization presents itself.</h2>
+    <p>The palette and logo reach the wallet whenever it shows this organization. The name, product name and favicon are what replace the platform's own on every page once the organization is served from its own domain.</p>
   </div>
   <article class="blade-guidance">
     <strong>Advice</strong>
@@ -2072,8 +2072,8 @@
       {{else}}
         <span>V</span>
       {{/if}}
-      <h3>{{workspace.organization}}</h3>
-      <p>Aegis ID wallet profile</p>
+      <h3>{{#if orgAdmin.branding.displayName}}{{orgAdmin.branding.displayName}}{{else}}{{workspace.organization}}{{/if}}</h3>
+      <p>{{#if orgAdmin.branding.productName}}{{orgAdmin.branding.productName}}{{else}}Aegis ID{{/if}} wallet profile</p>
     </article>
 
     {{#if orgAdmin.canManageBranding}}
@@ -2111,7 +2111,43 @@
           <label for="logoUpload">Logo upload</label>
           <input id="logoUpload" type="file" accept="image/png,image/jpeg,image/webp" data-logo-upload>
           <input type="hidden" name="logoDataUrl" data-logo-data-url>
+          {{#if orgAdmin.branding.logoDataUrl}}
+            <label class="checkline"><input type="checkbox" name="removeLogo" value="1"><span>Remove the current logo</span></label>
+          {{/if}}
         </div>
+
+        <p class="form-note">Site identity</p>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label" for="brandDisplayName">Organization name <span class="field-tooltip" tabindex="0" data-tooltip="Shown in the header, footer and page titles in place of the platform's name. Leave blank to use the workspace name.">?</span></label>
+            <input id="brandDisplayName" name="displayName" type="text" maxlength="80" value="{{orgAdmin.branding.displayName}}" placeholder="{{workspace.organization}}">
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="brandProductName">Product name <span class="field-tooltip" tabindex="0" data-tooltip="The pill beside the logo and the word in &quot;Sign in to …&quot;. Leave blank to keep &quot;Aegis ID&quot;.">?</span></label>
+            <input id="brandProductName" name="productName" type="text" maxlength="80" value="{{orgAdmin.branding.productName}}" placeholder="Aegis ID">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="faviconUpload">Favicon</label>
+            <input id="faviconUpload" type="file" accept="image/png,image/x-icon,image/svg+xml" data-favicon-upload>
+            <input type="hidden" name="faviconDataUrl" data-favicon-data-url>
+            {{#if orgAdmin.branding.faviconDataUrl}}
+              <label class="checkline"><input type="checkbox" name="removeFavicon" value="1"><span>Remove the current favicon</span></label>
+            {{/if}}
+          </div>
+          <div class="field-group">
+            <label for="brandSupportEmail">Support email</label>
+            <input id="brandSupportEmail" name="supportEmail" type="email" maxlength="160" value="{{orgAdmin.branding.supportEmail}}" placeholder="help@example.com">
+            <p class="field-hint">Where the footer's Support link points on your domain. Blank keeps the platform support page.</p>
+          </div>
+        </div>
+        <label class="checkline">
+          <input type="checkbox" name="poweredByHidden" value="1" {{#if orgAdmin.branding.poweredByHidden}}checked{{/if}}>
+          <span>Hide "Powered by Aegis ID" in the footer</span>
+        </label>
+        <p class="field-hint">Site identity takes effect on your own domain. Until then it is stored and shown here.</p>
+
         <button class="button button--primary button--blue" type="submit">Save Branding</button>
       </form>
     {{/if}}

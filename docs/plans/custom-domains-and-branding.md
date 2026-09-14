@@ -1,6 +1,6 @@
 # Custom Domains And White-Label Branding — Implementation Plan
 
-Status: **proposed** · Owner: platform · Target: Enterprise plan feature
+Status: **in progress — phases A and B shipped** · Owner: platform · Target: Enterprise plan feature
 
 ## What this delivers
 
@@ -232,8 +232,8 @@ host — existing credentials keep working, only the vanity host stops, matching
 
 | Phase | Work | Size |
 |---|---|---|
-| **A. Base URL per request** | `site-context` middleware (platform host only, no custom hosts yet); replace the 33 `publicBaseUrl` reads; `baseUrlForWorkspace`; tests asserting no emitted URL reads config directly. Ships silently — no behaviour change. | 2–3 days |
-| **B. Branding site-wide** | Branding fields + blade; templates read `site.branding`; email templates take branding; platform defaults from config. Visible only inside workspaces until C. | 2 days |
+| **A. Base URL per request** — *done* | `site-context` middleware; the 33 `publicBaseUrl` reads replaced; `baseUrlForWorkspace`; `tests/site-context.test.js` forbids a new direct read. No behaviour change. | 2–3 days |
+| **B. Branding site-wide** — *done* | `displayName`, `productName`, `faviconDataUrl`, `supportEmail`, `poweredByHidden` on org branding and the Branding blade; header, footer, layout title, home, sign-in, register, subscribe and not-found read `site.branding`; `deliverMessage` names the brand from `context.branding`. Platform host unchanged; organization values take effect on their host in C. | 2 days |
 | **C. Host resolution + routes** | Hosting record, index, organization-host routing table (§3), per-host OIDC issuer (§4), DID document on host, isolation check, `CUSTOM_HOSTING_PROVIDER=none` for local. | 3–4 days |
 | **D. Azure provisioning** | Managed identity + role, hostname binding, managed certificate, status polling, deactivate; DNS instructions page reusing the verification UI. | 2–3 days |
 | **E. Plan gating, docs, e2e** | 402 enforcement, lapse handling, operator guide + help page, e2e journey on a custom host with `/etc/hosts`. | 1–2 days |
