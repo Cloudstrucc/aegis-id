@@ -14,6 +14,7 @@
 const crypto = require('node:crypto');
 
 const config = require('../config');
+const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { deliverMessage } = require('./otp-delivery-service');
 const { writeAuditEvent } = require('./audit-service');
@@ -119,7 +120,7 @@ async function grantReenrolment(userId, { actorEmail, baseUrl, reason } = {}) {
   });
   await grantStore.write(grants);
 
-  const reenrolUrl = `${String(baseUrl || config.app.publicBaseUrl).replace(/\/$/, '')}/auth/reenrol/${token}`;
+  const reenrolUrl = `${String(baseUrl || platformBaseUrl()).replace(/\/$/, '')}/auth/reenrol/${token}`;
   const delivery = await deliverMessage({
     type: 'account-reenrolment',
     email: user.email,

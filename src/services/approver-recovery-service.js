@@ -35,6 +35,7 @@
 const crypto = require('node:crypto');
 
 const config = require('../config');
+const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { deliverMessage } = require('./otp-delivery-service');
 const { writeAuditEvent } = require('./audit-service');
@@ -289,7 +290,7 @@ async function startApproverRecovery(emailInput, { baseUrl, context = {} } = {})
   await store.write(records);
 
   // The requester gets a pointer to a status page and no token at all.
-  const statusUrl = `${String(baseUrl || config.app.publicBaseUrl).replace(/\/$/, '')}/auth/recover/approvals/${statusToken}`;
+  const statusUrl = `${String(baseUrl || platformBaseUrl()).replace(/\/$/, '')}/auth/recover/approvals/${statusToken}`;
   await deliverMessage({
     type: 'approver-recovery-status',
     email: user.email,

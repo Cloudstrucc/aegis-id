@@ -1,7 +1,6 @@
 const express = require('express');
 const QRCode = require('qrcode');
 
-const config = require('../config');
 const { createAuthorizationCode, exchangeAuthorizationCode } = require('../services/oidc-provider-service');
 const { listCredentialMembershipsForEmail } = require('../services/org-admin-service');
 const {
@@ -161,7 +160,8 @@ router.post('/oidc/authorize', authorize('api.oidcProvider.external'), async (re
       name: record.email,
       walletId: record.walletId,
       organizationId,
-      organizations
+      organizations,
+      issuerBaseUrl: req.site.baseUrl
     });
     await writeAuditEvent('oidc-provider.authorization.issued', {
       clientId: record.clientId,
@@ -213,10 +213,7 @@ router.post('/oidc/token', authorize('api.oidcProvider.external'), async (req, r
 });
 
 function getRequestBaseUrl(req) {
-  if (config.app.publicBaseUrl) {
-    return config.app.publicBaseUrl.replace(/\/$/, '');
-  }
-  return `${req.protocol}://${req.get('host')}`;
+  return req.site.baseUrl;
 }
 
 module.exports = router;

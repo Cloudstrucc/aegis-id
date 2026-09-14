@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 
 const config = require('../config');
+const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { assertOrgPrivilege, listCredentialMembershipsForEmail } = require('./org-admin-service');
 const { createExternalWalletChallenge, getWalletChallenge, listWalletChallengeLedger } = require('./wallet-challenge-service');
@@ -110,7 +111,7 @@ async function getConnectedAppsView(workspace, subscription, query = {}, options
     secretCreated: options.secretCreated || null,
     supportedGrantTypes: SUPPORTED_GRANTS.map((value) => ({ value, label: grantLabel(value) })),
     supportedScopes: DEFAULT_SCOPES,
-    defaultRedirectUri: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth/callback`,
+    defaultRedirectUri: `${options.publicBaseUrl || platformBaseUrl()}/oauth/callback`,
     stats: {
       total: apps.length,
       enabled: apps.filter((app) => app.status === 'enabled').length,
@@ -1258,11 +1259,11 @@ function decorateApp(app, options = {}) {
     statusLabel: safeApp.status === 'enabled' ? 'Enabled' : safeApp.status === 'deleted' ? 'Deleted' : 'Disabled',
     nextStatus: safeApp.status === 'enabled' ? 'disabled' : 'enabled',
     nextStatusLabel: safeApp.status === 'enabled' ? 'Disable' : 'Enable',
-    discoveryUrl: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth2/.well-known/openid-configuration`,
-    authorizationEndpoint: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth2/authorize`,
-    tokenEndpoint: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth2/token`,
-    backchannelAuthenticationEndpoint: `${options.publicBaseUrl || config.app.publicBaseUrl}/oauth2/backchannel-authentication`,
-    walletChallengeEndpoint: `${options.publicBaseUrl || config.app.publicBaseUrl}/api/connected-apps/wallet-challenges`,
+    discoveryUrl: `${options.publicBaseUrl || platformBaseUrl()}/oauth2/.well-known/openid-configuration`,
+    authorizationEndpoint: `${options.publicBaseUrl || platformBaseUrl()}/oauth2/authorize`,
+    tokenEndpoint: `${options.publicBaseUrl || platformBaseUrl()}/oauth2/token`,
+    backchannelAuthenticationEndpoint: `${options.publicBaseUrl || platformBaseUrl()}/oauth2/backchannel-authentication`,
+    walletChallengeEndpoint: `${options.publicBaseUrl || platformBaseUrl()}/api/connected-apps/wallet-challenges`,
     scopesText: safeApp.scopes.join(' '),
     grantTypesRawText: safeApp.grantTypes.join(' '),
     grantTypesText: safeApp.grantTypes.map(grantLabel).join(', '),

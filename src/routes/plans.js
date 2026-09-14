@@ -124,7 +124,7 @@ router.post('/checkout/pay', authorize('public.plans'), async (req, res, next) =
 
     const checkout = await startCheckout({
       planId: intent.planId,
-      returnBaseUrl: config.app.publicBaseUrl
+      returnBaseUrl: req.site.baseUrl
     });
     // Only the handle is kept. It identifies the checkout to us and is worth
     // nothing anywhere else.

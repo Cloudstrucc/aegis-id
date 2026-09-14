@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 
 const config = require('../config');
+const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { assertCanAddWorkspace } = require('./plan-service');
 const { ensureIdentity, getIdentity } = require('./organization-identity-service');
@@ -83,7 +84,7 @@ function getPlatformDefinitions() {
             textField('tenantDisplayName', 'Tenant display name', 'Vanguard Cloud Services'),
             textField('azureTenantId', 'Azure tenant ID'),
             textField('adminDomain', 'Primary verified domain', 'vanguardcs.ca'),
-            urlField('publicBaseUrl', 'Public HTTPS app URL', config.app.publicBaseUrl),
+            urlField('publicBaseUrl', 'Public HTTPS app URL', platformBaseUrl()),
             textField('verifiedIdAdminRole', 'Verified ID admin role', 'Authentication Policy Administrator'),
             selectField('setupMode', 'Verified ID setup mode', [
               ['advanced', 'Advanced setup with Key Vault'],
@@ -261,7 +262,7 @@ function getPlatformDefinitions() {
           fields: [
             textField('clientId', 'Client ID'),
             textField('clientSecretReference', 'Client secret reference'),
-            urlField('redirectUri', 'Redirect URI', `${config.app.publicBaseUrl}/auth/keycloak/callback`),
+            urlField('redirectUri', 'Redirect URI', `${platformBaseUrl()}/auth/keycloak/callback`),
             urlField('metadataUrl', 'Metadata or discovery URL')
           ]
         },
@@ -311,7 +312,7 @@ function getPlatformDefinitions() {
           fields: [
             textField('clientId', 'Client ID'),
             textField('clientSecretReference', 'Client secret reference'),
-            urlField('redirectUri', 'Redirect URI', `${config.app.publicBaseUrl}/auth/okta/callback`),
+            urlField('redirectUri', 'Redirect URI', `${platformBaseUrl()}/auth/okta/callback`),
             urlField('metadataUrl', 'SAML metadata URL')
           ]
         },
@@ -362,7 +363,7 @@ function getPlatformDefinitions() {
           fields: [
             textField('clientId', 'Client ID / Entity ID'),
             textField('secretOrCertReference', 'Secret or certificate reference'),
-            urlField('callbackOrAcsUrl', 'Callback / ACS URL', `${config.app.publicBaseUrl}/auth/federation/callback`)
+            urlField('callbackOrAcsUrl', 'Callback / ACS URL', `${platformBaseUrl()}/auth/federation/callback`)
           ]
         },
         {
@@ -786,7 +787,7 @@ async function runMicrosoftVerifiedIdTest(platformState, input) {
   const oneTimeClientSecret = String(input.oneTimeClientSecret || '').trim();
   const effectiveMode = testMode === 'live' ? 'live' : 'mock';
   const client = new VerifiedIdClient({
-    publicBaseUrl: config.app.publicBaseUrl,
+    publicBaseUrl: platformBaseUrl(),
     config: {
       ...config.verifiedId,
       mode: effectiveMode,

@@ -13,6 +13,7 @@ const crypto = require('node:crypto');
 const bcrypt = require('bcryptjs');
 
 const config = require('../config');
+const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { deliverMessage } = require('./otp-delivery-service');
 const { writeAuditEvent } = require('./audit-service');
@@ -81,7 +82,7 @@ async function requestPasswordReset(emailInput, { baseUrl, context = {} } = {}) 
   });
   await resetStore.write(others);
 
-  const resetUrl = `${String(baseUrl || config.app.publicBaseUrl).replace(/\/$/, '')}/auth/reset/${token}`;
+  const resetUrl = `${String(baseUrl || platformBaseUrl()).replace(/\/$/, '')}/auth/reset/${token}`;
   const delivery = await deliverMessage({
     type: 'password-reset',
     email: user.email,

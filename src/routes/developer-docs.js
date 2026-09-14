@@ -156,7 +156,7 @@ function buildOpenApiSpec(baseUrl) {
 }
 
 function getRequestBaseUrl(req) {
-  return `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
+  return req.site.baseUrl;
 }
 
 function renderDocsWorkspace(req, res) {

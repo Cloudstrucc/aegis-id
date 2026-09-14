@@ -18,6 +18,7 @@ const crypto = require('node:crypto');
 const dns = require('node:dns/promises');
 
 const config = require('../config');
+const { platformBaseUrl, platformHost } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { writeAuditEvent } = require('./audit-service');
 const { consume } = require('./rate-limit-service');
@@ -419,7 +420,7 @@ async function revokeVerification(workspaceId, { actorEmail, reason } = {}) {
  * does, and is a valid did:web path form for later.
  */
 function publicView(record) {
-  const host = String(config.app.publicBaseUrl || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  const host = platformHost();
   const isVerified = record.status === 'verified' && Boolean(record.domain);
 
   return {
@@ -436,7 +437,7 @@ function publicView(record) {
     revokedReason: record.revokedReason || null,
     // What a holder sees beside the name.
     displayIdentity: isVerified ? record.domain : record.handle,
-    canonicalUrl: `${config.app.publicBaseUrl}/orgs/${record.handle}`,
+    canonicalUrl: `${platformBaseUrl()}/orgs/${record.handle}`,
     // Reserved for per-organization DIDs once org keys exist; the path form is
     // what makes it possible without a custom domain per customer.
     didWeb: isVerified

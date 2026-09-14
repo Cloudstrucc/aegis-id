@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const QRCode = require('qrcode');
 
 const config = require('../config');
+const { baseUrlForWorkspace } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { revokeWorkspaceMemberRole, setWorkspaceMemberRole } = require('./platform-service');
 const { assertBinding } = require('./wallet-registry-service');
@@ -1509,7 +1510,7 @@ async function getOrganizationBranding(organizationId) {
 
 async function getCredentialInvitationView(organizationId, credentialId, options = {}) {
   const states = await stateStore.read();
-  const publicBaseUrl = (options.publicBaseUrl || config.app.publicBaseUrl).replace(/\/$/, '');
+  const publicBaseUrl = (options.publicBaseUrl || await baseUrlForWorkspace(organizationId)).replace(/\/$/, '');
   const state = states.find((record) => record.workspaceId === organizationId);
   if (!state) {
     throw notFound('Credential invitation was not found.');
@@ -2443,7 +2444,7 @@ function buildAdminProfile(workspace, subscription, state) {
 }
 
 async function buildCredentialInvitation(workspace, credential, options = {}) {
-  const publicBaseUrl = (options.publicBaseUrl || config.app.publicBaseUrl).replace(/\/$/, '');
+  const publicBaseUrl = (options.publicBaseUrl || await baseUrlForWorkspace(workspace.id)).replace(/\/$/, '');
   const walletParams = new URLSearchParams({
     organization_id: workspace.id,
     organization_name: workspace.organization || credential.organizationName || 'Vanguard organization',

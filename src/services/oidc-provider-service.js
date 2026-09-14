@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 
 const config = require('../config');
+const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 
 const store = new FileJsonStore(config.paths.oidcCodes, []);
@@ -16,7 +17,9 @@ function nowIso() {
 async function createAuthorizationCode(input = {}) {
   const code = `aegis-code-${createToken(18)}`;
   const claims = {
-    iss: `${config.app.publicBaseUrl}/oidc`,
+    // The host the sign-in started on. Falls back to the platform so a
+    // caller without a request still mints a valid token.
+    iss: `${String(input.issuerBaseUrl || platformBaseUrl()).replace(/\/+$/, '')}/oidc`,
     sub: normalizeSubject(input.email),
     aud: normalizeText(input.clientId, 160),
     email: normalizeEmail(input.email),

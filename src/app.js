@@ -29,6 +29,7 @@ const developerDocsRoutes = require('./routes/developer-docs');
 const didWebRoutes = require('./routes/did-web');
 const { attachAuthLocals } = require('./middleware/auth');
 const { attachLocalTestMode } = require('./middleware/local-test-mode');
+const { attachSiteContext } = require('./middleware/site-context');
 const { configurePassport } = require('./services/passport-service');
 
 function registerHandlebars() {
@@ -335,6 +336,9 @@ function createApp() {
     })
   );
   app.use(morgan(config.app.env === 'production' ? 'combined' : 'dev'));
+  // First, so every route — including the DID document and the well-known
+  // files mounted before the session — knows which site it is answering for.
+  app.use(attachSiteContext);
   // Before the body parsers on purpose: the Stripe signature is computed over
   // the exact bytes sent, and a parsed-then-restringified body will not match.
   app.use('/', billingWebhookRoutes);

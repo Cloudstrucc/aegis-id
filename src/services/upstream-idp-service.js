@@ -1,13 +1,14 @@
 const crypto = require('node:crypto');
 
 const config = require('../config');
+const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 
 const upstreamStateStore = new FileJsonStore(config.paths.connectedAppUpstreamStates, []);
 const STATE_TTL_MS = 10 * 60 * 1000;
 
 function isUpstreamFederationEnabled() {
-  const provider = getConfiguredProvider(config.app.publicBaseUrl);
+  const provider = getConfiguredProvider(platformBaseUrl());
   return provider.enabled;
 }
 
@@ -110,7 +111,7 @@ function getConfiguredProvider(baseUrl = '') {
   const entra = upstream.entra || {};
   const tenantId = normalizeText(entra.tenantId, 160);
   const issuer = normalizeText(entra.issuer, 500) || `https://login.microsoftonline.com/${tenantId}/v2.0`;
-  const normalizedBaseUrl = normalizeText(baseUrl || config.app.publicBaseUrl, 500).replace(/\/$/, '');
+  const normalizedBaseUrl = normalizeText(baseUrl || platformBaseUrl(), 500).replace(/\/$/, '');
   const provider = {
     id: 'entra',
     tenantId,

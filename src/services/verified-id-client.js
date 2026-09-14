@@ -3,11 +3,12 @@ const msal = require('@azure/msal-node');
 const QRCode = require('qrcode');
 
 const config = require('../config');
+const { platformBaseUrl } = require('./site-context-service');
 
 class VerifiedIdClient {
   constructor(options = {}) {
     this.config = options.config || config.verifiedId;
-    this.publicBaseUrl = options.publicBaseUrl || config.app.publicBaseUrl;
+    this.publicBaseUrl = options.publicBaseUrl || platformBaseUrl();
     this.msalClient = null;
   }
 

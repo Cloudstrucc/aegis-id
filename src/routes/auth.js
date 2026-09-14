@@ -270,7 +270,7 @@ router.post('/auth/register/passkey/verify', requireAnonymous, authorize('auth.p
 
     // With no password, registering proves nothing about the address, so it has
     // to be confirmed before the account is much use.
-    await sendVerificationEmail(user, { baseUrl: config.app.publicBaseUrl });
+    await sendVerificationEmail(user, { baseUrl: req.site.baseUrl });
 
     await writeAuditEvent('auth.user.registered', {
       userId: user.id,
@@ -750,7 +750,7 @@ router.post('/auth/forgot', requireAnonymous, authorize('auth.passwordReset'), a
 
     if (byEmail.allowed && byIp.allowed) {
       await requestPasswordReset(email, {
-        baseUrl: config.app.publicBaseUrl,
+        baseUrl: req.site.baseUrl,
         context: { ip: req.ip }
       });
     } else {

@@ -14,6 +14,7 @@ const express = require('express');
 const QRCode = require('qrcode');
 
 const config = require('../config');
+const { platformHost } = require('../services/site-context-service');
 const { authorize } = require('../middleware/authorization');
 const { requireAuthenticated } = require('../middleware/auth');
 const { getWorkspaceForSubscription } = require('../services/platform-service');
@@ -181,7 +182,7 @@ router.get('/help/domain-verification', authorize('public.help'), (req, res) => 
     providers: DNS_PROVIDERS,
     exampleHost: '_aegis-challenge',
     exampleValue: 'aegis-domain-verification=EXAMPLE-TOKEN',
-    platformHost: String(config.app.publicBaseUrl || '').replace(/^https?:\/\//, '')
+    platformHost: platformHost()
   });
 });
 

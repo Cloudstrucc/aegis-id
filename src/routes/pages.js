@@ -366,7 +366,7 @@ router.post('/admin/account-recovery', authorize('admin.accountRecovery.manage')
   try {
     await grantReenrolment(req.body.userId, {
       actorEmail: req.user?.email,
-      baseUrl: config.app.publicBaseUrl,
+      baseUrl: req.site.baseUrl,
       reason: req.body.reason
     });
     return res.redirect(303, '/admin/account-recovery?saved=1');
@@ -600,8 +600,7 @@ router.get('/health', authorize('admin.health.view'), async (req, res, next) => 
 
 router.get('/lab/mock-wallet/:kind/:state', requireAuthenticated, authorize('api.verifiedId.present'), async (req, res, next) => {
   try {
-    const publicBaseUrl = config.app.publicBaseUrl.replace(/\/$/, '');
-    const requestUrl = `${publicBaseUrl}${req.originalUrl}`;
+    const requestUrl = `${req.site.baseUrl}${req.originalUrl}`;
     const qrCodeDataUrl = await QRCode.toDataURL(requestUrl, { margin: 1, width: 460 });
 
     res.render('pages/mock-wallet', {
@@ -674,7 +673,7 @@ function buildOidcDiscovery(issuer, provider) {
 }
 
 function getRequestBaseUrl(req) {
-  return `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
+  return req.site.baseUrl;
 }
 
 module.exports = router;

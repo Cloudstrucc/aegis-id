@@ -299,7 +299,7 @@ async function getCredentialMembershipWorkspaceIds(req) {
 }
 
 function getRequestBaseUrl(req) {
-  return `${req.protocol}://${req.get('host')}`.replace(/\/$/, '');
+  return req.site.baseUrl;
 }
 
 function renderPlatformTestError(res, subscription, workspace, platform, error) {

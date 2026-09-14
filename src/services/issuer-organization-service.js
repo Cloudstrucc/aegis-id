@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const QRCode = require('qrcode');
 
 const config = require('../config');
+const { baseUrlForWorkspace } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { createIosWalletDeepLink, createOutOfBandInvitation } = require('../adapters/aries/aries-lab-adapter');
 
@@ -30,7 +31,7 @@ function useAriesLabInvitations(options = {}) {
 async function createProductOrganizationInvitation(subscription, workspace) {
   const organizationId = workspace.id;
   const organizationName = workspace.organization || subscription.organization || 'Vanguard subscriber';
-  const publicBaseUrl = config.app.publicBaseUrl.replace(/\/$/, '');
+  const publicBaseUrl = await baseUrlForWorkspace(organizationId);
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   const params = new URLSearchParams({
@@ -93,7 +94,7 @@ async function createLabOrganizationInvitation(subscription, workspace) {
     vanguard_org_id: organizationId,
     vanguard_subscription_id: subscription.id,
     vanguard_org_name: organizationName,
-    vanguard_web_app_url: config.app.publicBaseUrl.replace(/\/$/, '')
+    vanguard_web_app_url: await baseUrlForWorkspace(organizationId)
   });
   const iosDeepLinkUrl = createIosWalletDeepLink(decoratedInvitationUrl);
   const now = new Date().toISOString();
