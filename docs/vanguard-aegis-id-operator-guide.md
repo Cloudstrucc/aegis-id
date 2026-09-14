@@ -562,6 +562,10 @@ level too high says so rather than reporting it missing.
 Checks are rate limited to ten per ten minutes, because DNS propagation makes
 people click. A claim expires after 14 days; start it again for a fresh record.
 
+A verified domain is a label and a DID today; serving the platform *from* that
+domain under the organization's own branding is planned — see
+[Custom domains and white-label branding](plans/custom-domains-and-branding.md).
+
 **Administrators see every organization identity at `/admin/domains`** and can
 **withdraw** a verification. Domains get sold, lapse and change hands — when
 that happens the organization that used to hold it must stop being able to point
