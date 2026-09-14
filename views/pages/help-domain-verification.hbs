@@ -16,6 +16,19 @@
     </span>
   </article>
 
+  <article class="callout callout--info">
+    <strong>Claiming a subdomain? The opposite mistake.</strong>
+    <span>
+      If you are verifying <code>id.contoso.com</code> but your provider hosts the
+      zone <code>contoso.com</code>, typing only <code>_aegis-challenge</code> puts
+      the record at <code>_aegis-challenge.contoso.com</code> — one level too
+      high, where it proves the wrong thing. The host must carry the subdomain:
+      <code>_aegis-challenge.id</code>. The claim page shows the exact value to
+      type for your domain, and "Check DNS now" tells you if the record turned
+      up at the apex instead.
+    </span>
+  </article>
+
   <div class="section-heading">
     <h2>What you are adding</h2>
     <p>Your organization's page in Aegis ID shows the exact value to use. It looks like this:</p>
@@ -73,6 +86,7 @@
   <ul class="help-list">
     <li><strong>Check the full name.</strong> Look up <code>_aegis-challenge.yourdomain.com</code> yourself: <code>dig TXT _aegis-challenge.yourdomain.com +short</code>, or <code>nslookup -type=TXT _aegis-challenge.yourdomain.com</code> on Windows. If that returns nothing, the record is not published yet.</li>
     <li><strong>Check for a doubled domain.</strong> If <code>dig TXT _aegis-challenge.yourdomain.com.yourdomain.com</code> returns your value, the host field was over-filled.</li>
+    <li><strong>Check for a record one level too high.</strong> When claiming <code>sub.yourdomain.com</code>, if <code>dig TXT _aegis-challenge.yourdomain.com</code> returns your value, the host field was under-filled: it needs <code>_aegis-challenge.sub</code>.</li>
     <li><strong>Check the value is complete.</strong> Long values get truncated by a careless paste. It must match exactly, including the <code>aegis-domain-verification=</code> prefix.</li>
     <li><strong>Check you edited the live zone.</strong> If your nameservers point at another provider — Cloudflare, your host, your registrar — the record has to go wherever the nameservers point, not wherever you bought the domain.</li>
     <li><strong>Quotes.</strong> Most providers add them for you; AWS Route 53 does not. If you see quotes stored inside the value on a provider that adds its own, remove yours.</li>

@@ -7678,6 +7678,16 @@ body:has(.workspace-blade) .site-footer div span {
   color: #684b14;
 }
 
+.callout--info {
+  background: #eef5ff;
+  border-color: #b9d2f5;
+  border-left-color: var(--blue-600);
+}
+
+.callout--info strong {
+  color: #163d73;
+}
+
 .callout--success {
   background: #ecfff6;
   border-color: #9fdcc2;

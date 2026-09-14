@@ -18,6 +18,7 @@
         {{#if (eq reason "no-record")}}No TXT record exists at that name yet. DNS changes can take anywhere from a minute to a few hours to propagate.{{/if}}
         {{#if (eq reason "mismatch")}}A TXT record exists but its value does not match. Check for a stray space or a truncated paste.{{/if}}
         {{#if (eq reason "lookup-failed")}}The lookup itself failed. That usually means the domain has no nameservers responding.{{/if}}
+        {{#if (eq reason "misplaced")}}The record exists, but at <code>{{identity.challenge.misplacedAt}}</code> — one level too high. Your provider appended the zone to the Host you typed. Edit the record's Host to <code>{{identity.challenge.hostField}}</code> so it resolves as <code>{{identity.challenge.fullRecordName}}</code>.{{/if}}
       </span>
     </div>
   {{/if}}
@@ -48,7 +49,7 @@
           <table class="data-table">
             <tbody>
               <tr><th>Type</th><td><code>TXT</code></td></tr>
-              <tr><th>Name / Host</th><td><code>{{identity.challenge.recordName}}</code><div class="table-note">Most providers add your domain automatically. The full name is <code>{{identity.challenge.fullRecordName}}</code>.</div></td></tr>
+              <tr><th>Name / Host</th><td><code>{{identity.challenge.hostField}}</code><div class="table-note">{{#if identity.challenge.isSubdomain}}Your provider hosts the zone <strong>{{identity.challenge.zone}}</strong> and appends it to whatever you type, so the Host must carry the subdomain: <code>{{identity.challenge.hostField}}</code>, not just <code>{{identity.challenge.recordName}}</code>.{{else}}Most providers add your domain automatically.{{/if}} The full name must resolve as <code>{{identity.challenge.fullRecordName}}</code>.</div></td></tr>
               <tr><th>Value</th><td><code class="wrap-anywhere">{{identity.challenge.value}}</code></td></tr>
               <tr><th>TTL</th><td>Lowest your provider allows, while testing</td></tr>
             </tbody>

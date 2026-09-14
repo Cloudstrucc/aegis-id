@@ -553,7 +553,11 @@ invitation. Unverified organizations are labelled as such there, in plain words.
 guide at `/help/domain-verification` has step-by-step instructions for GoDaddy,
 Namecheap, Cloudflare, Squarespace, Azure DNS and AWS Route 53, plus the fix for
 the mistake that catches most people — the host field usually wants only
-`_aegis-challenge`, not the full name.
+`_aegis-challenge`, not the full name. Claiming a *subdomain* of a zone the
+provider hosts at the apex is the mirror case: the host must then carry the
+subdomain labels (`_aegis-challenge.aegis-id` for `aegis-id.cloudstrucc.com`),
+and the claim page shows that exact value. A check that finds the record one
+level too high says so rather than reporting it missing.
 
 Checks are rate limited to ten per ten minutes, because DNS propagation makes
 people click. A claim expires after 14 days; start it again for a fresh record.

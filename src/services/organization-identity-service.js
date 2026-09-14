@@ -25,6 +25,36 @@ const { consume } = require('./rate-limit-service');
 const store = new FileJsonStore(config.paths.organizationIdentities, []);
 
 const TXT_PREFIX = 'aegis-domain-verification=';
+
+// Second-level public suffixes where the registrable zone is three labels.
+// Not the whole public suffix list — enough for the customers this serves —
+// and only used to word instructions, never to decide verification.
+const THREE_LABEL_ZONES = new Set(['co.uk', 'org.uk', 'ac.uk', 'gov.uk', 'com.au', 'net.au', 'org.au', 'co.nz', 'co.jp', 'com.br', 'co.za', 'gc.ca']);
+
+/**
+ * The zone a DNS provider most likely hosts: the registrable domain. For
+ * "aegis-id.cloudstrucc.com" that is "cloudstrucc.com".
+ */
+function registrableZone(domain) {
+  const labels = String(domain || '').toLowerCase().split('.').filter(Boolean);
+  if (labels.length <= 2) {
+    return labels.join('.');
+  }
+  const lastTwo = labels.slice(-2).join('.');
+  const keep = THREE_LABEL_ZONES.has(lastTwo) ? 3 : 2;
+  return labels.slice(-keep).join('.');
+}
+
+/**
+ * What to type in the provider's "Host" box, given that providers append the
+ * zone themselves. For an apex claim this is just the record name; for a
+ * subdomain it carries the subdomain labels too.
+ */
+function hostFieldValue(recordName, domain) {
+  const zone = registrableZone(domain);
+  const full = `${recordName}.${domain}`;
+  return full.endsWith(`.${zone}`) ? full.slice(0, -(zone.length + 1)) : recordName;
+}
 const TOKEN_BYTES = 24;
 const CHALLENGE_TTL_DAYS = 14;
 
@@ -297,9 +327,32 @@ async function verifyDomain(workspaceId, { actorEmail } = {}) {
     failure = error.code === 'ENOTFOUND' || error.code === 'ENODATA' ? 'no-record' : 'lookup-failed';
   }
 
-  const matched = found.some((value) => value.trim() === expected);
+  let matched = found.some((value) => value.trim() === expected);
+
+  // The commonest way to get this wrong when claiming a subdomain: the DNS
+  // provider appends the *zone* to whatever is typed in Host, so
+  // "_aegis-challenge" lands at _aegis-challenge.<zone> rather than
+  // _aegis-challenge.<subdomain>.<zone>. Look there too — not to accept it
+  // (a record at the apex proves the zone, not this subdomain), but to say
+  // exactly where the record went.
+  let misplacedAt = null;
+  if (!matched) {
+    const apexHost = `${record.challenge.recordName}.${registrableZone(record.domain)}`;
+    if (apexHost !== hostname) {
+      try {
+        const atApex = (await txtResolver(apexHost)).map((chunks) => chunks.join(''));
+        if (atApex.some((value) => value.trim() === expected)) {
+          misplacedAt = apexHost;
+        }
+      } catch (error) {
+        // Nothing there either; the original reason stands.
+      }
+    }
+  }
+
   record.challenge.lastCheckedAt = new Date().toISOString();
-  record.challenge.lastResult = matched ? 'verified' : failure || 'mismatch';
+  record.challenge.lastResult = matched ? 'verified' : misplacedAt ? 'misplaced' : failure || 'mismatch';
+  record.challenge.misplacedAt = misplacedAt;
 
   if (matched) {
     record.status = 'verified';
@@ -393,6 +446,10 @@ function publicView(record) {
       ? {
           recordName: record.challenge.recordName,
           fullRecordName: record.domain ? `${record.challenge.recordName}.${record.domain}` : null,
+          hostField: record.domain ? hostFieldValue(record.challenge.recordName, record.domain) : null,
+          zone: record.domain ? registrableZone(record.domain) : null,
+          isSubdomain: record.domain ? registrableZone(record.domain) !== record.domain.toLowerCase() : false,
+          misplacedAt: record.challenge.misplacedAt || null,
           value: record.challenge.token ? expectedTxtValue(record) : null,
           expiresAt: record.challenge.expiresAt,
           lastCheckedAt: record.challenge.lastCheckedAt,
@@ -405,6 +462,8 @@ function publicView(record) {
 }
 
 module.exports = {
+  registrableZone,
+  hostFieldValue,
   TXT_PREFIX,
   cancelDomainClaim,
   ensureIdentity,

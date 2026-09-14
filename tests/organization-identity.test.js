@@ -132,6 +132,41 @@ test('a domain is only verified when the TXT record is actually there', async ()
   });
 });
 
+// The commonest subdomain mistake: the provider appends the zone to the Host
+// typed, so the record lands one level too high. It must not verify — a
+// record at the apex proves the zone, not the subdomain — but the page must
+// say exactly where it went and what to type instead.
+test('a subdomain claim names the Host to type, and a record at the zone apex is reported as misplaced', async () => {
+  await withEnv(async ({ identity }) => {
+    await identity.ensureIdentity(WORKSPACE);
+    const claimed = await identity.startDomainClaim(WORKSPACE.id, 'aegis-id.cloudstrucc.com');
+
+    assert.equal(claimed.challenge.fullRecordName, '_aegis-challenge.aegis-id.cloudstrucc.com');
+    assert.equal(claimed.challenge.hostField, '_aegis-challenge.aegis-id');
+    assert.equal(claimed.challenge.zone, 'cloudstrucc.com');
+    assert.equal(claimed.challenge.isSubdomain, true);
+
+    identity.setTxtResolverForTesting(
+      resolver({ '_aegis-challenge.cloudstrucc.com': [[claimed.challenge.value]] })
+    );
+    const misplaced = await identity.verifyDomain(WORKSPACE.id);
+    assert.equal(misplaced.ok, false);
+    assert.equal(misplaced.reason, 'misplaced');
+    assert.equal(misplaced.identity.challenge.misplacedAt, '_aegis-challenge.cloudstrucc.com');
+    assert.equal(misplaced.identity.isVerified, false);
+
+    identity.setTxtResolverForTesting(
+      resolver({ '_aegis-challenge.aegis-id.cloudstrucc.com': [[claimed.challenge.value]] })
+    );
+    const verified = await identity.verifyDomain(WORKSPACE.id);
+    assert.equal(verified.ok, true);
+    assert.equal(verified.identity.challenge.misplacedAt, null);
+  });
+
+  assert.equal(require('../src/services/organization-identity-service').hostFieldValue('_aegis-challenge', 'cloudstrucc.com'), '_aegis-challenge');
+  assert.equal(require('../src/services/organization-identity-service').registrableZone('id.example.co.uk'), 'example.co.uk');
+});
+
 test('a long TXT value split into chunks still matches', async () => {
   await withEnv(async ({ identity }) => {
     await identity.ensureIdentity(WORKSPACE);
