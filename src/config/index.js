@@ -312,6 +312,14 @@ const config = {
     credentialType: process.env.VID_CREDENTIAL_TYPE || 'VanguardEmployeeCredential',
     callbackApiKey: process.env.VID_CALLBACK_API_KEY || ''
   },
+  // Serving the platform from an organization's own hostname
+  // (docs/plans/custom-domains-and-branding.md). `none` hides the feature;
+  // `manual` activates a hostname once its CNAME points here and leaves the
+  // App Service binding and certificate to the operator; `azure` (phase D)
+  // provisions both.
+  hosting: {
+    provider: (process.env.CUSTOM_HOSTING_PROVIDER || 'none').trim().toLowerCase()
+  },
   didWeb: {
     enabled: booleanFlag(process.env.AEGIS_DID_WEB_ENABLED, false),
     domain: didWebDomain,

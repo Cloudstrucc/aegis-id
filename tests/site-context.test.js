@@ -53,12 +53,12 @@ test('every request carries its site, and the platform site answers with the con
   }
 });
 
-test('the middleware exposes req.site and site to templates', () => {
+test('the middleware exposes req.site and site to templates', async () => {
   const { attachSiteContext } = require('../src/middleware/site-context');
   const req = { hostname: 'localhost', get: () => 'localhost:3000' };
   const res = { locals: {} };
   let called = false;
-  attachSiteContext(req, res, () => { called = true; });
+  await attachSiteContext(req, res, () => { called = true; });
 
   assert.equal(called, true);
   assert.equal(req.site.kind, 'platform');

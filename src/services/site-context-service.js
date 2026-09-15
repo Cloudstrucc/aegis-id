@@ -83,34 +83,97 @@ function platformHost() {
   return platformBaseUrl().replace(/^https?:\/\//, '');
 }
 
-/**
- * The site a request on `hostname` belongs to.
- *
- * Phase A: every hostname is the platform site. Unknown hosts are not refused
- * yet — a developer reaching the app by IP, or App Service's own probe
- * hostname, must keep working until organization hosts exist to distinguish.
- */
-function resolveSite(hostname) {
+function platformSite(hostname) {
   return {
     kind: 'platform',
     hostname: String(hostname || platformHost()).toLowerCase(),
     baseUrl: platformBaseUrl(),
     workspaceId: null,
     subscriptionId: null,
+    handle: null,
     branding: platformBranding()
   };
 }
 
 /**
- * The base URL to emit for an organization's own links when there is no
- * request to take it from.
+ * The platform site for a hostname, without consulting organization hosts.
+ * What the synchronous callers get; requests go through resolveSiteForRequest.
  */
-async function baseUrlForWorkspace(workspaceId) { // eslint-disable-line no-unused-vars
-  return platformBaseUrl();
+function resolveSite(hostname) {
+  return platformSite(hostname);
+}
+
+// Organization sites are looked up per request, so the answer is held for a
+// short while: the identity store and the organization's branding are JSON
+// files, and reading both on every asset request would be silly. A branding
+// change shows on the host within this window.
+const SITE_CACHE_TTL_MS = 30 * 1000;
+const siteCache = new Map();
+
+/**
+ * The site a request on `hostname` belongs to: the organization whose active
+ * hosted hostname it is, otherwise the platform.
+ *
+ * A hostname bound to nobody is the platform site rather than a refusal. A
+ * developer reaching the app by IP, App Service's own probe hostname and a
+ * customer whose CNAME has just started resolving all land here, and none of
+ * them may be shown another organization's branding — the platform's is the
+ * one safe answer.
+ */
+async function resolveSiteForRequest(hostname) {
+  const host = String(hostname || '').toLowerCase().split(':')[0];
+  const cached = siteCache.get(host);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.site;
+  }
+
+  let site = platformSite(hostname);
+  // Lazy: these services build URLs through this module.
+  const identityService = require('./organization-identity-service');
+  const identity = await identityService.findHostedIdentity(host);
+  if (identity) {
+    const orgAdmin = require('./org-admin-service');
+    const state = await orgAdmin.getOrCreateState({ id: identity.workspaceId, organization: identity.organization });
+    site = {
+      kind: 'organization',
+      hostname: host,
+      baseUrl: identity.hosting.baseUrl,
+      workspaceId: identity.workspaceId,
+      subscriptionId: identity.subscriptionId,
+      handle: identity.handle,
+      branding: normalizeBranding({
+        ...state.branding,
+        // The workspace name stands in until the organization sets one.
+        displayName: state.branding?.displayName || identity.organization || state.organizationName
+      })
+    };
+  }
+  siteCache.set(host, { site, expiresAt: Date.now() + SITE_CACHE_TTL_MS });
+  return site;
+}
+
+function forgetSiteCache() {
+  siteCache.clear();
+}
+
+/**
+ * The base URL to emit for an organization's own links when there is no
+ * request to take it from: its hosted hostname once active, the platform
+ * until then.
+ */
+async function baseUrlForWorkspace(workspaceId) {
+  if (!workspaceId) {
+    return platformBaseUrl();
+  }
+  const identityService = require('./organization-identity-service');
+  const hosted = await identityService.hostedBaseUrlForWorkspace(workspaceId);
+  return hosted || platformBaseUrl();
 }
 
 module.exports = {
   baseUrlForWorkspace,
+  forgetSiteCache,
+  resolveSiteForRequest,
   normalizeBranding,
   platformBranding,
   platformBaseUrl,

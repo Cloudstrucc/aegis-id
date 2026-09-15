@@ -280,6 +280,7 @@ function expectedTxtValue(record) {
 
 /** Test seam: the suite cannot publish real DNS records. */
 let txtResolver = (hostname) => dns.resolveTxt(hostname);
+let cnameResolver = (hostname) => dns.resolveCname(hostname);
 
 function setTxtResolverForTesting(resolver) {
   txtResolver = resolver;
@@ -397,7 +398,12 @@ async function revokeVerification(workspaceId, { actorEmail, reason } = {}) {
   record.revokedAt = new Date().toISOString();
   record.revokedReason = String(reason || '').slice(0, 300);
   record.updatedAt = record.revokedAt;
+  if (record.hosting && record.hosting.status !== 'disabled') {
+    record.hosting.status = 'disabled';
+    record.hosting.updatedAt = record.revokedAt;
+  }
   await store.write(records);
+  rebuildHostIndex(records);
 
   await writeAuditEvent('organization.domain.verification.revoked', {
     workspaceId,
@@ -407,6 +413,201 @@ async function revokeVerification(workspaceId, { actorEmail, reason } = {}) {
     reason: record.revokedReason
   });
 
+  return publicView(record);
+}
+
+// ---------------------------------------------------------------------------
+// Hosting: serving the platform from the organization's own hostname.
+//
+// Bound only to a verified domain — the hostname must be that domain or under
+// it — so a host can never vouch for an organization that has not proven it.
+// The record moves pending-dns → active once the CNAME is seen pointing at the
+// platform; with the `azure` provider (phase D) a TLS step sits in between.
+
+const HOSTING_PROVIDERS = new Set(['none', 'manual', 'azure']);
+
+function hostingProvider() {
+  const provider = String(config.hosting?.provider || 'none').toLowerCase();
+  return HOSTING_PROVIDERS.has(provider) ? provider : 'none';
+}
+
+function hostingEnabled() {
+  return hostingProvider() !== 'none';
+}
+
+function normalizeHostname(value = '') {
+  const text = String(value || '').trim().toLowerCase().replace(/\.$/, '');
+  if (!/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(text)) {
+    return '';
+  }
+  return text;
+}
+
+// The in-memory answer to "which organization is this hostname?", asked on
+// every request. Rebuilt on every write and lazily on first use.
+let hostIndex = null;
+
+function rebuildHostIndex(records) {
+  // A host went up or down: what a request resolves to may have changed.
+  require('./site-context-service').forgetSiteCache();
+  hostIndex = new Map();
+  for (const record of records) {
+    if (record.hosting?.status === 'active' && record.hosting.hostname) {
+      hostIndex.set(record.hosting.hostname, record);
+    }
+  }
+}
+
+async function hostedBaseUrlForWorkspace(workspaceId) {
+  if (!hostingEnabled()) {
+    return null;
+  }
+  if (!hostIndex) {
+    rebuildHostIndex(await store.read());
+  }
+  for (const record of hostIndex.values()) {
+    if (record.workspaceId === workspaceId) {
+      return `https://${record.hosting.hostname}`;
+    }
+  }
+  return null;
+}
+
+async function findHostedIdentity(hostname) {
+  if (!hostingEnabled()) {
+    return null;
+  }
+  if (!hostIndex) {
+    rebuildHostIndex(await store.read());
+  }
+  const record = hostIndex.get(String(hostname || '').toLowerCase().split(':')[0]);
+  return record ? publicView(record) : null;
+}
+
+async function requestHosting(workspaceId, hostnameInput, { actorEmail } = {}) {
+  if (!hostingEnabled()) {
+    throw validationError('Custom hostnames are not enabled on this deployment.', 409);
+  }
+  const records = await store.read();
+  const record = records.find((entry) => entry.workspaceId === workspaceId);
+  if (!record) {
+    throw validationError('Organization identity not found.', 404);
+  }
+  if (record.status !== 'verified' || !record.domain) {
+    throw validationError('Verify the domain before serving the platform from it.', 409);
+  }
+  const hostname = normalizeHostname(hostnameInput);
+  if (!hostname) {
+    throw validationError('Enter a hostname such as id.example.com.');
+  }
+  if (hostname !== record.domain && !hostname.endsWith(`.${record.domain}`)) {
+    throw validationError(`The hostname must be ${record.domain} or a name under it.`);
+  }
+  if (hostname === platformHost().split(':')[0]) {
+    throw validationError('That is the platform\'s own hostname.');
+  }
+  const taken = records.find((entry) => entry.workspaceId !== workspaceId && entry.hosting?.hostname === hostname && entry.hosting.status !== 'disabled');
+  if (taken) {
+    throw validationError('That hostname is already in use by another organization.', 409);
+  }
+
+  const now = new Date().toISOString();
+  record.hosting = {
+    hostname,
+    status: 'pending-dns',
+    cnameTarget: platformHost().split(':')[0],
+    requestedAt: now,
+    activatedAt: null,
+    lastCheckedAt: null,
+    lastResult: null,
+    lastError: null,
+    updatedAt: now
+  };
+  record.updatedAt = now;
+  await store.write(records);
+  rebuildHostIndex(records);
+
+  await writeAuditEvent('organization.hosting.requested', {
+    workspaceId,
+    handle: record.handle,
+    hostname,
+    requestedBy: actorEmail || null
+  });
+  return publicView(record);
+}
+
+/**
+ * Look for the CNAME and, if it points at the platform, go live.
+ *
+ * With the `manual` provider this is the whole check: the operator has bound
+ * the hostname and certificate on App Service by hand. The `azure` provider
+ * (phase D) adds the binding and certificate steps after the DNS check.
+ */
+async function checkHosting(workspaceId, { actorEmail } = {}) {
+  const limit = consume(`hosting-check:${workspaceId}`, { limit: 10, windowMs: 10 * 60 * 1000 });
+  if (!limit.allowed) {
+    throw validationError(
+      `Too many checks. DNS can take a while to propagate — try again in ${Math.ceil(limit.retryAfterMs / 60000)} minutes.`,
+      429
+    );
+  }
+  const records = await store.read();
+  const record = records.find((entry) => entry.workspaceId === workspaceId);
+  if (!record?.hosting || record.hosting.status === 'disabled') {
+    throw validationError('No hostname has been requested for this organization.', 409);
+  }
+
+  let targets = [];
+  let failure = null;
+  try {
+    targets = (await cnameResolver(record.hosting.hostname)).map((entry) => String(entry).toLowerCase().replace(/\.$/, ''));
+  } catch (error) {
+    failure = error.code === 'ENOTFOUND' || error.code === 'ENODATA' ? 'no-cname' : 'lookup-failed';
+  }
+  const matched = targets.includes(record.hosting.cnameTarget);
+  const now = new Date().toISOString();
+  record.hosting.lastCheckedAt = now;
+  record.hosting.lastResult = matched ? 'dns-ok' : failure || 'wrong-target';
+  record.hosting.lastError = matched ? null : targets.length ? `CNAME points at ${targets.join(', ')}` : null;
+  if (matched && record.hosting.status === 'pending-dns') {
+    record.hosting.status = 'active';
+    record.hosting.activatedAt = now;
+  }
+  record.hosting.updatedAt = now;
+  record.updatedAt = now;
+  await store.write(records);
+  rebuildHostIndex(records);
+
+  await writeAuditEvent(matched ? 'organization.hosting.activated' : 'organization.hosting.check.failed', {
+    workspaceId,
+    handle: record.handle,
+    hostname: record.hosting.hostname,
+    reason: matched ? null : record.hosting.lastResult,
+    checkedBy: actorEmail || null
+  });
+  return { ok: matched, identity: publicView(record), reason: matched ? null : record.hosting.lastResult };
+}
+
+async function disableHosting(workspaceId, { actorEmail, reason } = {}) {
+  const records = await store.read();
+  const record = records.find((entry) => entry.workspaceId === workspaceId);
+  if (!record?.hosting) {
+    return record ? publicView(record) : null;
+  }
+  const hostname = record.hosting.hostname;
+  record.hosting.status = 'disabled';
+  record.hosting.updatedAt = new Date().toISOString();
+  record.updatedAt = record.hosting.updatedAt;
+  await store.write(records);
+  rebuildHostIndex(records);
+
+  await writeAuditEvent('organization.hosting.disabled', {
+    workspaceId,
+    handle: record.handle,
+    hostname,
+    disabledBy: actorEmail || null,
+    reason: String(reason || '').slice(0, 300)
+  });
   return publicView(record);
 }
 
@@ -457,12 +658,35 @@ function publicView(record) {
           lastResult: record.challenge.lastResult
         }
       : null,
+    hosting: record.hosting
+      ? {
+          hostname: record.hosting.hostname,
+          status: record.hosting.status,
+          isActive: record.hosting.status === 'active',
+          baseUrl: `https://${record.hosting.hostname}`,
+          cnameTarget: record.hosting.cnameTarget,
+          lastCheckedAt: record.hosting.lastCheckedAt,
+          lastResult: record.hosting.lastResult,
+          lastError: record.hosting.lastError,
+          activatedAt: record.hosting.activatedAt
+        }
+      : null,
+    hostingEnabled: hostingEnabled(),
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };
 }
 
 module.exports = {
+  checkHosting,
+  disableHosting,
+  findHostedIdentity,
+  hostedBaseUrlForWorkspace,
+  hostingEnabled,
+  hostingProvider,
+  normalizeHostname,
+  requestHosting,
+  setCnameResolverForTesting: (resolver) => { cnameResolver = resolver; },
   registrableZone,
   hostFieldValue,
   TXT_PREFIX,
