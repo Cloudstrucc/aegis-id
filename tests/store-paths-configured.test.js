@@ -48,6 +48,8 @@ const NOT_DEPLOYED = new Map([
   ['NODE_ENV', 'set by App Service itself'],
   ['PORT', 'set by App Service itself'],
   ['WEBSITE_HOSTNAME', 'provided by App Service'],
+  ['WEBSITE_SITE_NAME', 'set by App Service itself'],
+  ['WEBSITE_RESOURCE_GROUP', 'set by App Service itself'],
   ['LOCAL_TEST_MODE', 'localhost-only affordance; deliberately never deployed'],
   ['MAIL_DROP_PATH', 'filesystem transport is local-only'],
   ['APP_ENV', 'set per environment by the deploy script itself'],

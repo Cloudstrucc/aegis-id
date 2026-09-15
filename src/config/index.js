@@ -318,7 +318,16 @@ const config = {
   // App Service binding and certificate to the operator; `azure` (phase D)
   // provisions both.
   hosting: {
-    provider: (process.env.CUSTOM_HOSTING_PROVIDER || 'none').trim().toLowerCase()
+    provider: (process.env.CUSTOM_HOSTING_PROVIDER || 'none').trim().toLowerCase(),
+    // Which App Service the `azure` provider binds hostnames to. On the host
+    // itself App Service sets WEBSITE_SITE_NAME and WEBSITE_RESOURCE_GROUP, so
+    // a deployment usually needs to set only the subscription id; the deploy
+    // script's AZURE_* values are the fallback for running the calls locally.
+    azure: {
+      subscriptionId: process.env.HOSTING_AZURE_SUBSCRIPTION_ID || process.env.AZURE_SUBSCRIPTION_ID || '',
+      resourceGroup: process.env.WEBSITE_RESOURCE_GROUP || process.env.AZURE_RESOURCE_GROUP || '',
+      siteName: process.env.WEBSITE_SITE_NAME || process.env.AZURE_WEBAPP_NAME || ''
+    }
   },
   didWeb: {
     enabled: booleanFlag(process.env.AEGIS_DID_WEB_ENABLED, false),

@@ -131,7 +131,7 @@ async function resolveSiteForRequest(hostname) {
   // Lazy: these services build URLs through this module.
   const identityService = require('./organization-identity-service');
   const identity = await identityService.findHostedIdentity(host);
-  if (identity) {
+  if (identity && await hostingStillEntitled(identity.subscriptionId)) {
     const orgAdmin = require('./org-admin-service');
     const state = await orgAdmin.getOrCreateState({ id: identity.workspaceId, organization: identity.organization });
     site = {
@@ -154,6 +154,31 @@ async function resolveSiteForRequest(hostname) {
 
 function forgetSiteCache() {
   siteCache.clear();
+}
+
+// A vanity host is a paid convenience. If the owning subscription's plan no
+// longer entitles it — lapsed, or downgraded off Enterprise — the host stops
+// resolving to the organization and falls back to the platform, without a
+// background job flipping records. Credentials are untouched; only the host
+// reverts. Checked here rather than at bind time so a lapse takes effect on
+// its own. Errors fail open to "still hosting" so a transient read does not
+// knock a customer's domain offline.
+async function hostingStillEntitled(subscriptionId) {
+  if (!subscriptionId) {
+    return true;
+  }
+  try {
+    const { getSubscription } = require('./subscription-service');
+    const { assertCanUseCustomDomain } = require('./plan-service');
+    const subscription = await getSubscription(subscriptionId);
+    if (!subscription) {
+      return true;
+    }
+    assertCanUseCustomDomain(subscription);
+    return true;
+  } catch (error) {
+    return error.status === 402 ? false : true;
+  }
 }
 
 /**

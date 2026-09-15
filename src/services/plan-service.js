@@ -28,7 +28,8 @@ const PLANS = Object.freeze({
     includedCredentials: null,
     perCredentialCents: null,
     trialDays: TRIAL_DAYS,
-    requiresPayment: false
+    requiresPayment: false,
+    customDomain: false
   },
   basic: {
     id: 'basic',
@@ -41,7 +42,8 @@ const PLANS = Object.freeze({
     includedCredentials: null,
     perCredentialCents: null,
     trialDays: 0,
-    requiresPayment: true
+    requiresPayment: true,
+    customDomain: false
   },
   pro: {
     id: 'pro',
@@ -54,7 +56,8 @@ const PLANS = Object.freeze({
     includedCredentials: null,
     perCredentialCents: null,
     trialDays: 0,
-    requiresPayment: true
+    requiresPayment: true,
+    customDomain: false
   },
   metered: {
     id: 'metered',
@@ -68,7 +71,8 @@ const PLANS = Object.freeze({
     includedCredentials: 3,
     perCredentialCents: 500,
     trialDays: 0,
-    requiresPayment: true
+    requiresPayment: true,
+    customDomain: false
   },
   enterprise: {
     id: 'enterprise',
@@ -81,7 +85,8 @@ const PLANS = Object.freeze({
     includedCredentials: 100,
     perCredentialCents: 300,
     trialDays: 0,
-    requiresPayment: true
+    requiresPayment: true,
+    customDomain: true
   }
 });
 
@@ -201,8 +206,24 @@ function limitsFor(plan) {
     maxWorkspaces: plan.maxWorkspaces,
     maxCredentialsPerWorkspace: plan.maxCredentialsPerWorkspace,
     includedCredentials: plan.includedCredentials,
-    perCredentialCents: plan.perCredentialCents
+    perCredentialCents: plan.perCredentialCents,
+    customDomain: Boolean(plan.customDomain)
   };
+}
+
+// A billing lapse must not revoke identity — existing credentials keep working
+// — but a vanity host is a paid convenience, so it reverts with the plan.
+// Enforced where hosting is activated; read here so both agree.
+function assertCanUseCustomDomain(subscription) {
+  const { plan, limits, standing } = effectiveEntitlement(subscription);
+  if (limits.customDomain && (standing === 'active' || standing === 'trialing' || standing === 'comped' || standing === 'grandfathered')) {
+    return;
+  }
+  throw limitError(
+    limits.customDomain
+      ? `Serving Aegis ID from your own domain needs an active ${plan.label} subscription.`
+      : 'Serving Aegis ID from your own domain is an Enterprise feature.'
+  );
 }
 
 function limitError(message) {
@@ -342,6 +363,7 @@ module.exports = {
   TRIAL_DAYS,
   assertCanAddWorkspace,
   assertCanIssueCredential,
+  assertCanUseCustomDomain,
   describeHeadlinePrice,
   describeLimits,
   describePrice,

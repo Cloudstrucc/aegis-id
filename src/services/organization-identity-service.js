@@ -567,25 +567,64 @@ async function checkHosting(workspaceId, { actorEmail } = {}) {
   const matched = targets.includes(record.hosting.cnameTarget);
   const now = new Date().toISOString();
   record.hosting.lastCheckedAt = now;
-  record.hosting.lastResult = matched ? 'dns-ok' : failure || 'wrong-target';
   record.hosting.lastError = matched ? null : targets.length ? `CNAME points at ${targets.join(', ')}` : null;
-  if (matched && record.hosting.status === 'pending-dns') {
-    record.hosting.status = 'active';
-    record.hosting.activatedAt = now;
+
+  if (!matched) {
+    record.hosting.lastResult = failure || 'wrong-target';
+    record.hosting.updatedAt = now;
+    record.updatedAt = now;
+    await store.write(records);
+    await writeAuditEvent('organization.hosting.check.failed', {
+      workspaceId, handle: record.handle, hostname: record.hosting.hostname, reason: record.hosting.lastResult, checkedBy: actorEmail || null
+    });
+    return { ok: false, identity: publicView(record), reason: record.hosting.lastResult };
   }
+
+  // DNS is right. Ask the provider to bind the hostname and issue the
+  // certificate; on `manual` that is a no-op that is always ready.
+  const { bindHostname } = require('./hosting-provider');
+  let binding;
+  try {
+    binding = await bindHostname(record.hosting.hostname);
+  } catch (error) {
+    record.hosting.status = 'error';
+    record.hosting.lastResult = 'bind-failed';
+    record.hosting.lastError = error.message;
+    record.hosting.updatedAt = now;
+    record.updatedAt = now;
+    await store.write(records);
+    await writeAuditEvent('organization.hosting.check.failed', {
+      workspaceId, handle: record.handle, hostname: record.hosting.hostname, reason: 'bind-failed', checkedBy: actorEmail || null
+    });
+    throw error;
+  }
+
+  if (!binding.ready) {
+    record.hosting.status = 'pending-tls';
+    record.hosting.lastResult = 'pending-tls';
+    record.hosting.lastError = binding.detail || null;
+    record.hosting.updatedAt = now;
+    record.updatedAt = now;
+    await store.write(records);
+    await writeAuditEvent('organization.hosting.check.failed', {
+      workspaceId, handle: record.handle, hostname: record.hosting.hostname, reason: 'pending-tls', checkedBy: actorEmail || null
+    });
+    return { ok: false, identity: publicView(record), reason: 'pending-tls' };
+  }
+
+  record.hosting.status = 'active';
+  record.hosting.lastResult = 'active';
+  record.hosting.certificateThumbprint = binding.thumbprint || null;
+  record.hosting.activatedAt = record.hosting.activatedAt || now;
   record.hosting.updatedAt = now;
   record.updatedAt = now;
   await store.write(records);
   rebuildHostIndex(records);
 
-  await writeAuditEvent(matched ? 'organization.hosting.activated' : 'organization.hosting.check.failed', {
-    workspaceId,
-    handle: record.handle,
-    hostname: record.hosting.hostname,
-    reason: matched ? null : record.hosting.lastResult,
-    checkedBy: actorEmail || null
+  await writeAuditEvent('organization.hosting.activated', {
+    workspaceId, handle: record.handle, hostname: record.hosting.hostname, checkedBy: actorEmail || null
   });
-  return { ok: matched, identity: publicView(record), reason: matched ? null : record.hosting.lastResult };
+  return { ok: true, identity: publicView(record) };
 }
 
 async function disableHosting(workspaceId, { actorEmail, reason } = {}) {
@@ -600,6 +639,7 @@ async function disableHosting(workspaceId, { actorEmail, reason } = {}) {
   record.updatedAt = record.hosting.updatedAt;
   await store.write(records);
   rebuildHostIndex(records);
+  await require('./hosting-provider').unbindHostname(hostname);
 
   await writeAuditEvent('organization.hosting.disabled', {
     workspaceId,

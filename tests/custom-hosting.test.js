@@ -38,6 +38,7 @@ async function withEnv(run) {
     SESSION_SECRET: 'test-secret-test-secret-test-secret',
     CUSTOM_HOSTING_PROVIDER: 'manual',
     ORGANIZATION_IDENTITY_STORE_PATH: path.join(dir, 'identities.json'),
+    SUBSCRIPTION_STORE_PATH: path.join(dir, 'subscriptions.json'),
     SUBSCRIBER_WORKSPACE_STORE_PATH: path.join(dir, 'workspaces.json'),
     ORG_ADMIN_STORE_PATH: path.join(dir, 'org-admin.json'),
     ORG_ADMIN_EVENT_STORE_PATH: path.join(dir, 'org-admin-events.json'),
@@ -192,5 +193,33 @@ test('with hosting disabled at the deployment, no host resolves to an organizati
     assert.equal(identity.hostingEnabled(), false);
     await assert.rejects(identity.requestHosting('org-contoso', 'id.contoso.example'), /not enabled/);
     assert.equal((await site.resolveSiteForRequest('id.contoso.example')).kind, 'platform');
+  });
+});
+
+test('serving a custom domain is gated on the plan, and a lapse reverts the host', async () => {
+  await withEnv(async () => {
+    const identity = require('../src/services/organization-identity-service');
+    const site = require('../src/services/site-context-service');
+    const plans = require('../src/services/plan-service');
+    await seedVerifiedOrg(identity);
+    await identity.requestHosting(WORKSPACE.id, 'id.contoso.example');
+    identity.setCnameResolverForTesting(async () => ['platform.example']);
+    await identity.checkHosting(WORKSPACE.id);
+
+    // The route gate: Enterprise (active) yes, Pro no, lapsed Enterprise no.
+    plans.assertCanUseCustomDomain({ plan: 'enterprise', billingStatus: 'active' });
+    assert.throws(() => plans.assertCanUseCustomDomain({ plan: 'pro', billingStatus: 'active' }), (e) => e.status === 402);
+    assert.throws(() => plans.assertCanUseCustomDomain({ plan: 'enterprise', billingStatus: 'canceled' }), (e) => e.status === 402);
+
+    // With no subscription record the host still resolves (fail open).
+    assert.equal((await site.resolveSiteForRequest('id.contoso.example')).kind, 'organization');
+
+    // A subscription that no longer entitles it: the host reverts to platform,
+    // the record untouched (credentials keep working).
+    const fs = require('node:fs/promises');
+    await fs.writeFile(process.env.SUBSCRIPTION_STORE_PATH, JSON.stringify([{ id: WORKSPACE.subscriptionId, email: WORKSPACE.ownerEmail, plan: 'pro', billingStatus: 'active' }]));
+    site.forgetSiteCache();
+    assert.equal((await site.resolveSiteForRequest('id.contoso.example')).kind, 'platform');
+    assert.equal(identity.hostingEnabled(), true);
   });
 });

@@ -562,8 +562,37 @@ level too high says so rather than reporting it missing.
 Checks are rate limited to ten per ten minutes, because DNS propagation makes
 people click. A claim expires after 14 days; start it again for a fresh record.
 
-A verified domain is a label and a DID today; serving the platform *from* that
-domain under the organization's own branding is planned — see
+### Serving the platform from a customer's domain
+
+Once a domain is verified, an Enterprise organization can serve the whole
+platform — sign-in, invitations, the OIDC issuer, its public page — from a
+hostname under it, under its own name and logo (set those under **Branding**).
+On the domain page, **Serve Aegis ID from your domain** takes a hostname (the
+verified domain or a name below it), shows the CNAME to add, and goes live once
+it resolves. Withdrawing the domain, or the plan lapsing off Enterprise, reverts
+the host to the platform automatically — credentials are never touched.
+
+This is gated by `CUSTOM_HOSTING_PROVIDER`:
+
+- `none` (default on dev, qa, prod) — the feature is hidden.
+- `manual` — a hostname goes live the moment its CNAME resolves; **you** bind
+  the hostname and certificate on App Service by hand. Used locally.
+- `azure` — the platform binds the hostname and issues a free App Service
+  managed certificate itself, over the ARM API, authenticated as the site's
+  **system-assigned managed identity**. To use it: enable the identity on the
+  App Service, grant it **Website Contributor** on that same App Service (scoped
+  to the site, nothing wider), set `CUSTOM_HOSTING_PROVIDER=azure`, and set
+  `HOSTING_AZURE_SUBSCRIPTION_ID` (the resource group and site name come from
+  the `WEBSITE_RESOURCE_GROUP` / `WEBSITE_SITE_NAME` that App Service provides).
+
+Two limits worth stating to customers: a passkey registered on the platform
+host will not work on the custom host and vice versa (passkeys are bound to the
+hostname), and the mobile apps' universal links stay on the platform host —
+custom-domain organizations get `aegisid://` links, which still work
+everywhere. Per-organization DID documents on the custom host are not served
+yet; that waits on per-organization signing keys.
+
+Full design and phase status:
 [Custom domains and white-label branding](plans/custom-domains-and-branding.md).
 
 **Administrators see every organization identity at `/admin/domains`** and can

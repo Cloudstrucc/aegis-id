@@ -31,6 +31,7 @@ const {
   disableHosting
 } = require('../services/organization-identity-service');
 const { DNS_PROVIDERS } = require('../services/dns-provider-guides');
+const { assertCanUseCustomDomain } = require('../services/plan-service');
 const {
   confirmRootWallet,
   nominateRootWallet,
@@ -109,6 +110,7 @@ router.get(
         // Hosting is offered only once the domain is proven, and only where the
         // deployment can provision a hostname at all.
         showHosting: hostingEnabled() && identity.isVerified,
+        customDomainAllowed: canUseCustomDomain(req.authorizedSubscription),
         hostingActive: identity.hosting?.isActive === true,
         hostingStatusLabel: HOSTING_STATUS_LABELS[identity.hosting?.status] || identity.hosting?.status || '',
         checked: req.query.checked || null,
@@ -157,6 +159,16 @@ router.post(
   }
 );
 
+// A non-throwing form for the view.
+function canUseCustomDomain(subscription) {
+  try {
+    assertCanUseCustomDomain(subscription);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 const HOSTING_STATUS_LABELS = {
   'pending-dns': 'Waiting for the CNAME to point here',
   'pending-tls': 'Issuing the certificate',
@@ -177,6 +189,7 @@ router.post(
       const actorEmail = req.user?.email;
 
       if (req.body.action === 'request') {
+        assertCanUseCustomDomain(req.authorizedSubscription);
         await requestHosting(workspace.id, req.body.hostname, { actorEmail });
       } else if (req.body.action === 'check') {
         await checkHosting(workspace.id, { actorEmail });

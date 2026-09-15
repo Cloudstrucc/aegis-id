@@ -1,6 +1,6 @@
 # Custom Domains And White-Label Branding — Implementation Plan
 
-Status: **in progress — phases A, B and C shipped; D and E remain** · Owner: platform · Target: Enterprise plan feature
+Status: **shipped — phases A–E complete; per-organization DID on the host deferred** · Owner: platform · Target: Enterprise plan feature
 
 ## What this delivers
 
@@ -235,8 +235,8 @@ host — existing credentials keep working, only the vanity host stops, matching
 | **A. Base URL per request** — *done* | `site-context` middleware; the 33 `publicBaseUrl` reads replaced; `baseUrlForWorkspace`; `tests/site-context.test.js` forbids a new direct read. No behaviour change. | 2–3 days |
 | **B. Branding site-wide** — *done* | `displayName`, `productName`, `faviconDataUrl`, `supportEmail`, `poweredByHidden` on org branding and the Branding blade; header, footer, layout title, home, sign-in, register, subscribe and not-found read `site.branding`; `deliverMessage` names the brand from `context.branding`. Platform host unchanged; organization values take effect on their host in C. | 2 days |
 | **C. Host resolution + routes** — *done* | Hosting record + host index; `resolveSiteForRequest` resolves a request to its organization and branding; organization-host routing table (§3) with workspace isolation; per-host OIDC issuer (already from A); domain-page hosting controls; `CUSTOM_HOSTING_PROVIDER` (`none`/`manual`/`azure`), `manual` going live the moment the CNAME resolves. **Per-organization DID documents on the host are still deferred** — they need per-org signing keys (§ reserved). | 3–4 days |
-| **D. Azure provisioning** — *next* | The `azure` provider: managed identity + role, hostname binding, managed certificate, a `pending-tls` step and its polling. The `manual` provider already covers everything except automatic binding + certificate, so this phase is only the App Service API calls behind the same records and UI. | 2–3 days |
-| **E. Plan gating, docs, e2e** | 402 enforcement, lapse handling, operator guide + help page, e2e journey on a custom host with `/etc/hosts`. | 1–2 days |
+| **D. Azure provisioning** — *done* | `hosting-provider.js`: the `azure` provider binds the hostname and issues a managed certificate over the ARM API as the site's managed identity, with a `pending-tls` step the DNS re-check completes; `manual` stays a no-op. `HOSTING_AZURE_SUBSCRIPTION_ID` added; resource group and site name come from App Service's own env. Requires **Website Contributor** on the site for the managed identity. | 2–3 days |
+| **E. Plan gating, docs, e2e** — *done* | `customDomain` on the plan catalogue (Enterprise only); `assertCanUseCustomDomain` gates the hosting request with a 402 and the domain page shows an upgrade note otherwise; a lapse reverts the host lazily at resolve time (fail-open); operator guide updated; host routing and gating covered by `tests/custom-hosting.test.js` and `tests/hosting-provider.test.js`. | 1–2 days |
 
 Roughly **two weeks** for one engineer. A and B are safe to ship on their own
 and are worth doing first regardless — A removes the single-host assumption,
