@@ -59,10 +59,20 @@ const CATALOG = Object.freeze({
 });
 
 function mergeDefaults(saved = {}) {
+  const forceWallet = Boolean(config.auth?.walletSignInForceEnabled);
   return Object.fromEntries(
     Object.values(CATALOG).map((method) => {
       const stored = saved[method.id] || {};
       const merged = { ...method.defaults, ...stored };
+      // A deployment can pin wallet approval on regardless of what the store
+      // says, so production is guaranteed to offer it. It never becomes the
+      // only first factor — password and passkey stay first factors too — so
+      // the bootstrap rule below is not endangered.
+      if (method.id === 'wallet' && forceWallet && method.implemented) {
+        merged.enabled = true;
+        merged.firstFactor = true;
+        merged.satisfiesSecond = true;
+      }
       const enabled = Boolean(merged.enabled) && method.implemented;
       return [
         method.id,

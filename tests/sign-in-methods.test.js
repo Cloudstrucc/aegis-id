@@ -113,3 +113,28 @@ test('disabling a method takes effect', async () => {
     assert.equal(await service.isFirstFactorEnabled('password'), true);
   });
 });
+
+test('WALLET_SIGNIN_FORCE_ENABLED pins wallet approval on, over a stored off', async () => {
+  await withEnv(async () => {
+    const fs = require('node:fs/promises');
+    // A store that explicitly turned wallet off, as a prod store might hold.
+    await fs.writeFile(process.env.SIGN_IN_METHOD_STORE_PATH, JSON.stringify({
+      password: { enabled: true, firstFactor: true, satisfiesSecond: false },
+      wallet: { enabled: false, firstFactor: false, satisfiesSecond: false }
+    }));
+
+    process.env.WALLET_SIGNIN_FORCE_ENABLED = 'true';
+    resetModules();
+    const forced = require('../src/services/sign-in-methods-service');
+    assert.equal(await forced.isFirstFactorEnabled('wallet'), true, 'the force overrides the stored off');
+    assert.equal(await forced.satisfiesSecondFactor('wallet'), true);
+    // Password is untouched and still a first factor, so wallet is never the
+    // only way in.
+    assert.equal(await forced.isFirstFactorEnabled('password'), true);
+
+    delete process.env.WALLET_SIGNIN_FORCE_ENABLED;
+    resetModules();
+    const unforced = require('../src/services/sign-in-methods-service');
+    assert.equal(await unforced.isFirstFactorEnabled('wallet'), false, 'without the force the stored off stands');
+  });
+});

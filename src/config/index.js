@@ -287,7 +287,12 @@ const config = {
     defaultMfaMethod: process.env.DEFAULT_MFA_METHOD || 'email',
     passkeyRpName: process.env.PASSKEY_RP_NAME || 'Vanguard Cloud Services - Aegis ID',
     passkeyRpId: process.env.PASSKEY_RP_ID || '',
-    passkeyOrigin: process.env.PASSKEY_ORIGIN || ''
+    passkeyOrigin: process.env.PASSKEY_ORIGIN || '',
+    // Pin wallet approval on for this deployment, whatever is saved in the
+    // sign-in-methods store. Sign-in methods are otherwise runtime state on
+    // /home, so this is how an environment guarantees wallet sign-in is on
+    // (and stays on across deploys) without editing that store by hand.
+    walletSignInForceEnabled: booleanFlag(process.env.WALLET_SIGNIN_FORCE_ENABLED, false)
   },
   mobileApps: {
     iosTeamId: process.env.IOS_APP_TEAM_ID || 'GL46AP73ZQ',

@@ -806,10 +806,14 @@ It works two ways, both on one mechanism:
   fingerprint, and the app signs them in. This is what the wallet's `sign-in`
   deep link is; a wallet that met an "Aries out-of-band" error here predates the
   handler and needs the current build.
-- **Into the Aegis web app itself**, passwordless. Turn on **Aegis wallet
-  approval** at `/admin/sign-in-methods` (off by default). The login page then
-  offers "Sign in with your wallet"; approving opens the account **registered
-  with that wallet's email** — never a new one, the same rule as Entra.
+- **Into the Aegis web app itself**, passwordless. The login page offers "Sign
+  in with your wallet"; approving opens the account **registered with that
+  wallet's email** — never a new one, the same rule as Entra. It is enabled per
+  environment two ways: an admin toggles **Aegis wallet approval** at
+  `/admin/sign-in-methods`, or `WALLET_SIGNIN_FORCE_ENABLED=true` pins it on for
+  the whole deployment regardless of that store (how dev, qa and prod ship).
+  Password and passkey stay first factors alongside it, so wallet approval is
+  never the only way in.
 
 Approving always needs the wallet on the phone *and* the phone's own biometric,
 so it is possession plus inherence — enough to be a second factor on its own.
