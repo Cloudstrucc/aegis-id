@@ -62,6 +62,53 @@ Each template is a function of these (see the `TEMPLATES` object in
 `brand` is supplied by `deliverMessage` from `context.branding`; templates never
 take it as a caller variable.
 
+## Making delivery work in dev, qa and prod
+
+dev, qa and prod ship **fail-closed**: with no transport configured, choosing
+"email code" at registration generates the code but sends nothing. Turn email
+on one of two ways.
+
+### Option A — deployment settings (recommended, survives deploys)
+
+Set these as app settings on the environment (or in its gitignored `.env` /
+`.env.dev` / `.env.qa`, which the deploy script pushes). When `SMTP_HOST` and
+`SMTP_FROM_ADDRESS` are present they **take precedence** over
+`/admin/notifications` and turn email on, so every environment is guaranteed to
+send:
+
+| Setting | Microsoft 365 | Gmail / Workspace |
+|---|---|---|
+| `SMTP_HOST` | `smtp.office365.com` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` | `587` |
+| `SMTP_SECURE` | `false` (STARTTLS) | `false` |
+| `SMTP_USERNAME` | a licensed mailbox | the sending account |
+| `SMTP_PASSWORD` | an **app password** (secret) | an **app password** (secret) |
+| `SMTP_FROM_ADDRESS` | that mailbox | that account |
+| `SMTP_FROM_NAME` | `Vanguard Aegis ID` | `Vanguard Aegis ID` |
+
+`SMTP_PASSWORD` is a secret — set it as an Azure app setting or in the
+gitignored env file, never commit it. With these set, `/admin/notifications`
+shows email as environment-managed and read-only; the per-message channel
+matrix stays editable there. Redeploy after changing them:
+
+```bash
+for e in dev qa prod; do bash scripts/deploy-azure-webapp.sh --env "$e" --tenant vanguardcs || break; done
+```
+
+### Option B — the admin UI (runtime, per environment)
+
+Sign in as a platform admin, open `/admin/notifications`, pick the Microsoft 365
+or Gmail preset, enter the mailbox and app password, and **Test connection**.
+This is stored on `/home` and survives deploys, but must be done per
+environment and is overridden by Option A when that is set.
+
+### Why nothing arrived before
+
+No transport was configured, so email was fail-closed — the intended default,
+so a fresh environment never silently sends from a wrong address. Locally the
+`filesystem` transport is on instead, writing to `artifacts/mail/` rather than
+sending; read the file, there is no inbox.
+
 ## Testing
 
 ### Fastest — render every template through the real delivery path

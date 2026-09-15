@@ -26,6 +26,12 @@
   <form class="wizard-form" action="/admin/notifications" method="post">
 
     <h2>Email (SMTP)</h2>
+    {{#if notificationSettings.email.managedByEnv}}
+      <div class="callout callout--info">
+        <strong>Email is configured by this environment.</strong>
+        <span>SMTP host, sender and credentials come from the deployment's settings (SMTP_*), so email is on and these fields are read-only here. Change them in the app settings and redeploy. The per-message channel matrix below is still editable.</span>
+      </div>
+    {{/if}}
     <div class="field-group">
       <label class="field-checkbox">
         <input type="checkbox" name="emailEnabled" value="true" {{#if notificationSettings.email.enabled}}checked{{/if}}>

@@ -154,11 +154,37 @@ function defaults() {
   };
 }
 
+// Email transport set at the deployment level (SMTP_* env). When a host and
+// from-address are present it is authoritative — it overrides the stored
+// settings and turns email on — so an environment can guarantee delivery
+// without an admin configuring anything. Returns null when not configured, so
+// the runtime-configured behaviour stands.
+function envEmailTransport() {
+  const env = config.notifications?.email || {};
+  if (!env.host || !env.fromAddress) {
+    return null;
+  }
+  return {
+    enabled: true,
+    preset: 'custom-smtp',
+    host: env.host,
+    port: env.port || 587,
+    secure: Boolean(env.secure),
+    requireTls: env.requireTls !== false,
+    username: env.username || '',
+    password: env.password || '',
+    fromAddress: env.fromAddress,
+    fromName: env.fromName || 'Vanguard Aegis ID',
+    managedByEnv: true
+  };
+}
+
 function mergeDefaults(saved = {}) {
   const base = defaults();
   const savedTypes = saved.messageTypes || {};
+  const envEmail = envEmailTransport();
   return {
-    email: { ...base.email, ...(saved.email || {}) },
+    email: envEmail || { ...base.email, ...(saved.email || {}) },
     sms: { ...base.sms, ...(saved.sms || {}) },
     messageTypes: Object.fromEntries(
       Object.values(MESSAGE_TYPES).map((type) => [

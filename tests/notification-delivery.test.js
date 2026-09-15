@@ -165,3 +165,46 @@ test('hosted environments start fail-closed until an admin configures a channel'
     assert.notEqual(settings.email.preset, 'filesystem');
   });
 });
+
+test('SMTP env config turns email on in a hosted environment, over a store that has it off', async () => {
+  await withEnv({
+    NODE_ENV: 'production',
+    APP_ENV: 'prod',
+    SMTP_HOST: 'smtp.office365.com',
+    SMTP_FROM_ADDRESS: 'no-reply@vanguardcs.ca',
+    SMTP_USERNAME: 'mailer@vanguardcs.ca',
+    SMTP_PASSWORD: 'app-password'
+  }, async ({ dir }) => {
+    const fs = require('node:fs/promises');
+    // A hosted store that never configured email — email off, so nothing sends.
+    await fs.writeFile(path.join(dir, 'notify.json'), JSON.stringify({
+      email: { enabled: false, preset: 'microsoft-exchange', host: '', fromAddress: '' }
+    }));
+
+    const settingsService = require('../src/services/notification-settings-service');
+    const settings = await settingsService.getNotificationSettings();
+    assert.equal(settings.email.enabled, true, 'env transport turns email on');
+    assert.equal(settings.email.host, 'smtp.office365.com');
+    assert.equal(settings.email.fromAddress, 'no-reply@vanguardcs.ca');
+    assert.equal(settings.email.managedByEnv, true);
+    // The matrix still governs which types may use email; mfa-otp does by default.
+    assert.equal(settingsService.channelAllowed(settings, 'mfa-otp', 'email'), true);
+
+    // The masked display carries the flag but never the password.
+    const display = await settingsService.getNotificationSettingsForDisplay();
+    assert.equal(display.email.managedByEnv, true);
+    assert.equal(display.email.password, '');
+    assert.equal(display.email.hasPassword, true);
+  });
+});
+
+test('without SMTP env, a hosted environment stays runtime-configured', async () => {
+  await withEnv({ NODE_ENV: 'production', APP_ENV: 'prod' }, async () => {
+    const settingsService = require('../src/services/notification-settings-service');
+    const settings = await settingsService.getNotificationSettings();
+    // Fail-closed default: email preset present but no host/from, so nothing
+    // sends until an admin configures it — unchanged behaviour.
+    assert.notEqual(settings.email.managedByEnv, true);
+    assert.equal(settings.email.fromAddress, '');
+  });
+});

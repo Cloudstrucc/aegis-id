@@ -322,6 +322,24 @@ const config = {
   // `manual` activates a hostname once its CNAME points here and leaves the
   // App Service binding and certificate to the operator; `azure` (phase D)
   // provisions both.
+  // Email transport from the environment, so a deployment can send mail
+  // without an admin typing SMTP settings into /admin/notifications. When a
+  // host and from-address are set here, they take precedence over the stored
+  // settings and turn email delivery on — that is how dev, qa and prod are
+  // guaranteed to send. The password is a secret set as an app setting, never
+  // committed. Leave SMTP_HOST empty to keep the runtime-configured behaviour.
+  notifications: {
+    email: {
+      host: (process.env.SMTP_HOST || '').trim(),
+      port: integerValue(process.env.SMTP_PORT, 587),
+      secure: booleanFlag(process.env.SMTP_SECURE, false),
+      requireTls: booleanFlag(process.env.SMTP_REQUIRE_TLS, true),
+      username: process.env.SMTP_USERNAME || '',
+      password: process.env.SMTP_PASSWORD || '',
+      fromAddress: (process.env.SMTP_FROM_ADDRESS || '').trim(),
+      fromName: process.env.SMTP_FROM_NAME || 'Vanguard Aegis ID'
+    }
+  },
   hosting: {
     provider: (process.env.CUSTOM_HOSTING_PROVIDER || 'none').trim().toLowerCase(),
     // Which App Service the `azure` provider binds hostnames to. On the host
