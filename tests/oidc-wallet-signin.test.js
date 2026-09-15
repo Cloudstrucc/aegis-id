@@ -74,6 +74,22 @@ test('the deep link carries a challenge and nothing that names anybody', async (
   });
 });
 
+// What the wallet shows before the holder decides: the application and the
+// deadline, and nothing about anybody.
+test('the wallet can read what it is being asked to approve, and only that', async () => {
+  await withEnv(async ({ signin }) => {
+    const challenge = await signin.startWalletSignIn({ ...REQUEST, organizationId: 'org-1' });
+    const view = await signin.describeWalletSignIn(challenge.id);
+
+    assert.deepEqual(Object.keys(view).sort(), ['appName', 'challengeId', 'clientId', 'expiresAt', 'requestedOrganizationId', 'status']);
+    assert.equal(view.appName, 'Business Expenses');
+    assert.equal(view.requestedOrganizationId, 'org-1');
+    assert.equal(view.status, 'pending');
+
+    await assert.rejects(signin.describeWalletSignIn('no-such-challenge'), (error) => error.status === 404);
+  });
+});
+
 test('a pending challenge tells a watcher nothing about who might answer', async () => {
   await withEnv(async ({ signin }) => {
     const challenge = await signin.startWalletSignIn(REQUEST);

@@ -766,3 +766,28 @@ controller's legal name are business decisions.
 - Use YubiKey for phishing-resistant sign-in, not as a Verified ID wallet.
 - Keep the Aries lab separate from the production trust path.
 - Replace local JSON storage before real multi-tenant customer onboarding.
+
+## Signing in with the wallet
+
+The Aegis wallet answers a QR to prove it is the holder — no password, no code.
+It works two ways, both on one mechanism:
+
+- **Into a connected app** (Business Expenses, the signature app). The app shows
+  a QR; the holder scans it in the wallet, approves with Face ID / Touch ID /
+  fingerprint, and the app signs them in. This is what the wallet's `sign-in`
+  deep link is; a wallet that met an "Aries out-of-band" error here predates the
+  handler and needs the current build.
+- **Into the Aegis web app itself**, passwordless. Turn on **Aegis wallet
+  approval** at `/admin/sign-in-methods` (off by default). The login page then
+  offers "Sign in with your wallet"; approving opens the account **registered
+  with that wallet's email** — never a new one, the same rule as Entra.
+
+Approving always needs the wallet on the phone *and* the phone's own biometric,
+so it is possession plus inherence — enough to be a second factor on its own.
+
+**A wallet as its own passkey.** In the wallet's Settings, "Sign in with a
+passkey" registers a platform passkey (Face ID / Touch ID) or a security key
+such as a YubiKey for the wallet's own address. This is the wallet holding a
+passkey for *itself*; the wallet acting as a passkey provider for *other* sites
+is a separate, held-back capability (see
+[`wallet-passkey-provider.md`](wallet-passkey-provider.md)).

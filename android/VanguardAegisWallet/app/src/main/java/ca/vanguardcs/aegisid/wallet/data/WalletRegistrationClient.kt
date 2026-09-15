@@ -176,6 +176,28 @@ class WalletRegistrationClient(
         }
     }
 
+    // --- Sign-in requests ----------------------------------------------------
+
+    /** What a sign-in request is, before the holder decides. */
+    suspend fun describeSignIn(challengeId: String, sourceWebAppUrl: String? = null): JSONObject =
+        get("/api/wallet-signin/$challengeId", sourceWebAppUrl)
+
+    /**
+     * Answer a sign-in request. **This device's own** Wallet ID is what
+     * authenticates the answer; the link named nobody.
+     */
+    suspend fun answerSignIn(
+        challengeId: String,
+        walletId: String,
+        approve: Boolean,
+        sourceWebAppUrl: String? = null
+    ): JSONObject =
+        post(
+            "/api/wallet-signin/$challengeId/${if (approve) "approve" else "decline"}",
+            JSONObject().put("walletId", walletId),
+            sourceWebAppUrl
+        )
+
     // --- Contact changes (challenge gated) -----------------------------------
 
     suspend fun startContactChange(walletId: String, field: String, value: String): String =

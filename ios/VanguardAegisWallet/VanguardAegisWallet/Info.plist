@@ -56,6 +56,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Vanguard Aegis ID Wallet confirms it is you before approving a sign-in or an action from this wallet.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Vanguard Aegis ID Wallet uses the camera to scan Aegis ID credential, Aries lab, and OpenID VC presentation QR codes.</string>
 	<key>NSLocalNetworkUsageDescription</key>

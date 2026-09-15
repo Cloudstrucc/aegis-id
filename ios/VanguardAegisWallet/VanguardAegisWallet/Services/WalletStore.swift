@@ -27,6 +27,8 @@ final class WalletStore: ObservableObject {
     @Published var lastLabMessage: String?
     @Published var lastLabError: String?
     @Published var challengeBanner: WalletChallengeBanner?
+    // A sign-in request waiting for an answer (see WalletStore+SignIn.swift).
+    @Published var pendingSignIn: PendingSignIn?
     @Published private(set) var organizationProfiles: [String: OrganizationProfile] = [:]
     @Published private(set) var walletPasskeyStatus: WalletPasskeyStatus?
     // Defaults to empty: the holder supplies their address during first-run setup
@@ -82,6 +84,15 @@ final class WalletStore: ObservableObject {
         lastLabError = nil
 
         do {
+            // An application asking the holder to approve a sign-in. First,
+            // because it is the one link a holder meets every day, and because
+            // left to the last parser it read as a malformed Aries invitation.
+            if AegisSignInLinkParser.canParse(rawText) {
+                let request = try AegisSignInLinkParser.parse(rawText)
+                Task { await loadSignIn(request) }
+                return
+            }
+
             // Product-path organization invite: accepted directly, with no ACA-Py
             // round trip, so it works against any deployment.
             if AegisOrganizationInviteParser.canParse(rawText) {
@@ -1006,6 +1017,13 @@ final class WalletStore: ObservableObject {
             transactions = []
             lastLabError = "Stored transaction state could not be loaded."
         }
+    }
+
+    /// Add a ledger entry and persist it. For extensions that record an
+    /// answer given elsewhere than the challenge poller.
+    func insertTransaction(_ transaction: WalletTransaction) {
+        transactions.insert(transaction, at: 0)
+        saveTransactions()
     }
 
     private func saveTransactions() {

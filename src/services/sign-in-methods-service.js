@@ -50,8 +50,8 @@ const CATALOG = Object.freeze({
   wallet: {
     id: 'wallet',
     label: 'Aegis wallet approval',
-    description: 'Approve the sign-in from a registered wallet. Requires a wallet already bound to the account.',
-    implemented: false,
+    description: 'Scan a code and approve the sign-in from the Aegis wallet registered with your email. No password.',
+    implemented: true,
     canBeFirst: true,
     canSatisfySecond: true,
     defaults: { enabled: false, firstFactor: true, satisfiesSecond: true }

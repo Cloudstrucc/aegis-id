@@ -37,10 +37,23 @@
         </div>
       </form>
 
-      {{#if passkeyLoginEnabled}}
+      {{#if (or passkeyLoginEnabled walletLoginEnabled)}}
         <div class="auth-panel__alternatives">
           <p class="auth-divider">or</p>
 
+          {{#if walletLoginEnabled}}
+            <a class="button button--ghost" href="/auth/login/wallet">
+              <svg class="auth-panel__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="5" y="2" width="14" height="20" rx="2"></rect>
+                <path d="M12 18h.01"></path>
+              </svg>
+              Sign in with your wallet
+            </a>
+            <p class="auth-hint">Scan a code and approve from the Aegis wallet on your phone. No password.</p>
+          {{/if}}
+
+          {{#if passkeyLoginEnabled}}
           <button class="button button--ghost" type="button" data-passkey-login>
             <svg class="auth-panel__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -52,6 +65,7 @@
 
           <p class="form-footnote form-footnote--centred" data-passkey-status aria-live="polite"></p>
           <p class="auth-hint">Uses Face ID, Touch ID, Windows Hello or a security key. No password needed.</p>
+          {{/if}}
           <p class="auth-hint">Lost your device? <a href="/auth/recover">Use a recovery code</a>, or <a href="/auth/recover/approvals">ask your root wallets to approve</a>.</p>
         </div>
       {{/if}}

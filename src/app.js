@@ -40,6 +40,7 @@ function registerHandlebars() {
     }
   }
   hbs.registerHelper('eq', (left, right) => left === right);
+  hbs.registerHelper('or', (...args) => args.slice(0, -1).some(Boolean));
   hbs.registerHelper('json', (value) => new hbs.handlebars.SafeString(safeJson(value, 2)));
   hbs.registerHelper('jsonScript', (value) => new hbs.handlebars.SafeString(safeJson(value)));
   hbs.registerHelper('year', () => new Date().getFullYear());

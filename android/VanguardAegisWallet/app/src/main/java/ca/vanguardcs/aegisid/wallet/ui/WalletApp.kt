@@ -130,6 +130,24 @@ private fun WalletTabs(
         store.autoRefreshOidcWalletChallenges()
     }
 
+    // Over whichever tab is showing: the request can arrive from the camera,
+    // a paste or a deep link, and the question is the same.
+    store.pendingSignIn?.let { pending ->
+        SignInApprovalSheet(
+            store = store,
+            pending = pending,
+            onAnswered = { approved ->
+                router.flash(
+                    FlashNotice(
+                        if (approved) "Signed in to ${pending.appName}." else "Declined ${pending.appName}.",
+                        succeeded = approved
+                    )
+                )
+                router.show(WalletTab.Ledger)
+            }
+        )
+    }
+
     run {
         Scaffold(
             topBar = {
@@ -662,7 +680,16 @@ private fun ConnectionsScreen(store: WalletStore, router: WalletRouter) {
 
 @Composable
 private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String) -> JSONObject, router: WalletRouter) {
-    var passkeySubject by rememberSaveable { mutableStateOf(store.walletPasskeySubject) }
+    // The wallet's own registered address, so registering a passkey is one tap
+    // rather than a blank field. Falls back to whatever was set before.
+    var passkeySubject by rememberSaveable {
+        mutableStateOf(store.walletPasskeySubject.ifBlank { store.identity?.email.orEmpty() })
+    }
+    LaunchedEffect(passkeySubject) {
+        if (passkeySubject.isNotBlank() && store.walletPasskeySubject != passkeySubject) {
+            store.updateWalletPasskeySubject(passkeySubject)
+        }
+    }
     var showProfile by rememberSaveable { mutableStateOf(false) }
     var showPasskeys by rememberSaveable { mutableStateOf(false) }
     val settingsContext = androidx.compose.ui.platform.LocalContext.current
@@ -782,7 +809,7 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
         item {
             AegisCard {
                 StatusBadge("Optional assurance", VanguardColors.Green)
-                Text("Wallet passkey assurance", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Sign in with a passkey", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
                     "Register a device passkey when an organization requires phishing-resistant proof before approving wallet challenges.",
                     color = Color.Gray
