@@ -1,0 +1,61 @@
+{{!--
+  Signing in to the web app itself with the wallet.
+
+  The same mechanism the relying parties use, with this application as the
+  relying party. Nothing on the page names the person: the wallet answers with
+  its own Wallet ID, and the account is whichever one is registered with that
+  wallet's email. No account, no sign-in — nothing is ever provisioned here.
+--}}
+<section class="page-hero page-hero--compact">
+  <p class="eyebrow">{{site.branding.shortName}}</p>
+  <h1>Approve this sign-in from your wallet.</h1>
+  <p>
+    Scan the code with the Aegis wallet on your phone, or open the link on the
+    phone the wallet is installed on, and approve with your biometric.
+  </p>
+</section>
+
+<section class="band band--white">
+  <div class="auth-grid auth-grid--compact">
+    <div class="auth-panel">
+      <div class="auth-panel__form"
+           data-wallet-signin="{{challengeId}}"
+           data-wallet-signin-complete="/auth/login/wallet/complete">
+        <h2>Scan with the Aegis ID wallet</h2>
+
+        <div class="wallet-signin__qr">
+          <img src="{{qrCodeDataUrl}}" alt="QR code containing this sign-in request" width="240" height="240">
+        </div>
+
+        <p class="form-footnote wallet-signin__link">{{deepLink}}</p>
+
+        <p>
+          <a class="button button--primary" href="{{deepLink}}">Open in my wallet</a>
+        </p>
+
+        <p class="form-footnote" data-wallet-signin-status role="status" aria-live="polite">
+          Waiting for your wallet. This request expires in about {{expiresInMinutes}} minutes.
+        </p>
+
+        <p class="form-footnote"><a href="/auth/login">Sign in another way</a></p>
+      </div>
+    </div>
+
+    <div class="section-heading">
+      <p class="eyebrow">No password, no code</p>
+      <h2>Your phone is the second factor.</h2>
+      <p>
+        Approving needs the wallet on your phone and your face, fingerprint or
+        passcode — possession and a biometric — so nothing else is asked of you
+        here.
+      </p>
+      <p>
+        The account that opens is the one registered with your wallet's email
+        address. If there is none, you will be told; no account is created.
+      </p>
+      <p class="form-footnote">
+        No wallet yet? <a href="/support">Support</a> explains how to set one up.
+      </p>
+    </div>
+  </div>
+</section>

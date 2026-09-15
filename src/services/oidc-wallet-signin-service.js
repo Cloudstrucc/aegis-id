@@ -141,6 +141,31 @@ async function getChallenge(challengeId) {
 }
 
 /**
+ * What the wallet shows before the holder decides.
+ *
+ * Deliberately little: the application's name, when the request expires and
+ * which organization it asked for. No email, no Wallet ID — the link is
+ * public and so is this.
+ */
+async function describeWalletSignIn(challengeId) {
+  const record = await getChallenge(challengeId);
+  if (!record) {
+    throw expose('That sign-in request is no longer available.', 404);
+  }
+  if (record.status === 'pending' && isExpired(record)) {
+    throw expose('That sign-in request has expired. Start again from the application.', 410);
+  }
+  return {
+    challengeId: record.id,
+    status: record.status,
+    appName: record.appName,
+    clientId: record.clientId,
+    requestedOrganizationId: record.requestedOrganizationId || null,
+    expiresAt: record.expiresAt
+  };
+}
+
+/**
  * The wallet answering.
  *
  * `presentedWalletId` comes from the wallet's own storage, never from the link
@@ -285,6 +310,7 @@ async function claimWalletSignIn(challengeId, { clientId, redirectUri } = {}) {
 }
 
 module.exports = {
+  describeWalletSignIn,
   CHALLENGE_TTL_MINUTES,
   startWalletSignIn,
   walletDeepLink,

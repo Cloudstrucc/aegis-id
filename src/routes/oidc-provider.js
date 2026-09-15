@@ -5,6 +5,7 @@ const { createAuthorizationCode, exchangeAuthorizationCode } = require('../servi
 const { listCredentialMembershipsForEmail } = require('../services/org-admin-service');
 const {
   approveWalletSignIn,
+  describeWalletSignIn,
   claimWalletSignIn,
   declineWalletSignIn,
   readSignInStatus,
@@ -88,6 +89,14 @@ router.get('/oidc/authorize/wallet/:challengeId/status', async (req, res, next) 
 
 // The wallet answering. Content-negotiated like every other wallet endpoint:
 // a browser gets a page, a wallet gets JSON.
+router.get('/api/wallet-signin/:challengeId', authorize('api.oidcProvider.walletSignIn'), async (req, res, next) => {
+  try {
+    res.json(await describeWalletSignIn(req.params.challengeId));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/api/wallet-signin/:challengeId/approve', authorize('api.oidcProvider.walletSignIn'), async (req, res, next) => {
   try {
     const record = await approveWalletSignIn(req.params.challengeId, req.body.walletId);

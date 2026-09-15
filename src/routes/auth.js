@@ -19,6 +19,12 @@ const {
   verifyOtpChallenge
 } = require('../services/auth-service');
 const { writeAuditEvent } = require('../services/audit-service');
+const QRCode = require('qrcode');
+const {
+  startWalletSignIn,
+  walletDeepLink,
+  claimWalletSignIn
+} = require('../services/oidc-wallet-signin-service');
 const {
   TOKEN_TTL_MINUTES,
   completePasswordReset,
@@ -128,6 +134,7 @@ router.get('/auth/login', requireAnonymous, async (req, res, next) => {
       description: 'Sign in to Vanguard Cloud Services - Aegis ID.',
       formValues: { email: normalizeEmail(req.query.email || '') },
       passkeyLoginEnabled: await isFirstFactorEnabled('passkey'),
+      walletLoginEnabled: await isFirstFactorEnabled('wallet'),
       errorMessage: req.session.authError || null
     });
     req.session.authError = null;
@@ -183,6 +190,75 @@ router.post('/auth/login', requireAnonymous, authorize('auth.login'), (req, res,
       return next(routeError);
     }
   })(req, res, next);
+});
+
+// Sign in by approving from the wallet — no password, no code.
+//
+// The same challenge the relying parties use, with the web app as the relying
+// party: the wallet answers with its own Wallet ID, the server maps that
+// wallet's registered email to an account, and the session opens. The wallet
+// is possession plus the phone's own biometric, so it satisfies the second
+// factor by itself. An email with no account is refused, never provisioned —
+// the same rule as Entra.
+const WEB_APP_CLIENT_ID = 'aegis-web-app';
+
+function walletLoginRedirectUri(req) {
+  return `${req.site.baseUrl}/auth/login/wallet/complete`;
+}
+
+router.get('/auth/login/wallet', requireAnonymous, async (req, res, next) => {
+  try {
+    if (!(await isFirstFactorEnabled('wallet'))) {
+      return res.redirect(303, '/auth/login');
+    }
+    captureReturnTo(req);
+    const challenge = await startWalletSignIn({
+      clientId: WEB_APP_CLIENT_ID,
+      redirectUri: walletLoginRedirectUri(req),
+      appName: req.site.branding.appName
+    });
+    const deepLink = walletDeepLink(challenge.id);
+    res.render('pages/auth-login-wallet', {
+      title: 'Sign in with your wallet',
+      description: 'Approve this sign-in from the Aegis ID wallet on your phone.',
+      challengeId: challenge.id,
+      deepLink,
+      qrCodeDataUrl: await QRCode.toDataURL(deepLink, { margin: 1, width: 360 }),
+      expiresInMinutes: Math.max(1, Math.round((Date.parse(challenge.expiresAt) - Date.now()) / 60000))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/auth/login/wallet/complete', requireAnonymous, authorize('auth.login'), async (req, res, next) => {
+  try {
+    const { record } = await claimWalletSignIn(req.body.challengeId, {
+      clientId: WEB_APP_CLIENT_ID,
+      redirectUri: walletLoginRedirectUri(req)
+    });
+    const user = await findAccountByEmail(record.email);
+    if (!user) {
+      await writeAuditEvent('auth.login.wallet.refused', {
+        walletId: record.walletId,
+        reason: 'no-account'
+      });
+      return res.status(403).json({
+        error: { message: 'No Aegis account is registered with that wallet\'s email address. Sign in another way, or register first.' }
+      });
+    }
+    await writeAuditEvent('auth.login.wallet.accepted', {
+      userId: user.id,
+      email: user.email,
+      walletId: record.walletId
+    });
+    return await finishInteractiveLogin(req, res, user, 'wallet', true);
+  } catch (error) {
+    if (error.expose) {
+      return res.status(error.status || 400).json({ error: { message: error.message } });
+    }
+    next(error);
+  }
 });
 
 router.get('/auth/verify', requirePendingSecondFactor, async (req, res, next) => {

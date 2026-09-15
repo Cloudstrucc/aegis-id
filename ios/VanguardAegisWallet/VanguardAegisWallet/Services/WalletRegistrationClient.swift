@@ -152,6 +152,39 @@ struct WalletRegistrationClient {
         )
     }
 
+    struct SignInRequestView: Decodable {
+        let challengeId: String
+        let status: String
+        let appName: String
+        let clientId: String
+        let requestedOrganizationId: String?
+        let expiresAt: String
+    }
+
+    struct SignInAnswer: Decodable {
+        let status: String
+        let appName: String?
+        let walletId: String?
+    }
+
+    /// What a sign-in request is, before the holder decides.
+    func describeSignIn(challengeId: String, sourceWebAppURL: String? = nil) async throws -> SignInRequestView {
+        try await get(
+            path: "api/wallet-signin/\(challengeId)",
+            baseURL: portalURL(sourceWebAppURL)
+        )
+    }
+
+    /// Answer a sign-in request. **This device's own** Wallet ID is what
+    /// authenticates the answer; the link named nobody.
+    func answerSignIn(challengeId: String, walletId: String, approve: Bool, sourceWebAppURL: String? = nil) async throws -> SignInAnswer {
+        try await post(
+            path: "api/wallet-signin/\(challengeId)/\(approve ? "approve" : "decline")",
+            body: ["walletId": walletId],
+            baseURL: portalURL(sourceWebAppURL)
+        )
+    }
+
     struct RecoveryApproval: Decodable {
         let approved: Bool
         let approvalCount: Int

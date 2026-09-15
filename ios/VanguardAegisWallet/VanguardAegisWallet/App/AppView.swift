@@ -79,6 +79,13 @@ struct AppView: View {
             store.importInvitation(from: url.absoluteString)
             router.show(.home)
         }
+        // Over whichever tab is showing: the request can arrive from the
+        // camera, a paste or a deep link, and the question is the same.
+        .sheet(item: $store.pendingSignIn) { pending in
+            SignInApprovalSheet(pending: pending)
+                .environmentObject(store)
+                .environmentObject(router)
+        }
         .task(id: scenePhase) {
             guard scenePhase == .active else {
                 return

@@ -106,7 +106,7 @@ struct SettingsView: View {
                 LabeledContent("Credential engine", value: "Lab bridge")
             }
 
-            Section("Wallet passkey assurance") {
+            Section("Sign in with a passkey") {
                 TextField("Wallet subject email", text: $passkeySubject)
                     .textInputAutocapitalization(.never)
                     .keyboardType(.emailAddress)
@@ -154,7 +154,7 @@ struct SettingsView: View {
                     Label("Refresh Passkey Status", systemImage: "arrow.clockwise")
                 }
 
-                Text("Register Apple Passwords, a browser passkey, or a hardware security key such as YubiKey. The local toggle is useful for demos; organization policy can still require server-verified passkey evidence.")
+                Text("Register a passkey for this wallet — Face ID, Touch ID, or a hardware security key such as YubiKey — so you can sign in without a password. The local toggle is useful for demos; organization policy can still require server-verified passkey evidence.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
@@ -200,7 +200,14 @@ struct SettingsView: View {
             SafariView(url: AegisWalletEnvironment.webAppURL).ignoresSafeArea()
         }
         .onAppear {
-            passkeySubject = store.walletPasskeySubject
+            // The wallet's own registered address, so registering a passkey is
+            // one tap rather than a blank field to puzzle over.
+            passkeySubject = store.walletPasskeySubject.isEmpty
+                ? (store.identity?.email ?? "")
+                : store.walletPasskeySubject
+            if !passkeySubject.isEmpty {
+                store.updateWalletPasskeySubject(passkeySubject)
+            }
             Task { await store.refreshWalletPasskeyStatus() }
         }
     }

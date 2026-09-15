@@ -1717,7 +1717,11 @@ function watchWalletSignIn() {
   const challengeId = panel.dataset.walletSignin;
   const status = panel.querySelector('[data-wallet-signin-status]');
   const values = panel.querySelector('[data-wallet-signin-client]');
-  if (!challengeId || !values) {
+  // The web app signing in to itself completes at its own endpoint, with
+  // nothing but the challenge; a relying party completes at the
+  // authorization endpoint with the request it started.
+  const completePath = panel.dataset.walletSigninComplete;
+  if (!challengeId || (!values && !completePath)) {
     return;
   }
 
@@ -1733,6 +1737,21 @@ function watchWalletSignIn() {
   // The authorization endpoint answers with the relying party's own origin, and
   // `form-action 'self'` blocks a form whose redirect chain leaves this site.
   const complete = async () => {
+    if (completePath) {
+      const response = await fetch(completePath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ challengeId })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) {
+        say(result.error?.message || 'That approval could not be completed. Start again.');
+        return;
+      }
+      window.location.assign(result.redirectUrl || '/');
+      return;
+    }
+
     const response = await fetch('/oidc/authorize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },

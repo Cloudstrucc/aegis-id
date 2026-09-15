@@ -73,7 +73,9 @@ class WalletStore(
     var lastLabError by mutableStateOf<String?>(null)
         private set
     var challengeBanner by mutableStateOf<WalletChallengeBanner?>(null)
-        private set
+    // A sign-in request waiting for an answer (see WalletStoreSignIn.kt).
+    var pendingSignIn by mutableStateOf<PendingSignIn?>(null)
+        internal set
     var walletPasskeySubject by mutableStateOf(preferences.getString("walletPasskeySubject", "") ?: "")
         private set
     var walletPasskeyStatus by mutableStateOf<WalletPasskeyStatus?>(null)
@@ -250,6 +252,19 @@ class WalletStore(
         lastLabError = null
 
         try {
+            // An application asking the holder to approve a sign-in. First,
+            // because it is the one link a holder meets every day, and because
+            // left to the last parser it read as a malformed Aries invitation.
+            if (SignInLinkParser.canParse(rawText)) {
+                val request = SignInLinkParser.parse(rawText)
+                if (request == null) {
+                    lastImportError = "This sign-in link is missing its challenge."
+                    return
+                }
+                viewModelScope.launch { loadSignIn(request) }
+                return
+            }
+
             // Product-path organization invitations, which never touch ACA-Py.
             if (OrganizationInviteParser.canParse(rawText)) {
                 val invite = OrganizationInviteParser.parse(rawText)
@@ -950,6 +965,12 @@ class WalletStore(
         preferences.edit().putString("connections", JSONArray().also { array ->
             connections.forEach { array.put(it.toJson()) }
         }.toString()).apply()
+    }
+
+    /** Add a ledger entry and persist it, for answers recorded outside the poller. */
+    internal fun insertTransaction(transaction: WalletTransaction) {
+        transactions = listOf(transaction) + transactions
+        saveTransactions()
     }
 
     private fun saveTransactions() {

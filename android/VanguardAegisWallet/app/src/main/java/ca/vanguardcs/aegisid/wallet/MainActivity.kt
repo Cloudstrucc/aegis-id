@@ -2,7 +2,7 @@ package ca.vanguardcs.aegisid.wallet
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.credentials.CreatePublicKeyCredentialRequest
@@ -18,7 +18,9 @@ import kotlinx.coroutines.launch
 import ca.vanguardcs.aegisid.wallet.ui.WalletApp
 import org.json.JSONObject
 
-class MainActivity : ComponentActivity() {
+// A FragmentActivity because BiometricPrompt, used to confirm a sign-in
+// approval, needs one. It is a ComponentActivity underneath.
+class MainActivity : FragmentActivity() {
     private val store: WalletStore by viewModels {
         WalletStore.Factory(applicationContext)
     }

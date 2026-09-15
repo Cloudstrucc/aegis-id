@@ -592,6 +592,61 @@ enum AegisRootWalletLinkParser {
 }
 
 
+/// `aegisid://sign-in?challenge=…`
+///
+/// An application — Business Expenses, the Aegis web app itself — is asking
+/// the holder to prove it is them by approving from this wallet. The link
+/// carries the challenge and nothing else: no email, no Wallet ID, no
+/// organization. It is shown on a screen for anyone to photograph, and what
+/// makes that safe is that there is nothing in it worth having. The wallet
+/// supplies its own identity when it answers.
+struct AegisSignInRequest: Equatable, Hashable {
+    var challengeId: String
+    var sourceWebAppURL: String?
+    var rawURL: String
+}
+
+enum AegisSignInLinkParser {
+    static func canParse(_ rawText: String) -> Bool {
+        guard let parts = URLComponents(string: rawText.trimmingCharacters(in: .whitespacesAndNewlines)),
+              AegisWalletEnvironment.isAegisScheme(parts.scheme)
+        else {
+            return false
+        }
+        return parts.host?.lowercased() == "sign-in" || parts.path.lowercased().contains("sign-in")
+    }
+
+    static func parse(_ rawText: String) throws -> AegisSignInRequest {
+        let trimmed = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canParse(trimmed), let parts = URLComponents(string: trimmed) else {
+            throw ParserError.invalidLink
+        }
+        let items = parts.queryItems ?? []
+        guard let challengeId = items.first(where: { $0.name == "challenge" })?.aegisDecodedValue, !challengeId.isEmpty else {
+            throw ParserError.missingChallenge
+        }
+        return AegisSignInRequest(
+            challengeId: challengeId,
+            sourceWebAppURL: items.first(where: { $0.name == "vanguard_web_app_url" })?.aegisDecodedValue,
+            rawURL: trimmed
+        )
+    }
+
+    enum ParserError: LocalizedError {
+        case invalidLink
+        case missingChallenge
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidLink:
+                return "That QR code is not an Aegis sign-in request."
+            case .missingChallenge:
+                return "This sign-in link is missing its challenge."
+            }
+        }
+    }
+}
+
 /// Query values as the server actually encoded them.
 ///
 /// The web app builds invitation links with `URLSearchParams`, which encodes a

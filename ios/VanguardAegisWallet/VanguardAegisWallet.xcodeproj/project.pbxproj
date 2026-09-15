@@ -44,6 +44,8 @@
 		A10000000000000000000050 /* WalletIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000050 /* WalletIdentity.swift */; };
 		A10000000000000000000051 /* WalletRegistrationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000051 /* WalletRegistrationClient.swift */; };
 		A10000000000000000000052 /* WalletStore+Identity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000052 /* WalletStore+Identity.swift */; };
+		A10000000000000000000093 /* WalletStore+SignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000093 /* WalletStore+SignIn.swift */; };
+		A10000000000000000000094 /* SignInApprovalSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000094 /* SignInApprovalSheet.swift */; };
 		A10000000000000000000053 /* WalletSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000053 /* WalletSetupView.swift */; };
 		A10000000000000000000054 /* WalletRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000054 /* WalletRecoveryView.swift */; };
 		A10000000000000000000055 /* WalletProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000055 /* WalletProfileView.swift */; };
@@ -110,6 +112,8 @@
 		A20000000000000000000050 /* WalletIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletIdentity.swift; sourceTree = "<group>"; };
 		A20000000000000000000051 /* WalletRegistrationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletRegistrationClient.swift; sourceTree = "<group>"; };
 		A20000000000000000000052 /* WalletStore+Identity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletStore+Identity.swift"; sourceTree = "<group>"; };
+		A20000000000000000000093 /* WalletStore+SignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletStore+SignIn.swift"; sourceTree = "<group>"; };
+		A20000000000000000000094 /* SignInApprovalSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInApprovalSheet.swift; sourceTree = "<group>"; };
 		A20000000000000000000053 /* WalletSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletSetupView.swift; sourceTree = "<group>"; };
 		A20000000000000000000054 /* WalletRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletRecoveryView.swift; sourceTree = "<group>"; };
 		A20000000000000000000055 /* WalletProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletProfileView.swift; sourceTree = "<group>"; };
@@ -211,6 +215,7 @@
 				A20000000000000000000050 /* WalletIdentity.swift */,
 				A20000000000000000000051 /* WalletRegistrationClient.swift */,
 				A20000000000000000000052 /* WalletStore+Identity.swift */,
+				A20000000000000000000093 /* WalletStore+SignIn.swift */,
 				A20000000000000000000021 /* AegisWalletEnvironment.swift */,
 				A20000000000000000000006 /* OOBInvitationParser.swift */,
 				A20000000000000000000014 /* LabAgentClient.swift */,
@@ -231,6 +236,7 @@
 				A40000000000000000000010 /* Scan */,
 				A40000000000000000000013 /* Organizations */,
 				A40000000000000000000015 /* Ledger */,
+				A40000000000000000000016 /* SignIn */,
 				A40000000000000000000011 /* Connections */,
 				A40000000000000000000012 /* Settings */,
 			);
@@ -296,6 +302,14 @@
 				A20000000000000000000018 /* vanguard-logo@3x.png */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000016 /* SignIn */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000094 /* SignInApprovalSheet.swift */,
+			);
+			path = SignIn;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000015 /* Ledger */ = {
@@ -440,6 +454,8 @@
 				A10000000000000000000050 /* WalletIdentity.swift in Sources */,
 				A10000000000000000000051 /* WalletRegistrationClient.swift in Sources */,
 				A10000000000000000000052 /* WalletStore+Identity.swift in Sources */,
+				A10000000000000000000093 /* WalletStore+SignIn.swift in Sources */,
+				A10000000000000000000094 /* SignInApprovalSheet.swift in Sources */,
 				A10000000000000000000053 /* WalletSetupView.swift in Sources */,
 				A10000000000000000000054 /* WalletRecoveryView.swift in Sources */,
 				A10000000000000000000006 /* OOBInvitationParser.swift in Sources */,
