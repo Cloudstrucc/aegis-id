@@ -30,6 +30,7 @@ const didWebRoutes = require('./routes/did-web');
 const { attachAuthLocals } = require('./middleware/auth');
 const { attachLocalTestMode } = require('./middleware/local-test-mode');
 const { attachSiteContext } = require('./middleware/site-context');
+const { organizationHostRouting } = require('./middleware/organization-host');
 const { configurePassport } = require('./services/passport-service');
 
 function registerHandlebars() {
@@ -489,6 +490,7 @@ function createApp() {
     })
   );
 
+  app.use(organizationHostRouting);
   app.use('/', authRoutes);
   app.use('/', accountRoutes);
   app.use('/', pageRoutes);

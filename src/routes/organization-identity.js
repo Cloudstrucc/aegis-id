@@ -24,7 +24,11 @@ const {
   getIdentity,
   listIdentities,
   startDomainClaim,
-  verifyDomain
+  verifyDomain,
+  hostingEnabled,
+  requestHosting,
+  checkHosting,
+  disableHosting
 } = require('../services/organization-identity-service');
 const { DNS_PROVIDERS } = require('../services/dns-provider-guides');
 const {
@@ -95,12 +99,18 @@ router.get(
   async (req, res, next) => {
     try {
       const workspace = await loadWorkspace(req);
+      const identity = await ensureIdentity(workspace);
       res.render('pages/organization-domain', {
         title: 'Organization identity',
         description: 'Prove the domain your organization is known by.',
         workspace,
         subscriptionId: req.params.subscriptionId,
-        identity: await ensureIdentity(workspace),
+        identity,
+        // Hosting is offered only once the domain is proven, and only where the
+        // deployment can provision a hostname at all.
+        showHosting: hostingEnabled() && identity.isVerified,
+        hostingActive: identity.hosting?.isActive === true,
+        hostingStatusLabel: HOSTING_STATUS_LABELS[identity.hosting?.status] || identity.hosting?.status || '',
         checked: req.query.checked || null,
         reason: req.query.reason || null,
         errorMessage: req.query.error || null
@@ -141,6 +151,42 @@ router.post(
     } catch (error) {
       if (error.expose) {
         return res.redirect(303, `${domainPath(req)}?error=${encodeURIComponent(error.message)}`);
+      }
+      return next(error);
+    }
+  }
+);
+
+const HOSTING_STATUS_LABELS = {
+  'pending-dns': 'Waiting for the CNAME to point here',
+  'pending-tls': 'Issuing the certificate',
+  active: 'Live',
+  disabled: 'Not in use',
+  error: 'Needs attention'
+};
+
+router.post(
+  '/organizations/:subscriptionId/:workspaceId/hosting',
+  requireAuthenticated,
+  authorize('workspace.domain.manage'),
+  async (req, res, next) => {
+    const backToHosting = `${domainPath(req)}#hosting`;
+    try {
+      const workspace = await loadWorkspace(req);
+      await ensureIdentity(workspace);
+      const actorEmail = req.user?.email;
+
+      if (req.body.action === 'request') {
+        await requestHosting(workspace.id, req.body.hostname, { actorEmail });
+      } else if (req.body.action === 'check') {
+        await checkHosting(workspace.id, { actorEmail });
+      } else if (req.body.action === 'disable') {
+        await disableHosting(workspace.id, { actorEmail });
+      }
+      return res.redirect(303, backToHosting);
+    } catch (error) {
+      if (error.expose) {
+        return res.redirect(303, `${domainPath(req)}?error=${encodeURIComponent(error.message)}#hosting`);
       }
       return next(error);
     }

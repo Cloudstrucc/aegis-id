@@ -1,6 +1,6 @@
 # Custom Domains And White-Label Branding — Implementation Plan
 
-Status: **in progress — phases A and B shipped** · Owner: platform · Target: Enterprise plan feature
+Status: **in progress — phases A, B and C shipped; D and E remain** · Owner: platform · Target: Enterprise plan feature
 
 ## What this delivers
 
@@ -234,8 +234,8 @@ host — existing credentials keep working, only the vanity host stops, matching
 |---|---|---|
 | **A. Base URL per request** — *done* | `site-context` middleware; the 33 `publicBaseUrl` reads replaced; `baseUrlForWorkspace`; `tests/site-context.test.js` forbids a new direct read. No behaviour change. | 2–3 days |
 | **B. Branding site-wide** — *done* | `displayName`, `productName`, `faviconDataUrl`, `supportEmail`, `poweredByHidden` on org branding and the Branding blade; header, footer, layout title, home, sign-in, register, subscribe and not-found read `site.branding`; `deliverMessage` names the brand from `context.branding`. Platform host unchanged; organization values take effect on their host in C. | 2 days |
-| **C. Host resolution + routes** | Hosting record, index, organization-host routing table (§3), per-host OIDC issuer (§4), DID document on host, isolation check, `CUSTOM_HOSTING_PROVIDER=none` for local. | 3–4 days |
-| **D. Azure provisioning** | Managed identity + role, hostname binding, managed certificate, status polling, deactivate; DNS instructions page reusing the verification UI. | 2–3 days |
+| **C. Host resolution + routes** — *done* | Hosting record + host index; `resolveSiteForRequest` resolves a request to its organization and branding; organization-host routing table (§3) with workspace isolation; per-host OIDC issuer (already from A); domain-page hosting controls; `CUSTOM_HOSTING_PROVIDER` (`none`/`manual`/`azure`), `manual` going live the moment the CNAME resolves. **Per-organization DID documents on the host are still deferred** — they need per-org signing keys (§ reserved). | 3–4 days |
+| **D. Azure provisioning** — *next* | The `azure` provider: managed identity + role, hostname binding, managed certificate, a `pending-tls` step and its polling. The `manual` provider already covers everything except automatic binding + certificate, so this phase is only the App Service API calls behind the same records and UI. | 2–3 days |
 | **E. Plan gating, docs, e2e** | 402 enforcement, lapse handling, operator guide + help page, e2e journey on a custom host with `/etc/hosts`. | 1–2 days |
 
 Roughly **two weeks** for one engineer. A and B are safe to ship on their own
