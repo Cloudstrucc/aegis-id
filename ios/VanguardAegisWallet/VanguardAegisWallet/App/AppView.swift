@@ -7,15 +7,28 @@ struct AppView: View {
 
     var body: some View {
         if store.isWalletRegistered {
-            walletTabs
-                .environmentObject(router)
-                // Confirm the server still knows this wallet whenever the app
-                // comes to the foreground, so a wiped environment sends the
-                // holder back to setup instead of failing every request.
-                .task(id: scenePhase) {
-                    guard scenePhase == .active else { return }
-                    await store.verifyWalletStillRegistered()
+            Group {
+                if store.isLocked {
+                    // The lock stands in front of everything: a wallet that can
+                    // approve a sign-in must confirm it is the holder first.
+                    WalletLockView()
+                } else {
+                    walletTabs
+                        .environmentObject(router)
                 }
+            }
+            // Confirm the server still knows this wallet whenever the app comes
+            // to the foreground, and re-lock so an unattended phone does not
+            // leave the wallet open.
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .background {
+                    store.lockIfConfigured()
+                }
+            }
+            .task(id: scenePhase) {
+                guard scenePhase == .active else { return }
+                await store.verifyWalletStillRegistered()
+            }
         } else {
             // Setup gate: no credential can bind to this wallet until it has a
             // Wallet ID, so the tabs stay unavailable until registration finishes.

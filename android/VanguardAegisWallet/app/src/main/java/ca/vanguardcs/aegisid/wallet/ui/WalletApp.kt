@@ -3,6 +3,10 @@ package ca.vanguardcs.aegisid.wallet.ui
 import androidx.compose.foundation.background
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.fragment.app.FragmentActivity
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.platform.LocalContext
+import ca.vanguardcs.aegisid.wallet.data.WalletLockMethod
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
@@ -101,6 +105,10 @@ fun WalletApp(
             } else {
                 WalletSetupScreen(store = store, onRecoverInstead = { showRecovery = true })
             }
+        } else if (store.isLocked) {
+            // The lock stands in front of everything: a wallet that can approve
+            // a sign-in must confirm it is the holder first.
+            WalletLockScreen(store)
         } else {
             WalletTabs(store, onCreatePasskey, onGetPasskey)
         }
@@ -816,6 +824,67 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
                         color = Color.Gray
                     )
                 }
+            }
+        }
+        item {
+            AegisCard {
+                Text("Wallet lock", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                val lockScope = rememberCoroutineScope()
+                val lockLabel = when (store.lockMethod) {
+                    WalletLockMethod.PIN -> "PIN"
+                    WalletLockMethod.BIOMETRIC -> "Fingerprint / face"
+                    WalletLockMethod.NONE -> "None"
+                }
+                KeyValue("Current lock", lockLabel)
+                val activity = LocalContext.current as? FragmentActivity
+                var showPin by remember { mutableStateOf(false) }
+                var newPin by remember { mutableStateOf("") }
+                var newPinConfirm by remember { mutableStateOf("") }
+                var lockError by remember { mutableStateOf<String?>(null) }
+                if (activity != null && deviceAuthAvailable(activity)) {
+                    OutlinedButton(onClick = {
+                        lockScope.launch {
+                            if (authenticateWithDevice(activity, "Set device unlock", "Use your fingerprint, face or screen lock")) {
+                                store.setWalletBiometricLock(); lockError = null
+                            } else lockError = "Not verified."
+                        }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Use fingerprint / face") }
+                }
+                OutlinedButton(onClick = { showPin = !showPin; newPin = ""; newPinConfirm = ""; lockError = null }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (store.lockMethod == WalletLockMethod.PIN) "Change PIN" else "Set a PIN")
+                }
+                if (showPin) {
+                    OutlinedTextField(
+                        value = newPin,
+                        onValueChange = { newPin = it.filter(Char::isDigit).take(12) },
+                        label = { Text("New PIN (at least 4 digits)") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newPinConfirm,
+                        onValueChange = { newPinConfirm = it.filter(Char::isDigit).take(12) },
+                        label = { Text("Confirm PIN") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(onClick = {
+                        when {
+                            newPin.length < 4 -> lockError = "Use at least 4 digits."
+                            newPin != newPinConfirm -> lockError = "The two PINs do not match."
+                            else -> { store.setWalletPin(newPin); showPin = false; lockError = null }
+                        }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Save PIN") }
+                }
+                lockError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                Text(
+                    "The wallet asks for this each time it opens, because it can approve sign-ins and sign documents.",
+                    color = Color.Gray
+                )
             }
         }
         item {

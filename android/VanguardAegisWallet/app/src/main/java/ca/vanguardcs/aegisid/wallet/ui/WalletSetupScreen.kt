@@ -1,5 +1,7 @@
 package ca.vanguardcs.aegisid.wallet.ui
 
+import androidx.fragment.app.FragmentActivity
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -260,14 +262,87 @@ fun WalletSetupScreen(store: WalletStore, onRecoverInstead: () -> Unit) {
                 }
 
                 Button(
-                    onClick = {
-                        store.completeSetup()
-                    },
+                    onClick = { step = SetupStep.Lock },
                     enabled = savedCodes,
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("Finish setup") }
+                ) { Text("Continue") }
+            }
+
+            SetupStep.Lock -> {
+                LockSetupStep(store = store)
             }
         }
+    }
+}
+
+/**
+ * Lock the wallet before it holds anything. A wallet can approve a sign-in with
+ * a tap, so the app itself is protected — a PIN this app checks, or the
+ * device's own fingerprint / face / screen lock. Mirrors the iOS lock step.
+ */
+@Composable
+private fun LockSetupStep(store: WalletStore) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var pin by remember { mutableStateOf("") }
+    var pinConfirm by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text("Lock your wallet", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            "Your wallet can approve sign-ins and sign documents, so it asks to confirm it is you each time it opens. Choose how.",
+            color = Color.Gray
+        )
+
+        val activity = context as? FragmentActivity
+        if (activity != null && deviceAuthAvailable(activity)) {
+            Button(
+                onClick = {
+                    scope.launch {
+                        if (authenticateWithDevice(activity, "Set device unlock", "Use your fingerprint, face or screen lock")) {
+                            store.setWalletBiometricLock()
+                            store.completeSetup()
+                        } else {
+                            error = "Not verified."
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Use fingerprint / face") }
+            Text("or set a PIN", color = Color.Gray)
+        }
+
+        OutlinedTextField(
+            value = pin,
+            onValueChange = { pin = it.filter(Char::isDigit).take(12) },
+            label = { Text("Choose a PIN (at least 4 digits)") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = pinConfirm,
+            onValueChange = { pinConfirm = it.filter(Char::isDigit).take(12) },
+            label = { Text("Confirm PIN") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            modifier = Modifier.fillMaxWidth()
+        )
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Button(
+            onClick = {
+                when {
+                    pin.length < 4 -> error = "Use at least 4 digits."
+                    pin != pinConfirm -> error = "The two PINs do not match."
+                    else -> { store.setWalletPin(pin); store.completeSetup() }
+                }
+            },
+            enabled = pin.isNotEmpty() && pinConfirm.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Set PIN and finish") }
     }
 }
 
@@ -334,4 +409,4 @@ private fun SetupHint(number: String, text: String) {
     }
 }
 
-private enum class SetupStep { Intro, Contact, WalletId, RecoveryCodes }
+private enum class SetupStep { Intro, Contact, WalletId, RecoveryCodes, Lock }

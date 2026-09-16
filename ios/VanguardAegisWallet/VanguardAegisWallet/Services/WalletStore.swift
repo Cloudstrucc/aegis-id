@@ -39,6 +39,10 @@ final class WalletStore: ObservableObject {
     // Wallet identity (see WalletStore+Identity.swift)
     @Published var identity: WalletIdentityRecord?
     @Published var isWalletRegistered = false
+    // The app lock (see WalletLock). `isLocked` gates the tabs; it starts true
+    // when a lock is configured so a cold launch always asks.
+    @Published var isLocked = false
+    @Published private(set) var lockMethod: WalletLockMethod = .none
     @Published var pendingRecoveryCodes: [String] = []
     @Published var pendingContactChallengeId: String?
     @Published var recoveryRequestId: String?
@@ -73,6 +77,7 @@ final class WalletStore: ObservableObject {
         // recovery is one tap away from the welcome screen.
         if !UserDefaults.standard.bool(forKey: installInitialisedKey) {
             clearInstallKeychain()
+            WalletLock.clear()
             UserDefaults.standard.set(true, forKey: installInitialisedKey)
         }
         walletPasskeySubject = UserDefaults.standard.string(forKey: walletPasskeySubjectStorageKey) ?? walletPasskeySubject
@@ -87,6 +92,54 @@ final class WalletStore: ObservableObject {
         isWalletRegistered = identity != nil
         if let email = identity?.email, !email.isEmpty {
             walletPasskeySubject = email
+        }
+        lockMethod = WalletLock.method
+        // A registered wallet with a lock configured comes up locked.
+        isLocked = isWalletRegistered && lockMethod != .none
+    }
+
+    // MARK: - App lock (see WalletLock)
+
+    /// Set during onboarding, or changed later from Settings.
+    func setWalletPin(_ pin: String) {
+        WalletLock.setPin(pin)
+        lockMethod = .pin
+        isLocked = false
+    }
+
+    func setWalletBiometricLock() {
+        WalletLock.setBiometric()
+        lockMethod = .biometric
+        isLocked = false
+    }
+
+    func disableWalletLock() {
+        WalletLock.clear()
+        lockMethod = .none
+        isLocked = false
+    }
+
+    /// Called when the app returns to the foreground: a configured lock
+    /// re-engages so the wallet is not left open on an unattended phone.
+    func lockIfConfigured() {
+        if lockMethod != .none {
+            isLocked = true
+        }
+    }
+
+    func unlockWithPin(_ pin: String) -> Bool {
+        guard WalletLock.verifyPin(pin) else { return false }
+        isLocked = false
+        return true
+    }
+
+    func unlockWithBiometric() async -> Bool {
+        do {
+            try await WalletLock.evaluateBiometric(reason: "Unlock your Aegis ID wallet")
+            isLocked = false
+            return true
+        } catch {
+            return false
         }
     }
 

@@ -18,6 +18,18 @@ struct SettingsView: View {
     @State private var isRegisteringPasskey = false
     @State private var passkeyPreference: WalletPasskeyCredentialPreference = .securityKey
     @State private var showHelp = false
+    @State private var showChangePin = false
+    @State private var newPin = ""
+    @State private var newPinConfirm = ""
+    @State private var lockError: String?
+
+    private var lockMethodLabel: String {
+        switch store.lockMethod {
+        case .pin: return "PIN"
+        case .biometric: return "Face ID / Touch ID"
+        case .none: return "None"
+        }
+    }
     @State private var showWebApp = false
 
     var body: some View {
@@ -104,6 +116,50 @@ struct SettingsView: View {
                 LabeledContent("Invitation", value: "Out-of-Band 1.1")
                 LabeledContent("Handshake", value: "DIDExchange 1.0")
                 LabeledContent("Credential engine", value: "Lab bridge")
+            }
+
+            Section("Wallet lock") {
+                LabeledContent("Current lock", value: lockMethodLabel)
+                if WalletLock.biometricsAvailable() {
+                    Button {
+                        Task {
+                            do {
+                                try await WalletLock.evaluateBiometric(reason: "Confirm to use Face ID / Touch ID as your lock")
+                                store.setWalletBiometricLock()
+                                lockError = nil
+                            } catch { lockError = error.localizedDescription }
+                        }
+                    } label: {
+                        Label("Use Face ID / Touch ID", systemImage: "faceid")
+                    }
+                }
+                Button {
+                    showChangePin.toggle()
+                    newPin = ""; newPinConfirm = ""; lockError = nil
+                } label: {
+                    Label(store.lockMethod == .pin ? "Change PIN" : "Set a PIN", systemImage: "number")
+                }
+                if showChangePin {
+                    SecureField("New PIN (at least 4 digits)", text: $newPin)
+                        .keyboardType(.numberPad)
+                        .onChange(of: newPin) { _, v in newPin = String(v.filter(\.isNumber).prefix(12)) }
+                    SecureField("Confirm PIN", text: $newPinConfirm)
+                        .keyboardType(.numberPad)
+                        .onChange(of: newPinConfirm) { _, v in newPinConfirm = String(v.filter(\.isNumber).prefix(12)) }
+                    Button("Save PIN") {
+                        guard newPin.count >= 4 else { lockError = "Use at least 4 digits."; return }
+                        guard newPin == newPinConfirm else { lockError = "The two PINs do not match."; return }
+                        store.setWalletPin(newPin)
+                        showChangePin = false
+                        lockError = nil
+                    }
+                }
+                if let lockError {
+                    Text(lockError).font(.footnote).foregroundStyle(.red)
+                }
+                Text("The wallet asks for this each time it opens, because it can approve sign-ins and sign documents. Face ID / Touch ID uses the device's own authentication; a PIN is checked by this app.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Sign in with a passkey") {

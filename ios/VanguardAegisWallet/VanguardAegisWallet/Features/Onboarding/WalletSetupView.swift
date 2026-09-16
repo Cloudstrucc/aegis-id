@@ -13,6 +13,7 @@ struct WalletSetupView: View {
         case registering
         case walletId
         case recoveryCodes
+        case lock
     }
 
     @State private var step: Step = .welcome
@@ -20,6 +21,9 @@ struct WalletSetupView: View {
     @State private var phone = ""
     @State private var errorMessage: String?
     @State private var savedCodesConfirmed = false
+    @State private var pin = ""
+    @State private var pinConfirm = ""
+    @State private var lockError: String?
     @State private var showRecovery = false
     @State private var showWebApp = false
     @State private var showHelp = false
@@ -33,6 +37,7 @@ struct WalletSetupView: View {
                 case .registering: registeringStep
                 case .walletId: walletIdStep
                 case .recoveryCodes: recoveryCodesStep
+                case .lock: lockStep
                 }
             }
             .padding(24)
@@ -246,10 +251,72 @@ struct WalletSetupView: View {
 
             Toggle("I have saved these codes", isOn: $savedCodesConfirmed)
 
-            Button("Finish setup") { store.completeSetup() }
+            Button("Continue") { step = .lock }
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity)
                 .disabled(!savedCodesConfirmed)
+        }
+    }
+
+    /// Lock the wallet before it holds anything. A wallet can approve a sign-in
+    /// with a tap, so the app itself is protected — a PIN this app checks, or
+    /// the device's own Face ID / Touch ID / passcode.
+    private var lockStep: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Lock your wallet").font(.title2.bold())
+            Text("Your wallet can approve sign-ins and sign documents, so it asks to confirm it is you each time it opens. Choose how.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            if WalletLock.biometricsAvailable() {
+                Button {
+                    Task {
+                        do {
+                            try await WalletLock.evaluateBiometric(reason: "Set Face ID / Touch ID as your wallet lock")
+                            store.setWalletBiometricLock()
+                            store.completeSetup()
+                        } catch {
+                            lockError = error.localizedDescription
+                        }
+                    }
+                } label: {
+                    Label("Use Face ID / Touch ID", systemImage: "faceid")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+
+                Text("or set a PIN")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            SecureField("Choose a PIN (at least 4 digits)", text: $pin)
+                .textContentType(.newPassword)
+                .keyboardType(.numberPad)
+                .textFieldStyle(.roundedBorder)
+                .onChange(of: pin) { _, value in pin = String(value.filter(\.isNumber).prefix(12)) }
+
+            SecureField("Confirm PIN", text: $pinConfirm)
+                .keyboardType(.numberPad)
+                .textFieldStyle(.roundedBorder)
+                .onChange(of: pinConfirm) { _, value in pinConfirm = String(value.filter(\.isNumber).prefix(12)) }
+
+            if let lockError {
+                Text(lockError).font(.footnote).foregroundStyle(.red)
+            }
+
+            Spacer()
+            Button("Set PIN and finish") {
+                lockError = nil
+                guard pin.count >= 4 else { lockError = "Use at least 4 digits."; return }
+                guard pin == pinConfirm else { lockError = "The two PINs do not match."; return }
+                store.setWalletPin(pin)
+                store.completeSetup()
+            }
+            .buttonStyle(.borderedProminent)
+            .frame(maxWidth: .infinity)
+            .disabled(pin.isEmpty || pinConfirm.isEmpty)
         }
     }
 

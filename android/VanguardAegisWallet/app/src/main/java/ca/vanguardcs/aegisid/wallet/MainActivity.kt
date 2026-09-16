@@ -47,6 +47,13 @@ class MainActivity : FragmentActivity() {
         lifecycleScope.launch { store.verifyWalletStillRegistered() }
     }
 
+    override fun onStop() {
+        super.onStop()
+        // Re-engage the lock when the app leaves the foreground, so an
+        // unattended phone does not leave the wallet open.
+        store.lockIfConfigured()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

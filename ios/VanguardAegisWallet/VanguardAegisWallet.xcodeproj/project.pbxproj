@@ -46,6 +46,8 @@
 		A10000000000000000000052 /* WalletStore+Identity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000052 /* WalletStore+Identity.swift */; };
 		A10000000000000000000093 /* WalletStore+SignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000093 /* WalletStore+SignIn.swift */; };
 		A10000000000000000000094 /* SignInApprovalSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000094 /* SignInApprovalSheet.swift */; };
+		A10000000000000000000095 /* WalletLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000095 /* WalletLock.swift */; };
+		A10000000000000000000096 /* WalletLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000096 /* WalletLockView.swift */; };
 		A10000000000000000000053 /* WalletSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000053 /* WalletSetupView.swift */; };
 		A10000000000000000000054 /* WalletRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000054 /* WalletRecoveryView.swift */; };
 		A10000000000000000000055 /* WalletProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000055 /* WalletProfileView.swift */; };
@@ -114,6 +116,8 @@
 		A20000000000000000000052 /* WalletStore+Identity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletStore+Identity.swift"; sourceTree = "<group>"; };
 		A20000000000000000000093 /* WalletStore+SignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletStore+SignIn.swift"; sourceTree = "<group>"; };
 		A20000000000000000000094 /* SignInApprovalSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInApprovalSheet.swift; sourceTree = "<group>"; };
+		A20000000000000000000095 /* WalletLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletLock.swift; sourceTree = "<group>"; };
+		A20000000000000000000096 /* WalletLockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletLockView.swift; sourceTree = "<group>"; };
 		A20000000000000000000053 /* WalletSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletSetupView.swift; sourceTree = "<group>"; };
 		A20000000000000000000054 /* WalletRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletRecoveryView.swift; sourceTree = "<group>"; };
 		A20000000000000000000055 /* WalletProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletProfileView.swift; sourceTree = "<group>"; };
@@ -216,6 +220,7 @@
 				A20000000000000000000051 /* WalletRegistrationClient.swift */,
 				A20000000000000000000052 /* WalletStore+Identity.swift */,
 				A20000000000000000000093 /* WalletStore+SignIn.swift */,
+				A20000000000000000000095 /* WalletLock.swift */,
 				A20000000000000000000021 /* AegisWalletEnvironment.swift */,
 				A20000000000000000000006 /* OOBInvitationParser.swift */,
 				A20000000000000000000014 /* LabAgentClient.swift */,
@@ -325,6 +330,7 @@
 			children = (
 				A20000000000000000000053 /* WalletSetupView.swift */,
 				A20000000000000000000054 /* WalletRecoveryView.swift */,
+				A20000000000000000000096 /* WalletLockView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -456,6 +462,8 @@
 				A10000000000000000000052 /* WalletStore+Identity.swift in Sources */,
 				A10000000000000000000093 /* WalletStore+SignIn.swift in Sources */,
 				A10000000000000000000094 /* SignInApprovalSheet.swift in Sources */,
+				A10000000000000000000095 /* WalletLock.swift in Sources */,
+				A10000000000000000000096 /* WalletLockView.swift in Sources */,
 				A10000000000000000000053 /* WalletSetupView.swift in Sources */,
 				A10000000000000000000054 /* WalletRecoveryView.swift in Sources */,
 				A10000000000000000000006 /* OOBInvitationParser.swift in Sources */,

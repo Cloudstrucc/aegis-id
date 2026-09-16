@@ -32,6 +32,7 @@ class WalletStore(
 ) : ViewModel() {
     private val preferences = context.applicationContext.getSharedPreferences("vanguard-aegis-wallet", Context.MODE_PRIVATE)
     private val identityStore = WalletIdentityStore(context.applicationContext)
+    private val lock = WalletLock(context.applicationContext)
 
     // --- wallet identity ---------------------------------------------------
     var identity by mutableStateOf<WalletIdentityRecord?>(null)
@@ -83,10 +84,54 @@ class WalletStore(
     var isWorking by mutableStateOf(false)
         private set
 
+    // The app lock (see WalletLock). `isLocked` gates the tabs.
+    var lockMethod by mutableStateOf(WalletLockMethod.NONE)
+        private set
+    var isLocked by mutableStateOf(false)
+        internal set
+
     init {
         load()
         identity = identityStore.load()
         isWalletRegistered = identity != null
+        lockMethod = lock.method
+        isLocked = isWalletRegistered && lockMethod != WalletLockMethod.NONE
+    }
+
+    // --- app lock ----------------------------------------------------------
+
+    fun setWalletPin(pin: String) {
+        lock.setPin(pin)
+        lockMethod = WalletLockMethod.PIN
+        isLocked = false
+    }
+
+    fun setWalletBiometricLock() {
+        lock.setBiometric()
+        lockMethod = WalletLockMethod.BIOMETRIC
+        isLocked = false
+    }
+
+    fun disableWalletLock() {
+        lock.clear()
+        lockMethod = WalletLockMethod.NONE
+        isLocked = false
+    }
+
+    /** Re-engage the lock when the app leaves the foreground. */
+    fun lockIfConfigured() {
+        if (lockMethod != WalletLockMethod.NONE) isLocked = true
+    }
+
+    fun unlockWithPin(pin: String): Boolean {
+        val ok = lock.verifyPin(pin)
+        if (ok) isLocked = false
+        return ok
+    }
+
+    /** Called by the UI after BiometricPrompt succeeds. */
+    fun markUnlocked() {
+        isLocked = false
     }
 
     val walletId: String?
