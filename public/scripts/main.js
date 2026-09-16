@@ -218,6 +218,27 @@ document.querySelectorAll('[data-logo-upload]').forEach((input) => {
   input.addEventListener('change', () => handleLogoUpload(input));
 });
 
+document.querySelectorAll('[data-wallet-id-input]').forEach((input) => {
+  input.addEventListener('input', () => formatWalletIdField(input));
+});
+
+// On a computer the aegisid:// deep link cannot open anything, so the
+// "Open in my wallet" button reads as broken. Surface the explanation there
+// (no touch capability ≈ a desktop) and keep the button for phones.
+(function annotateWalletOpenLinks() {
+  const hint = document.querySelector('[data-wallet-open-hint]');
+  const link = document.querySelector('[data-wallet-open-link]');
+  if (!hint || !link) {
+    return;
+  }
+  const isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if (!isTouch) {
+    hint.hidden = false;
+    link.classList.add('button--secondary');
+    link.classList.remove('button--primary');
+  }
+})();
+
 document.querySelectorAll('[data-favicon-upload]').forEach((input) => {
   input.addEventListener('change', () => handleFaviconUpload(input));
 });
@@ -906,6 +927,24 @@ function handleFaviconUpload(input) {
   reader.readAsDataURL(file);
 }
 
+// A Wallet ID is AEG-XXXX-XXXX-XXXX-XXXX in a fixed alphabet. As the admin
+// types, uppercase it, drop the characters the alphabet excludes, and lay the
+// hyphens in — so a pasted "aeg1a2b..." or a hand-typed lowercase one both land
+// in the exact shape the server parses. The caret is kept at the end, which is
+// where typing happens.
+function formatWalletIdField(input) {
+  const body = String(input.value || '')
+    .toUpperCase()
+    .replace(/[^0-9A-Z]/g, '')       // strip spaces, hyphens, anything else
+    .replace(/^AEG/, '')             // the prefix is added back below
+    .replace(/[IL]/g, '1')           // the common substitutions the server also makes
+    .replace(/O/g, '0')
+    .replace(/U/g, 'V')
+    .slice(0, 16);                   // 16 significant characters
+  const groups = body.match(/.{1,4}/g) || [];
+  input.value = body ? `AEG-${groups.join('-')}` : '';
+}
+
 function handleLogoUpload(input) {
   const file = input.files?.[0];
   const hiddenInput = input.closest('form')?.querySelector('[data-logo-data-url]');
@@ -1382,7 +1421,14 @@ function startCredentialInvitePolling(viewer) {
       const status = await response.json();
       if (status.status === 'active') {
         stopCredentialInvitePolling();
-        window.location.reload();
+        // Close the modal at once so the acceptance is acknowledged even before
+        // the reload paints, then reload onto the people directory so the row
+        // shows Accepted / Active rather than dropping back to the overview.
+        closeAppModal(document.querySelector('.app-modal:not([hidden])'));
+        const url = new URL(window.location.href);
+        url.searchParams.set('blade', 'people');
+        url.hash = '';
+        window.location.assign(url.toString());
       }
     } catch (error) {
       // Transient network errors are ignored; the next tick retries.

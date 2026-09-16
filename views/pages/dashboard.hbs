@@ -441,7 +441,7 @@
           <div class="field-row">
             <div class="field-group">
               <label class="field-label" for="walletId">Wallet ID <span class="field-tooltip" tabindex="0" data-tooltip="Ask the holder for the Wallet ID shown in their Aegis ID app. Binding to a Wallet ID is the strongest option and lets the credential email differ from their wallet email.">?</span></label>
-              <input id="walletId" name="walletId" type="text" placeholder="AEG-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false">
+              <input id="walletId" name="walletId" type="text" placeholder="AEG-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" autocapitalize="characters" data-wallet-id-input>
               <p class="field-hint">Recommended. Paste the Wallet ID the holder shared, or the whole <code>aegisid://wallet?…</code> link from their share sheet or QR code. Without it the invite binds to the holder's registered email or phone, which is lower assurance.</p>
             </div>
             <div class="field-group">
@@ -761,7 +761,11 @@
               <strong>Credential invite link</strong>
               <p>Use this if the holder registered in the web app but still needs to add the credential to the Vanguard Aegis ID wallet.</p>
               <code>{{inviteUrl}}</code>
-              <a class="button button--secondary button--dark-text" href="{{webInviteUrl}}" target="_blank" rel="noopener">Open wallet invite page</a>
+              <div class="button-row">
+                <a class="button button--primary button--blue" href="{{inviteUrl}}">Open in wallet</a>
+                <a class="button button--secondary button--dark-text" href="{{webInviteUrl}}" target="_blank" rel="noopener">Open wallet invite page</a>
+              </div>
+              <p class="field-hint">On the holder's phone, "Open in wallet" imports this credential directly. On a computer, they scan the QR instead.</p>
             </div>
           </div>
           <div class="credential-invite-panel credential-invite-panel--json">

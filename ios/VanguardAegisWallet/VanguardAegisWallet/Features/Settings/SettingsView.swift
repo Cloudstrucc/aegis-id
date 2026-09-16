@@ -173,9 +173,19 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Simulator lab mode") {
-                Text(AegisWalletEnvironment.usesHostedWebApp ? "This app sends lab actions to the hosted Aegis ID bridge, which talks to ACA-Py with server-side admin credentials. It is not a production wallet engine and should not be used with real credentials." : "This app calls local ACA-Py admin APIs for simulator-only testing. It is not a production wallet engine and should not be used with real credentials.")
-                    .foregroundStyle(.secondary)
+            // The lab disclaimer is about ACA-Py lab connections, which only
+            // exist in the dev/qa/local builds. A production install is a real
+            // wallet, so it says so instead.
+            if AegisWalletEnvironment.isProduction {
+                Section("Aegis ID service") {
+                    Text("Your credentials, approvals and signatures are held on this device and answered with your own biometric. Organizations issue to you and raise requests through the Aegis ID service.")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Section("Simulator lab mode") {
+                    Text(AegisWalletEnvironment.usesHostedWebApp ? "This build sends lab actions to the hosted Aegis ID bridge, which talks to ACA-Py with server-side admin credentials. It is a dev/test build, not the production wallet." : "This build calls local ACA-Py admin APIs for simulator-only testing. It is a dev/test build, not the production wallet.")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .navigationTitle("Settings")

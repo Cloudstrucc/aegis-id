@@ -69,6 +69,15 @@ extension WalletStore {
         }
     }
 
+    /// Wipe every Keychain item this wallet owns. Used on a fresh install, where
+    /// the Keychain outlived the app's deletion and would otherwise restore an
+    /// old identity the new owner never set up.
+    func clearInstallKeychain() {
+        deleteKeychain(service: Self.identityService)
+        deleteKeychain(service: Self.deviceKeyService)
+        deleteKeychain(service: "\(Self.deviceKeyService).private")
+    }
+
     /// Forget this device's wallet identity and return to first-run setup. The
     /// wallet on the server, if any, is untouched.
     func clearLocalIdentity() {

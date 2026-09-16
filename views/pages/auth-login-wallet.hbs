@@ -30,8 +30,9 @@
         <p class="form-footnote wallet-signin__link">{{deepLink}}</p>
 
         <p>
-          <a class="button button--primary" href="{{deepLink}}">Open in my wallet</a>
+          <a class="button button--primary" href="{{deepLink}}" data-wallet-open-link>Open in my wallet</a>
         </p>
+        <p class="form-footnote" data-wallet-open-hint hidden>On a computer there is nothing to open — scan the QR with the Aegis wallet on your phone. "Open in my wallet" works when you view this page on the phone itself.</p>
 
         <p class="form-footnote" data-wallet-signin-status role="status" aria-live="polite">
           Waiting for your wallet. This request expires in about {{expiresInMinutes}} minutes.

@@ -106,3 +106,8 @@ async function issueTestCredentials(options = {}) {
 function capitalize(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
+
+// Pasting this whole file into the console on an organization dashboard issues
+// four appreview invitations immediately (the App Review set). Comment this out
+// if you only want the function defined.
+issueTestCredentials({ count: 4, prefix: 'appreview', ttlDays: 365, unique: false });

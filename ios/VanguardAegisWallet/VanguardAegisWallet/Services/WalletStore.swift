@@ -57,11 +57,24 @@ final class WalletStore: ObservableObject {
     private let organizationProfilesStorageKey = "vanguard.aegis.wallet.organization-profiles"
     private let walletPasskeySubjectStorageKey = "vanguard.aegis.wallet.passkey-subject"
     private let requirePasskeyForAllChallengesStorageKey = "vanguard.aegis.wallet.require-passkey-for-all-challenges"
+    // Set once per install. Its absence means the app container was wiped — a
+    // fresh download — while the Keychain (which outlives deletion) may still
+    // hold an old identity.
+    private let installInitialisedKey = "vanguard.aegis.wallet.install-initialised"
     private let labClient = LabAgentClient()
     private let passkeyCoordinator = WalletPasskeyCoordinator()
     private var isAutoRefreshingChallenges = false
 
     init() {
+        // A reinstall wipes the app container but not the Keychain, so an old
+        // wallet would otherwise reappear without the holder choosing to
+        // recover it. On the first launch of a fresh install, clear the
+        // Keychain-held identity and device key so the app starts at setup;
+        // recovery is one tap away from the welcome screen.
+        if !UserDefaults.standard.bool(forKey: installInitialisedKey) {
+            clearInstallKeychain()
+            UserDefaults.standard.set(true, forKey: installInitialisedKey)
+        }
         walletPasskeySubject = UserDefaults.standard.string(forKey: walletPasskeySubjectStorageKey) ?? walletPasskeySubject
         requirePasskeyForAllWalletChallenges = UserDefaults.standard.bool(forKey: requirePasskeyForAllChallengesStorageKey)
         load()

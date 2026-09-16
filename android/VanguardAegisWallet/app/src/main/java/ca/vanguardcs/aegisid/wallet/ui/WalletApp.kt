@@ -796,14 +796,26 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
         }
         item {
             AegisCard {
-                Text("Protocol", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                KeyValue("Invitation", "Out-of-Band 1.1")
-                KeyValue("Handshake", "DIDExchange 1.0")
-                KeyValue("Credential engine", "Lab bridge")
-                Text(
-                    "This Android pilot sends lab actions to the hosted Aegis ID bridge, which talks to ACA-Py with server-side admin credentials. It is not a production wallet engine and should not be used with real credentials.",
-                    color = Color.Gray
-                )
+                // The production build registers the bare `aegisid` scheme;
+                // dev/qa/local suffix it. The lab/ACA-Py protocol detail only
+                // applies to the non-production builds.
+                val isProduction = BuildConfig.AEGIS_URL_SCHEME == "aegisid"
+                if (isProduction) {
+                    Text("Aegis ID service", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Your credentials, approvals and signatures are held on this device and answered with your own biometric. Organizations issue to you and raise requests through the Aegis ID service.",
+                        color = Color.Gray
+                    )
+                } else {
+                    Text("Protocol (dev/test)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    KeyValue("Invitation", "Out-of-Band 1.1")
+                    KeyValue("Handshake", "DIDExchange 1.0")
+                    KeyValue("Credential engine", "Lab bridge")
+                    Text(
+                        "This build sends lab actions to the hosted Aegis ID bridge, which talks to ACA-Py with server-side admin credentials. It is a dev/test build, not the production wallet.",
+                        color = Color.Gray
+                    )
+                }
             }
         }
         item {

@@ -70,6 +70,13 @@ enum AegisWalletEnvironment {
         webAppURL.host() ?? webAppURL.absoluteString
     }
 
+    /// The production build registers the bare `aegisid` scheme; dev, qa and
+    /// local register a suffixed one. Used to hide lab-only affordances from a
+    /// real install.
+    static var isProduction: Bool {
+        urlScheme == "aegisid"
+    }
+
     static var usesHostedWebApp: Bool {
         guard let host = webAppURL.host()?.lowercased() else {
             return false
