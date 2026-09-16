@@ -121,6 +121,8 @@ extension WalletStore {
             value: value
         )
         pendingContactChallengeId = challenge.id
+        pendingContactField = field
+        pendingContactValue = value
         return challenge.id
     }
 
@@ -131,18 +133,24 @@ extension WalletStore {
         _ = try await registrationClient.resolveContactChange(challengeId: challengeId, approve: approve)
         pendingContactChallengeId = nil
 
-        if approve, let walletId = identity?.walletId, var record = identity {
-            // Reflect the approved change locally.
-            record = WalletIdentityRecord(
-                walletId: walletId,
-                email: record.email,
-                phone: record.phone,
+        if approve, let record = identity {
+            // Reflect the approved change locally — the server applied it but
+            // does not echo the value, so use the one we staged.
+            let updated = WalletIdentityRecord(
+                walletId: record.walletId,
+                email: pendingContactField == "email" ? (pendingContactValue ?? record.email) : record.email,
+                phone: pendingContactField == "phone" ? pendingContactValue : record.phone,
                 deviceKeyId: record.deviceKeyId,
                 registeredAt: record.registeredAt
             )
-            persistIdentity(record)
-            identity = record
+            persistIdentity(updated)
+            identity = updated
+            if updated.email != record.email {
+                walletPasskeySubject = updated.email
+            }
         }
+        pendingContactField = nil
+        pendingContactValue = nil
     }
 
     // MARK: - Recovery

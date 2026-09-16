@@ -45,6 +45,10 @@ final class WalletStore: ObservableObject {
     @Published private(set) var lockMethod: WalletLockMethod = .none
     @Published var pendingRecoveryCodes: [String] = []
     @Published var pendingContactChallengeId: String?
+    // The staged new value, remembered so an approved change can be reflected
+    // locally — the server never echoes a pending value back.
+    var pendingContactField: String?
+    var pendingContactValue: String?
     @Published var recoveryRequestId: String?
     @Published var recoveryWalletId: String?
     @Published var recoveryOptions: WalletRegistrationClient.RecoveryOptions?
