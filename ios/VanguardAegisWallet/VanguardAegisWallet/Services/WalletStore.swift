@@ -721,6 +721,7 @@ final class WalletStore: ObservableObject {
                     credentialId: credentialId,
                     organizationId: organizationId,
                     holderEmail: payloadValue("holderEmail", in: transaction),
+                    walletId: identity?.walletId,
                     sourceWebAppURL: connection.invitation.sourceWebAppURL
                 )
             } else if let webAcceptPath = transaction.webAcceptPath {

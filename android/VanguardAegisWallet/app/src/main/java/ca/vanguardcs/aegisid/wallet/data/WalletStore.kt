@@ -702,6 +702,7 @@ class WalletStore(
                     credentialId = transaction.remoteId ?: transaction.resourceId.orEmpty(),
                     organizationId = currentConnection.invitation.organizationId ?: transaction.payloadValue("organizationId").orEmpty(),
                     holderEmail = transaction.payloadValue("holderEmail"),
+                    walletId = walletId,
                     sourceWebAppUrl = currentConnection.invitation.sourceWebAppUrl
                 )
             } else when {

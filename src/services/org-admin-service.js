@@ -710,9 +710,16 @@ async function acceptCredentialInvitation(organizationId, credentialId, input = 
       presentedWalletId
     );
     bindingMode = binding.mode;
-  } else if (holderEmail && holderEmail !== credential.holderEmail) {
+  } else if (credential.bindingMode !== 'wallet-id' && holderEmail && holderEmail !== credential.holderEmail) {
     // Legacy path for wallet builds that predate the Wallet ID. Kept so existing
     // installs continue to work until they upgrade.
+    //
+    // A wallet-id invite binds on the Wallet ID, not the email — its contact may
+    // be any per-organization address (e.g. a "+" alias) — so a legacy client
+    // that sends only its registered email must not be rejected on an email
+    // mismatch here. The wallet has already checked the invite's Wallet ID
+    // against its own before accepting; newer builds send the Wallet ID so the
+    // authoritative check above runs.
     throw validationError('Credential invite holder did not match this wallet.');
   }
 
