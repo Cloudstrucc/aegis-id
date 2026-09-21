@@ -93,10 +93,8 @@ struct WalletLockView: View {
 /// is missing.
 private struct VanguardLogoMark: View {
     var body: some View {
-        if let image = UIImage(named: "vanguard-logo") {
-            Image(uiImage: image).resizable().scaledToFit().frame(height: 48)
-        } else {
-            Image(systemName: "lock.shield").font(.system(size: 44)).foregroundStyle(VanguardTheme.blue)
-        }
+        // Adaptive: the colour mark on a light ground, the white mark on dark.
+        Image("AegisMark").resizable().scaledToFit().frame(height: 48)
+            .accessibilityLabel("Aegis ID")
     }
 }

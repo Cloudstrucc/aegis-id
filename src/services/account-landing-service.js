@@ -67,7 +67,7 @@ async function buildAccountLanding(user) {
   return {
     view: {
       title: 'Home',
-      description: 'Your Vanguard Cloud Services - Aegis ID organizations and subscriptions.',
+      description: 'Your Aegis ID organizations and subscriptions.',
       user,
       organizations,
       hasOrganizations: organizations.length > 0

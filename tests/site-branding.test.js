@@ -9,12 +9,13 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
 
-test('platform branding is the Vanguard defaults, and an organization record overrides them', () => {
+test('platform branding is the Aegis ID defaults, and an organization record overrides them', () => {
   const { platformBranding, normalizeBranding } = require('../src/services/site-context-service');
   const platform = platformBranding();
-  assert.equal(platform.appName, 'Vanguard Cloud Services - Aegis ID');
+  assert.equal(platform.appName, 'Aegis ID');
   assert.equal(platform.shortName, 'Aegis ID');
-  assert.equal(platform.logoUrl, '/images/vanguard-cloud-services-logo.png');
+  assert.equal(platform.logoUrl, '/images/brand/aegis-id-lockup-white.svg');
+  assert.equal(platform.logoMarkUrl, '/images/brand/aegis-mark-white.svg');
   assert.equal(platform.poweredByHidden, true, 'the platform never says "powered by" itself');
 
   const contoso = normalizeBranding({

@@ -269,7 +269,7 @@ data class OidcWalletChallenge(
             connectionId = json.optString("connectionId"),
             threadId = json.optStringOrNull("threadId"),
             subject = json.optString("subject"),
-            organizationName = json.optString("organizationName", "Vanguard Aegis ID"),
+            organizationName = json.optString("organizationName", "Aegis ID"),
             appName = json.optStringOrNull("appName"),
             action = json.optStringOrNull("action"),
             resourceType = json.optStringOrNull("resourceType"),

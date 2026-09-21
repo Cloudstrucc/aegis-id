@@ -529,7 +529,7 @@ private fun OrganizationsScreen(store: WalletStore, router: WalletRouter) {
             item {
                 EmptyState(
                     "No credential organizations",
-                    "Accept a Vanguard Aegis ID credential invitation or issuer invitation to see organizations you hold credentials or wallet challenge history for."
+                    "Accept a Aegis ID credential invitation or issuer invitation to see organizations you hold credentials or wallet challenge history for."
                 )
             }
         } else {
@@ -795,7 +795,7 @@ private fun SettingsScreen(store: WalletStore, onCreatePasskey: suspend (String)
         item {
             AegisCard {
                 VanguardLogo()
-                KeyValue("Organization", "Vanguard Cloud Services")
+                KeyValue("Organization", "Aegis ID")
                 KeyValue("Wallet", "Aegis ID Wallet")
                 KeyValue("Mode", "Aries lab")
                 KeyValue("Lab transport", "Hosted bridge")

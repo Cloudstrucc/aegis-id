@@ -32,10 +32,14 @@ const config = require('../config');
  */
 function platformBranding() {
   return normalizeBranding({
-    displayName: 'Vanguard Cloud Services',
+    displayName: 'Aegis ID',
     productName: 'Aegis ID',
-    logoUrl: '/images/vanguard-cloud-services-logo.png',
-    faviconUrl: '',
+    // The platform chrome (hero, footer) is dark navy, so the reversed lockup
+    // is the one that reads. The header shows the shield mark alone, since the
+    // hero already carries the full lockup. The favicon uses the colour mark.
+    logoUrl: '/images/brand/aegis-id-lockup-white.svg',
+    logoMarkUrl: '/images/brand/aegis-mark-white.svg',
+    faviconUrl: '/images/brand/aegis-mark.svg',
     supportEmail: config.app.supportEmail || '',
     // The platform is Aegis ID; it does not say "powered by" itself.
     poweredByHidden: true,
@@ -49,7 +53,7 @@ function platformBranding() {
  * (`logoUrl`), and always yields something a template can render.
  */
 function normalizeBranding(input = {}) {
-  const platform = { displayName: 'Vanguard Cloud Services', productName: 'Aegis ID' };
+  const platform = { displayName: 'Aegis ID', productName: 'Aegis ID' };
   const displayName = String(input.displayName || '').trim() || platform.displayName;
   // A blank product name keeps "Aegis ID" — the blade says so — rather than
   // leaving the sign-in page saying "Sign in to Contoso." for an
@@ -63,6 +67,9 @@ function normalizeBranding(input = {}) {
     // The short name for prose: "Sign in to Aegis ID", "Your Contoso ID code".
     shortName: productName || displayName,
     logoUrl,
+    // An optional mark-only logo for tight spaces such as the header; the
+    // full lockup (logoUrl) is the default everywhere else.
+    logoMarkUrl: String(input.logoMarkUrl || '').trim(),
     logoAlt: displayName,
     faviconUrl: String(input.faviconDataUrl || input.faviconUrl || '').trim(),
     supportEmail: String(input.supportEmail || '').trim(),

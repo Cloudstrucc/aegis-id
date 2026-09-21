@@ -78,12 +78,12 @@ struct LabAgentClient {
 
         let ping: PingResponse = try await post(
             issuerAdminURL.appending(path: "connections/\(issuerConnectionId)/send-ping"),
-            body: try JSONEncoder().encode(["comment": "Vanguard Aegis ID simulator wallet challenge"])
+            body: try JSONEncoder().encode(["comment": "Aegis ID simulator wallet challenge"])
         )
 
         _ = try await post(
             issuerAdminURL.appending(path: "connections/\(issuerConnectionId)/send-message"),
-            body: try JSONEncoder().encode(["content": "Vanguard Aegis ID wallet challenge: accept this challenge in the simulator."])
+            body: try JSONEncoder().encode(["content": "Aegis ID wallet challenge: accept this challenge in the simulator."])
         ) as EmptyResponse
 
         return ping.threadId

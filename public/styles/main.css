@@ -2,7 +2,7 @@
   --navy-950: #061625;
   --navy-900: #081c2d;
   --navy-800: #0d2a42;
-  --blue-600: #1769e0;
+  --blue-600: #3871c1;
   --cyan-500: #00b7c7;
   --green-500: #19b97a;
   --amber-400: #f7b955;
@@ -84,6 +84,19 @@ pre {
   display: block;
   width: clamp(164px, 17vw, 232px);
   height: auto;
+}
+
+.brand-mark {
+  display: block;
+  width: auto;
+  height: 42px;
+}
+
+.hero__logo {
+  display: block;
+  width: min(340px, 74%);
+  height: auto;
+  margin: 4px 0 6px;
 }
 
 .brand-product-pill {

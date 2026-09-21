@@ -45,7 +45,7 @@ object AegisCredentialInviteParser {
 
         return AegisCredentialInvite(
             organizationId = organizationId,
-            organizationName = queryValue(uri, "organization_name", "organizationName") ?: "Vanguard organization",
+            organizationName = queryValue(uri, "organization_name", "organizationName") ?: "Organization",
             credentialId = credentialId,
             holderEmail = queryValue(uri, "holder_email", "holderEmail") ?: "",
             expiresAt = queryValue(uri, "expires_at", "expiresAt"),

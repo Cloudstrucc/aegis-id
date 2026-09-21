@@ -1253,7 +1253,7 @@ async function updateBranding(workspace, subscription, input = {}) {
     backgroundColor: normalizeColor(useCustom ? input.backgroundColor : selectedPalette.backgroundColor, selectedPalette.backgroundColor),
     textColor: normalizeColor(useCustom ? input.textColor : selectedPalette.textColor, selectedPalette.textColor),
     logoDataUrl: input.removeLogo ? '' : normalizeLogoDataUrl(input.logoDataUrl) || state.branding.logoDataUrl || '',
-    // Site-wide identity: what replaces "Vanguard Cloud Services" and
+    // Site-wide identity: what replaces the platform name and
     // "Aegis ID" once the organization is served from its own host. Stored
     // now so the blade can be set up ahead of the host going live.
     displayName: normalizeText(input.displayName, 80) || '',

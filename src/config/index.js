@@ -121,7 +121,7 @@ const walletUrlScheme = (process.env.WALLET_URL_SCHEME || '').trim() ||
 
 const config = {
   app: {
-    name: 'Vanguard Cloud Services - Aegis ID',
+    name: 'Aegis ID',
     env: process.env.NODE_ENV || 'development',
     // The deployment's own name (local/dev/qa/prod), as distinct from NODE_ENV,
     // which is 'production' for dev, qa and prod alike. Surfaced so a page can
@@ -285,7 +285,7 @@ const config = {
   auth: {
     sessionSecret: process.env.SESSION_SECRET || 'dev-change-this-session-secret',
     defaultMfaMethod: process.env.DEFAULT_MFA_METHOD || 'email',
-    passkeyRpName: process.env.PASSKEY_RP_NAME || 'Vanguard Cloud Services - Aegis ID',
+    passkeyRpName: process.env.PASSKEY_RP_NAME || 'Aegis ID',
     passkeyRpId: process.env.PASSKEY_RP_ID || '',
     passkeyOrigin: process.env.PASSKEY_ORIGIN || '',
     // Pin wallet approval on for this deployment, whatever is saved in the
@@ -311,7 +311,7 @@ const config = {
     clientSecret: process.env.AZURE_CLIENT_SECRET || '',
     scope: '3db474b9-6a0c-4840-96ac-1fceb342124f/.default',
     apiBaseUrl: 'https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials',
-    clientName: process.env.VID_CLIENT_NAME || 'Vanguard Cloud Services - Aegis ID',
+    clientName: process.env.VID_CLIENT_NAME || 'Aegis ID',
     authorityDid: process.env.VID_AUTHORITY_DID || '',
     manifestUrl: process.env.VID_MANIFEST_URL || '',
     credentialType: process.env.VID_CREDENTIAL_TYPE || 'VanguardEmployeeCredential',

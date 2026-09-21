@@ -86,8 +86,11 @@ fun VanguardLogo(
     darkBackground: Boolean = false
 ) {
     Image(
-        painter = painterResource(R.drawable.vanguard_cloud_services_logo),
-        contentDescription = "Vanguard Cloud Services",
+        // The reversed lockup on a dark ground, the colour lockup on light.
+        painter = painterResource(
+            if (darkBackground) R.drawable.aegis_lockup_white else R.drawable.aegis_lockup
+        ),
+        contentDescription = "Aegis ID",
         modifier = modifier.height(54.dp),
         contentScale = ContentScale.Fit
     )

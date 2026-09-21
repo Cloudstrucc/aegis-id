@@ -276,7 +276,7 @@ final class WalletStore: ObservableObject {
                 title: "Credential invite received",
                 detail: "\(invite.organizationName) invited \(invite.holderEmail.isEmpty ? "this wallet" : invite.holderEmail) to accept an organization credential.",
                 remoteId: invite.credentialId,
-                appName: "Vanguard Aegis ID",
+                appName: "Aegis ID",
                 action: "accept-credential",
                 resourceType: "credential-invitation",
                 resourceId: invite.credentialId,
@@ -549,7 +549,7 @@ final class WalletStore: ObservableObject {
                 type: .challenge,
                 status: .pendingAcceptance,
                 title: "Wallet challenge received",
-                detail: "Vanguard Aegis ID DIDComm trust ping and basic message challenge.",
+                detail: "Aegis ID DIDComm trust ping and basic message challenge.",
                 remoteId: threadId
             )
             lastLabMessage = "Wallet challenge received."
@@ -709,7 +709,7 @@ final class WalletStore: ObservableObject {
                let holderConnectionId = current(connection)?.holderConnectionId {
                 try await labClient.sendHolderMessage(
                     holderConnectionId: holderConnectionId,
-                    content: "Vanguard Aegis ID Wallet simulator accepted challenge \(transaction.remoteId ?? transaction.id.uuidString).",
+                    content: "Aegis ID Wallet simulator accepted challenge \(transaction.remoteId ?? transaction.id.uuidString).",
                     sourceWebAppURL: connection.invitation.sourceWebAppURL
                 )
             }
@@ -780,7 +780,7 @@ final class WalletStore: ObservableObject {
                let holderConnectionId = current(connection)?.holderConnectionId {
                 try await labClient.sendHolderMessage(
                     holderConnectionId: holderConnectionId,
-                    content: "Vanguard Aegis ID Wallet simulator declined challenge \(transaction.remoteId ?? transaction.id.uuidString).",
+                    content: "Aegis ID Wallet simulator declined challenge \(transaction.remoteId ?? transaction.id.uuidString).",
                     sourceWebAppURL: connection.invitation.sourceWebAppURL
                 )
             }

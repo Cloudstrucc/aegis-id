@@ -16,7 +16,7 @@ const FIELD_HELP_TEXT = {
   attestationType: 'Choose how claims are supplied to the credential. Use ID token hint for this app because Aegis ID sends claim values in the issuance request.',
   azureAppName: 'Enter the display name of the Entra app registration that will call the Verified ID Request Service API.',
   azureClientId: 'Paste the Application (client) ID from the Entra app registration.',
-  azureTenantId: 'Paste the Directory (tenant) ID for the Vanguard Cloud Services Entra tenant.',
+  azureTenantId: 'Paste the Directory (tenant) ID for your Entra tenant.',
   baseUrl: 'Enter the root URL of the Keycloak server, without the realm path.',
   callbackApiKeyReference: 'Enter the App Service setting or Key Vault secret name that stores VID_CALLBACK_API_KEY for callback verification.',
   callbackOrAcsUrl: 'Enter the OIDC callback URL or SAML Assertion Consumer Service URL registered with the identity provider.',
@@ -57,7 +57,7 @@ const FIELD_HELP_TEXT = {
   secretOrCertReference: 'Enter the secret, certificate, or signing key reference used for this relying-party registration. Do not paste private material.',
   secretReference: 'Enter where the client secret is stored, such as an App Service setting or Key Vault secret reference. Do not paste the secret here.',
   setupMode: 'Choose Advanced setup for tenant testing because it exposes Key Vault, DID, and linked-domain settings needed for production-like validation.',
-  tenantDisplayName: 'Enter the friendly tenant name shown to operators, for example Vanguard Cloud Services.',
+  tenantDisplayName: 'Enter the friendly tenant name shown to operators, for example your organization name.',
   testMode: 'Choose Mock to validate local UI behavior, or Live to call Microsoft Entra Verified ID with tenant configuration.',
   userVerification: 'Choose whether users must unlock the key with a PIN or biometric gesture before the FIDO2 assertion is accepted.',
   walletApprovalPasskeyPolicy: 'Choose whether wallet approvals for this organization should require a verified passkey assertion before Aegis ID accepts the challenge.',
@@ -73,7 +73,7 @@ function getPlatformDefinitions() {
       name: 'Microsoft Entra Verified ID',
       family: 'Verified ID / Azure',
       icon: 'MS',
-      summary: 'Set up Vanguard Cloud Services tenant details, issuer DID, credential contract, claims, and a wallet test.',
+      summary: 'Set up your tenant details, issuer DID, credential contract, claims, and a wallet test.',
       docsUrl: 'https://learn.microsoft.com/en-us/entra/verified-id/verifiable-credentials-configure-tenant',
       steps: [
         {
@@ -81,7 +81,7 @@ function getPlatformDefinitions() {
           title: 'Tenant & Prerequisites',
           description: 'Confirm the Entra tenant, public callback host, admin role, and setup path before creating live Verified ID requests.',
           fields: [
-            textField('tenantDisplayName', 'Tenant display name', 'Vanguard Cloud Services'),
+            textField('tenantDisplayName', 'Tenant display name', 'Your organization'),
             textField('azureTenantId', 'Azure tenant ID'),
             textField('adminDomain', 'Primary verified domain', 'vanguardcs.ca'),
             urlField('publicBaseUrl', 'Public HTTPS app URL', platformBaseUrl()),
@@ -710,7 +710,7 @@ function buildDashboardView(subscription, workspace) {
 
   return {
     title: 'Subscriber Dashboard',
-    description: 'Vanguard Cloud Services - Aegis ID subscriber dashboard.',
+    description: 'Aegis ID subscriber dashboard.',
     bodyClass: 'workspace-page',
     subscription,
     workspace,
@@ -732,7 +732,7 @@ function buildWizardView(subscription, workspace, platformId, stepIndex = 0) {
 
   return {
     title: `${platform.name} Setup`,
-    description: `${platform.name} setup wizard for Vanguard Cloud Services - Aegis ID.`,
+    description: `${platform.name} setup wizard for Aegis ID.`,
     subscription,
     workspace,
     workspaceRole: workspace.roleLabel || roleLabel(workspace.role || 'administrator'),

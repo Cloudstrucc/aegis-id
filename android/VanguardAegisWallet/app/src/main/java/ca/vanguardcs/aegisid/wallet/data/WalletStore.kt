@@ -428,7 +428,7 @@ class WalletStore(
                 title = "Credential invite received",
                 detail = "${invite.organizationName} invited ${invite.holderEmail.ifBlank { "this wallet" }} to accept an organization credential.",
                 remoteId = invite.credentialId,
-                appName = "Vanguard Aegis ID",
+                appName = "Aegis ID",
                 action = "accept-credential",
                 resourceType = "credential-invitation",
                 resourceId = invite.credentialId,
@@ -583,7 +583,7 @@ class WalletStore(
                 type = WalletTransactionType.Challenge,
                 status = WalletTransactionStatus.PendingAcceptance,
                 title = "Wallet challenge received",
-                detail = "Vanguard Aegis ID DIDComm trust ping and basic message challenge.",
+                detail = "Aegis ID DIDComm trust ping and basic message challenge.",
                 remoteId = threadId
             )
             lastLabMessage = "Wallet challenge received."
@@ -690,7 +690,7 @@ class WalletStore(
             if (transaction.type == WalletTransactionType.Challenge && currentConnection.holderConnectionId != null) {
                 labClient.sendHolderMessage(
                     currentConnection.holderConnectionId,
-                    "Vanguard Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id}.",
+                    "Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id}.",
                     currentConnection.invitation.sourceWebAppUrl
                 )
             }
@@ -739,7 +739,7 @@ class WalletStore(
             if (transaction.type == WalletTransactionType.Challenge && currentConnection.holderConnectionId != null) {
                 labClient.sendHolderMessage(
                     currentConnection.holderConnectionId,
-                    "Vanguard Aegis ID Android wallet declined challenge ${transaction.remoteId ?: transaction.id}.",
+                    "Aegis ID Android wallet declined challenge ${transaction.remoteId ?: transaction.id}.",
                     currentConnection.invitation.sourceWebAppUrl
                 )
             }
@@ -781,7 +781,7 @@ class WalletStore(
             if (transaction.type == WalletTransactionType.Challenge && currentConnection.holderConnectionId != null) {
                 labClient.sendHolderMessage(
                     currentConnection.holderConnectionId,
-                    "Vanguard Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id} with passkey assurance.",
+                    "Aegis ID Android wallet accepted challenge ${transaction.remoteId ?: transaction.id} with passkey assurance.",
                     currentConnection.invitation.sourceWebAppUrl
                 )
             }

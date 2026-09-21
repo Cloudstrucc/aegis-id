@@ -84,7 +84,7 @@ router.get('/', authorize('public.home'), async (req, res, next) => {
 router.get('/architecture', requireAuthenticated, authorize('account.view'), (req, res) => {
   res.render('pages/architecture', {
     title: 'Architecture',
-    description: 'Vanguard Cloud Services - Aegis ID reference architecture.',
+    description: 'Aegis ID reference architecture.',
     policy: getPresentationPolicy(),
     microsoftMode: config.verifiedId.mode
   });

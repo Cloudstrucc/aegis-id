@@ -65,8 +65,12 @@ struct WalletSetupView: View {
 
     private var welcomeStep: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Vanguard Aegis ID")
-                .font(.largeTitle.bold())
+            Image("AegisLockup")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 38, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel("Aegis ID")
             if store.walletServerMismatch {
                 // Explain rather than silently restarting setup.
                 Label(

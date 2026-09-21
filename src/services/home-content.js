@@ -49,7 +49,7 @@ function getTestingApps() {
 
 function getHomeContent(overrides = {}) {
   return {
-    title: 'Vanguard Cloud Services - Aegis ID',
+    title: 'Aegis ID',
     description:
       'Governed identity assurance, wallet challenges, and interoperability labs for enterprise applications.',
     iosDownloadUrl: config.app.iosTestFlightUrl,
