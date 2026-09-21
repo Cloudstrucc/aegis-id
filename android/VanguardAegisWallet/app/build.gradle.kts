@@ -96,7 +96,7 @@ android {
         // stores show this to the same people, and a wallet that calls itself
         // 1.0 on iPhone and 0.1.1 on Android reads as the Android one being
         // the unfinished afterthought.
-        versionName = (project.findProperty("aegisVersionName") as String?) ?: "1.0"
+        versionName = (project.findProperty("aegisVersionName") as String?) ?: "2.0"
 
         buildConfigField("boolean", "PASSKEY_PROVIDER_ENABLED", passkeyProviderEnabled.toString())
         manifestPlaceholders["passkeyProviderEnabled"] = passkeyProviderEnabled.toString()
