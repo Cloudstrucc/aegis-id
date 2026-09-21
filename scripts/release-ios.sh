@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Archive, export and (optionally) upload the Vanguard Aegis ID wallet to
-# TestFlight for one or more environments.
+# Archive, export and (optionally) upload the Aegis ID wallet to
+# TestFlight / the App Store for one or more environments.
 #
 # Usage (--env mirrors the Azure deploy scripts; bare names still work):
 #   scripts/release-ios.sh --env dev
 #   scripts/release-ios.sh --env dev --env qa
 #   scripts/release-ios.sh --env all
 #   scripts/release-ios.sh dev qa prod
-#   scripts/release-ios.sh --env all --build-number 7   # pin the build number
-#   scripts/release-ios.sh --env dev --skip-upload      # archive + export only
+#   scripts/release-ios.sh --env all --build-number 7        # pin the build number
+#   scripts/release-ios.sh --env prod --marketing-version 2.0 # override CFBundleShortVersionString (e.g. 2.0)
+#   scripts/release-ios.sh --env dev --skip-upload           # archive + export only
 #   scripts/release-ios.sh --help
 #
 # BUILD_NUMBER and SKIP_UPLOAD still work as environment variables.
+# --marketing-version overrides the project's version just for this build; omit
+# it to keep whatever MARKETING_VERSION the Xcode project holds.
 #
 # Uploading needs App Store Connect API credentials:
 #   ASC_KEY_ID, ASC_ISSUER_ID   and  ~/.appstoreconnect/private_keys/AuthKey_<ASC_KEY_ID>.p8
