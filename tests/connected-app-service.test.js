@@ -150,6 +150,11 @@ test('connected app service registers clients, issues tokens, and records logs',
   assert.equal(certAuth.method, 'certificate');
 
   const view = await getConnectedAppsView(workspace, subscription, { connectedAppId: app.id }, { publicBaseUrl: 'http://localhost:3000' });
+  // The integration examples app is a built-in relying party shown to every
+  // organization, kept out of the real registrations so it never affects stats.
+  assert.equal(view.builtinApps.length, 1);
+  assert.equal(view.builtinApps[0].builtin, true);
+  assert.ok(view.builtinApps[0].openUrl);
   assert.equal(view.stats.total, 1);
   assert.equal(view.stats.secrets, 1);
   assert.equal(view.stats.certificates, 1);
