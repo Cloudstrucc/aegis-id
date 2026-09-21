@@ -34,11 +34,9 @@ function platformBranding() {
   return normalizeBranding({
     displayName: 'Aegis ID',
     productName: 'Aegis ID',
-    // The platform chrome (hero, footer) is dark navy, so the reversed lockup
-    // is the one that reads. The header shows the shield mark alone, since the
-    // hero already carries the full lockup. The favicon uses the colour mark.
+    // The platform chrome (header, hero, footer) is dark navy, so the reversed
+    // lockup is the one that reads. The favicon uses the colour mark.
     logoUrl: '/images/brand/aegis-id-lockup-white.svg',
-    logoMarkUrl: '/images/brand/aegis-mark-white.svg',
     faviconUrl: '/images/brand/aegis-mark.svg',
     supportEmail: config.app.supportEmail || '',
     // The platform is Aegis ID; it does not say "powered by" itself.
@@ -67,9 +65,6 @@ function normalizeBranding(input = {}) {
     // The short name for prose: "Sign in to Aegis ID", "Your Contoso ID code".
     shortName: productName || displayName,
     logoUrl,
-    // An optional mark-only logo for tight spaces such as the header; the
-    // full lockup (logoUrl) is the default everywhere else.
-    logoMarkUrl: String(input.logoMarkUrl || '').trim(),
     logoAlt: displayName,
     faviconUrl: String(input.faviconDataUrl || input.faviconUrl || '').trim(),
     supportEmail: String(input.supportEmail || '').trim(),

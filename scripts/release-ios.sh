@@ -142,6 +142,8 @@ Options:
   --env, -e <dev|qa|prod|all>   Environment to release. Repeatable.
   --env=<value>                 Same, in equals form.
   --build-number <n>            Pin the build number instead of a timestamp.
+  --marketing-version <v>       Override the marketing version
+                                (CFBundleShortVersionString), e.g. 1.0.2.
   --skip-upload                 Archive and export only, no upload.
   --env-file <path>             App Store Connect credentials file.
   --help, -h                    This message.
@@ -150,6 +152,8 @@ Credentials come from .env.ios at the repository root (see .env.ios.example).
 Values already exported in the shell take precedence.
 USAGE
 }
+
+MARKETING_VERSION_OVERRIDE="${MARKETING_VERSION_OVERRIDE:-}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -169,6 +173,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     --build-number=*)
       BUILD_NUMBER="${1#*=}"
+      shift
+      ;;
+    --marketing-version)
+      [[ $# -ge 2 ]] || die "--marketing-version requires a value"
+      MARKETING_VERSION_OVERRIDE="$2"
+      shift 2
+      ;;
+    --marketing-version=*)
+      MARKETING_VERSION_OVERRIDE="${1#*=}"
       shift
       ;;
     --skip-upload)
@@ -243,13 +256,19 @@ for env in "${ENVIRONMENTS[@]}"; do
   # have created it. The passkey provider extension is exactly that case: it is
   # a second bundle id, and both it and the app need the App Group capability
   # added to their profiles.
+  # Build-setting overrides. The marketing version stays whatever the project
+  # holds unless --marketing-version pins one, so a normal release does not
+  # silently change the version App Store Connect sees.
+  build_settings=( CURRENT_PROJECT_VERSION="$BUILD_NUMBER" )
+  [[ -n "$MARKETING_VERSION_OVERRIDE" ]] && build_settings+=( MARKETING_VERSION="$MARKETING_VERSION_OVERRIDE" )
+
   xcodebuild -project "$PROJECT" \
     -scheme "$scheme" \
     -configuration "$configuration" \
     -destination 'generic/platform=iOS' \
     -archivePath "$archive" \
     -allowProvisioningUpdates \
-    CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+    "${build_settings[@]}" \
     clean archive
 
   # App Store export options. Signing stays automatic so Xcode manages profiles.

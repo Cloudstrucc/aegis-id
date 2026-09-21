@@ -1,14 +1,12 @@
 <header class="site-header" aria-label="Primary">
   <a class="brand-lockup" href="/" aria-label="Go to {{site.branding.appName}} home" title="Home">
-    {{#if site.branding.logoMarkUrl}}
-      <img class="brand-mark" src="{{site.branding.logoMarkUrl}}" alt="{{site.branding.logoAlt}}">
-    {{else}}
+    {{#unless isLandingPage}}
       {{#if site.branding.logoUrl}}
         <img class="brand-logo" src="{{site.branding.logoUrl}}" alt="{{site.branding.logoAlt}}">
       {{else}}
         <span class="brand-wordmark">{{site.branding.displayName}}</span>
       {{/if}}
-    {{/if}}
+    {{/unless}}
     {{#unless site.branding.isPlatform}}{{#if site.branding.productName}}<span class="brand-product-pill">{{site.branding.productName}}</span>{{/if}}{{/unless}}
   </a>
   <nav class="site-nav" aria-label="Site">

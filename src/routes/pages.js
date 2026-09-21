@@ -75,7 +75,9 @@ router.get('/', authorize('public.home'), async (req, res, next) => {
       return res.render('pages/account', landing.view);
     }
 
-    res.render('pages/home', getHomeContent());
+    // The landing page carries the full lockup in its hero, so the header
+    // stays logo-free here; every other page shows the lockup in the header.
+    res.render('pages/home', { ...getHomeContent(), isLandingPage: true });
   } catch (error) {
     next(error);
   }
