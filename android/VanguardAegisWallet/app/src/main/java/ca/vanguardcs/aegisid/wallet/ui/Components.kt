@@ -121,8 +121,10 @@ fun HeroPanel(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
             VanguardLogo(darkBackground = true)
+            // The lockup above already reads "AEGIS ID", so the title is just
+            // "Wallet" rather than repeating the name.
             Text(
-                text = "Aegis ID Wallet",
+                text = "Wallet",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
