@@ -833,7 +833,7 @@
 			buildSettings = {
 				AEGIS_APP_DISPLAY_NAME = "Aegis ID";
 				AEGIS_URL_SCHEME = aegisid;
-				AEGIS_WEB_APP_BASE_URL = "https://vanguard-aegis-id-0e75d1.azurewebsites.net";
+				AEGIS_WEB_APP_BASE_URL = "https://aegis-id.io";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = VanguardAegisWallet/VanguardAegisWallet.entitlements;
@@ -866,7 +866,7 @@
 			buildSettings = {
 				AEGIS_APP_DISPLAY_NAME = "Aegis ID";
 				AEGIS_URL_SCHEME = aegisid;
-				AEGIS_WEB_APP_BASE_URL = "https://vanguard-aegis-id-0e75d1.azurewebsites.net";
+				AEGIS_WEB_APP_BASE_URL = "https://aegis-id.io";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = VanguardAegisWallet/VanguardAegisWallet.entitlements;

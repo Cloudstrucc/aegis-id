@@ -147,9 +147,9 @@ android {
             dimension = "environment"
             resValue("string", "app_name", "Aegis ID")
             aegisEnvironment(
-                baseUrl = "https://vanguard-aegis-id-0e75d1.azurewebsites.net",
+                baseUrl = "https://aegis-id.io",
                 urlScheme = "aegisid",
-                appLinkHost = "vanguard-aegis-id-0e75d1.azurewebsites.net"
+                appLinkHost = "aegis-id.io"
             )
         }
     }
