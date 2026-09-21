@@ -354,6 +354,25 @@ h3 {
   gap: 12px;
 }
 
+.store-badge-official {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  box-shadow: 0 16px 42px rgba(6, 22, 37, 0.18);
+}
+
+.store-badge-official img {
+  display: block;
+  height: 66px;
+  width: auto;
+  border-radius: 8px;
+}
+
+.store-badge-official:focus-visible {
+  outline: 2px solid var(--cyan-500);
+  outline-offset: 3px;
+}
+
 .store-badge {
   position: relative;
   display: grid;

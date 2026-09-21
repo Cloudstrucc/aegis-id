@@ -14,11 +14,19 @@
 <section class="band band--white mobile-downloads" id="mobile-apps">
   <div class="mobile-downloads__copy">
     <p class="eyebrow">Mobile wallet</p>
-    <h2>Install the {{site.branding.shortName}} wallet for testing.</h2>
-    <p>Use the iOS TestFlight beta or Android testing link for business-partner wallet pilots.</p>
+    <h2>Install the {{site.branding.shortName}} wallet.</h2>
+    {{#if hasIosAppStore}}
+      <p>Get it on the App Store. Android is available through a testing link for business-partner pilots.</p>
+    {{else}}
+      <p>Use the iOS TestFlight beta or Android testing link for business-partner wallet pilots.</p>
+    {{/if}}
   </div>
   <div class="store-badge-row" aria-label="Mobile app downloads">
-    {{#if hasIosDownloadUrl}}
+    {{#if hasIosAppStore}}
+      <a class="store-badge-official" href="{{iosAppStoreUrl}}" target="_blank" rel="noopener" aria-label="Download {{site.branding.shortName}} on the App Store">
+        <img src="/images/brand/app-store-badge.svg" alt="Download on the App Store">
+      </a>
+    {{else if hasIosDownloadUrl}}
       <a class="store-badge store-badge--ios" href="{{iosDownloadUrl}}" target="_blank" rel="noopener">
         <span class="store-badge__mark">iOS</span>
         <span>
