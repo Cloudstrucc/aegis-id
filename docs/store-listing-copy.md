@@ -24,7 +24,7 @@ field to update when something is worth announcing.
 ## Description — 1,893 / 4,000
 
 ```
-Vanguard Aegis ID Wallet holds the credentials your organization issues to you,
+Aegis ID Wallet holds the credentials your organization issues to you,
 and lets you approve or decline the requests those organizations send — from
 your own device, with your own biometric.
 
@@ -63,7 +63,7 @@ when, and what you answered. Nothing there can be quietly edited afterwards.
 
 WHAT YOU NEED
 
-This wallet is a companion to the Vanguard Aegis ID platform. An organization
+This wallet is a companion to the Aegis ID platform. An organization
 using Aegis ID has to issue you a credential or send you an invitation — the
 wallet is not useful on its own.
 ```
@@ -76,16 +76,16 @@ wallet is not useful on its own.
 credential,identity,workforce,employee,badge,approval,authenticator,verifiable,enterprise,sso
 ```
 
-No spaces after the commas — they count against the limit. "Wallet", "Aegis",
-"Vanguard" and "ID" are deliberately absent: Apple already indexes the app name,
-and repeating those wastes characters.
+No spaces after the commas — they count against the limit. "Wallet", "Aegis"
+and "ID" are deliberately absent: Apple already indexes the app name, and
+repeating those wastes characters.
 
 ---
 
 ## Support URL
 
 ```
-https://vanguard-aegis-id-0e75d1.azurewebsites.net/support
+https://aegis-id.io/support
 ```
 
 Public and unauthenticated — the people who most need it are the ones who cannot
@@ -96,7 +96,7 @@ plainly that no address is configured, which is honest but is not a support
 page. Review does check this URL.
 
 ```bash
-az webapp config appsettings set --name vanguard-aegis-id-65067d --resource-group <rg> --settings SUPPORT_EMAIL=contact-aegis-id@vanguardcs.ca
+az webapp config appsettings set --name vanguard-aegis-id-0e75d1 --resource-group <rg> --settings SUPPORT_EMAIL=<your support email>
 ```
 
 `scripts/deploy-azure-webapp.sh` forwards the setting, so a later deployment
@@ -105,7 +105,7 @@ keeps it.
 ## Marketing URL
 
 ```
-https://vanguard-aegis-id-0e75d1.azurewebsites.net/
+https://aegis-id.io/
 ```
 
 ## Privacy Policy URL
@@ -113,7 +113,7 @@ https://vanguard-aegis-id-0e75d1.azurewebsites.net/
 Required by both stores.
 
 ```
-https://vanguard-aegis-id-0e75d1.azurewebsites.net/privacy
+https://aegis-id.io/privacy
 ```
 
 Public and unauthenticated, like the support page. `PRIVACY_POLICY_URL` defaults
@@ -167,7 +167,7 @@ generated before submitting** — see below.
 ```
 WHAT THIS APP IS
 
-Vanguard Aegis ID Wallet is the holder-side companion to Vanguard Aegis ID, an
+Aegis ID Wallet is the holder-side companion to Aegis ID, an
 enterprise identity service. An organization issues a credential to a person, it
 arrives in this wallet, and the person then approves or declines the requests
 that follow - signing in, approving an expense, signing a document - from their
