@@ -486,7 +486,7 @@ app.post('/signatures/templates/:templateId/envelopes', requireAuthenticated, as
 
     const challenge = await createAegisChallenge({
       organizationId: activeOrganizationId(req),
-      appName: 'Vanguard E-Signatures',
+      appName: 'Aegis ID E-Signatures',
       challengeType: 'document-signature',
       action: 'sign-document',
       resourceType: 'pdf-envelope',
@@ -494,7 +494,7 @@ app.post('/signatures/templates/:templateId/envelopes', requireAuthenticated, as
       subject: req.session.user.email,
       requiredAssurance: config.walletPasskeyApprovalsRequired ? 'passkey' : undefined,
       payload: {
-        appName: 'Vanguard E-Signatures',
+        appName: 'Aegis ID E-Signatures',
         action: 'sign-document',
         timestamp: now,
         actor: {
@@ -778,7 +778,7 @@ async function createYubiKeyStepUpRequest(user, action) {
     publicKey: {
       challenge: crypto.randomBytes(32).toString('base64url'),
       rp: {
-        name: 'Vanguard Aegis ID',
+        name: 'Aegis ID',
         id: host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(host) ? undefined : host
       },
       user: {
@@ -1079,7 +1079,7 @@ function createRandomExpense(existingExpenses = []) {
   const departments = ['Finance', 'Security', 'Delivery', 'HR', 'Legal', 'Cloud Ops', 'Sales', 'Engineering'];
   const vendors = [
     'Azure Marketplace',
-    'Vanguard Travel Desk',
+    'Northwind Travel Desk',
     'Northwind SaaS',
     'YubiEnterprise',
     'Contoso Office',
