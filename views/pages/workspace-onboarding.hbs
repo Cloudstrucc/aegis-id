@@ -37,7 +37,11 @@
         <h3>{{#if walletSetupComplete}}Wallet connected for {{workspace.organization}}{{else}}Register {{workspace.organization}} in the Aegis wallet{{/if}}</h3>
         <p class="demo-qr-card__description">{{#if walletSetupComplete}}The first administrator wallet is now linked to this organization.{{else}}Download the mobile wallet on iOS or Android, open it on your phone, scan the QR code, and accept the issuer invitation for {{workspace.organization}}. Refresh after acceptance if this page does not update automatically.{{/if}}</p>
         <div class="store-badge-row">
-          {{#if hasIosDownloadUrl}}
+          {{#if hasIosAppStore}}
+            <a class="store-badge-official" href="{{iosAppStoreUrl}}" target="_blank" rel="noopener" aria-label="Download on the App Store">
+              <img src="/images/brand/app-store-badge.svg" alt="Download on the App Store">
+            </a>
+          {{else if hasIosDownloadUrl}}
             <a class="store-badge store-badge--ios" href="{{iosDownloadUrl}}" target="_blank" rel="noopener">
               <span class="store-badge__mark">iOS</span>
               <span>

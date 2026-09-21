@@ -82,6 +82,10 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId/onboarding', authorize(
       hasInvitation: Boolean(onboarding.latestInvitation),
       iosDownloadUrl: config.app.iosTestFlightUrl,
       hasIosDownloadUrl: Boolean(config.app.iosTestFlightUrl),
+      // Production carries a public App Store listing (blanked on dev/qa by the
+      // deploy script), so the badge points there instead of TestFlight.
+      iosAppStoreUrl: config.app.appStoreUrl,
+      hasIosAppStore: Boolean(config.app.appStoreUrl),
       androidDownloadUrl: config.app.androidTestingUrl,
       hasAndroidDownloadUrl: Boolean(config.app.androidTestingUrl),
       welcome: req.query.welcome === '1',

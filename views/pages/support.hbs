@@ -223,9 +223,11 @@
         {{#if hasPlayStore}}
           <p><a class="button button--secondary" href="{{playStoreUrl}}">Android — Google Play</a></p>
         {{/if}}
-        {{#if hasIosTestFlight}}
-          <p><a class="button button--secondary" href="{{iosTestFlightUrl}}">iOS — TestFlight</a></p>
-        {{/if}}
+        {{#unless hasAppStore}}
+          {{#if hasIosTestFlight}}
+            <p><a class="button button--secondary" href="{{iosTestFlightUrl}}">iOS — TestFlight</a></p>
+          {{/if}}
+        {{/unless}}
         {{#if hasAndroidDownload}}
           <p><a class="button button--secondary" href="/downloads/android">Android — install guide</a></p>
         {{/if}}
