@@ -38,6 +38,7 @@ const {
   revokeRegistrationCode
 } = require('../services/registration-code-service');
 const { PLANS, describePrice } = require('../services/plan-service');
+const { listInstances: listAuthAdapters, isEnabled: authAdaptersEnabled } = require('../services/adapter-registry-service');
 const { listIdentities, revokeVerification } = require('../services/organization-identity-service');
 const { listBreakGlassCodes, redeemBreakGlassCode } = require('../services/break-glass-service');
 const { writeAuditEvent } = require('../services/audit-service');
@@ -99,7 +100,7 @@ router.get('/architecture', requireAuthenticated, authorize('account.view'), (re
 // so the page is worth opening rather than being a list of links.
 router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) => {
   try {
-    const [wallets, codes, passwordlessAccounts, methods, notificationSettings, identities, glassCodes] =
+    const [wallets, codes, passwordlessAccounts, methods, notificationSettings, identities, glassCodes, authAdapters] =
       await Promise.all([
         listWallets(),
         listRegistrationCodes(),
@@ -107,8 +108,10 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         getSignInMethodsForDisplay(),
         getNotificationSettingsForDisplay(),
         listIdentities(),
-        listBreakGlassCodes()
+        listBreakGlassCodes(),
+        listAuthAdapters()
       ]);
+    const activeAdapters = authAdapters.filter((adapter) => adapter.status === 'active').length;
 
     const revokedWallets = wallets.filter((wallet) => wallet.status === 'revoked').length;
     const usableCodes = codes.filter((code) => code.isUsable).length;
@@ -151,6 +154,15 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
           summary: 'Choose how people may sign in, and what each method counts for.',
           stat: enabledMethods,
           statLabel: enabledMethods === 1 ? 'method enabled' : 'methods enabled'
+        },
+        {
+          href: '/admin/auth-adapters',
+          title: 'Authentication adapters',
+          summary: 'SAML, Kerberos and certificate (CBA) adapters that let an external IdP front connected-app sign-in.',
+          stat: activeAdapters,
+          statLabel: activeAdapters === 1 ? 'active adapter' : 'active adapters',
+          note: authAdaptersEnabled() ? (authAdapters.length ? null : 'None configured yet') : 'Framework disabled in this environment',
+          isWarning: !authAdaptersEnabled()
         },
         {
           href: '/admin/notifications',

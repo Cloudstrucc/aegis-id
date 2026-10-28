@@ -210,6 +210,12 @@ const config = {
     connectedAppOAuthCodes: resolveFromRoot(process.env.CONNECTED_APP_OAUTH_CODE_STORE_PATH, 'data/connected-app-oauth-codes.json'),
     connectedAppSigningKeys: resolveFromRoot(process.env.CONNECTED_APP_SIGNING_KEY_STORE_PATH, 'data/connected-app-signing-keys.json'),
     connectedAppUpstreamStates: resolveFromRoot(process.env.CONNECTED_APP_UPSTREAM_STATE_STORE_PATH, 'data/connected-app-upstream-states.json'),
+    // Authentication adapters (SAML / Kerberos / CBA and future protocols) and
+    // the short-lived state they issue during an authorization. New stores, so
+    // they must be added to scripts/deploy-azure-webapp.sh and set as app
+    // settings on hosted environments or the next deploy wipes them.
+    authAdapters: resolveFromRoot(process.env.AUTH_ADAPTER_STORE_PATH, 'data/auth-adapters.json'),
+    authAdapterStates: resolveFromRoot(process.env.AUTH_ADAPTER_STATE_STORE_PATH, 'data/auth-adapter-states.json'),
     oidcWalletSessions: resolveFromRoot(process.env.OIDC_WALLET_SESSION_STORE_PATH, 'data/oidc-wallet-sessions.json'),
     oidcCodes: resolveFromRoot(process.env.OIDC_CODE_STORE_PATH, 'data/oidc-codes.json'),
     oidcWalletSignIns: resolveFromRoot(
@@ -386,6 +392,16 @@ const config = {
         jwksUri: process.env.CONNECTED_APP_UPSTREAM_ENTRA_JWKS_URI || ''
       }
     }
+  },
+  authAdapters: {
+    // The adapter framework (SAML 2.0, Kerberos/SPNEGO, certificate/CBA, and the
+    // provider presets built on them). On by default off-prod so pilots and the
+    // local suite exercise it; off in dev/qa/prod until an operator turns it on,
+    // because it changes how people can authenticate into connected apps.
+    enabled: booleanFlag(
+      process.env.ADAPTER_FRAMEWORK_ENABLED,
+      (process.env.NODE_ENV || 'development') !== 'production'
+    )
   },
   aries: {
     // 'product' (default) issues self-contained aegisid:// org invites with no

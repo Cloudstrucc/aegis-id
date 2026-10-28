@@ -1,0 +1,172 @@
+<section class="band band--white">
+  <div class="section-heading">
+    <p class="eyebrow">Platform settings</p>
+    <h1>Authentication adapters</h1>
+    <p>Connect an external identity protocol so it can front connected-app sign-in. SAML 2.0, Kerberos/SPNEGO and certificate-based auth (CBA) are the out-of-the-box protocols; provider presets build on them. Aegis stays the policy decision point for every route.</p>
+  </div>
+
+  {{#unless enabled}}
+    <div class="callout callout--warning"><strong>Framework disabled in this environment.</strong> <span>Adapters can be configured and tested, but will not front sign-in until <code>ADAPTER_FRAMEWORK_ENABLED</code> is on.</span></div>
+  {{/unless}}
+  {{#if saved}}
+    <div class="callout callout--success">
+      <strong>
+        {{#if (eq saved "created")}}Adapter created and active.{{/if}}
+        {{#if (eq saved "created-draft")}}Adapter saved as a draft — complete the configuration to activate it.{{/if}}
+        {{#if (eq saved "updated")}}Adapter updated.{{/if}}
+        {{#if (eq saved "deleted")}}Adapter deleted.{{/if}}
+        {{#if (eq saved "default-set")}}This adapter now fronts connected-app sign-in.{{/if}}
+        {{#if (eq saved "default-cleared")}}Connected-app sign-in no longer uses an adapter.{{/if}}
+      </strong>
+    </div>
+  {{/if}}
+  {{#if errorMessage}}
+    <div class="callout callout--warning"><strong>Not saved.</strong> <span>{{errorMessage}}</span></div>
+  {{/if}}
+
+  {{#if testResult}}
+    <article class="note-panel {{#if testResult.ok}}note-panel--success{{else}}note-panel--error{{/if}}">
+      <strong>{{testResult.name}} — {{testResult.title}}</strong>
+      <span>{{testResult.detail}}</span>
+      {{#if testResult.claims}}
+        <div class="people-table-wrap" style="margin-top:12px">
+          <table class="data-table">
+            <thead><tr><th>Claim</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>subject</td><td><code>{{testResult.claims.subject}}</code></td></tr>
+              <tr><td>email</td><td>{{testResult.claims.email}}</td></tr>
+              <tr><td>name</td><td>{{testResult.claims.name}}</td></tr>
+              <tr><td>roles</td><td>{{#each testResult.claims.roles}}<span class="status-pill">{{this}}</span> {{/each}}</td></tr>
+              <tr><td>acr</td><td><code>{{testResult.claims.acr}}</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      {{/if}}
+    </article>
+  {{/if}}
+
+  <article class="blade-guidance">
+    <strong>How this is enforced</strong>
+    <span>An adapter that does not validate is kept as a <em>draft</em> and cannot authenticate anyone (deny-by-default). The Kerberos and certificate adapters refuse to activate without a trusted-proxy allowlist, because a forwarded header is only as trustworthy as who may set it. Every create, update, delete and test is written to the evidence chain. Secrets are held by reference; signing certificates and trust anchors are public material and stored as-is.</span>
+  </article>
+</section>
+
+<section class="band band--light">
+  <div class="section-heading"><h2>Configured adapters</h2></div>
+  {{#if instances.length}}
+    <div class="people-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Name</th><th>Protocol</th><th>Status</th><th>Factors</th><th>Last test</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {{#each instances}}
+            <tr>
+              <td><strong>{{name}}</strong><div class="table-note">{{catalog.summary}}</div></td>
+              <td>{{catalog.protocol}}</td>
+              <td>
+                <span class="status-pill status-pill--{{#if isActive}}active{{else}}{{#if (eq status "draft")}}warn{{else}}revoked{{/if}}{{/if}}">{{status}}</span>
+              </td>
+              <td>
+                {{#if firstFactor}}<span class="status-pill">First factor</span>{{/if}}
+                {{#if satisfiesSecond}}<span class="status-pill">Completes sign-in</span>{{/if}}
+                {{#if defaultForSignIn}}<span class="status-pill status-pill--active">Sign-in default</span>{{/if}}
+              </td>
+              <td>
+                {{#if lastTest}}
+                  <span class="status-pill status-pill--{{#if lastTest.ok}}active{{else}}revoked{{/if}}">{{lastTest.title}}</span>
+                  <div class="table-note">{{lastTest.at}}</div>
+                {{else}}<span class="table-note">Not tested</span>{{/if}}
+              </td>
+              <td>
+                <details>
+                  <summary class="link-button">Test &amp; manage</summary>
+                  <div style="margin-top:10px">
+                    <form class="wizard-form" action="/admin/auth-adapters/{{id}}/test" method="post">
+                      <p class="form-note">Run a self-test with sample input. Nothing is stored except pass/fail.</p>
+                      {{#if (eq kind "saml")}}
+                        <div class="field-group"><label>Signed SAML Response (base64)</label><textarea name="samlResponse" rows="3" placeholder="PHNhbWxwOlJlc3BvbnNl…"></textarea></div>
+                        <div class="field-group"><label>…or IdP metadata XML</label><textarea name="metadataXml" rows="3" placeholder="&lt;EntityDescriptor…&gt;"></textarea></div>
+                      {{/if}}
+                      {{#if (eq kind "kerberos")}}
+                        <div class="field-group"><label>Sample principal</label><input name="principal" placeholder="jdoe@CLOUDSTRUCC.CA"></div>
+                        <div class="field-group"><label>Groups (optional)</label><input name="groups" placeholder="Domain Admins; Finance"></div>
+                      {{/if}}
+                      {{#if (eq kind "cba")}}
+                        <div class="field-group"><label>Client certificate (PEM)</label><textarea name="pem" rows="4" placeholder="-----BEGIN CERTIFICATE-----"></textarea></div>
+                      {{/if}}
+                      <button class="button button--secondary button--dark-text" type="submit">Run test</button>
+                    </form>
+
+                    <form class="inline-actions" action="/admin/auth-adapters/{{id}}" method="post" style="margin-top:10px">
+                      <input type="hidden" name="_action" value="update">
+                      <label class="checkline"><input type="checkbox" name="firstFactor" {{#if firstFactor}}checked{{/if}}> First factor</label>
+                      <label class="checkline"><input type="checkbox" name="satisfiesSecond" {{#if satisfiesSecond}}checked{{/if}}> Completes sign-in</label>
+                      <input type="hidden" name="status" value="{{#if (eq status "disabled")}}active{{else}}disabled{{/if}}">
+                      <button class="button button--secondary button--dark-text" type="submit">{{#if (eq status "disabled")}}Enable{{else}}Disable{{/if}}</button>
+                    </form>
+
+                    {{#if isActive}}
+                      <form class="inline-actions" action="/admin/auth-adapters/{{id}}" method="post" style="margin-top:6px">
+                        <input type="hidden" name="_action" value="{{#if defaultForSignIn}}clear-default{{else}}set-default{{/if}}">
+                        <button class="button button--secondary button--dark-text" type="submit">{{#if defaultForSignIn}}Stop fronting sign-in{{else}}Use for connected-app sign-in{{/if}}</button>
+                      </form>
+                    {{/if}}
+
+                    <form action="/admin/auth-adapters/{{id}}" method="post" style="margin-top:6px" onsubmit="return confirm('Delete this adapter? Evidence of the change is kept.');">
+                      <input type="hidden" name="_action" value="delete">
+                      <button class="button button--ghost" type="submit">Delete adapter</button>
+                    </form>
+                  </div>
+                </details>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  {{else}}
+    <p class="empty-table-note">No adapters configured yet. Add one below.</p>
+  {{/if}}
+</section>
+
+<section class="band band--white">
+  <div class="section-heading"><h2>Add an adapter</h2><p>Pick a protocol. Required fields must validate before the adapter goes active.</p></div>
+  {{#each catalog}}
+    <details class="platform-card" style="margin-bottom:12px">
+      <summary><strong>{{name}}</strong> — {{summary}} {{#if mandatory}}<span class="status-pill status-pill--warn">SSC M4</span>{{/if}}</summary>
+      <form class="wizard-form" action="/admin/auth-adapters" method="post" style="margin-top:12px">
+        <input type="hidden" name="kind" value="{{kind}}">
+        <div class="field-group">
+          <label>Adapter name</label>
+          <input name="name" placeholder="{{name}} for Cloudstrucc">
+        </div>
+        {{#each schema}}
+          <div class="field-group">
+            <label>{{label}}{{#if required}} *{{/if}}</label>
+            {{#if (eq type "textarea")}}
+              <textarea name="{{key}}" rows="3"></textarea>
+            {{else}}
+              {{#if (eq type "select")}}
+                <select name="{{key}}">
+                  {{#each options}}<option value="{{this.[0]}}">{{this.[1]}}</option>{{/each}}
+                </select>
+              {{else}}
+                {{#if (eq type "boolean")}}
+                  <label class="checkline"><input type="checkbox" name="{{key}}" value="true" checked> Enabled</label>
+                {{else}}
+                  <input name="{{key}}" type="{{#if (eq type "url")}}url{{else}}text{{/if}}">
+                {{/if}}
+              {{/if}}
+            {{/if}}
+            {{#if help}}<p class="field-hint">{{help}}</p>{{/if}}
+          </div>
+        {{/each}}
+        <div class="inline-actions">
+          <button class="button button--primary button--blue" type="submit">Create {{name}} adapter</button>
+        </div>
+      </form>
+    </details>
+  {{/each}}
+  <div class="inline-actions"><a class="button button--ghost" href="/admin">All settings</a></div>
+</section>
