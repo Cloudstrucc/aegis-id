@@ -4259,6 +4259,27 @@ body.document-page .embedded-document {
   }
 }
 
+/* The --workspace-* palette is promoted to :root because several rules that use
+   it are global, not blade-scoped: .people-table-wrap, .definition-list,
+   .profile-summary-card h3 and .profile-org-row all live outside
+   .workspace-blade (the profile modal is in the site header, on every page).
+   Unset custom properties make the whole declaration invalid, so those borders,
+   backgrounds and shadows were simply never drawn off the dashboard. The
+   .workspace-blade block below keeps its own identical copy, so blade pages
+   resolve exactly the same values they did before. */
+:root {
+  --workspace-site-header: 90px;
+  --workspace-footer-height: 0px;
+  --workspace-ink: #0a1626;
+  --workspace-muted: #64748b;
+  --workspace-line: #d9e4ef;
+  --workspace-soft: #f4f8fc;
+  --workspace-blue: #2268e8;
+  --workspace-cyan: #00a6b8;
+  --workspace-green: #15915f;
+  --workspace-shadow: 0 18px 44px rgba(7, 22, 38, 0.08);
+}
+
 /* Organization workspace blade refresh. Scoped to the dashboard so legacy site pages keep their styling. */
 .workspace-blade {
   --workspace-site-header: 90px;
@@ -7089,6 +7110,24 @@ body:has(.workspace-blade) .site-footer div span {
   }
 }
 
+/* The same clearance, applied globally rather than per page. .band--page-top
+   has to be remembered in the template, and seven admin pages did not: they
+   open straight into <section class="band band--white"> and put their heading
+   under the fixed header. The layout renders every page as a direct child of
+   <main>, so the first band in the document is exactly the one that needs the
+   offset. Pages that open with .page-hero / .hero are untouched because their
+   first child is not a .band, and .band--page-top is excluded so the two never
+   stack. */
+main > .band:first-child:not(.band--page-top) {
+  padding-top: calc(104px + 48px);
+}
+
+@media (max-width: 760px) {
+  main > .band:first-child:not(.band--page-top) {
+    padding-top: calc(104px + 24px);
+  }
+}
+
 .section-heading--page h1 {
   font-size: clamp(30px, 3.4vw, 52px);
   line-height: 1.08;
@@ -8312,4 +8351,1700 @@ body:has(.workspace-blade) .site-footer div span {
 
 .footer-powered-by {
   color: var(--muted);
+}
+
+/* ==========================================================================
+   AEGIS FACELIFT LAYER
+   --------------------------------------------------------------------------
+   Appended last on purpose: everything below is either a brand-new class or a
+   deliberate correction of a rule earlier in this file, and source order is
+   the only lever available without a build step or specificity arms race.
+
+   Three things live here:
+     1. the --aeg-* token layer (prefixed so it cannot collide with the
+        existing :root palette, which marketing pages depend on)
+     2. definitions for classes templates already use but nothing ever styled
+     3. the aeg-* component vocabulary, which sits alongside the three button
+        / card / table systems already in this file rather than replacing them
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens.
+   Values are taken verbatim from the approved mockup. The --aeg- prefix keeps
+   them out of the way of --navy-*, --line, --muted and friends, so a token
+   change here can never reach a marketing page that did not opt in.
+   -------------------------------------------------------------------------- */
+:root {
+  /* spacing */
+  --aeg-space-1: 4px;
+  --aeg-space-2: 8px;
+  --aeg-space-3: 12px;
+  --aeg-space-4: 16px;
+  --aeg-space-5: 20px;
+  --aeg-space-6: 24px;
+  --aeg-space-7: 28px;
+  --aeg-space-8: 32px;
+
+  /* radii */
+  --aeg-r: 7px;
+  --aeg-r-lg: 11px;
+  --aeg-r-pill: 999px;
+
+  /* type ramp. These are the sizes the facelift is actually about: an
+     operational page has a 23px title, not the 72px marketing h1. */
+  --aeg-t-page: 23px;
+  --aeg-t-section: 15.5px;
+  --aeg-t-card: 14px;
+  --aeg-t-body: 13.5px;
+  --aeg-t-hint: 12.5px;
+  --aeg-t-th: 11px;
+  --aeg-t-eyebrow: 10.5px;
+
+  /* weights. The rest of this file leans on 800-900, which reads as shouting
+     at 13px; the mockup tops out at 700. */
+  --aeg-w-reg: 400;
+  --aeg-w-md: 550;
+  --aeg-w-sb: 600;
+  --aeg-w-bd: 650;
+  --aeg-w-hd: 700;
+
+  /* shadows */
+  --aeg-sh: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --aeg-sh-lg: 0 16px 48px rgba(15, 23, 42, 0.18);
+  --aeg-sh-brand: 0 3px 14px rgba(11, 127, 199, 0.11);
+
+  /* surfaces and ink */
+  --aeg-bg: #f5f7fa;
+  --aeg-surface: #ffffff;
+  --aeg-surface-2: #f8fafc;
+  --aeg-surface-3: #f1f5f9;
+  --aeg-border: #e4e9f0;
+  --aeg-border-strong: #cbd5e1;
+  --aeg-text: #0f172a;
+  --aeg-muted: #64748b;
+  --aeg-subtle: #94a3b8;
+
+  /* brand */
+  --aeg-brand: #0b7fc7;
+  --aeg-brand-ink: #075e94;
+  --aeg-brand-soft: #e8f4fc;
+  --aeg-brand-line: #bfe2f7;
+  --aeg-accent: #19b0d8;
+
+  /* app chrome */
+  --aeg-nav: #17222f;
+  --aeg-nav-2: #1e2c3c;
+  --aeg-nav-line: #31425a;
+  --aeg-nav-text: #dbe4ee;
+
+  /* state triples */
+  --aeg-ok: #047857;
+  --aeg-ok-bg: #ecfdf5;
+  --aeg-ok-br: #a7f3d0;
+  --aeg-warn: #b45309;
+  --aeg-warn-bg: #fffbeb;
+  --aeg-warn-br: #fde68a;
+  --aeg-bad: #be123c;
+  --aeg-bad-bg: #fff1f2;
+  --aeg-bad-br: #fecdd3;
+
+  /* the fixed site header is ~104px tall; anything that has to clear it
+     should say so through one token rather than repeating the number */
+  --aeg-header-clear: 104px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Classes templates already use that nothing defined.
+   Each of these renders visibly broken today, not merely unstyled.
+   -------------------------------------------------------------------------- */
+
+/* Used 17 times across the admin forms as the explanatory line under a field.
+   With no definition it inherited the 16px body size and sat at full ink,
+   so the hint competed with its own label. */
+.field-hint {
+  margin: 0;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-hint);
+  font-weight: var(--aeg-w-reg);
+  line-height: 1.45;
+}
+
+.field-hint code {
+  font-size: 12px;
+}
+
+/* A label wrapping its own checkbox. The global `label` rule makes it a block
+   at weight 800, which stacked the box above the text and bolded the text. */
+.field-checkbox {
+  display: flex;
+  gap: var(--aeg-space-2);
+  align-items: flex-start;
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-reg);
+  line-height: 1.45;
+}
+
+.field-checkbox input {
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+}
+
+.field-checkbox small,
+.field-checkbox span {
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-hint);
+}
+
+/* Status chips. Templates ask for .pill plus a tone, and got an inline run of
+   unstyled text. Tones mirror the mockup's .p-* set. */
+.pill {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 2.5px var(--aeg-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--aeg-r-pill);
+  font-size: 11.5px;
+  font-weight: var(--aeg-w-sb);
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+/* A leading dot is a common child of a pill; it has no colour of its own so a
+   tone change carries it along. */
+.pill__dot {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.pill--ok {
+  color: var(--aeg-ok);
+  background: var(--aeg-ok-bg);
+  border-color: var(--aeg-ok-br);
+}
+
+/* "Waiting" and "warning" look the same deliberately: both mean nothing is
+   wrong yet but somebody still has to act. */
+.pill--wait,
+.pill--warn {
+  color: var(--aeg-warn);
+  background: var(--aeg-warn-bg);
+  border-color: var(--aeg-warn-br);
+}
+
+.pill--bad {
+  color: var(--aeg-bad);
+  background: var(--aeg-bad-bg);
+  border-color: var(--aeg-bad-br);
+}
+
+.pill--mute {
+  color: var(--aeg-muted);
+  background: var(--aeg-surface-3);
+  border-color: var(--aeg-border);
+}
+
+.pill--brand {
+  color: var(--aeg-brand-ink);
+  background: var(--aeg-brand-soft);
+  border-color: var(--aeg-brand-line);
+}
+
+/* The existing .status-pill set has active / invited / revoked / declined but
+   no warn or enabled, so an adapter that needs attention rendered in the
+   neutral default and read as fine. */
+.status-pill--warn {
+  color: #7c4a06;
+  background: var(--aeg-warn-bg);
+  border-color: var(--aeg-warn-br);
+}
+
+.status-pill--enabled {
+  color: var(--aeg-ok);
+  background: var(--aeg-ok-bg);
+  border-color: var(--aeg-ok-br);
+}
+
+/* Root-wallet progress ("2 of 3 confirmed"). The fill carries an inline width
+   but the track had no height and no background, so the whole meter was an
+   invisible zero-height div. */
+.meter {
+  display: grid;
+  gap: 6px;
+  max-width: 420px;
+  margin: 0 0 var(--aeg-space-4);
+}
+
+.meter__bar {
+  overflow: hidden;
+  height: 7px;
+  background: var(--aeg-surface-3);
+  border: 1px solid var(--aeg-border);
+  border-radius: var(--aeg-r-pill);
+}
+
+.meter__fill {
+  height: 100%;
+  max-width: 100%;
+  background: var(--aeg-brand);
+  border-radius: inherit;
+}
+
+.meter__label {
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-hint);
+  font-weight: var(--aeg-w-md);
+}
+
+/* Dashboard sub-tables. Without border-collapse the browser's default 2px
+   cell spacing draws a visible lattice between every cell. */
+.workspace-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-body);
+}
+
+.workspace-table th,
+.workspace-table td {
+  padding: 10px var(--aeg-space-3);
+  border-bottom: 1px solid var(--workspace-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.workspace-table th {
+  color: var(--aeg-muted);
+  background: var(--aeg-surface-2);
+  font-size: var(--aeg-t-th);
+  font-weight: var(--aeg-w-hd);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.workspace-table tr:last-child td {
+  border-bottom: 0;
+}
+
+/* The trailing cell of a table row that holds the buttons. */
+.table-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table-actions > * + * {
+  margin-left: 6px;
+}
+
+/* A clarification under a table cell's value, e.g. "Shown temporarily for
+   this session." */
+.table-hint {
+  display: block;
+  margin-top: 3px;
+  color: var(--aeg-muted);
+  font-size: 12px;
+  font-weight: var(--aeg-w-reg);
+  line-height: 1.4;
+}
+
+/* Documentation category rail. .docs-category and .docs-category__links are
+   styled; the <nav> wrapping them was not, so the groups ran together. */
+.docs-nav {
+  display: grid;
+  gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   3. Header-clearance companion for the new page wrapper.
+   .band gets this in place earlier in the file; .aeg-page needs the same
+   treatment when a template uses it as the top-level element.
+   -------------------------------------------------------------------------- */
+main > .aeg-page:first-child {
+  padding-top: calc(var(--aeg-header-clear) + 32px);
+}
+
+/* --------------------------------------------------------------------------
+   4. The profile modal.
+   The panel is the wide variant at ~1040px for two short columns, the two
+   columns are unequal, and the definition list draws one bordered box per row
+   on top of a line-coloured background — three separate reasons it reads as a
+   stack of boxes floating in dead space. Everything here is scoped to
+   #global-profile-modal so the eight other --wide modals are untouched.
+   -------------------------------------------------------------------------- */
+#global-profile-modal .app-modal__panel--wide {
+  width: min(680px, 100%);
+  gap: var(--aeg-space-4);
+  padding: var(--aeg-space-5);
+  border-radius: 13px;
+  box-shadow: var(--aeg-sh-lg);
+}
+
+#global-profile-modal .app-modal__head h2 {
+  color: var(--aeg-text);
+  font-size: 17px;
+  font-weight: var(--aeg-w-bd);
+  line-height: 1.25;
+}
+
+#global-profile-modal .app-modal__head .eyebrow {
+  margin-bottom: 4px;
+  color: var(--aeg-brand);
+  font-size: var(--aeg-t-eyebrow);
+  font-weight: var(--aeg-w-hd);
+  letter-spacing: 0.09em;
+}
+
+#global-profile-modal .app-modal__head p:last-child {
+  margin: 1px 0 0;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-hint);
+}
+
+/* Equal columns. The 0.9fr / 1.1fr split made the left card narrower than its
+   own longest value, so "Registered passkeys" wrapped while the right card had
+   room to spare. */
+.profile-modal-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: var(--aeg-space-5);
+  align-items: start;
+}
+
+/* One card per column, not a card per row. */
+.profile-summary-card--table {
+  gap: var(--aeg-space-2);
+  padding: var(--aeg-space-3) var(--aeg-space-4);
+  background: var(--aeg-surface);
+  border: 1px solid var(--aeg-border);
+  border-radius: var(--aeg-r-lg);
+}
+
+/* Section label rather than a heading: at 18px it outweighed the modal title
+   twice over. */
+#global-profile-modal .profile-summary-card h3 {
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-eyebrow);
+  font-weight: var(--aeg-w-hd);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* One consistent template for the compact list. Two rules upstream competed
+   for grid-template-columns (0.8fr 1fr auto at ~3086, 1fr auto at ~4797) and
+   the container's background was --workspace-line, which turned the 10px grid
+   gap into a thick grey band between rows. Hairlines instead. */
+.definition-list--compact {
+  gap: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.definition-list--compact > div {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--aeg-space-3);
+  align-items: baseline;
+  padding: 10px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--aeg-surface-3);
+  border-radius: 0;
+}
+
+.definition-list--compact > div:last-child {
+  border-bottom: 0;
+}
+
+.definition-list--compact > div > span {
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-reg);
+}
+
+.definition-list--compact > div > strong {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-md);
+  text-align: right;
+}
+
+.profile-org-list {
+  display: grid;
+  gap: 0;
+}
+
+/* Same row rhythm as the definition list above: 10px vertical, no horizontal
+   inset, hairline separator. Before this the two columns of the modal used
+   12px and 14px row padding and drew different borders. */
+.profile-org-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--aeg-space-3);
+  align-items: baseline;
+  padding: 10px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--aeg-surface-3);
+  border-radius: 0;
+}
+
+.profile-org-row:last-child {
+  border-bottom: 0;
+}
+
+.profile-org-row strong {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-sb);
+}
+
+.profile-org-row span,
+.profile-org-row small {
+  color: var(--aeg-muted);
+  font-size: 12px;
+  font-weight: var(--aeg-w-reg);
+}
+
+.profile-org-row small {
+  text-align: right;
+}
+
+#global-profile-modal .profile-summary-card .muted {
+  margin: 0;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-body);
+}
+
+/* Three actions spread by space-between put "Administration" and "Close" on
+   opposite edges of the panel with a lake between them. The first action is
+   the odd one out, so it keeps the left and the rest group right. */
+.modal-actions--profile {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--aeg-space-2);
+  padding-top: var(--aeg-space-3);
+  border-top: 1px solid var(--aeg-border);
+}
+
+.modal-actions--profile > *:first-child {
+  margin-right: auto;
+}
+
+@media (max-width: 760px) {
+  .profile-modal-grid {
+    grid-template-columns: 1fr;
+    gap: var(--aeg-space-4);
+  }
+
+  .modal-actions--profile > *:first-child {
+    margin-right: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Operational type scale.
+   The global h1 (72px) and h2 (38px) are sized for the marketing hero and are
+   left exactly as they are. These rules re-scale headings only on surfaces
+   that are plainly operational:
+
+     .surface-app                 opt-in, for templates that add the class
+     main > .band:first-child
+       :has(> .section-heading)   the seven admin pages, which open straight
+                                  into <section class="band band--white"> with
+                                  a .section-heading and no hero
+
+   .onboarding-shell is excluded because it already sets its own calmer ramp,
+   and pages whose first element is a .page-hero never match at all.
+   -------------------------------------------------------------------------- */
+.surface-app,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-body);
+  line-height: 1.5;
+}
+
+.surface-app h1,
+.surface-app .section-heading h1,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) h1,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .section-heading h1 {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-page);
+  font-weight: var(--aeg-w-bd);
+  letter-spacing: -0.011em;
+  line-height: 1.25;
+}
+
+.surface-app h2,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) h2 {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-section);
+  font-weight: var(--aeg-w-bd);
+  letter-spacing: -0.011em;
+  line-height: 1.35;
+}
+
+.surface-app h3,
+.surface-app h4,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) h3,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) h4 {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-card);
+  font-weight: var(--aeg-w-bd);
+  line-height: 1.4;
+}
+
+.surface-app .eyebrow,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .eyebrow {
+  margin-bottom: 6px;
+  color: var(--aeg-brand);
+  font-size: var(--aeg-t-eyebrow);
+  font-weight: var(--aeg-w-hd);
+  letter-spacing: 0.09em;
+}
+
+.surface-app .section-heading,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .section-heading {
+  max-width: 68ch;
+  margin-bottom: 22px;
+}
+
+.surface-app .section-heading p,
+main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .section-heading p {
+  margin: 6px 0 0;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-reg);
+}
+
+/* --------------------------------------------------------------------------
+   6. The aeg-* component vocabulary.
+   New names throughout: .button / .card / .admin-table and the blade's own
+   components all keep working untouched, and a template moves over one
+   element at a time.
+   -------------------------------------------------------------------------- */
+
+/* Page frame */
+.aeg-page {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 26px var(--aeg-space-6) 64px;
+}
+
+.aeg-crumb {
+  margin: 0 0 10px;
+  color: var(--aeg-muted);
+  font-size: 12px;
+}
+
+.aeg-crumb a {
+  color: var(--aeg-muted);
+  text-decoration: none;
+}
+
+.aeg-crumb a:hover {
+  color: var(--aeg-text);
+}
+
+.aeg-eyebrow {
+  margin: 0 0 6px;
+  color: var(--aeg-brand);
+  font-size: var(--aeg-t-eyebrow);
+  font-weight: var(--aeg-w-hd);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.aeg-page-head {
+  margin-bottom: 22px;
+}
+
+.aeg-page-head h1 {
+  margin: 0;
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-page);
+  font-weight: var(--aeg-w-bd);
+  letter-spacing: -0.011em;
+  line-height: 1.25;
+}
+
+.aeg-page-head p {
+  max-width: 68ch;
+  margin: 6px 0 0;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-reg);
+}
+
+.aeg-section {
+  margin-top: var(--aeg-space-7);
+}
+
+.aeg-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--aeg-space-4);
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--aeg-space-3);
+}
+
+.aeg-section-head h2,
+.aeg-section-head h3 {
+  margin: 0;
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-section);
+  font-weight: var(--aeg-w-bd);
+  letter-spacing: -0.011em;
+  line-height: 1.35;
+}
+
+.aeg-section-head p {
+  margin: 3px 0 0;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-hint);
+  font-weight: var(--aeg-w-reg);
+}
+
+/* An uppercase label, an optional pill and a hairline that runs to the right
+   edge. Separates "This organization" from "Platform" on the admin index
+   without spending a whole heading level on it. */
+.aeg-scope-head {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin: var(--aeg-space-6) 0 11px;
+}
+
+.aeg-scope-head h2,
+.aeg-scope-head h3,
+.aeg-scope-head__label {
+  margin: 0;
+  color: var(--aeg-muted);
+  font-size: 13px;
+  font-weight: var(--aeg-w-hd);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.aeg-scope-head__line {
+  flex: 1;
+  min-width: 16px;
+  height: 1px;
+  background: var(--aeg-border);
+}
+
+/* Card */
+.aeg-card {
+  background: var(--aeg-surface);
+  border: 1px solid var(--aeg-border);
+  border-radius: var(--aeg-r-lg);
+  box-shadow: var(--aeg-sh);
+}
+
+.aeg-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--aeg-space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--aeg-border);
+}
+
+.aeg-card__head h2,
+.aeg-card__head h3,
+.aeg-card__head h4 {
+  margin: 0;
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-card);
+  font-weight: var(--aeg-w-bd);
+  line-height: 1.4;
+}
+
+.aeg-card__head p {
+  margin: 2px 0 0;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-hint);
+  font-weight: var(--aeg-w-reg);
+}
+
+.aeg-card__body {
+  padding: var(--aeg-space-4) 18px;
+}
+
+.aeg-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--aeg-space-2);
+  align-items: center;
+  padding: 11px 18px;
+  background: var(--aeg-surface-2);
+  border-top: 1px solid var(--aeg-border);
+  border-radius: 0 0 var(--aeg-r-lg) var(--aeg-r-lg);
+}
+
+/* A table is normally the last thing in a card, and its own last row already
+   draws no border, so the card corner is the only thing left to round. */
+.aeg-card > .aeg-table-wrap:last-child {
+  border-radius: 0 0 var(--aeg-r-lg) var(--aeg-r-lg);
+}
+
+/* Buttons */
+.aeg-btn {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 7px 13px;
+  color: var(--aeg-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--aeg-r);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-md);
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.aeg-btn:disabled,
+.aeg-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.aeg-btn--primary {
+  color: #ffffff;
+  background: var(--aeg-brand);
+  border-color: var(--aeg-brand);
+}
+
+.aeg-btn--primary:hover {
+  background: var(--aeg-brand-ink);
+  border-color: var(--aeg-brand-ink);
+}
+
+.aeg-btn--secondary {
+  color: var(--aeg-text);
+  background: var(--aeg-surface);
+  border-color: var(--aeg-border-strong);
+}
+
+.aeg-btn--secondary:hover {
+  background: var(--aeg-surface-3);
+}
+
+.aeg-btn--ghost {
+  color: var(--aeg-muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+.aeg-btn--ghost:hover {
+  color: var(--aeg-text);
+  background: var(--aeg-surface-3);
+}
+
+.aeg-btn--danger {
+  color: var(--aeg-bad);
+  background: var(--aeg-surface);
+  border-color: var(--aeg-bad-br);
+}
+
+.aeg-btn--danger:hover {
+  background: var(--aeg-bad-bg);
+}
+
+.aeg-btn--sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+/* .inline-actions is a two-column grid, which is why four buttons render as a
+   stretched 2x2 panel. It is left alone — several pages rely on the grid — and
+   this is the flex row to reach for instead. A nested <form> is a common child
+   because sign-out and revoke are POSTs, so it is flattened here. */
+.aeg-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--aeg-space-2);
+  align-items: center;
+}
+
+.aeg-btns form {
+  display: contents;
+}
+
+.aeg-btns__spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Table.
+   No min-width on purpose: a fixed minimum is what forces a wrapper to scroll
+   sideways, and the project's styling rules say tables stay inside their
+   container. Cells wrap instead, and the header row is the only thing held to
+   nowrap because a wrapped column label reads as two columns. */
+.aeg-table-wrap {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.aeg-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-body);
+}
+
+.aeg-table th {
+  padding: 9px var(--aeg-space-3);
+  color: var(--aeg-muted);
+  background: var(--aeg-surface-2);
+  border-bottom: 1px solid var(--aeg-border);
+  font-size: var(--aeg-t-th);
+  font-weight: var(--aeg-w-hd);
+  letter-spacing: 0.055em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.aeg-table td {
+  padding: var(--aeg-space-3);
+  border-bottom: 1px solid var(--aeg-border);
+  vertical-align: middle;
+}
+
+.aeg-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.aeg-table tbody tr:hover {
+  background: #fafcfe;
+}
+
+.aeg-table__name {
+  font-weight: var(--aeg-w-sb);
+}
+
+.aeg-table__sub {
+  margin-top: 2px;
+  color: var(--aeg-muted);
+  font-size: 12px;
+}
+
+.aeg-table__right {
+  text-align: right;
+}
+
+/* Callout.
+   The body text is never bold: the existing .callout bolds its <strong> and
+   its span alike, which leaves a four-line paragraph shouting. Only the
+   optional title carries weight. */
+.aeg-callout {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  padding: var(--aeg-space-3) var(--aeg-space-4);
+  border: 1px solid var(--aeg-border);
+  border-radius: var(--aeg-r);
+  font-size: var(--aeg-t-body);
+  line-height: 1.5;
+}
+
+.aeg-callout__icon {
+  flex: 0 0 auto;
+  font-size: var(--aeg-t-body);
+  line-height: 1.35;
+}
+
+.aeg-callout p,
+.aeg-callout span,
+.aeg-callout strong,
+.aeg-callout__body {
+  color: inherit;
+  font-weight: var(--aeg-w-reg);
+}
+
+.aeg-callout p {
+  margin: 0;
+}
+
+.aeg-callout p + p {
+  margin-top: 6px;
+}
+
+/* Declared after the blanket weight reset above so the one element that is
+   meant to carry weight still does, whatever tag it uses. */
+.aeg-callout .aeg-callout__title {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: var(--aeg-w-bd);
+}
+
+.aeg-callout--info {
+  color: #0c4a6e;
+  background: var(--aeg-brand-soft);
+  border-color: #c5e3f5;
+}
+
+.aeg-callout--warn {
+  color: #7c2d12;
+  background: var(--aeg-warn-bg);
+  border-color: var(--aeg-warn-br);
+}
+
+.aeg-callout--ok {
+  color: #064e3b;
+  background: var(--aeg-ok-bg);
+  border-color: var(--aeg-ok-br);
+}
+
+.aeg-callout--danger {
+  color: #881337;
+  background: var(--aeg-bad-bg);
+  border-color: var(--aeg-bad-br);
+}
+
+/* Card grid and stat card */
+.aeg-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 13px;
+}
+
+.aeg-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px var(--aeg-space-4);
+  color: inherit;
+  background: var(--aeg-surface);
+  border: 1px solid var(--aeg-border);
+  border-radius: var(--aeg-r-lg);
+  box-shadow: var(--aeg-sh);
+  text-decoration: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.aeg-stat-card:hover {
+  border-color: var(--aeg-brand);
+  box-shadow: var(--aeg-sh-brand);
+}
+
+.aeg-stat-card__top {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aeg-stat-card h2,
+.aeg-stat-card h3,
+.aeg-stat-card h4 {
+  margin: 0;
+  color: var(--aeg-text);
+  font-size: 13.5px;
+  font-weight: var(--aeg-w-bd);
+  line-height: 1.4;
+}
+
+.aeg-stat-card__stat {
+  color: var(--aeg-text);
+  font-size: 21px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.aeg-stat-card__statlabel {
+  color: var(--aeg-muted);
+  font-size: 11.5px;
+  font-weight: var(--aeg-w-md);
+}
+
+.aeg-stat-card p {
+  margin: 0;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-hint);
+  font-weight: var(--aeg-w-reg);
+  line-height: 1.45;
+}
+
+/* Empty state */
+.aeg-empty {
+  padding: 40px 18px;
+  color: var(--aeg-muted);
+  text-align: center;
+}
+
+.aeg-empty h2,
+.aeg-empty h3,
+.aeg-empty h4 {
+  margin: 0 0 5px;
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-card);
+  font-weight: var(--aeg-w-bd);
+}
+
+.aeg-empty p {
+  margin: 0 0 14px;
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-reg);
+}
+
+.aeg-empty > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Forms.
+   Capped at 580px. A full-bleed input on a 2560px monitor is the single
+   loudest complaint about the adapters form: a 40-character client id in a
+   2000px-wide box tells you nothing about how long the value should be. */
+.aeg-form {
+  max-width: 580px;
+}
+
+.aeg-field {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.aeg-field > label,
+.aeg-field__label {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-hint);
+  font-weight: var(--aeg-w-sb);
+}
+
+.aeg-field__req {
+  color: var(--aeg-bad);
+}
+
+.aeg-input,
+.aeg-select,
+.aeg-textarea {
+  width: 100%;
+  min-width: 0;
+  padding: var(--aeg-space-2) 11px;
+  color: var(--aeg-text);
+  background: var(--aeg-surface);
+  border: 1px solid var(--aeg-border-strong);
+  border-radius: var(--aeg-r);
+  font: inherit;
+  font-size: var(--aeg-t-body);
+}
+
+.aeg-input:focus,
+.aeg-select:focus,
+.aeg-textarea:focus {
+  border-color: var(--aeg-brand);
+  box-shadow: 0 0 0 3px rgba(11, 127, 199, 0.13);
+  outline: none;
+}
+
+.aeg-textarea {
+  min-height: 76px;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+}
+
+.aeg-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+}
+
+/* Tenant switcher.
+   Sits in the dark header, so its own colours are the nav palette rather than
+   the page surface. The menu is a light card because it overlays the page.
+   [hidden] is honoured explicitly: the element is positioned, and a positioned
+   element ignores the UA's display:none for [hidden] once display is set here.
+*/
+.aeg-tenant-switcher {
+  position: relative;
+  display: inline-flex;
+}
+
+.aeg-tenant-switcher__button {
+  display: inline-flex;
+  gap: var(--aeg-space-2);
+  align-items: center;
+  padding: 5px 9px;
+  color: #e2e8f0;
+  background: var(--aeg-nav-2);
+  border: 1px solid var(--aeg-nav-line);
+  border-radius: var(--aeg-r);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--aeg-t-hint);
+  font-weight: var(--aeg-w-md);
+  line-height: 1.3;
+}
+
+.aeg-tenant-switcher__button:hover {
+  color: #ffffff;
+  border-color: #46597a;
+}
+
+.aeg-tenant-switcher__icon {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #ffffff;
+  background: var(--aeg-brand);
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: var(--aeg-w-hd);
+}
+
+.aeg-tenant-switcher__name {
+  overflow: hidden;
+  max-width: 22ch;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aeg-tenant-switcher__caret {
+  flex: 0 0 auto;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.aeg-tenant-switcher__menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  gap: 2px;
+  min-width: 248px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 6px;
+  background: var(--aeg-surface);
+  border: 1px solid var(--aeg-border);
+  border-radius: var(--aeg-r-lg);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.22);
+}
+
+.aeg-tenant-switcher__menu[hidden] {
+  display: none;
+}
+
+.aeg-tenant-switcher__item {
+  display: grid;
+  gap: 1px;
+  padding: 7px 10px;
+  color: var(--aeg-text);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--aeg-t-body);
+  text-align: left;
+  text-decoration: none;
+}
+
+.aeg-tenant-switcher__item:hover {
+  background: var(--aeg-surface-3);
+}
+
+.aeg-tenant-switcher__item[aria-current="true"] {
+  background: var(--aeg-brand-soft);
+  font-weight: var(--aeg-w-sb);
+}
+
+.aeg-tenant-switcher__item small {
+  color: var(--aeg-muted);
+  font-size: 12px;
+  font-weight: var(--aeg-w-reg);
+}
+
+/* Organization row: a mark, a name, a line of metadata. */
+.aeg-org-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--aeg-surface-3);
+}
+
+.aeg-org-row:last-child {
+  border-bottom: 0;
+}
+
+.aeg-org-row__mark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--aeg-brand-ink);
+  background: var(--aeg-brand-soft);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: var(--aeg-w-hd);
+}
+
+.aeg-org-row__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.aeg-org-row__name {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-sb);
+}
+
+.aeg-org-row__meta {
+  margin-top: 1px;
+  color: var(--aeg-muted);
+  font-size: 12px;
+  font-weight: var(--aeg-w-reg);
+}
+
+/* Site nav: there was a base rule and a :hover rule and nothing in between,
+   so the current page was indistinguishable from the others. */
+.site-nav a.is-active {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.site-nav a.is-active::after {
+  display: block;
+  height: 2px;
+  margin-top: 3px;
+  background: var(--aeg-accent);
+  border-radius: 2px;
+  content: "";
+}
+
+/* An "Admin" / "Settings" link in the header reads as chrome rather than as
+   another destination, so it gets a quiet outline instead of nav weight. */
+.aeg-admin-link {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 10px;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--aeg-r);
+  font-size: var(--aeg-t-hint);
+  font-weight: var(--aeg-w-sb);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.aeg-admin-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   7. Responsive.
+   Everything above has to hold at 380px with no horizontal page scroll, which
+   mostly means collapsing the two-column grids and letting the button rows
+   wrap rather than widening their container.
+   -------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .aeg-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .aeg-section-head {
+    gap: var(--aeg-space-2);
+  }
+
+  main > .aeg-page:first-child {
+    padding-top: calc(var(--aeg-header-clear) + 20px);
+  }
+}
+
+@media (max-width: 560px) {
+  .aeg-page {
+    padding: 20px var(--aeg-space-4) 48px;
+  }
+
+  .aeg-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .aeg-card__head,
+  .aeg-card__body,
+  .aeg-card__foot {
+    padding-right: var(--aeg-space-4);
+    padding-left: var(--aeg-space-4);
+  }
+
+  /* Tighter cell padding rather than a scrolling wrapper: the table has no
+     min-width, so trimming the gutters is what keeps it inside its container
+     instead of pushing the page sideways. */
+  .aeg-table th,
+  .aeg-table td,
+  .workspace-table th,
+  .workspace-table td {
+    padding: 10px var(--aeg-space-2);
+  }
+
+  .aeg-table__right,
+  .table-actions {
+    text-align: left;
+  }
+
+  .aeg-tenant-switcher,
+  .aeg-tenant-switcher__button {
+    max-width: 100%;
+  }
+
+  .aeg-tenant-switcher__name {
+    max-width: 12ch;
+  }
+
+  .aeg-tenant-switcher__menu {
+    right: auto;
+    left: 0;
+    min-width: 0;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+  }
+}
+
+@media (max-width: 420px) {
+  .aeg-page {
+    padding: 16px var(--aeg-space-3) 40px;
+  }
+
+  .aeg-btn,
+  .aeg-btn--sm {
+    font-size: 12.5px;
+  }
+
+  .aeg-btns {
+    gap: 6px;
+  }
+
+  .aeg-stat-card {
+    padding: var(--aeg-space-3);
+  }
+
+  .aeg-empty {
+    padding: var(--aeg-space-7) var(--aeg-space-3);
+  }
+
+  /* The profile modal's panel padding is the only thing between its content
+     and the viewport edge at this width. */
+  #global-profile-modal .app-modal__panel--wide {
+    padding: var(--aeg-space-4);
+  }
+
+  .definition-list--compact > div,
+  .profile-org-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .definition-list--compact > div > strong,
+  .profile-org-row small {
+    text-align: left;
+  }
+}
+
+/* ==========================================================================
+   AEGIS FACELIFT LAYER — TEMPLATE SUPPLEMENT
+   The pieces the new templates need that the component layer above does not
+   cover: the switcher as a <details> (so it needs no JavaScript), the profile
+   modal's avatar, and the organization settings index.
+   ========================================================================== */
+
+/* The switcher is a <details>, so the disclosure state does the toggling and
+   the menu is simply hidden while it is closed. */
+.aeg-tenant-switcher > summary {
+  list-style: none;
+}
+
+.aeg-tenant-switcher > summary::-webkit-details-marker,
+.aeg-tenant-switcher > summary::marker {
+  display: none;
+  content: '';
+}
+
+.aeg-tenant-switcher:not([open]) .aeg-tenant-switcher__menu {
+  display: none;
+}
+
+.aeg-tenant-switcher__label {
+  margin: 2px 0 4px;
+  padding: 0 10px;
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-eyebrow);
+  font-weight: var(--aeg-w-hd);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.aeg-tenant-switcher__create {
+  justify-content: center;
+  margin-top: 4px;
+  width: 100%;
+}
+
+/* The avatar in the profile modal head. The head is already a flex row, so the
+   mark only needs to stop itself shrinking. */
+.profile-modal__avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #ffffff;
+  background: linear-gradient(140deg, var(--aeg-accent), var(--aeg-brand));
+  border-radius: 50%;
+  font-size: 15px;
+  font-weight: var(--aeg-w-hd);
+}
+
+#global-profile-modal .app-modal__head {
+  gap: var(--aeg-space-3);
+  align-items: center;
+}
+
+#global-profile-modal .app-modal__head > div:not(.profile-modal__avatar) {
+  flex: 1;
+  min-width: 0;
+}
+
+#global-profile-modal .video-modal__close {
+  margin-left: auto;
+}
+
+/* Rows in the organization list carry a pill rather than a run of text, so the
+   right-hand cell is a shrink-to-fit column rather than right-ragged prose. */
+.profile-org-row small {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* The organization settings index: a scope heading, then the cards. */
+.aeg-scope-head + .aeg-cards {
+  margin-bottom: var(--aeg-space-6);
+}
+
+.aeg-stat-card__pill {
+  display: flex;
+  align-items: center;
+}
+
+/* A <details> styled as a card or a button still draws a disclosure triangle
+   and lays its summary out as a list item, which breaks the flex row inside. */
+details.aeg-card > summary,
+summary.aeg-btn {
+  cursor: pointer;
+  list-style: none;
+}
+
+details.aeg-card > summary::-webkit-details-marker,
+details.aeg-card > summary::marker,
+summary.aeg-btn::-webkit-details-marker,
+summary.aeg-btn::marker {
+  display: none;
+  content: '';
+}
+
+details.aeg-card > summary {
+  flex-wrap: wrap;
+}
+
+details.aeg-card > summary:hover {
+  background: var(--aeg-surface-3);
+}
+
+details.aeg-card[open] > summary {
+  border-bottom: 1px solid var(--aeg-border);
+}
+
+/* An input that sits in a row of buttons rather than in a form column. */
+.aeg-input--inline {
+  width: auto;
+  max-width: 180px;
+  flex: 1 1 110px;
+  padding: 5px 9px;
+  font-size: var(--aeg-t-hint);
+}
+
+/* Right-aligned action cells wrap their own rows, so each form keeps its
+   buttons together instead of stretching across the cell. */
+.aeg-table__right .aeg-btns {
+  justify-content: flex-end;
+}
+
+/* Nested disclosure inside a table cell: the panel must not inherit the cell's
+   right alignment. */
+.aeg-table__right details > div {
+  text-align: left;
+}
+
+/* The shared close control is a 42px navy block, sized for the video overlay
+   it was written for. In the profile modal it outweighs the title it sits
+   beside, so here it is a quiet icon button. */
+#global-profile-modal .video-modal__close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  color: var(--aeg-subtle);
+  background: transparent;
+  border-radius: 6px;
+  font-size: 19px;
+}
+
+#global-profile-modal .video-modal__close:hover,
+#global-profile-modal .video-modal__close:focus-visible {
+  color: var(--aeg-text);
+  background: var(--aeg-surface-3);
+}
+
+/* The switcher lives inside .site-nav, whose `a` rule is more specific than a
+   single class — so menu links inherited the navy bar's white text and
+   vanished against the white menu. Re-asserted here at matching specificity. */
+.site-nav .aeg-tenant-switcher__item,
+.site-nav .aeg-tenant-switcher__item:hover {
+  color: var(--aeg-text);
+  text-decoration: none;
+}
+
+.site-nav .aeg-tenant-switcher__item small {
+  color: var(--aeg-muted);
+}
+
+.site-nav .aeg-tenant-switcher__item[aria-current="true"] {
+  color: var(--aeg-brand-ink);
+}
+
+.site-nav a.aeg-btn--secondary,
+.site-nav a.aeg-btn--secondary:hover {
+  color: var(--aeg-text);
+  background: var(--aeg-surface);
+}
+
+.site-nav a.aeg-btn--secondary:hover {
+  background: var(--aeg-surface-3);
+}
+
+/* The global form rule sizes every input to the full column width, which a
+   checkbox inherits too — so the box stretched across the row and squeezed its
+   own label into a narrow column at the far edge. Checkboxes and radios are
+   intrinsically sized. */
+.field-checkbox input[type="checkbox"],
+.field-checkbox input[type="radio"],
+.aeg-form input[type="checkbox"],
+.aeg-form input[type="radio"] {
+  width: 15px;
+  min-width: 15px;
+  max-width: 15px;
+  height: 15px;
+  min-height: 15px;
+  max-height: 15px;
+  flex: 0 0 15px;
+  padding: 0;
+}
+
+/* Guidance panels bold their whole body (`.blade-guidance span` at 750, and
+   again at 650 inside the blade), which is why the enforcement notes shout. A
+   bold title and plain body reads the same way at a glance without it. */
+.blade-guidance span,
+.blade-guidance p,
+.note-panel span:not(:first-child),
+.note-panel p {
+  color: var(--aeg-muted);
+  font-size: var(--aeg-t-body);
+  font-weight: var(--aeg-w-reg);
+  line-height: 1.55;
+}
+
+.blade-guidance strong,
+.note-panel > strong:first-child {
+  color: var(--aeg-text);
+  font-size: var(--aeg-t-card);
+  font-weight: var(--aeg-w-bd);
+}
+
+/* The scope heading is a label, some pills and a rule on one line. On a phone
+   that line is wider than the screen, which is the project's one hard styling
+   rule — so it wraps and the rule only draws when there is room for it. */
+.aeg-scope-head {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 560px) {
+  .aeg-scope-head__line {
+    display: none;
+  }
+
+  .aeg-scope-head .pill {
+    max-width: 100%;
+  }
+}
+
+/* Long identifiers — handles, Wallet IDs, domains — are the usual cause of a
+   page being wider than the phone it is on. */
+.aeg-stat-card__statlabel,
+.aeg-table__sub,
+.aeg-org-row__meta,
+.aeg-crumb {
+  overflow-wrap: anywhere;
+}
+
+/* `overflow: hidden` keeps the page from scrolling sideways, but on a phone it
+   clips the Actions column off a six-column table — the Revoke button becomes
+   unreachable rather than merely cramped. AGENTS.md asks for tables responsive
+   *within their container*, so the container scrolls and the page does not. */
+.aeg-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* On a phone the nav wraps to several rows, so a fixed header is taller than
+   any fixed clearance can predict and the page title ends up underneath it.
+   Below the wrap point the header simply scrolls with the page, which needs no
+   clearance at all. */
+@media (max-width: 760px) {
+  .site-header {
+    position: static;
+    background: rgba(6, 22, 37, 0.96);
+  }
+
+  main > .band:first-child:not(.band--page-top) {
+    padding-top: var(--aeg-space-6);
+  }
+
+  .site-nav {
+    gap: 6px 10px;
+  }
+}
+
+/* The header was 78%-opaque navy over a backdrop blur, so it took on the
+   colour of whatever page scrolled under it — dark over the marketing hero,
+   washed-out grey-blue over a white admin page. It is one fixed bar across the
+   whole product, so it is one fixed colour. */
+.site-header {
+  background: var(--navy-950);
+  backdrop-filter: none;
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    background: var(--navy-950);
+  }
 }

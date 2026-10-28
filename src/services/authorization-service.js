@@ -5,6 +5,13 @@ const POLICY_TYPES = new Set([
   'adminAnyWorkspace',
   'subscription',
   'orgPrivilege',
+  // Tenancy keyed on the organization in the route rather than on the
+  // subscription that pays for it. `adminAnyWorkspace` still guards every
+  // platform-wide setting; these two guard settings that belong to one
+  // organization, so an administrator of that organization can reach them
+  // without being able to reach anybody else's.
+  'tenantAdmin',
+  'tenantPrivilege',
   'external'
 ]);
 
@@ -282,6 +289,35 @@ const POLICIES = Object.freeze({
         'Issue and revoke registration codes, which grant a paid plan without payment. Scoped to named environments so a test code cannot be redeemed against prod.'
     }
   ),
+  // ---- Organization-scoped settings -------------------------------------
+  //
+  // The same settings an administrator used to have to be a paying subscriber
+  // to reach, scoped to the one organization named in the route. Nothing here
+  // can read or change another organization, and nothing here opens a platform
+  // setting — that distinction is the whole point of the split.
+  'tenant.settings.view': policy('tenant.settings.view', 'tenantAdmin', 'tenant-settings', 'read', {
+    description:
+      "The settings index for one organization. Same gate as every area it links to, so it cannot become a way to discover settings you may not open."
+  }),
+  'tenant.adapters.manage': policy('tenant.adapters.manage', 'tenantAdmin', 'auth-adapter', 'manage', {
+    fields: ['kind', 'name', 'status', 'firstFactor', 'satisfiesSecond', 'action'],
+    description:
+      'Configure this organization\'s authentication adapters. Making one the deployment-wide sign-in default stays a platform action, because it decides how everybody signs in.'
+  }),
+  'tenant.wallets.manage': policy('tenant.wallets.manage', 'tenantAdmin', 'wallet', 'revoke', {
+    fields: ['walletId', 'reason', 'action'],
+    description:
+      'Withdraw or restore a wallet that holds a credential from this organization. Scoped to those wallets — a tenant administrator cannot reach the deployment-wide register.'
+  }),
+  'tenant.domain.manage': policy('tenant.domain.manage', 'tenantAdmin', 'organization-domain', 'update', {
+    fields: ['domain', 'action'],
+    description:
+      'Claim and verify the domain this organization is known by. Proving control of DNS is what lets a holder tell a real organization from one that typed the same name.'
+  }),
+  'tenant.people.view': policy('tenant.people.view', 'tenantPrivilege', 'credential', 'read', {
+    privilegeId: 'people.view',
+    description: 'See the people in this organization and the roles they hold.'
+  }),
   'wallet.recovery.approve': policy('wallet.recovery.approve', 'orgPrivilege', 'wallet-recovery', 'approve', {
     privilegeId: 'wallet.recovery.approve',
     description:

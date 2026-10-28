@@ -27,6 +27,7 @@
 - [Microsoft Entra Verified ID Live Path](#microsoft-entra-verified-id-live-path)
 - [YubiKey And Passkey Testing](#yubikey-and-passkey-testing)
 - [Platform Wizards](#platform-wizards)
+- [Administration: Two Scopes](#administration-two-scopes)
 - [Aries Interoperability Lab](#aries-interoperability-lab)
 - [Azure Free-Tier Pilot Deployment](#azure-free-tier-pilot-deployment)
 - [Troubleshooting](#troubleshooting)
@@ -638,8 +639,10 @@ Aegis can sit in front of a customer's existing identity protocol for
 connected-app sign-in. Beyond the Entra OIDC broker, the adapter framework adds
 three out-of-the-box classic protocols — **SAML 2.0**, **Kerberos/SPNEGO** and
 **certificate-based (X.509/CBA)** — configured and self-tested at
-**/admin/auth-adapters**. Aegis stays the policy decision point: an adapter only
-supplies normalized claims; Aegis issues the tokens and enforces the journey.
+**/orgs/<handle>/settings/adapters** for one organization, or
+**/admin/auth-adapters** for the deployment as a whole. Aegis stays the policy
+decision point: an adapter only supplies normalized claims; Aegis issues the
+tokens and enforces the journey.
 
 Operator points worth knowing:
 
@@ -649,13 +652,69 @@ Operator points worth knowing:
 - Kerberos and CBA require a **trusted-proxy allowlist** and refuse to activate
   without one, because a forwarded principal or certificate is only as
   trustworthy as who may set it.
+- Adapters belong to an **organization**. An organization administrator sees and
+  configures only their own; the platform page sees all of them. Adapters
+  configured before this shipped have no organization and stay deployment-wide,
+  visible on the platform page only.
 - One active adapter can be made the **sign-in default**; it then fronts
-  `/oauth2/authorize` ahead of Entra.
+  `/oauth2/authorize` ahead of Entra. That decides how everybody on the
+  deployment signs in, so it is a **platform action** and is offered only on
+  `/admin/auth-adapters`.
 - The framework is gated by `ADAPTER_FRAMEWORK_ENABLED` and ships **off** in dev,
   qa and prod until a pilot turns it on, because it changes how people
   authenticate.
 
 Full operator and developer notes: [Authentication adapters](auth-adapters.md).
+
+## Administration: Two Scopes
+
+Settings are split by what they apply to, and where you find them follows from
+that.
+
+**Organization settings** live at **/orgs/<handle>/settings** and belong to one
+organization: its authentication adapters, the wallets holding its credentials,
+its domain, its root wallets, its people and roles, and its branding. Any
+administrator of that organization can open them — including somebody who was
+invited to the organization rather than paying for it.
+
+**Platform settings** live at **/admin** and apply to every organization on the
+deployment: sign-in methods, notification delivery, registration codes,
+break-glass redemption, account recovery, the deployment-wide wallet register
+and the domain overview. These stay limited to subscribers who administer their
+own organization, because they decide how everybody signs in and what everybody
+is charged. Somebody invited to hold a credential never sees them, even when
+they administer the organization that invited them.
+
+The header carries both: **Settings** for the current organization, **Platform**
+for the deployment when you may reach it, and a **switcher** listing every
+organization you belong to with the role that gets you in.
+
+### Making somebody an administrator
+
+Open the organization's People screen and give them the **Organization admin**
+role. That is now all it takes: assigning a role marked *Administers the
+organization* writes the workspace membership too, so the person really becomes
+an administrator rather than looking like one.
+
+Two notes for operators upgrading from an earlier release:
+
+- **"Co-admin nominee" is not the administrator role.** It was called "Admin
+  Eligible", which read like one; it grants eligibility to be nominated through
+  the dual wallet challenge and no access at all. It has been renamed.
+- **Organizations created before this release had no assignable administrator
+  role at all.** One is seeded in the first time the organization is opened, and
+  anyone whose role already said "administrator" is granted the membership at
+  startup. The backfill only ever grants — it never demotes an existing
+  administrator — and it logs how many it changed.
+
+The high-assurance co-administrator path (two wallet challenges) still exists
+and is unchanged. It is simply no longer the only way to become an
+administrator.
+
+Granting or withdrawing administration is on the evidence chain with the actor.
+
+Full notes: [Organization tenancy](organization-tenancy.md) and
+[Authorization and RBAC](authorization-rbac.md).
 
 ## Aries Interoperability Lab
 
@@ -810,6 +869,8 @@ controller's legal name are business decisions.
 - Azure App Service Node.js quickstart: https://learn.microsoft.com/en-us/azure/app-service/quickstart-nodejs
 - ACA-Py documentation: https://aca-py.org/latest/
 - Authentication adapters (SAML / Kerberos / CBA): [docs/auth-adapters.md](auth-adapters.md)
+- Organization tenancy and the two administration scopes: [docs/organization-tenancy.md](organization-tenancy.md)
+- Authorization and RBAC: [docs/authorization-rbac.md](authorization-rbac.md)
 
 ---
 

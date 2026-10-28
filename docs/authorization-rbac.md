@@ -22,7 +22,9 @@ src/services/authorization-service.js
 Every policy has:
 
 - `id`: Stable policy identifier such as `org.credentials.issue`.
-- `type`: One of `public`, `anonymous`, `authenticated`, `subscription`, `orgPrivilege`, or `external`.
+- `type`: One of `public`, `anonymous`, `authenticated`, `adminAnyWorkspace`,
+  `subscription`, `orgPrivilege`, `tenantAdmin`, `tenantPrivilege`, or
+  `external`.
 - `resource`: The protected object or capability.
 - `operation`: The operation being performed, such as `read`, `create`, `update`, `delete`, `manage`, or `execute`.
 - `privilegeId`: Required for organization-scoped admin operations.
@@ -96,6 +98,79 @@ Examples:
 
 When adding a protected form or API payload, update the corresponding policy field list.
 
+## Two Scopes: Organization and Platform
+
+Settings are split by what they apply to, and the two scopes are different
+gates.
+
+**Organization scope** (`tenantAdmin`, `tenantPrivilege`) — settings belonging
+to one organization, addressed as `/orgs/:handle/settings/...`. Any
+administrator of *that* organization may open them, including one who was
+invited to it rather than paying for it:
+
+- authentication adapters (`tenant.adapters.manage`)
+- registered wallets holding one of its credentials (`tenant.wallets.manage`)
+- its domain (`tenant.domain.manage`)
+- its people and roles (`tenant.people.view`)
+
+**Platform scope** (`adminAnyWorkspace`) — settings that apply to every
+organization on the deployment, under `/admin`. These stay restricted to
+subscribers who administer their own organization:
+
+- sign-in methods — decides how *everybody* signs in
+- notification delivery — SMTP/SMS for the whole deployment
+- registration codes — grants paid plans without payment; revenue-bearing
+- break-glass redemption — by design requires a platform administrator
+- account recovery — passwordless accounts across the deployment
+- the deployment-wide wallet register and domain overview
+
+Resolution for the organization scope runs `user → membership → organization`,
+in `src/services/tenant-access-service.js`, with **no subscription in the
+path**. The platform gate in `src/services/admin-access-service.js` is
+unchanged and still filters out `portal-account` placeholder records, so an
+invited credential holder cannot reach a platform setting. That the two remain
+separate is asserted by `tests/authorization-service.test.js` ("organization
+settings and platform settings are different gates") and by the unchanged
+invited-holder tests in `tests/admin-access.test.js`.
+
+A handle that the caller is not a member of answers **404, not 403** — a 403
+would confirm the organization exists, which would make the URL an enumeration
+tool.
+
+## One Role System, Not Two
+
+An organization has two things that could be called "administrator", and until
+2.1 nothing kept them in step:
+
+- **workspace membership** — `workspace.members[].role === 'administrator'`,
+  which is the only thing `isWorkspaceAdmin()` reads
+- **org role definitions** — a role carrying `adminRole: true`, which is what
+  the People screen assigns
+
+Role assignment is now the source of truth. `syncAdminMembership()` in
+`src/services/org-admin-service.js` writes membership from the assigned roles
+on every path that can change them — issuing, updating, revoking or re-inviting
+a credential, and creating, editing or deleting a role. The two can no longer
+disagree.
+
+Withdrawal is deliberately narrow. Membership is only taken away again when
+this sync granted it, recorded as `grantedByRole: true`; a workspace owner, or
+a co-administrator approved through the dual wallet challenge, is never
+demoted by it.
+
+Every new organization is seeded with an **Organization admin** role
+(`role-org-admin`, `adminRole: true`). Organizations created before that are
+repaired on first read by `ensureSeededRoles()`, which also renames the old
+**Admin Eligible** role to **Co-admin nominee** — it confers nomination
+eligibility and no access, and its old name read as the administrator role.
+Existing holders whose role already said "administrator" are granted the
+membership by `backfillAdminMemberships()` at startup; that backfill grants and
+never demotes.
+
+Granting or withdrawing administration is a privilege change, so it is written
+to the evidence chain (`org.admin.granted` / `org.admin.revoked`) with the
+actor, as well as to the organization event log.
+
 ## Admin vs Employee/Contractor Model
 
 Core personas are deliberately source-controlled:
@@ -128,11 +203,39 @@ tests/authorization-service.test.js
 The tests verify:
 
 - Policy IDs are unique.
-- Every org privilege policy maps to a concrete privilege.
-- Middleware denies authenticated policies without a session.
+- Every org privilege policy maps to a concrete privilege — now including
+  `tenantPrivilege`.
+- Middleware denies authenticated policies without a session, and denies
+  organization-scoped policies without one too.
+- A handle the caller is not a member of resolves to 404, not 403.
+- Organization-scoped and platform-scoped policies stay different gates.
 - External policies are explicitly allowed without a browser session.
 - Every mutating Express route declares `authorize(...)`.
 - Every route policy reference exists in the registry.
+
+Tenancy and role resolution are covered separately in:
+
+```text
+tests/tenant-access.test.js
+```
+
+which asserts that a new organization is seeded with an assignable
+administrator role; that one created before that is repaired on first read;
+that assigning the administrator role really makes somebody an administrator
+(the defect this work fixes) and writes the membership `isWorkspaceAdmin()`
+reads; that administering one organization grants nothing in another; that a
+non-admin member is refused; that tenant administration does **not** open
+`/admin`; that revoking the credential withdraws the administration; that a
+workspace owner is never demoted; and that the backfill is idempotent.
+
+Adapter organization scoping is covered in `tests/auth-adapters.test.js`:
+adapters are visible only to the organization that owns them, reaching another
+organization's adapter by id answers 404 on read, update, delete and self-test,
+and an adapter created before scoping stays deployment-wide.
+
+The invited-holder tests in `tests/admin-access.test.js` are deliberately
+**unchanged** — they are the proof that opening organization settings did not
+widen platform access.
 
 Run the authorization tests:
 
@@ -154,7 +257,11 @@ npm test
    - `anonymous` for registration/login flows.
    - `authenticated` for user-owned pages.
    - `subscription` for subscriber-scoped workspace selection.
-   - `orgPrivilege` for organization admin actions.
+   - `orgPrivilege` for organization admin actions inside the dashboard.
+   - `tenantAdmin` for a setting belonging to the organization in the path.
+   - `tenantPrivilege` for one privilege within that organization.
+   - `adminAnyWorkspace` **only** for a setting that applies to every
+     organization on the deployment.
    - `external` for API/webhook/mobile/lab integration surfaces.
 3. Add `authorize('your.policy.id')` to the route.
 4. For `orgPrivilege`, map the policy to the correct service privilege.

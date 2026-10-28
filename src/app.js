@@ -28,6 +28,7 @@ const connectedOAuthRoutes = require('./routes/connected-oauth');
 const developerDocsRoutes = require('./routes/developer-docs');
 const didWebRoutes = require('./routes/did-web');
 const authAdapterRoutes = require('./routes/auth-adapters');
+const tenantAdminRoutes = require('./routes/tenant-admin');
 const { attachAuthLocals } = require('./middleware/auth');
 const { attachLocalTestMode } = require('./middleware/local-test-mode');
 const { attachSiteContext } = require('./middleware/site-context');
@@ -496,6 +497,9 @@ function createApp() {
   app.use('/', accountRoutes);
   app.use('/', pageRoutes);
   app.use('/', authAdapterRoutes);
+  // Mounted ahead of the public `/orgs/:handle` profile page so the
+  // organization-scoped settings paths resolve first.
+  app.use('/', tenantAdminRoutes);
   app.use('/', planRoutes);
   app.use('/', organizationIdentityRoutes);
   app.use('/', subscriptionRoutes);

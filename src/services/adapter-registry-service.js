@@ -48,22 +48,49 @@ function listCatalog() {
   }));
 }
 
-async function listInstances() {
-  const records = await store.read();
-  return records.map(decorate);
+/**
+ * Adapters belong to an organization.
+ *
+ * Records written before adapters were tenant-scoped have no `organizationId`.
+ * They are deployment-wide and stay visible only to the platform view, because
+ * guessing which customer they were meant for would be worse than leaving them
+ * where they are.
+ */
+function belongsToOrganization(record, organizationId) {
+  return normalizeText(record.organizationId, 120) === normalizeText(organizationId, 120);
 }
 
-async function getInstance(id) {
+/**
+ * Every configured adapter, or only one organization's.
+ *
+ * Called with no argument from the platform view, which sees all of them; called
+ * with an organizationId from a tenant view, which must see only its own.
+ */
+async function listInstances({ organizationId } = {}) {
+  const records = await store.read();
+  const scoped = organizationId
+    ? records.filter((record) => belongsToOrganization(record, organizationId))
+    : records;
+  return scoped.map(decorate);
+}
+
+/**
+ * One adapter by id. When `organizationId` is given the record must belong to
+ * that organization — so a tenant administrator cannot reach another
+ * organization's adapter by putting its id in the URL. Answers 404 rather than
+ * 403, because the existence of the id is itself not theirs to learn.
+ */
+async function getInstance(id, { organizationId } = {}) {
   const records = await store.read();
   const record = records.find((entry) => entry.id === normalizeText(id, 120));
-  if (!record) {
+  if (!record || (organizationId && !belongsToOrganization(record, organizationId))) {
     throw adapterError('Adapter instance not found.', 404);
   }
   return record;
 }
 
-async function getDecoratedInstance(id) {
-  return decorate(await getInstance(id));
+async function getDecoratedInstance(id, scope = {}) {
+  return decorate(await getInstance(id, scope));
 }
 
 function decorate(record) {
@@ -90,13 +117,15 @@ function redactConfig(config = {}) {
   return out;
 }
 
-async function createInstance({ kind, name, config: rawConfig, actorEmail }) {
+async function createInstance({ kind, name, config: rawConfig, actorEmail, organizationId = null }) {
   const adapter = getAdapter(kind);
   const normalizedConfig = adapter.normalizeConfig(rawConfig || {});
   const problems = adapter.validateConfig(normalizedConfig);
   const now = new Date().toISOString();
   const record = {
     id: `adp_${crypto.randomUUID()}`,
+    // Null means deployment-wide, which only the platform view can create.
+    organizationId: normalizeText(organizationId, 120) || null,
     kind: adapter.describe().kind,
     name: normalizeText(name, 160) || adapter.describe().name,
     // Deny-by-default: a configuration that does not validate is parked as a
@@ -114,7 +143,8 @@ async function createInstance({ kind, name, config: rawConfig, actorEmail }) {
   };
   await store.append(record);
   await writeAuditEvent('admin.auth-adapter.created', {
-    actorEmail, adapterId: record.id, kind: record.kind, status: record.status
+    actorEmail, adapterId: record.id, kind: record.kind, status: record.status,
+    organizationId: record.organizationId
   });
   return { record: decorate(record), problems };
 }
@@ -122,7 +152,7 @@ async function createInstance({ kind, name, config: rawConfig, actorEmail }) {
 async function updateInstance(id, patch = {}) {
   const records = await store.read();
   const index = records.findIndex((entry) => entry.id === normalizeText(id, 120));
-  if (index === -1) {
+  if (index === -1 || (patch.organizationId && !belongsToOrganization(records[index], patch.organizationId))) {
     throw adapterError('Adapter instance not found.', 404);
   }
   const existing = records[index];
@@ -157,10 +187,10 @@ async function updateInstance(id, patch = {}) {
   return { record: decorate(records[index]), problems };
 }
 
-async function deleteInstance(id, { actorEmail } = {}) {
+async function deleteInstance(id, { actorEmail, organizationId } = {}) {
   const records = await store.read();
   const record = records.find((entry) => entry.id === normalizeText(id, 120));
-  if (!record) {
+  if (!record || (organizationId && !belongsToOrganization(record, organizationId))) {
     throw adapterError('Adapter instance not found.', 404);
   }
   await store.write(records.filter((entry) => entry.id !== record.id));
@@ -175,8 +205,8 @@ async function deleteInstance(id, { actorEmail } = {}) {
  * result (no claim PII), and return the full result (claims included) to the
  * caller for display.
  */
-async function runSelfTest(id, sample = {}, { actorEmail } = {}) {
-  const record = await getInstance(id);
+async function runSelfTest(id, sample = {}, { actorEmail, organizationId } = {}) {
+  const record = await getInstance(id, { organizationId });
   const adapter = getAdapter(record.kind);
   let result;
   try {
@@ -242,6 +272,7 @@ async function getDefaultSignInAdapter() {
 }
 
 module.exports = {
+  belongsToOrganization,
   isEnabled,
   getAdapter,
   listCatalog,

@@ -1,41 +1,93 @@
-<section class="page-hero page-hero--compact">
-  <p class="eyebrow">Platform settings</p>
-  <h1>Administration.</h1>
-  <p>Settings that apply across every organization on this deployment — who may sign in, how messages are delivered, which wallets are in service, and which registration codes exist.</p>
-</section>
+{{!--
+  The platform administration index.
 
-<section class="band band--white">
-  <div class="admin-status">
-    <span class="admin-status__pill">Environment: <strong>{{environment}}</strong></span>
-    {{#if billing.checkoutEnabled}}
-      {{#if billing.isTestMode}}
-        <span class="admin-status__pill admin-status__pill--warn">Stripe: test mode — no money is collected</span>
+  Split into two scopes so what each setting applies to is visible rather than
+  implied: the organizations this person administers, and the deployment itself.
+  Only a subscriber who administers their own organization reaches this page at
+  all; an invited administrator reaches their own organization's settings from
+  the header without ever seeing the platform section.
+--}}
+<section class="band band--white surface-app">
+  <div class="aeg-page">
+    <div class="aeg-page-head">
+      <p class="aeg-eyebrow">Administration</p>
+      <h1>Administration</h1>
+      <p>
+        Settings for the organizations you administer, and for this deployment as
+        a whole — who may sign in, how messages are delivered, which wallets are
+        in service, and which registration codes exist.
+      </p>
+    </div>
+
+    <div class="aeg-btns" style="margin-bottom:4px">
+      <span class="pill pill--mute">Environment: {{environment}}</span>
+      {{#if billing.checkoutEnabled}}
+        {{#if billing.isTestMode}}
+          <span class="pill pill--warn">Stripe: test mode — no money is collected</span>
+        {{else}}
+          <span class="pill pill--ok">Stripe: live — real cards are charged</span>
+        {{/if}}
       {{else}}
-        <span class="admin-status__pill admin-status__pill--live">Stripe: live — real cards are charged</span>
+        <span class="pill pill--mute">Card payment: off</span>
       {{/if}}
-    {{else}}
-      <span class="admin-status__pill">Card payment: off</span>
+    </div>
+
+    {{#if tenants.length}}
+      <div class="aeg-scope-head">
+        <h3 class="aeg-scope-head__label">Your organizations</h3>
+        <span class="pill pill--brand">Scoped to one organization</span>
+        <span class="aeg-scope-head__line"></span>
+      </div>
+      <div class="aeg-cards">
+        {{#each tenants}}
+          <a class="aeg-stat-card" href="{{this.settingsPath}}">
+            <div class="aeg-stat-card__top">
+              <h4>{{this.organization}}</h4>
+              <span class="aeg-stat-card__pill">
+                <span class="pill {{#if this.isDomainVerified}}pill--ok{{else}}pill--mute{{/if}}">
+                  {{#if this.isDomainVerified}}{{this.domain}}{{else}}Unverified{{/if}}
+                </span>
+              </span>
+            </div>
+            <p>Adapters, registered wallets, domain, people and roles for this organization.</p>
+            <span class="aeg-stat-card__statlabel">{{this.roleLabel}}{{#if this.handle}} · {{this.handle}}{{/if}}</span>
+          </a>
+        {{/each}}
+      </div>
     {{/if}}
-  </div>
 
-  <div class="admin-grid">
-    {{#each cards}}
-      <a class="admin-card {{#if this.isWarning}}admin-card--attention{{/if}}" href="{{this.href}}">
-        <span class="admin-card__stat">{{this.stat}}</span>
-        <span class="admin-card__statlabel">{{this.statLabel}}</span>
-        <h2>{{this.title}}</h2>
-        <p>{{this.summary}}</p>
-        {{#if this.note}}<p class="admin-card__note">{{this.note}}</p>{{/if}}
-      </a>
-    {{/each}}
-  </div>
+    <div class="aeg-scope-head">
+      <h3 class="aeg-scope-head__label">Platform</h3>
+      <span class="pill pill--warn">Applies to every organization</span>
+      <span class="aeg-scope-head__line"></span>
+    </div>
+    <div class="aeg-cards">
+      {{#each cards}}
+        <a class="aeg-stat-card" href="{{this.href}}">
+          <div class="aeg-stat-card__top">
+            <h4>{{this.title}}</h4>
+            <span class="aeg-stat-card__stat">{{this.stat}}</span>
+          </div>
+          <p>{{this.summary}}</p>
+          <span class="aeg-stat-card__statlabel">{{this.statLabel}}</span>
+          {{#if this.note}}<span class="aeg-stat-card__statlabel">{{this.note}}</span>{{/if}}
+        </a>
+      {{/each}}
+    </div>
 
-  <article class="blade-guidance">
-    <strong>These settings are platform-wide</strong>
-    <span>
-      Everything here applies to every organization on this deployment, not only
-      to yours — which is why it is limited to subscribers who administer their
-      own organization. Somebody invited to hold a credential never sees it.
-    </span>
-  </article>
+    <div class="aeg-callout aeg-callout--info">
+      <span class="aeg-callout__icon" aria-hidden="true">ⓘ</span>
+      <div class="aeg-callout__body">
+        <p class="aeg-callout__title">Why the two scopes are separate</p>
+        <p>
+          Everything in the Platform section applies to every organization on
+          this deployment, not only to yours — which is why it is limited to
+          subscribers who administer their own organization. Somebody invited to
+          hold a credential never sees it, even when they administer the
+          organization that invited them: their settings are the
+          organization-scoped ones above.
+        </p>
+      </div>
+    </div>
+  </div>
 </section>

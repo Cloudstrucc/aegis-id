@@ -5,6 +5,7 @@ const {
 } = require('../services/platform-service');
 const { assertOrgPrivilege } = require('../services/org-admin-service');
 const { assertAdminOperations } = require('../services/admin-access-service');
+const { assertTenantAdmin, assertTenantPrivilege } = require('../services/tenant-access-service');
 const { requirePolicy } = require('../services/authorization-service');
 
 function authorize(policyId, options = {}) {
@@ -31,6 +32,20 @@ function authorize(policyId, options = {}) {
 
       if (selectedPolicy.type === 'adminAnyWorkspace') {
         await assertAdminOperations(req.user);
+        return next();
+      }
+
+      // Tenancy comes from the organization handle in the path, not from a
+      // subscription id. The resolver re-checks membership itself, so a handle
+      // typed into the URL is never a way in.
+      if (selectedPolicy.type === 'tenantAdmin' || selectedPolicy.type === 'tenantPrivilege') {
+        const handle = req.params.handle || req.body.handle || req.query.handle;
+        const resolved = selectedPolicy.type === 'tenantAdmin'
+          ? await assertTenantAdmin(req.user, handle)
+          : await assertTenantPrivilege(req.user, handle, selectedPolicy.privilegeId);
+        req.authorizedTenant = resolved.tenant;
+        req.authorizedWorkspace = resolved.workspace;
+        res.locals.tenant = resolved.tenant;
         return next();
       }
 

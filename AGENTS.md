@@ -407,20 +407,57 @@ the customer holds and a permission their root wallet already gave. An attempt
 with an unauthorised code is refused and recorded, and the redemption record
 names the wallet whose authority it acted on.
 
-## Platform administration
+## Administration has two scopes
 
-`/admin` is the index for every platform-wide setting — sign-in methods,
-notification delivery, wallet administration, registration codes, account
-recovery. Before it existed those pages were reachable only by typing the URL,
-which is how two of them shipped broken.
+**Organization scope** — `/orgs/:handle/settings/*`, keyed on the organization's
+globally-unique handle rather than on the subscription that pays for it, so the
+same organization has one address for every member. Its adapters, the wallets
+holding its credentials, its domain, its root wallets, its people and its
+branding live here, and any administrator *of that organization* may open them
+— including one who was invited to it. Resolved by `tenant-access-service` as
+`user → membership → organization`, with no subscription in the path. A handle
+you are not a member of answers **404, not 403**, so the URL cannot enumerate
+organizations.
 
-**It is for subscribers, not for everyone who can sign in.** Two populations
-have accounts: people who bought a plan and administer their own organizations,
-and credential holders who exist only because an organization invited them. The
-second group gets a `portal-account` subscription so they have somewhere to
-land; `admin-access-service` filters those records out before looking at
-workspaces, so an invited holder can never reach settings that decide how
-everybody signs in.
+**Platform scope** — `/admin`, the index for every deployment-wide setting:
+sign-in methods, notification delivery, registration codes, break-glass
+redemption, account recovery, and the deployment-wide wallet register and domain
+overview. Before the index existed those pages were reachable only by typing the
+URL, which is how two of them shipped broken.
+
+**Platform scope is for subscribers, not for everyone who can sign in.** Two
+populations have accounts: people who bought a plan and administer their own
+organizations, and credential holders who exist only because an organization
+invited them. The second group gets a `portal-account` subscription so they have
+somewhere to land; `admin-access-service` filters those records out before
+looking at workspaces, so an invited holder can never reach settings that decide
+how everybody signs in. **Opening organization settings to invited
+administrators did not change that filter**, and `tests/admin-access.test.js` is
+deliberately unchanged as the proof.
+
+Designating an adapter as the deployment-wide **sign-in default** is a platform
+action for the same reason, even though the adapters themselves are
+organization-scoped. So is **deleting** a wallet, since one wallet can hold
+credentials from several organizations.
+
+## One role system
+
+`workspace.members[].role === 'administrator'` is the only thing
+`isWorkspaceAdmin()` reads, and a role carrying `adminRole: true` is what the
+People screen assigns. Nothing wrote the first from the second, so **assigning
+the administrator role in the UI left the person an employee** everywhere that
+mattered. Role assignment is now the source of truth: `syncAdminMembership`
+writes membership from the assigned roles on every path that can change them.
+
+Withdrawal is narrow on purpose — only administration the sync itself granted
+(`grantedByRole: true`) is taken away again, so an owner or a wallet-challenge
+co-administrator is never demoted by it.
+
+Every organization is seeded with an **Organization admin** role; older ones are
+repaired on first read, and the misleadingly-named "Admin Eligible" is now
+**"Co-admin nominee"**, which is what it always granted. `backfillAdminMemberships`
+at startup grants membership to holders whose role already said administrator,
+and never demotes.
 
 ## Wallet administration
 

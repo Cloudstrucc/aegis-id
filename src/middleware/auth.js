@@ -1,26 +1,52 @@
 const { canViewAdminOperations } = require('../services/admin-access-service');
-const { listCredentialMembershipsForEmail } = require('../services/org-admin-service');
+const { listTenantsForUser } = require('../services/tenant-access-service');
 
+/**
+ * What the header and the profile modal need to know about the viewer.
+ *
+ * `canViewHealth` keeps its name and its meaning — it is the platform gate, and
+ * what the "Platform" link in the header is shown on. The tenant list is
+ * separate and comes from organization membership, so an invited administrator
+ * gets a working Settings link and a tenant switcher without the platform link
+ * appearing at all.
+ */
 function attachAuthLocals(req, res, next) {
   res.locals.currentUser = req.user || null;
   res.locals.isAuthenticated = Boolean(req.user);
   res.locals.canViewHealth = false;
   res.locals.headerProfile = null;
+  res.locals.tenants = [];
+  res.locals.currentTenant = null;
+  res.locals.canAdministerTenant = false;
 
   if (!req.user) {
     return next();
   }
 
-  return Promise.all([canViewAdminOperations(req.user), listCredentialMembershipsForEmail(req.user.email)])
-    .then(([canViewHealth, memberships]) => {
+  return Promise.all([canViewAdminOperations(req.user), listTenantsForUser(req.user)])
+    .then(([canViewHealth, tenants]) => {
+      const administered = tenants.filter((tenant) => tenant.isAdmin && tenant.settingsPath);
+      // Whichever organization the current URL is about, else the first one
+      // this person administers, else the first they belong to — so the
+      // switcher always has something selected.
+      const current = tenants.find((tenant) => tenant.handle && req.path.startsWith(`/orgs/${tenant.handle}`))
+        || administered[0]
+        || tenants[0]
+        || null;
+
       res.locals.canViewHealth = canViewHealth;
-      res.locals.headerProfile = buildHeaderProfile(req.user, memberships);
+      res.locals.isGlobalAdmin = canViewHealth;
+      res.locals.tenants = tenants;
+      res.locals.administeredTenants = administered;
+      res.locals.currentTenant = current;
+      res.locals.canAdministerTenant = administered.length > 0;
+      res.locals.headerProfile = buildHeaderProfile(req.user, tenants);
       next();
     })
     .catch(next);
 }
 
-function buildHeaderProfile(user, memberships = []) {
+function buildHeaderProfile(user, tenants = []) {
   return {
     displayName: user.displayName || user.email,
     initials: initialsFromName(user.displayName || user.email),
@@ -30,13 +56,20 @@ function buildHeaderProfile(user, memberships = []) {
     passkeyCount: user.passkeyCount || 0,
     lastSecondFactorAtLabel: formatProfileDate(user.lastSecondFactorAt),
     createdAtLabel: formatProfileDate(user.createdAt),
-    organizations: memberships.map((membership) => ({
-      organizationName: membership.organizationName,
-      persona: membership.personTypeLabel,
-      status: membership.statusLabel,
-      roleSummary: membership.roleLabels?.length ? membership.roleLabels.join(', ') : 'No roles assigned'
+    // Built from tenant memberships rather than from credentials alone, so the
+    // role shown is the one that actually grants access — an owner or an
+    // administrator previously read as "No roles assigned" here, because they
+    // hold access through membership rather than through a credential role.
+    organizations: tenants.map((tenant) => ({
+      organizationName: tenant.organization,
+      initials: tenant.initials,
+      handle: tenant.handle,
+      roleLabel: tenant.roleLabel,
+      isAdmin: tenant.isAdmin,
+      accessLabel: tenant.isAdmin ? 'Full access' : 'Credential holder',
+      settingsPath: tenant.settingsPath
     })),
-    hasOrganizations: memberships.length > 0
+    hasOrganizations: tenants.length > 0
   };
 }
 
