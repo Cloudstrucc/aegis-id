@@ -17,7 +17,7 @@ struct OrganizationsView: View {
                 ContentUnavailableView(
                     "No credential organizations",
                     systemImage: "building.2.crop.circle",
-                    description: Text("Accept a Vanguard Aegis ID issuer invitation to see the organizations you hold credentials or wallet challenges for.")
+                    description: Text("Accept a Aegis ID issuer invitation to see the organizations you hold credentials or wallet challenges for.")
                 )
             } else {
                 Section("Credential organizations") {

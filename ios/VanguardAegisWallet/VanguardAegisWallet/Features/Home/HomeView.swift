@@ -66,7 +66,9 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     VanguardLogoImage()
 
-                    Text("Aegis ID Wallet")
+                    // The lockup above already reads "AEGIS ID", so the title
+                    // is just "Wallet" rather than repeating the name.
+                    Text("Wallet")
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                     Text("Your personal vault for digital identity. Hold the credentials your organizations issue you, and approve the sign-ins, consents, signatures and authorizations they ask for — from this device, with your own biometric.")
@@ -322,26 +324,13 @@ private struct HeroPill: View {
 
 private struct VanguardLogoImage: View {
     var body: some View {
-        if let image = Self.logoImage {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 254, height: 62, alignment: .leading)
-                .clipped()
-                .accessibilityLabel("Vanguard Cloud Services")
-        } else {
-            Text("Vanguard Cloud Services")
-                .font(.headline.bold())
-                .foregroundStyle(.white)
-                .accessibilityLabel("Vanguard Cloud Services")
-        }
-    }
-
-    private static var logoImage: UIImage? {
-        guard let path = Bundle.main.path(forResource: "vanguard-logo", ofType: "png") else {
-            return UIImage(named: "vanguard-logo")
-        }
-        return UIImage(contentsOfFile: path)
+        // The Home header sits on a dark ground, so the reversed lockup reads.
+        Image("AegisLockupWhite")
+            .resizable()
+            .scaledToFit()
+            .frame(height: 40, alignment: .leading)
+            .frame(maxWidth: 254, alignment: .leading)
+            .accessibilityLabel("Aegis ID")
     }
 }
 

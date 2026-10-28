@@ -22,6 +22,12 @@ const {
   isUpstreamFederationEnabled,
   startUpstreamAuthorization
 } = require('../services/upstream-idp-service');
+const {
+  isAdapterSignInActive,
+  beginAuthorization: beginAdapterAuthorization,
+  completeSaml: completeAdapterSaml,
+  completeHeaderFlow: completeAdapterHeaderFlow
+} = require('../services/adapter-signin-service');
 
 const router = express.Router();
 
@@ -50,6 +56,28 @@ router.get('/oauth2/authorize', authorize('api.connectedApps.oauth'), async (req
     const app = await getConnectedAppByClientId(request.clientId);
     if (!app.redirectUris.includes(request.redirectUri)) {
       return redirectOAuthError(res, request.redirectUri, 'invalid_request', request.state);
+    }
+    // An authentication adapter (SAML / Kerberos / CBA), when the framework is
+    // enabled and one is designated the sign-in default, fronts the flow ahead
+    // of the Entra upstream and local login.
+    if (await isAdapterSignInActive()) {
+      const begun = await beginAdapterAuthorization({
+        app,
+        request,
+        baseUrl: getRequestBaseUrl(req)
+      });
+      await logConnectedAppEvent({
+        workspaceId: app.workspaceId,
+        appId: app.id,
+        clientId: app.clientId,
+        category: 'auth',
+        eventType: 'oauth.adapter.redirected',
+        method: req.method,
+        path: req.path,
+        statusCode: 303,
+        payload: { adapterKind: begun.kind, adapterId: begun.instanceId, redirectUri: request.redirectUri, scope: request.scope }
+      });
+      return res.redirect(303, begun.redirectUrl);
     }
     if (isUpstreamFederationEnabled()) {
       const upstream = await startUpstreamAuthorization({
@@ -148,6 +176,59 @@ router.get('/oauth2/upstream/entra/callback', authorize('api.connectedApps.oauth
     next(error);
   }
 });
+
+// SAML adapter Assertion Consumer Service: the IdP posts the signed response
+// here, RelayState carries our sign-in state.
+router.post('/auth/adapters/saml/:id/acs', authorize('api.connectedApps.oauth'), async (req, res, next) => {
+  try {
+    const result = await completeAdapterSaml({ instanceId: req.params.id, body: req.body });
+    await logAdapterCompletion(req, 'saml', req.params.id, result);
+    return res.redirect(303, result.redirectUrl);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Header / certificate adapter completion: the fronting proxy (Kerberos) or
+// mutual TLS (CBA) has populated the request; we read it and mint the code.
+router.get('/auth/adapters/:kind/:id/sso', authorize('api.connectedApps.oauth'), async (req, res, next) => {
+  try {
+    const kind = normalizeText(req.params.kind, 40);
+    if (kind !== 'kerberos' && kind !== 'cba') {
+      return res.status(404).json({ error: 'not_found' });
+    }
+    const result = await completeAdapterHeaderFlow({
+      kind,
+      instanceId: req.params.id,
+      stateId: req.query.state,
+      req
+    });
+    await logAdapterCompletion(req, kind, req.params.id, result);
+    return res.redirect(303, result.redirectUrl);
+  } catch (error) {
+    next(error);
+  }
+});
+
+async function logAdapterCompletion(req, kind, instanceId, result) {
+  try {
+    await logConnectedAppEvent({
+      workspaceId: result.app?.workspaceId,
+      appId: result.app?.id,
+      clientId: result.app?.clientId,
+      category: 'auth',
+      eventType: 'oauth.adapter.completed',
+      actorEmail: result.claims?.email,
+      subject: result.claims?.subject,
+      method: req.method,
+      path: req.path,
+      statusCode: 303,
+      payload: { adapterKind: kind, adapterId: instanceId }
+    });
+  } catch {
+    // Logging must never break a successful sign-in.
+  }
+}
 
 router.post('/oauth2/authorize', authorize('api.connectedApps.oauth'), async (req, res, next) => {
   try {

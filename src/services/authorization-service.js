@@ -263,6 +263,10 @@ const POLICIES = Object.freeze({
   'admin.signInMethods.manage': policy('admin.signInMethods.manage', 'adminAnyWorkspace', 'sign-in-methods', 'update', {
     description: 'Choose which sign-in methods the platform offers and what each one counts for.'
   }),
+  'admin.authAdapters.manage': policy('admin.authAdapters.manage', 'adminAnyWorkspace', 'auth-adapter', 'manage', {
+    fields: ['kind', 'name', 'status', 'firstFactor', 'satisfiesSecond', 'action'],
+    description: 'Configure authentication adapters (SAML, Kerberos, certificate/CBA) that front connected-app sign-in.'
+  }),
   'admin.dashboard.view': policy('admin.dashboard.view', 'adminAnyWorkspace', 'admin-dashboard', 'read', {
     description:
       'The platform administration index. Same gate as every area it links to, so it cannot become a way to discover settings you may not open.'

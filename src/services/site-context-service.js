@@ -32,10 +32,12 @@ const config = require('../config');
  */
 function platformBranding() {
   return normalizeBranding({
-    displayName: 'Vanguard Cloud Services',
+    displayName: 'Aegis ID',
     productName: 'Aegis ID',
-    logoUrl: '/images/vanguard-cloud-services-logo.png',
-    faviconUrl: '',
+    // The platform chrome (header, hero, footer) is dark navy, so the reversed
+    // lockup is the one that reads. The favicon uses the colour mark.
+    logoUrl: '/images/brand/aegis-id-lockup-white.svg',
+    faviconUrl: '/images/brand/aegis-mark.svg',
     supportEmail: config.app.supportEmail || '',
     // The platform is Aegis ID; it does not say "powered by" itself.
     poweredByHidden: true,
@@ -49,7 +51,7 @@ function platformBranding() {
  * (`logoUrl`), and always yields something a template can render.
  */
 function normalizeBranding(input = {}) {
-  const platform = { displayName: 'Vanguard Cloud Services', productName: 'Aegis ID' };
+  const platform = { displayName: 'Aegis ID', productName: 'Aegis ID' };
   const displayName = String(input.displayName || '').trim() || platform.displayName;
   // A blank product name keeps "Aegis ID" — the blade says so — rather than
   // leaving the sign-in page saying "Sign in to Contoso." for an

@@ -60,7 +60,7 @@ router.get('/organizations/:subscriptionId', authorize('workspace.view'), async 
 
     res.render('pages/organizations', {
       title: 'Organizations',
-      description: 'Choose an organization workspace for Vanguard Cloud Services - Aegis ID.',
+      description: 'Choose an organization workspace for Aegis ID.',
       subscription,
       organizations,
       hasOrganizations: organizations.length > 0,

@@ -35,7 +35,7 @@ object OrganizationInviteParser {
             invitationId = invitationId,
             organizationId = organizationId,
             organizationName = value(uri, "organization_name", "organizationName")
-                ?: "Vanguard organization",
+                ?: "Organization",
             sourceWebAppUrl = value(uri, "vanguard_web_app_url"),
             rawUrl = trimmed
         )

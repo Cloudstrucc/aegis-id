@@ -78,12 +78,12 @@ struct LabAgentClient {
 
         let ping: PingResponse = try await post(
             issuerAdminURL.appending(path: "connections/\(issuerConnectionId)/send-ping"),
-            body: try JSONEncoder().encode(["comment": "Vanguard Aegis ID simulator wallet challenge"])
+            body: try JSONEncoder().encode(["comment": "Aegis ID simulator wallet challenge"])
         )
 
         _ = try await post(
             issuerAdminURL.appending(path: "connections/\(issuerConnectionId)/send-message"),
-            body: try JSONEncoder().encode(["content": "Vanguard Aegis ID wallet challenge: accept this challenge in the simulator."])
+            body: try JSONEncoder().encode(["content": "Aegis ID wallet challenge: accept this challenge in the simulator."])
         ) as EmptyResponse
 
         return ping.threadId
@@ -249,13 +249,14 @@ struct LabAgentClient {
         try await get(portalURL(sourceWebAppURL).appending(path: "api/organizations/\(organizationId)/profile"))
     }
 
-    func acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?, sourceWebAppURL: String? = nil) async throws {
+    func acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?, walletId: String?, sourceWebAppURL: String? = nil) async throws {
         _ = try await post(
             portalURL(sourceWebAppURL).appending(path: "api/wallet/credential-invitations/\(credentialId)/accept"),
             body: try JSONEncoder().encode(
                 CredentialInvitationAcceptanceRequest(
                     organizationId: organizationId,
                     holderEmail: holderEmail,
+                    walletId: walletId,
                     source: "ios-wallet"
                 )
             )
@@ -539,6 +540,11 @@ struct IssuerOrganizationConnectionRegistrationResponse: Decodable {
 struct CredentialInvitationAcceptanceRequest: Encodable {
     var organizationId: String
     var holderEmail: String?
+    // The wallet's own registered Wallet ID. With it present the server does the
+    // authoritative wallet-id binding; without it, it falls back to a legacy
+    // email match that fails whenever the invite's contact email differs from
+    // the wallet's registered email (e.g. a per-organization "+" address).
+    var walletId: String?
     var source: String
 }
 

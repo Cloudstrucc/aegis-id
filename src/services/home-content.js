@@ -49,11 +49,16 @@ function getTestingApps() {
 
 function getHomeContent(overrides = {}) {
   return {
-    title: 'Vanguard Cloud Services - Aegis ID',
+    title: 'Aegis ID',
     description:
       'Governed identity assurance, wallet challenges, and interoperability labs for enterprise applications.',
     iosDownloadUrl: config.app.iosTestFlightUrl,
     hasIosDownloadUrl: Boolean(config.app.iosTestFlightUrl),
+    // Production carries a public App Store listing (blanked on dev/qa by the
+    // deploy script), so the badge points there rather than at the TestFlight
+    // beta once it is set.
+    iosAppStoreUrl: config.app.appStoreUrl,
+    hasIosAppStore: Boolean(config.app.appStoreUrl),
     androidDownloadUrl: config.app.androidTestingUrl,
     hasAndroidDownloadUrl: Boolean(config.app.androidTestingUrl),
     productBriefUrl: '/docs/aegis-id-overview.html',

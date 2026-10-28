@@ -2292,13 +2292,32 @@
             <th>Client ID</th>
             <th>Type</th>
             <th>Status</th>
-            <th>Auth method</th>
-            <th>Credentials</th>
+            <th>Auth</th>
+            <th>Creds</th>
             <th>Updated</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
+          {{#each connectedApps.builtinApps}}
+            <tr class="connected-app-row--builtin">
+              <td>
+                <strong>{{name}}</strong>
+                <span>{{description}}</span>
+              </td>
+              <td><code>{{clientId}}</code></td>
+              <td>{{appType}}</td>
+              <td><span class="status-pill status-pill--enabled">{{statusLabel}}</span></td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td>
+                <div class="row-actions">
+                  <a class="button button--secondary button--dark-text" href="{{openUrl}}" target="_blank" rel="noopener">Open example app</a>
+                </div>
+              </td>
+            </tr>
+          {{/each}}
           {{#each connectedApps.table.rows}}
             <tr>
               <td>
@@ -2330,7 +2349,7 @@
         </tbody>
       </table>
       {{#unless connectedApps.table.hasRows}}
-        <p class="empty-table-note">No connected apps match this filter yet.</p>
+        <p class="empty-table-note">No connected-app registrations of your own yet — the built-in example above is always available, or select “Create registration” to add one.</p>
       {{/unless}}
     </div>
 

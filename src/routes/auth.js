@@ -131,7 +131,7 @@ router.get('/auth/login', requireAnonymous, async (req, res, next) => {
     captureReturnTo(req);
     res.render('pages/auth-login', {
       title: 'Sign in',
-      description: 'Sign in to Vanguard Cloud Services - Aegis ID.',
+      description: 'Sign in to Aegis ID.',
       formValues: { email: normalizeEmail(req.query.email || '') },
       passkeyLoginEnabled: await isFirstFactorEnabled('passkey'),
       walletLoginEnabled: await isFirstFactorEnabled('wallet'),
@@ -152,7 +152,7 @@ router.post('/auth/login', requireAnonymous, authorize('auth.login'), (req, res,
       if (!user) {
         return res.status(401).render('pages/auth-login', {
           title: 'Sign in',
-          description: 'Sign in to Vanguard Cloud Services - Aegis ID.',
+          description: 'Sign in to Aegis ID.',
           formValues: { email: req.body.email || '' },
           errorMessage: info?.message || 'Invalid email or password.'
         });
@@ -1033,7 +1033,7 @@ async function buildRegisterView(req, overrides = {}) {
 
   return {
     title: 'Create account',
-    description: 'Create a Vanguard Cloud Services - Aegis ID account.',
+    description: 'Create a Aegis ID account.',
     formValues,
     formErrors: overrides.formErrors || {},
     planChoices: listPublicPlans().map((choice) => ({
@@ -1089,7 +1089,7 @@ function buildVerifyView(req, user, method, overrides = {}) {
 
   return {
     title: 'Verify sign in',
-    description: 'Complete second-factor verification for Vanguard Cloud Services - Aegis ID.',
+    description: 'Complete second-factor verification for Aegis ID.',
     user,
     method,
     isOtp: method === 'email' || method === 'sms',

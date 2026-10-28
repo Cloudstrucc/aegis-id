@@ -169,7 +169,7 @@ function buildSubscribeView(req, overrides = {}) {
 
   return {
     title: 'Subscribe an organization',
-    description: 'Subscribe an organization to Vanguard Cloud Services - Aegis ID.',
+    description: 'Subscribe an organization to Aegis ID.',
     formErrors: overrides.formErrors || {},
     errorMessage: overrides.errorMessage || null,
     roleChoices: roleChoices(draft.role || overrides.formValues?.role),

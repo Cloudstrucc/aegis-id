@@ -194,13 +194,17 @@ class LabAgentClient(
         return OrganizationProfile.fromJson(getJson("/api/organizations/$encoded/profile", sourceWebAppUrl))
     }
 
-    suspend fun acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?, sourceWebAppUrl: String? = null) {
+    suspend fun acceptCredentialInvitation(credentialId: String, organizationId: String, holderEmail: String?, walletId: String?, sourceWebAppUrl: String? = null) {
         val encoded = URLEncoder.encode(credentialId, Charsets.UTF_8.name())
+        // walletId lets the server do the authoritative wallet-id binding; without
+        // it, it falls back to a legacy email match that fails when the invite's
+        // contact email differs from the wallet's registered email.
         postJson(
             "/api/wallet/credential-invitations/$encoded/accept",
             JSONObject()
                 .put("organizationId", organizationId)
                 .put("holderEmail", holderEmail)
+                .put("walletId", walletId)
                 .put("source", "android-wallet"),
             sourceWebAppUrl
         )

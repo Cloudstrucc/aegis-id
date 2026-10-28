@@ -35,7 +35,7 @@ class VerifiedIdClient {
 
   async createPresentationRequest({ credentialType, acceptedIssuers, constraints, requestedClaims, purpose, clientName } = {}) {
     const state = crypto.randomUUID();
-    const presentationPurpose = purpose || 'Verify Vanguard Cloud Services employee access eligibility.';
+    const presentationPurpose = purpose || 'Verify employee access eligibility.';
     const requestedCredential = {
       type: credentialType || this.config.credentialType,
       purpose: presentationPurpose,

@@ -98,11 +98,7 @@ fun WalletSetupScreen(store: WalletStore, onRecoverInstead: () -> Unit) {
 
         when (step) {
             SetupStep.Intro -> {
-                Text(
-                    "Vanguard Aegis ID",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                VanguardLogo()
                 Text(
                     "Your wallet holds the credentials your organizations issue to you. " +
                         "Set it up once and you will receive a Wallet ID to share with your administrators.",

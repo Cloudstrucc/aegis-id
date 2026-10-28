@@ -102,13 +102,13 @@ function normalizePublicKeyOptions(input) {
     challenge: base64UrlToUint8Array(input.challenge),
     user: {
       id: base64UrlToUint8Array(input.user?.id || ''),
-      name: input.user?.name || 'identity@vanguardcs.ca',
-      displayName: input.user?.displayName || input.user?.name || 'Vanguard Pilot User'
+      name: input.user?.name || 'demo@aegis-id.io',
+      displayName: input.user?.displayName || input.user?.name || 'Demo User'
     }
   };
 
   if (!publicKey.rp?.id) {
-    publicKey.rp = { name: publicKey.rp?.name || 'Vanguard Aegis ID' };
+    publicKey.rp = { name: publicKey.rp?.name || 'Aegis ID' };
   }
 
   return publicKey;

@@ -100,8 +100,31 @@ async function getConnectedAppsView(workspace, subscription, query = {}, options
       })
     : [];
 
+  // A built-in, read-only relying party shown in every organization: the
+  // Aegis ID integration examples app (Business Expenses + Digital Signature).
+  // Kept separate from the real registrations (its own list, not table.rows)
+  // so it never affects stats, filters or pagination — it is injected here
+  // rather than stored, appears for existing and new orgs alike, has no
+  // secrets, and cannot be edited or deleted. Holders and admins can open it
+  // and try OIDC sign-in and wallet approvals.
+  const builtinApps = config.app.businessExpensesUrl
+    ? [{
+        id: 'builtin-integration-examples',
+        builtin: true,
+        name: 'Integration Examples',
+        description: 'Aegis ID sample relying parties — Business Expenses and Digital Signature. Open to try OIDC sign-in and wallet approvals.',
+        clientId: 'built-in',
+        appType: 'example',
+        status: 'enabled',
+        statusLabel: 'Built-in',
+        openUrl: config.app.businessExpensesUrl
+      }]
+    : [];
+
   return {
     apps: table.rows,
+    builtinApps,
+    hasBuiltinApps: builtinApps.length > 0,
     table,
     selectedApp: selectedApp ? decorateApp(selectedApp, options) : null,
     hasApps: table.total > 0,

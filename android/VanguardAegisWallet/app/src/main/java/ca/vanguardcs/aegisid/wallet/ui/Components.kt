@@ -86,8 +86,11 @@ fun VanguardLogo(
     darkBackground: Boolean = false
 ) {
     Image(
-        painter = painterResource(R.drawable.vanguard_cloud_services_logo),
-        contentDescription = "Vanguard Cloud Services",
+        // The reversed lockup on a dark ground, the colour lockup on light.
+        painter = painterResource(
+            if (darkBackground) R.drawable.aegis_lockup_white else R.drawable.aegis_lockup
+        ),
+        contentDescription = "Aegis ID",
         modifier = modifier.height(54.dp),
         contentScale = ContentScale.Fit
     )
@@ -118,8 +121,10 @@ fun HeroPanel(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
             VanguardLogo(darkBackground = true)
+            // The lockup above already reads "AEGIS ID", so the title is just
+            // "Wallet" rather than repeating the name.
             Text(
-                text = "Aegis ID Wallet",
+                text = "Wallet",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,

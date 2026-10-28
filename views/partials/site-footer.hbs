@@ -5,7 +5,7 @@
     {{else}}
       <strong class="footer-wordmark">{{site.branding.displayName}}</strong>
     {{/if}}
-    <strong>{{site.branding.shortName}}</strong>
+    {{#unless site.branding.isPlatform}}<strong>{{site.branding.shortName}}</strong>{{/unless}}
     <span>Portable identity assurance, wallet challenges, and interoperability testing in one governed platform.</span>
   </div>
   <span>

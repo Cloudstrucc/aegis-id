@@ -24,6 +24,7 @@
     "@azure/keyvault-keys": "^4.10.2",
     "@azure/msal-node": "^5.2.4",
     "@mediapipe/face_detection": "^0.4.1646425229",
+    "@node-saml/node-saml": "^5.2.0",
     "@simplewebauthn/server": "^13.3.1",
     "bcryptjs": "^3.0.3",
     "d3": "^7.9.0",

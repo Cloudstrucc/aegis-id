@@ -632,6 +632,31 @@ way of discovering which codes exist.
 Free plans cannot have codes: there is nothing to bypass, since anyone can start
 a trial without one.
 
+## Authentication Adapters
+
+Aegis can sit in front of a customer's existing identity protocol for
+connected-app sign-in. Beyond the Entra OIDC broker, the adapter framework adds
+three out-of-the-box classic protocols — **SAML 2.0**, **Kerberos/SPNEGO** and
+**certificate-based (X.509/CBA)** — configured and self-tested at
+**/admin/auth-adapters**. Aegis stays the policy decision point: an adapter only
+supplies normalized claims; Aegis issues the tokens and enforces the journey.
+
+Operator points worth knowing:
+
+- An adapter whose configuration does not validate is kept as a **draft** and
+  cannot authenticate anyone (deny-by-default). Only a validating — or a passing
+  live self-test — adapter becomes **active**.
+- Kerberos and CBA require a **trusted-proxy allowlist** and refuse to activate
+  without one, because a forwarded principal or certificate is only as
+  trustworthy as who may set it.
+- One active adapter can be made the **sign-in default**; it then fronts
+  `/oauth2/authorize` ahead of Entra.
+- The framework is gated by `ADAPTER_FRAMEWORK_ENABLED` and ships **off** in dev,
+  qa and prod until a pilot turns it on, because it changes how people
+  authenticate.
+
+Full operator and developer notes: [Authentication adapters](auth-adapters.md).
+
 ## Aries Interoperability Lab
 
 The Aries lab is intentionally separate from the Microsoft production path.
@@ -784,6 +809,7 @@ controller's legal name are business decisions.
 - Microsoft Entra passkeys/FIDO2: https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-authentication-passkeys-fido2
 - Azure App Service Node.js quickstart: https://learn.microsoft.com/en-us/azure/app-service/quickstart-nodejs
 - ACA-Py documentation: https://aca-py.org/latest/
+- Authentication adapters (SAML / Kerberos / CBA): [docs/auth-adapters.md](auth-adapters.md)
 
 ---
 

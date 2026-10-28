@@ -27,6 +27,7 @@ const connectedAppRoutes = require('./routes/connected-apps');
 const connectedOAuthRoutes = require('./routes/connected-oauth');
 const developerDocsRoutes = require('./routes/developer-docs');
 const didWebRoutes = require('./routes/did-web');
+const authAdapterRoutes = require('./routes/auth-adapters');
 const { attachAuthLocals } = require('./middleware/auth');
 const { attachLocalTestMode } = require('./middleware/local-test-mode');
 const { attachSiteContext } = require('./middleware/site-context');
@@ -494,6 +495,7 @@ function createApp() {
   app.use('/', authRoutes);
   app.use('/', accountRoutes);
   app.use('/', pageRoutes);
+  app.use('/', authAdapterRoutes);
   app.use('/', planRoutes);
   app.use('/', organizationIdentityRoutes);
   app.use('/', subscriptionRoutes);

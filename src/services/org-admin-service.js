@@ -710,9 +710,16 @@ async function acceptCredentialInvitation(organizationId, credentialId, input = 
       presentedWalletId
     );
     bindingMode = binding.mode;
-  } else if (holderEmail && holderEmail !== credential.holderEmail) {
+  } else if (credential.bindingMode !== 'wallet-id' && holderEmail && holderEmail !== credential.holderEmail) {
     // Legacy path for wallet builds that predate the Wallet ID. Kept so existing
     // installs continue to work until they upgrade.
+    //
+    // A wallet-id invite binds on the Wallet ID, not the email — its contact may
+    // be any per-organization address (e.g. a "+" alias) — so a legacy client
+    // that sends only its registered email must not be rejected on an email
+    // mismatch here. The wallet has already checked the invite's Wallet ID
+    // against its own before accepting; newer builds send the Wallet ID so the
+    // authoritative check above runs.
     throw validationError('Credential invite holder did not match this wallet.');
   }
 
@@ -1253,7 +1260,7 @@ async function updateBranding(workspace, subscription, input = {}) {
     backgroundColor: normalizeColor(useCustom ? input.backgroundColor : selectedPalette.backgroundColor, selectedPalette.backgroundColor),
     textColor: normalizeColor(useCustom ? input.textColor : selectedPalette.textColor, selectedPalette.textColor),
     logoDataUrl: input.removeLogo ? '' : normalizeLogoDataUrl(input.logoDataUrl) || state.branding.logoDataUrl || '',
-    // Site-wide identity: what replaces "Vanguard Cloud Services" and
+    // Site-wide identity: what replaces the platform name and
     // "Aegis ID" once the organization is served from its own host. Stored
     // now so the blade can be set up ahead of the host going live.
     displayName: normalizeText(input.displayName, 80) || '',
