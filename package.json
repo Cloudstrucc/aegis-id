@@ -1,6 +1,6 @@
 {
   "name": "aegis-id",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Vanguard Cloud Services - Aegis ID identity assurance platform with Verified ID, passkey, wallet challenge, OIDC/SAML, and Aries interoperability lab support.",
   "main": "src/server.js",
