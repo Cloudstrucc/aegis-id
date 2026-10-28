@@ -4,7 +4,7 @@ const QRCode = require('qrcode');
 const config = require('../config');
 const { baseUrlForWorkspace } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
-const { revokeWorkspaceMemberRole, setWorkspaceMemberRole } = require('./platform-service');
+const { listAllWorkspaces, revokeWorkspaceMemberRole, setWorkspaceMemberRole } = require('./platform-service');
 const { assertBinding } = require('./wallet-registry-service');
 const { assertCanIssueCredential } = require('./plan-service');
 const { parseWalletId } = require('./wallet-id');
@@ -80,7 +80,24 @@ const DEFAULT_CLAIMS = [
   }
 ];
 
+// Seeded into every new workspace.
+//
+// "Organization admin" is here rather than only in ROLE_TEMPLATES because a
+// fresh organization previously had no assignable administrator role at all:
+// the only admin-sounding option was "Admin Eligible", which grants nomination
+// eligibility and nothing else, so an administrator assigned it stayed an
+// employee. Its privilegeIds are left empty on purpose — normalizePrivilegeIds
+// unions ADMIN_BASE_PRIVILEGES in for any adminRole, and that constant is
+// declared further down this file.
 const DEFAULT_ROLES = [
+  {
+    id: 'role-org-admin',
+    name: 'Organization admin',
+    description:
+      'Administers this organization: people, roles, claims, branding, adapters, wallets and its domain. Grants nothing outside this organization.',
+    adminRole: true,
+    privilegeIds: []
+  },
   {
     id: 'role-employee',
     name: 'Employee',
@@ -96,9 +113,12 @@ const DEFAULT_ROLES = [
     privilegeIds: ['workspace.view', 'credentials.view.own', 'claims.view.own', 'ledger.view.own']
   },
   {
+    // Renamed from "Admin Eligible", which read as the administrator role and
+    // was the likeliest thing an admin would pick. It confers no access.
     id: 'role-admin-eligible',
-    name: 'Admin Eligible',
-    description: 'Credential holder can be nominated for co-administration.',
+    name: 'Co-admin nominee',
+    description:
+      'May be nominated for co-administration through the dual wallet challenge. Grants no administrative access on its own.',
     adminRole: false,
     privilegeIds: [
       'workspace.view',
@@ -109,6 +129,9 @@ const DEFAULT_ROLES = [
     ]
   }
 ];
+
+/** The seeded role that actually administers an organization. */
+const ORG_ADMIN_ROLE_ID = 'role-org-admin';
 
 const PRIVILEGE_GROUPS = [
   {
@@ -600,6 +623,9 @@ async function issueCredential(workspace, subscription, input = {}) {
 
   state.credentials.unshift(credential);
   await writeState(state);
+  // An invitation that carries an admin role makes an administrator, so the
+  // membership has to follow it here rather than only on a later edit.
+  await syncAdminMembership(workspace, subscription, state, credential.holderEmail);
   await appendCredentialEvent(workspace, credential, subscription, 'credential.invited', {
     holderEmail,
     roleIds,
@@ -863,17 +889,22 @@ async function hasCredentialMembershipForEmail(email) {
 
 async function revokeCredential(workspace, subscription, credentialId, reason = '') {
   await assertOrgPrivilege(workspace, subscription, 'credentials.revoke');
-  return mutateCredential(workspace, subscription, credentialId, 'credential.revoked', (credential) => {
-    credential.status = 'revoked';
-    credential.revokedAt = new Date().toISOString();
-    credential.revocationReason = normalizeText(reason, 500);
+  const credential = await mutateCredential(workspace, subscription, credentialId, 'credential.revoked', (record) => {
+    record.status = 'revoked';
+    record.revokedAt = new Date().toISOString();
+    record.revocationReason = normalizeText(reason, 500);
   });
+  // Revoking the credential that carried the admin role has to withdraw the
+  // administration it conferred, or a revoked holder keeps administering.
+  await syncAdminMembership(workspace, subscription, await getOrCreateState(workspace), credential.holderEmail);
+  return credential;
 }
 
 async function updateCredentialProfile(workspace, subscription, credentialId, input = {}) {
   await assertOrgPrivilege(workspace, subscription, 'credentials.update');
   const state = await getOrCreateState(workspace);
   const credential = findCredential(state, credentialId);
+  const previousEmail = normalizeEmail(credential.holderEmail);
   credential.roleIds = normalizeArray(input.roleIds).filter((roleId) => state.roles.some((role) => role.id === roleId));
   credential.personType = normalizePersonType(input.personType || credential.personType);
   credential.divisionId = normalizeOrgUnitId(state, input.divisionId || credential.divisionId);
@@ -896,6 +927,13 @@ async function updateCredentialProfile(workspace, subscription, credentialId, in
   );
   credential.updatedAt = new Date().toISOString();
   await writeState(state);
+  // This is the path the People UI uses to change somebody's role, so it is the
+  // one that has to make an administrator an administrator. Both addresses are
+  // synced in case the edit also moved the credential to a new one.
+  await syncAdminMembership(workspace, subscription, state, credential.holderEmail);
+  if (previousEmail && previousEmail !== normalizeEmail(credential.holderEmail)) {
+    await syncAdminMembership(workspace, subscription, state, previousEmail);
+  }
   await appendCredentialEvent(workspace, credential, subscription, 'credential.profile.updated', {
     holderEmail: credential.holderEmail,
     roleIds: credential.roleIds,
@@ -928,15 +966,18 @@ async function resetCredentialProfileValidation(workspace, subscription, credent
 
 async function reissueCredentialInvitation(workspace, subscription, credentialId, input = {}) {
   await assertOrgPrivilege(workspace, subscription, 'credentials.issue');
-  return mutateCredential(workspace, subscription, credentialId, 'credential.reinvited', (credential) => {
-    const inviteTtlDays = normalizeInviteTtlDays(input.inviteTtlDays || credential.inviteTtlDays);
-    credential.status = 'invited';
-    credential.inviteTtlDays = inviteTtlDays;
-    credential.invitedAt = new Date().toISOString();
-    credential.inviteExpiresAt = addDays(credential.invitedAt, inviteTtlDays).toISOString();
-    credential.revokedAt = null;
-    credential.revocationReason = '';
+  const credential = await mutateCredential(workspace, subscription, credentialId, 'credential.reinvited', (record) => {
+    const inviteTtlDays = normalizeInviteTtlDays(input.inviteTtlDays || record.inviteTtlDays);
+    record.status = 'invited';
+    record.inviteTtlDays = inviteTtlDays;
+    record.invitedAt = new Date().toISOString();
+    record.inviteExpiresAt = addDays(record.invitedAt, inviteTtlDays).toISOString();
+    record.revokedAt = null;
+    record.revocationReason = '';
   });
+  // Re-inviting a revoked credential restores whatever its roles grant.
+  await syncAdminMembership(workspace, subscription, await getOrCreateState(workspace), credential.holderEmail);
+  return credential;
 }
 
 async function createRole(workspace, subscription, input = {}) {
@@ -977,6 +1018,9 @@ async function updateRole(workspace, subscription, roleId, input = {}) {
   role.privilegeIds = normalizeRolePrivilegeInput(input, role);
   role.updatedAt = new Date().toISOString();
   await writeState(state);
+  // Turning adminRole on or off moves administration for everybody holding this
+  // role, not for one person.
+  await syncAllAdminMemberships(workspace, subscription, state);
   await appendWorkspaceEvent(workspace, subscription, 'role.updated', { roleId: role.id, name: role.name });
   return role;
 }
@@ -998,6 +1042,8 @@ async function deleteRole(workspace, subscription, roleId) {
     roleIds: normalizeArray(unit.roleIds).filter((candidate) => candidate !== roleId)
   }));
   await writeState(state);
+  // Deleting an admin role withdraws the administration it granted.
+  await syncAllAdminMemberships(workspace, subscription, state);
   await appendWorkspaceEvent(workspace, subscription, 'role.deleted', { roleId, name: role.name });
 }
 
@@ -1751,6 +1797,20 @@ function assertWorkspaceAdmin(workspace, subscription) {
   }
 }
 
+/**
+ * The viewer's effective access to one organization, resolved from an address
+ * rather than from a subscription.
+ *
+ * Tenancy is keyed on the organization, so the resolver has a user and a
+ * workspace in hand and no subscription — but the privilege engine itself is
+ * sound and only ever reads `subscription.email`, so it is reused as-is rather
+ * than reimplemented beside it.
+ */
+async function getViewerAccessForEmail(workspace, email) {
+  const state = await getOrCreateState(workspace);
+  return buildViewerAccess(workspace, { email: normalizeEmail(email) }, state);
+}
+
 async function assertOrgPrivilege(workspace, subscription, privilegeId) {
   if (isWorkspaceAdmin(workspace, subscription)) {
     return;
@@ -1763,6 +1823,145 @@ async function assertOrgPrivilege(workspace, subscription, privilegeId) {
   const error = new Error('This organization role does not allow that action.');
   error.status = 403;
   throw error;
+}
+
+/** Does any non-revoked credential for this address carry an adminRole role? */
+function holdsAdminRole(state, email) {
+  const normalizedEmail = normalizeEmail(email);
+  return state.credentials.some(
+    (credential) =>
+      normalizeEmail(credential.holderEmail) === normalizedEmail &&
+      credential.status !== 'revoked' &&
+      normalizeArray(credential.roleIds).some(
+        (roleId) => state.roles.find((role) => role.id === roleId)?.adminRole
+      )
+  );
+}
+
+/**
+ * Keep workspace membership in step with the roles actually assigned.
+ *
+ * Two unrelated notions of "administrator" existed: `workspace.members[].role`,
+ * which is the only thing `isWorkspaceAdmin()` reads, and the org role
+ * definitions carrying `adminRole: true`, which is what the People UI assigns.
+ * Nothing wrote the first from the second, so assigning the administrator role
+ * in the UI left the person an employee everywhere that mattered.
+ *
+ * Role assignment is now the source of truth and this writes membership from
+ * it, so the two cannot disagree. `isWorkspaceAdmin()` is left alone: it is
+ * called in hot paths with only `(workspace, subscription)` in hand, and
+ * teaching it to read role definitions would mean loading org state everywhere.
+ *
+ * Withdrawal is deliberately narrow. Only administration *this* function
+ * granted is taken away again — a workspace owner, or a co-admin approved
+ * through the dual wallet challenge, is not ours to demote.
+ */
+async function syncAdminMembership(workspace, subscription, state, holderEmail) {
+  const email = normalizeEmail(holderEmail);
+  if (!email || normalizeEmail(workspace.ownerEmail) === email) {
+    return null;
+  }
+
+  const shouldAdminister = holdsAdminRole(state, email);
+  const member = (workspace.members || []).find((item) => normalizeEmail(item.email) === email);
+  const administersNow = Boolean(member && member.role === 'administrator' && !member.revokedAt);
+
+  if (shouldAdminister === administersNow) {
+    return null;
+  }
+
+  if (shouldAdminister) {
+    await setWorkspaceMemberRole(workspace.id, email, 'administrator', { grantedByRole: true });
+    await recordAdminMembershipChange(workspace, subscription, email, 'granted');
+    return 'granted';
+  }
+
+  if (!member?.grantedByRole) {
+    return null;
+  }
+
+  await revokeWorkspaceMemberRole(workspace.id, email, 'administrator');
+  await recordAdminMembershipChange(workspace, subscription, email, 'revoked');
+  return 'revoked';
+}
+
+/**
+ * Bring every existing organization's memberships in line with its roles.
+ *
+ * Before role assignment wrote membership, somebody given an admin role in the
+ * People UI was an administrator in one role system and an employee in the
+ * other. Those people exist in the stores already, so without this they stay
+ * locked out until somebody edits them again. Idempotent, and run at startup.
+ *
+ * Grants only. An existing administrator is never demoted here: this cannot
+ * tell a membership that predates the sync from one it would have created, and
+ * guessing wrong would lock an administrator out of their own organization.
+ */
+async function backfillAdminMemberships() {
+  const workspaces = await listAllWorkspaces();
+  let granted = 0;
+
+  for (const workspace of workspaces) {
+    const states = await stateStore.read();
+    const stored = states.find((record) => record.workspaceId === workspace.id);
+    if (!stored) {
+      continue;
+    }
+    normalizeState(stored);
+
+    const emails = new Set(
+      stored.credentials.map((credential) => normalizeEmail(credential.holderEmail)).filter(Boolean)
+    );
+    for (const email of emails) {
+      if (normalizeEmail(workspace.ownerEmail) === email || !holdsAdminRole(stored, email)) {
+        continue;
+      }
+      const member = (workspace.members || []).find((item) => normalizeEmail(item.email) === email);
+      if (member && member.role === 'administrator' && !member.revokedAt) {
+        continue;
+      }
+      await setWorkspaceMemberRole(workspace.id, email, 'administrator', { grantedByRole: true });
+      await recordAdminMembershipChange(workspace, { email: 'system' }, email, 'granted');
+      granted += 1;
+    }
+  }
+
+  return { scanned: workspaces.length, granted };
+}
+
+/**
+ * Re-sync every holder in the organization.
+ *
+ * Used after a change to the roles themselves — marking a role as an admin
+ * role, or deleting one — which moves administration for everybody holding it
+ * rather than for one person. Most addresses are unchanged and cost a
+ * comparison; only the ones that actually moved are written.
+ */
+async function syncAllAdminMemberships(workspace, subscription, state) {
+  const emails = new Set(
+    state.credentials.map((credential) => normalizeEmail(credential.holderEmail)).filter(Boolean)
+  );
+  for (const email of emails) {
+    await syncAdminMembership(workspace, subscription, state, email);
+  }
+}
+
+/**
+ * A privilege change, so it goes on the evidence chain as well as the org event
+ * log — "who made this person an administrator of my organization, and when" is
+ * exactly the question an audit asks.
+ */
+async function recordAdminMembershipChange(workspace, subscription, email, outcome) {
+  const { writeAuditEvent } = require('./audit-service');
+  const data = {
+    workspaceId: workspace.id,
+    organizationName: workspace.organization,
+    holderEmail: email,
+    actorEmail: subscription?.email || null,
+    via: 'role-assignment'
+  };
+  await appendWorkspaceEvent(workspace, subscription || { email: null }, `workspace.admin.${outcome}`, data);
+  await writeAuditEvent(`org.admin.${outcome}`, data);
 }
 
 function isWorkspaceAdmin(workspace, subscription) {
@@ -1827,7 +2026,9 @@ function defaultOrgUnits(organizationName) {
       name: organizationName || 'Organization',
       parentId: '',
       description: 'Top-level organization.',
-      roleIds: DEFAULT_ROLES.map((role) => role.id),
+      // Administration is granted deliberately, per person — never inherited
+      // from the division somebody happens to be filed under.
+      roleIds: DEFAULT_ROLES.filter((role) => !role.adminRole).map((role) => role.id),
       claimKeys: DEFAULT_CLAIMS.map((claim) => claim.key),
       createdAt: now,
       updatedAt: now
@@ -1836,7 +2037,7 @@ function defaultOrgUnits(organizationName) {
 }
 
 function normalizeState(state) {
-  state.roles = normalizeRoleDefinitions(state.roles);
+  state.roles = ensureSeededRoles(normalizeRoleDefinitions(state.roles));
   state.orgUnits = normalizeOrgUnits(state);
   state.credentials = state.credentials.map((credential) => normalizeCredential(credential, state));
   state.adminIdentityVerifications = normalizeAdminIdentityVerifications(state.adminIdentityVerifications);
@@ -1868,6 +2069,36 @@ function decorateOrgPolicy(policy = defaultOrgPolicy()) {
 function normalizeRoleDefinitions(roles = []) {
   const source = Array.isArray(roles) && roles.length > 0 ? roles : DEFAULT_ROLES;
   return source.map((role) => normalizeRoleDefinition(role));
+}
+
+/**
+ * Make sure an organization has an assignable administrator role, and that the
+ * old "Admin Eligible" label no longer reads like one.
+ *
+ * Organizations created before `role-org-admin` was seeded have no role with
+ * `adminRole: true` at all, so there was nothing an admin could assign to make
+ * somebody an administrator. Repaired here rather than in a one-shot migration
+ * because every read passes through normalizeState: the role appears the first
+ * time the organization is opened, and persists on the next write.
+ *
+ * An organization that already defined its own admin role keeps it — a second
+ * one would only be a duplicate to choose between.
+ */
+function ensureSeededRoles(roles = []) {
+  const next = roles.map((role) => {
+    if (role.id !== 'role-admin-eligible' || role.name !== 'Admin Eligible') {
+      return role;
+    }
+    const seeded = DEFAULT_ROLES.find((candidate) => candidate.id === 'role-admin-eligible');
+    return { ...role, name: seeded.name, description: seeded.description };
+  });
+
+  if (next.some((role) => role.adminRole)) {
+    return next;
+  }
+
+  const seeded = DEFAULT_ROLES.find((role) => role.id === ORG_ADMIN_ROLE_ID);
+  return [normalizeRoleDefinition(seeded), ...next];
 }
 
 function normalizeRoleDefinition(role = {}) {
@@ -3057,6 +3288,37 @@ async function countCredentialsByWorkspace() {
  * or must only be revoked, so it counts every credential a wallet holds
  * regardless of status — a revoked credential is still history.
  */
+/**
+ * Which registered wallets one organization has a stake in.
+ *
+ * A tenant administrator may withdraw a wallet that holds one of *their*
+ * credentials, and no others — the deployment-wide register stays a platform
+ * surface. Wallet IDs cover accepted credentials; holder addresses cover the
+ * invited ones, which have no Wallet ID until the holder accepts.
+ */
+async function listWalletScopeForWorkspace(workspaceId) {
+  const states = await stateStore.read();
+  const state = states.find((record) => record.workspaceId === workspaceId);
+  const walletCounts = new Map();
+  const holderEmails = new Set();
+  if (!state) {
+    return { walletCounts, holderEmails };
+  }
+
+  normalizeState(state);
+  for (const credential of state.credentials) {
+    if (credential.walletId) {
+      walletCounts.set(credential.walletId, (walletCounts.get(credential.walletId) || 0) + 1);
+    }
+    const email = normalizeEmail(credential.holderEmail);
+    if (email) {
+      holderEmails.add(email);
+    }
+  }
+
+  return { walletCounts, holderEmails };
+}
+
 async function countCredentialsByWalletId() {
   const states = await stateStore.read();
   const counts = new Map();
@@ -3077,11 +3339,16 @@ async function countCredentialsByWalletId() {
 
 module.exports = {
   acceptCoAdminChallenge,
+  backfillAdminMemberships,
   getOrCreateState,
+  holdsAdminRole,
+  ORG_ADMIN_ROLE_ID,
+  syncAdminMembership,
   displayNameFromEmail,
   PERSON_TYPES,
   countCredentialsByWalletId,
   countCredentialsByWorkspace,
+  listWalletScopeForWorkspace,
   assertOrgPrivilege,
   createClaimDefinition,
   createOrgUnit,
@@ -3095,6 +3362,7 @@ module.exports = {
   isWorkspaceAdmin,
   listCredentialMembershipsForEmail,
   getOrgAdminView,
+  getViewerAccessForEmail,
   getOrganizationBranding,
   getOrganizationProfile,
   acceptCredentialInvitation,

@@ -1,112 +1,169 @@
-<section class="band band--white">
-  <div class="section-heading">
-    <p class="eyebrow">Platform settings</p>
-    <h1>Registered wallets</h1>
-    <p>Every wallet registered against this environment, newest first.</p>
-  </div>
+{{!--
+  Serves two surfaces: the platform register at /admin/wallets, which sees every
+  wallet on the deployment and may delete an unused one, and the organization
+  view at /orgs/:handle/settings/wallets, which sees only wallets holding one of
+  that organization's credentials and is not offered deletion — a wallet may
+  hold credentials from more than one organization, so erasing it is a
+  deployment-wide act.
+--}}
+<section class="band band--white surface-app">
+  <div class="aeg-page">
+    {{#if tenant}}
+      <nav class="aeg-crumb" aria-label="Breadcrumb">
+        <a href="{{tenant.publicPath}}">{{tenant.organization}}</a> ›
+        <a href="{{settingsPath}}">Settings</a> › Registered wallets
+      </nav>
+    {{/if}}
 
-  {{#if saved}}
-    <div class="callout callout--success">
-      <strong>
-        {{#if (eq saved "revoked")}}Wallet withdrawn from service.{{/if}}
-        {{#if (eq saved "restored")}}Wallet restored.{{/if}}
-        {{#if (eq saved "deleted")}}Wallet deleted.{{/if}}
-      </strong>
+    <div class="aeg-page-head">
+      <p class="aeg-eyebrow">{{#if scopeLabel}}{{scopeLabel}}{{else}}Platform settings{{/if}}</p>
+      <h1>Registered wallets</h1>
+      <p>
+        {{#if tenant}}
+          Wallets holding a credential from this organization, newest first.
+        {{else}}
+          Every wallet registered against this environment, newest first.
+        {{/if}}
+      </p>
     </div>
-  {{/if}}
-  {{#if errorMessage}}
-    <div class="callout callout--warning"><strong>Not applied.</strong> <span>{{errorMessage}}</span></div>
-  {{/if}}
 
-  <article class="blade-guidance">
-    <strong>Revoke keeps the history; delete does not</strong>
-    <span>
-      <em>Revoke</em> stops a wallet being used — every credential acceptance is
-      refused — but keeps the record and its evidence trail. That is the right
-      action for a lost or compromised wallet, because the trail is exactly what
-      you would need afterwards. <em>Delete</em> erases the wallet outright and
-      is only offered for a wallet that never held a credential, so a wallet with
-      history can never be deleted away. Neither action touches the holder's
-      device; a revoked wallet simply stops working.
-    </span>
-  </article>
+    {{#if saved}}
+      <div class="aeg-callout aeg-callout--ok">
+        <span class="aeg-callout__icon" aria-hidden="true">✓</span>
+        <div class="aeg-callout__body">
+          <p>
+            {{#if (eq saved "revoked")}}Wallet withdrawn from service.{{/if}}
+            {{#if (eq saved "restored")}}Wallet restored.{{/if}}
+            {{#if (eq saved "deleted")}}Wallet deleted.{{/if}}
+          </p>
+        </div>
+      </div>
+    {{/if}}
 
-  {{#if revokedCount}}
-    <div class="callout callout--warning">
-      <strong>{{revokedCount}} wallet(s) are withdrawn from service.</strong>
-      <span>Their holders cannot accept credentials until they are restored.</span>
+    {{#if errorMessage}}
+      <div class="aeg-callout aeg-callout--danger">
+        <span class="aeg-callout__icon" aria-hidden="true">⚠</span>
+        <div class="aeg-callout__body">
+          <p class="aeg-callout__title">Not applied</p>
+          <p>{{errorMessage}}</p>
+        </div>
+      </div>
+    {{/if}}
+
+    {{#if revokedCount}}
+      <div class="aeg-callout aeg-callout--warn">
+        <span class="aeg-callout__icon" aria-hidden="true">⚠</span>
+        <div class="aeg-callout__body">
+          <p class="aeg-callout__title">{{revokedCount}} wallet(s) are withdrawn from service</p>
+          <p>Their holders cannot accept credentials until they are restored.</p>
+        </div>
+      </div>
+    {{/if}}
+
+    <div class="aeg-callout aeg-callout--info">
+      <span class="aeg-callout__icon" aria-hidden="true">ⓘ</span>
+      <div class="aeg-callout__body">
+        <p class="aeg-callout__title">Revoke keeps the history; delete does not</p>
+        <p>
+          <em>Revoke</em> stops a wallet being used — every credential acceptance
+          is refused — but keeps the record and its evidence trail. That is the
+          right action for a lost or compromised wallet, because the trail is
+          exactly what you would need afterwards. <em>Delete</em> erases the
+          wallet outright and is only offered for a wallet that never held a
+          credential, so a wallet with history can never be deleted away.
+          Neither action touches the holder's device; a revoked wallet simply
+          stops working.
+        </p>
+      </div>
     </div>
-  {{/if}}
 
-  {{#if wallets.length}}
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Wallet ID</th>
-          <th>Contact</th>
-          <th>Credentials</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each wallets}}
-          <tr>
-            <td><code>{{this.walletId}}</code></td>
-            <td>
-              {{this.email}}
-              {{#if this.phone}}<div class="table-note">{{this.phone}}</div>{{/if}}
-              {{#if this.registeredAt}}<div class="table-note">Registered {{this.registeredAt}}</div>{{/if}}
-            </td>
-            <td>{{this.credentialCount}}</td>
-            <td>
-              {{#if this.isRevoked}}
-                <strong>Revoked</strong>
-                {{#if this.revokedReason}}<div class="table-note">{{this.revokedReason}}</div>{{/if}}
-                {{#if this.revokedBy}}<div class="table-note">by {{this.revokedBy}}</div>{{/if}}
-              {{else}}
-                Active
-              {{/if}}
-            </td>
-            <td>
-              {{#if this.isRevoked}}
-                <form action="/admin/wallets" method="post" class="inline-form">
-                  <input type="hidden" name="walletId" value="{{this.walletId}}">
-                  <input type="hidden" name="action" value="restore">
-                  <button class="button button--ghost" type="submit">Restore</button>
-                </form>
-              {{else}}
-                <form action="/admin/wallets" method="post" class="inline-form">
-                  <input type="hidden" name="walletId" value="{{this.walletId}}">
-                  <input type="hidden" name="action" value="revoke">
-                  <input type="text" name="reason" placeholder="Why" maxlength="300" required>
-                  <button class="button button--ghost" type="submit">Revoke</button>
-                </form>
-              {{/if}}
+    <div class="aeg-section">
+      <div class="aeg-card">
+        {{#if wallets.length}}
+          <div class="aeg-table-wrap">
+            <table class="aeg-table">
+              <thead>
+                <tr>
+                  <th>Wallet ID</th>
+                  <th>Contact</th>
+                  <th>Credentials</th>
+                  <th>Status</th>
+                  <th class="aeg-table__right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each wallets}}
+                  <tr>
+                    <td><code>{{this.walletId}}</code></td>
+                    <td>
+                      <div class="aeg-table__name">{{this.email}}</div>
+                      {{#if this.phone}}<div class="aeg-table__sub">{{this.phone}}</div>{{/if}}
+                      {{#if this.registeredAt}}<div class="aeg-table__sub">Registered {{this.registeredAt}}</div>{{/if}}
+                    </td>
+                    <td>{{this.credentialCount}}</td>
+                    <td>
+                      {{#if this.isRevoked}}
+                        <span class="pill pill--bad"><span class="pill__dot"></span>Revoked</span>
+                        {{#if this.revokedReason}}<div class="aeg-table__sub">{{this.revokedReason}}</div>{{/if}}
+                        {{#if this.revokedBy}}<div class="aeg-table__sub">by {{this.revokedBy}}</div>{{/if}}
+                      {{else}}
+                        <span class="pill pill--ok"><span class="pill__dot"></span>Active</span>
+                      {{/if}}
+                    </td>
+                    <td class="aeg-table__right">
+                      {{#if this.isRevoked}}
+                        <form class="aeg-btns" action="{{../basePath}}" method="post">
+                          <input type="hidden" name="walletId" value="{{this.walletId}}">
+                          <input type="hidden" name="action" value="restore">
+                          <button class="aeg-btn aeg-btn--secondary aeg-btn--sm" type="submit">Restore</button>
+                        </form>
+                      {{else}}
+                        <form class="aeg-btns" action="{{../basePath}}" method="post">
+                          <input type="hidden" name="walletId" value="{{this.walletId}}">
+                          <input type="hidden" name="action" value="revoke">
+                          <input class="aeg-input aeg-input--inline" type="text" name="reason" placeholder="Why" maxlength="300" required>
+                          <button class="aeg-btn aeg-btn--danger aeg-btn--sm" type="submit">Revoke</button>
+                        </form>
+                      {{/if}}
 
-              {{#if this.canDelete}}
-                <form action="/admin/wallets" method="post" class="inline-form">
-                  <input type="hidden" name="walletId" value="{{this.walletId}}">
-                  <input type="hidden" name="action" value="delete">
-                  <input type="text" name="reason" placeholder="Why" maxlength="300" required>
-                  <button class="button button--ghost" type="submit">Delete</button>
-                </form>
+                      {{#if this.canDelete}}
+                        <form class="aeg-btns" action="{{../basePath}}" method="post" style="margin-top:6px">
+                          <input type="hidden" name="walletId" value="{{this.walletId}}">
+                          <input type="hidden" name="action" value="delete">
+                          <input class="aeg-input aeg-input--inline" type="text" name="reason" placeholder="Why" maxlength="300" required>
+                          <button class="aeg-btn aeg-btn--danger aeg-btn--sm" type="submit">Delete</button>
+                        </form>
+                      {{else}}
+                        <div class="aeg-table__sub">Holds credentials — revoke only.</div>
+                      {{/if}}
+                    </td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        {{else}}
+          <div class="aeg-empty">
+            <h4>No wallets to show</h4>
+            <p>
+              {{#if tenant}}
+                No wallet holds a credential from this organization yet.
               {{else}}
-                <div class="table-note">Holds credentials — revoke only.</div>
+                No wallets are registered against this environment yet.
               {{/if}}
-            </td>
-          </tr>
-        {{/each}}
-      </tbody>
-    </table>
-  {{else}}
-    <p class="muted">No wallets are registered against this environment yet.</p>
-  {{/if}}
+            </p>
+          </div>
+        {{/if}}
+      </div>
+    </div>
 
-  <div class="inline-actions">
-    <a class="button button--ghost" href="/admin">All settings</a>
-    <a class="button button--ghost" href="/admin/account-recovery">Account recovery</a>
-    <a class="button button--ghost" href="/admin/sign-in-methods">Sign-in methods</a>
-    <a class="button button--ghost" href="/admin/registration-codes">Registration codes</a>
+    <div class="aeg-btns">
+      <a class="aeg-btn aeg-btn--ghost" href="{{#if backHref}}{{backHref}}{{else}}/admin{{/if}}">{{#if backLabel}}{{backLabel}}{{else}}All settings{{/if}}</a>
+      {{#unless tenant}}
+        <a class="aeg-btn aeg-btn--ghost" href="/admin/account-recovery">Account recovery</a>
+        <a class="aeg-btn aeg-btn--ghost" href="/admin/sign-in-methods">Sign-in methods</a>
+        <a class="aeg-btn aeg-btn--ghost" href="/admin/registration-codes">Registration codes</a>
+      {{/unless}}
+    </div>
   </div>
 </section>

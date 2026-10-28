@@ -26,6 +26,16 @@ async function renderPage(res, extra = {}) {
     enabled: isEnabled(),
     catalog,
     instances,
+    // This page also serves the organization-scoped surface at
+    // /orgs/:handle/settings/adapters; the base path is what tells it where its
+    // own forms post to.
+    basePath: '/admin/auth-adapters',
+    backHref: '/admin',
+    backLabel: 'All platform settings',
+    scopeLabel: 'Platform settings',
+    // Designating the sign-in default decides how everybody signs in, so it is
+    // offered only here.
+    canSetSignInDefault: true,
     saved: null,
     errorMessage: null,
     testResult: null,

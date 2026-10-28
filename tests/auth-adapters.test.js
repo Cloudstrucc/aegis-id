@@ -186,6 +186,77 @@ test('registry: a passing live self-test promotes a draft to active', async () =
 });
 
 // ---------------------------------------------------------------------------
+// Registry — organization scoping
+//
+// Adapters belong to an organization, so a tenant administrator must see and
+// touch only their own. The scope is enforced in the service rather than only
+// in the route, because the id is guessable and the route is not the only
+// caller.
+// ---------------------------------------------------------------------------
+test('registry: adapters are scoped to the organization that owns them', async () => {
+  const mine = await registry.createInstance({
+    kind: 'kerberos',
+    name: 'Mine',
+    config: { headerName: 'x-forwarded-user', trustedProxyCidrs: '10.0.0.0/8' },
+    actorEmail: 'admin@mine.ca',
+    organizationId: 'ws-mine'
+  });
+  const theirs = await registry.createInstance({
+    kind: 'kerberos',
+    name: 'Theirs',
+    config: { headerName: 'x-forwarded-user', trustedProxyCidrs: '10.0.0.0/8' },
+    actorEmail: 'admin@theirs.ca',
+    organizationId: 'ws-theirs'
+  });
+
+  const scoped = await registry.listInstances({ organizationId: 'ws-mine' });
+  assert.deepEqual(scoped.map((entry) => entry.name), ['Mine']);
+
+  // The platform view still sees everything, including the unscoped adapters
+  // created by the earlier tests.
+  const all = await registry.listInstances();
+  assert.ok(all.find((entry) => entry.id === mine.record.id));
+  assert.ok(all.find((entry) => entry.id === theirs.record.id));
+
+  // Answers 404 rather than 403: that the id exists is not theirs to learn.
+  await assert.rejects(
+    () => registry.getInstance(theirs.record.id, { organizationId: 'ws-mine' }),
+    (error) => error.status === 404
+  );
+  await assert.rejects(
+    () => registry.updateInstance(theirs.record.id, { organizationId: 'ws-mine', name: 'Hijacked' }),
+    (error) => error.status === 404
+  );
+  await assert.rejects(
+    () => registry.deleteInstance(theirs.record.id, { organizationId: 'ws-mine' }),
+    (error) => error.status === 404
+  );
+  await assert.rejects(
+    () => registry.runSelfTest(theirs.record.id, { principal: 'x@Y' }, { organizationId: 'ws-mine' }),
+    (error) => error.status === 404
+  );
+
+  // And the other organization's adapter is untouched by all of that.
+  assert.equal((await registry.getInstance(theirs.record.id)).name, 'Theirs');
+});
+
+test('registry: an adapter created before scoping stays deployment-wide', async () => {
+  const legacy = await registry.createInstance({
+    kind: 'kerberos',
+    name: 'Legacy',
+    config: { headerName: 'x-forwarded-user', trustedProxyCidrs: '10.0.0.0/8' },
+    actorEmail: 'admin@example.ca'
+  });
+  assert.equal(legacy.record.organizationId, null);
+
+  // Visible to the platform view, and to no organization — guessing which
+  // customer it was meant for would be worse than leaving it where it is.
+  const scoped = await registry.listInstances({ organizationId: 'ws-mine' });
+  assert.equal(scoped.find((entry) => entry.id === legacy.record.id), undefined);
+  assert.ok((await registry.listInstances()).find((entry) => entry.id === legacy.record.id));
+});
+
+// ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
 function hasOpenssl() {

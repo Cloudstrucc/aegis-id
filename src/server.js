@@ -3,6 +3,7 @@ const config = require('./config');
 const { logLocalTestModeBanner } = require('./middleware/local-test-mode');
 const { logBillingModeBanner } = require('./services/billing-service');
 const { backfillOrganizationIdentities } = require('./services/platform-service');
+const { backfillAdminMemberships } = require('./services/org-admin-service');
 
 const app = createApp();
 
@@ -23,4 +24,15 @@ app.listen(config.app.port, () => {
       }
     })
     .catch((error) => console.error('Organization identity backfill failed:', error.message));
+
+  // People who were given an administrator role before role assignment wrote
+  // workspace membership are administrators in one role system and employees in
+  // the other. Grants only, idempotent, and never fatal.
+  backfillAdminMemberships()
+    .then(({ granted }) => {
+      if (granted) {
+        console.log(`Granted workspace administration to ${granted} holder(s) whose role already said so.`);
+      }
+    })
+    .catch((error) => console.error('Administrator membership backfill failed:', error.message));
 });

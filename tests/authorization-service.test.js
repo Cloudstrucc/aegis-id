@@ -32,10 +32,83 @@ test('authorization registry exposes explicit, valid policies', () => {
     assert.ok(policy.operation, `${policy.id} is missing operation`);
     assert.ok(Array.isArray(policy.fields), `${policy.id} fields must be an array`);
 
-    if (policy.type === 'orgPrivilege') {
+    if (policy.type === 'orgPrivilege' || policy.type === 'tenantPrivilege') {
       assert.ok(policy.privilegeId, `${policy.id} must map to an org privilege`);
     }
   }
+});
+
+// The scope split is the security property of the tenancy work, so it is
+// asserted rather than described. Organization-scoped settings are reachable by
+// an administrator of that organization; platform-wide settings are not, and
+// drifting one of the second list to a tenant type would hand an invited
+// administrator the power to decide how everybody on the deployment signs in.
+test('organization settings and platform settings are different gates', () => {
+  const tenantScoped = [
+    'tenant.settings.view',
+    'tenant.adapters.manage',
+    'tenant.wallets.manage',
+    'tenant.domain.manage',
+    'tenant.people.view'
+  ];
+  const platformOnly = [
+    'admin.dashboard.view',
+    'admin.signInMethods.manage',
+    'admin.notifications.manage',
+    'admin.registrationCodes.manage',
+    'admin.accountRecovery.manage',
+    'admin.breakGlass.redeem',
+    'admin.wallets.manage',
+    'admin.domains.manage',
+    'admin.authAdapters.manage'
+  ];
+
+  for (const policyId of tenantScoped) {
+    const policy = requirePolicy(policyId);
+    assert.ok(
+      policy.type === 'tenantAdmin' || policy.type === 'tenantPrivilege',
+      `${policyId} must be organization-scoped, not ${policy.type}`
+    );
+  }
+
+  for (const policyId of platformOnly) {
+    assert.equal(
+      requirePolicy(policyId).type,
+      'adminAnyWorkspace',
+      `${policyId} must stay behind the platform gate`
+    );
+  }
+});
+
+test('authorization middleware denies organization-scoped policies without a session', async () => {
+  for (const policyId of ['tenant.settings.view', 'tenant.people.view']) {
+    const error = await invokeMiddleware(authorize(policyId), {
+      path: '/orgs/somebody-else-1234/settings',
+      params: { handle: 'somebody-else-1234' },
+      body: {},
+      query: {},
+      isAuthenticated: () => false,
+      get: () => 'text/html'
+    });
+
+    assert.equal(error.status, 401, `${policyId} should require a session`);
+  }
+});
+
+test('an organization handle alone does not resolve a tenant', async () => {
+  // The resolver re-checks membership itself, so a signed-in stranger putting a
+  // handle in the URL gets a 404 — not a 403, which would confirm it exists.
+  const error = await invokeMiddleware(authorize('tenant.settings.view'), {
+    path: '/orgs/not-a-real-handle/settings',
+    params: { handle: 'not-a-real-handle' },
+    body: {},
+    query: {},
+    user: { id: 'stranger', email: 'stranger@example.com' },
+    isAuthenticated: () => true,
+    get: () => 'text/html'
+  });
+
+  assert.equal(error.status, 404);
 });
 
 test('authorization middleware denies authenticated policies without a session', async () => {

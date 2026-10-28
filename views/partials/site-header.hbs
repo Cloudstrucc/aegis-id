@@ -11,17 +11,60 @@
   </a>
   <nav class="site-nav" aria-label="Site">
     {{#if isAuthenticated}}
-      <a href="/testing">Testing</a>
-      <a href="/developer/api">Docs</a>
-      <a href="/subscribe">Subscribe Org</a>
+      <a href="/testing" class="{{#if (eq currentPath '/testing')}}is-active{{/if}}">Testing</a>
+      <a href="/developer/api" class="{{#if (eq currentPath '/developer/api')}}is-active{{/if}}">Docs</a>
+      <a href="/subscribe" class="{{#if (eq currentPath '/subscribe')}}is-active{{/if}}">Subscribe Org</a>
     {{else}}
       <a href="/docs/aegis-id-overview.html">Product brief</a>
       <a href="/auth/login">Sign in</a>
       <a href="/#signup">Create account</a>
     {{/if}}
+
+    {{!--
+      The settings link an administrator was missing.
+
+      Shown on tenant administration — which an invited administrator has —
+      rather than on the platform gate, which they do not. The routes enforce
+      the same rule server-side; this is a signpost, not a permission.
+    --}}
+    {{#if currentTenant.settingsPath}}
+      {{#if canAdministerTenant}}
+        <a class="aeg-admin-link" href="{{currentTenant.settingsPath}}">Settings</a>
+      {{/if}}
+    {{/if}}
+    {{#if isGlobalAdmin}}
+      <a class="aeg-admin-link {{#if (eq currentPath '/admin')}}is-active{{/if}}" href="/admin">Platform</a>
+    {{/if}}
     {{#if canViewHealth}}
       <a href="/health">Health</a>
     {{/if}}
+
+    {{!--
+      The directory switcher. A <details> rather than a scripted menu, so it
+      needs no JavaScript and keeps working if the bundle fails to load.
+    --}}
+    {{#if currentTenant}}
+      <details class="aeg-tenant-switcher">
+        <summary class="aeg-tenant-switcher__button" aria-label="Switch organization">
+          <span class="aeg-tenant-switcher__icon" aria-hidden="true">{{currentTenant.initials}}</span>
+          <span class="aeg-tenant-switcher__name">{{currentTenant.organization}}</span>
+          <span class="aeg-tenant-switcher__caret" aria-hidden="true">▾</span>
+        </summary>
+        <div class="aeg-tenant-switcher__menu">
+          <p class="aeg-tenant-switcher__label">Your organizations</p>
+          {{#each tenants}}
+            <a class="aeg-tenant-switcher__item"
+               {{#if (eq handle ../currentTenant.handle)}}aria-current="true"{{/if}}
+               href="{{#if settingsPath}}{{settingsPath}}{{else}}{{publicPath}}{{/if}}">
+              {{organization}}
+              <small>{{roleLabel}}{{#if handle}} · {{handle}}{{/if}}</small>
+            </a>
+          {{/each}}
+          <a class="aeg-btn aeg-btn--secondary aeg-btn--sm aeg-tenant-switcher__create" href="/subscribe">+ Create organization</a>
+        </div>
+      </details>
+    {{/if}}
+
     {{#if headerProfile}}
       <button class="workspace-blade__avatar site-header__profile-trigger" type="button" data-modal-target="#global-profile-modal" aria-label="Open profile">
         {{headerProfile.initials}}
@@ -34,7 +77,9 @@
   <div class="app-modal" id="global-profile-modal" hidden>
     <div class="app-modal__backdrop" data-modal-close></div>
     <section class="app-modal__panel app-modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="global-profile-modal-title">
+      {{!-- The address appears once, beside the avatar, instead of twice. --}}
       <div class="app-modal__head">
+        <span class="profile-modal__avatar" aria-hidden="true">{{headerProfile.initials}}</span>
         <div>
           <p class="eyebrow">Profile</p>
           <h2 id="global-profile-modal-title">{{headerProfile.displayName}}</h2>
@@ -46,7 +91,6 @@
         <article class="profile-summary-card profile-summary-card--table">
           <h3>Basic information</h3>
           <dl class="definition-list definition-list--compact">
-            <div><span>Email</span><strong>{{headerProfile.email}}</strong></div>
             <div><span>Phone</span><strong>{{headerProfile.phone}}</strong></div>
             <div><span>Preferred MFA</span><strong>{{headerProfile.preferredMfa}}</strong></div>
             <div><span>Registered passkeys</span><strong>{{headerProfile.passkeyCount}}</strong></div>
@@ -59,12 +103,18 @@
           {{#if headerProfile.hasOrganizations}}
             <div class="profile-org-list">
               {{#each headerProfile.organizations}}
+                {{!--
+                  The role shown is the one that actually grants access. An
+                  owner or administrator holds it through membership rather than
+                  through a credential role, and used to read "No roles
+                  assigned" here.
+                --}}
                 <div class="profile-org-row">
                   <div>
                     <strong>{{organizationName}}</strong>
-                    <span>{{persona}} · {{status}}</span>
+                    <span>{{roleLabel}}</span>
                   </div>
-                  <small>{{roleSummary}}</small>
+                  <small><span class="pill {{#if isAdmin}}pill--brand{{else}}pill--mute{{/if}}">{{accessLabel}}</span></small>
                 </div>
               {{/each}}
             </div>
@@ -73,14 +123,18 @@
           {{/if}}
         </article>
       </div>
+      {{!-- Secondary actions left, primary right, sign-out de-emphasised. --}}
       <div class="modal-actions modal-actions--profile">
-        {{#if canViewHealth}}
-          <a class="button button--secondary button--dark-text" href="/admin">Administration</a>
+        {{#if currentTenant.settingsPath}}
+          <a class="aeg-btn aeg-btn--secondary" href="{{currentTenant.settingsPath}}">Organization settings</a>
+        {{/if}}
+        {{#if isGlobalAdmin}}
+          <a class="aeg-btn aeg-btn--secondary" href="/admin">Platform</a>
         {{/if}}
         <form action="/auth/logout" method="post">
-          <button class="button" type="submit">Sign out</button>
+          <button class="aeg-btn aeg-btn--ghost" type="submit">Sign out</button>
         </form>
-        <button class="button button--secondary button--dark-text" type="button" data-modal-close>Close</button>
+        <button class="aeg-btn aeg-btn--primary" type="button" data-modal-close>Done</button>
       </div>
     </section>
   </div>

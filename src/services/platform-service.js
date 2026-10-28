@@ -485,6 +485,19 @@ async function backfillOrganizationIdentities() {
   return { scanned: workspaces.length, created };
 }
 
+/**
+ * Every live workspace on the deployment, undecorated.
+ *
+ * Tenancy resolution starts from the organization rather than from a
+ * subscription, so it needs the whole set to find the ones a person is a member
+ * of. Deliberately not exported through anything user-facing — callers filter
+ * by membership before showing anything.
+ */
+async function listAllWorkspaces() {
+  const workspaces = await store.read();
+  return workspaces.filter((workspace) => workspace.status !== 'deleted');
+}
+
 async function listWorkspacesForSubscription(subscription, options = {}) {
   const workspaces = await store.read();
   const credentialWorkspaceIds = normalizeCredentialWorkspaceIds(options);
@@ -584,6 +597,14 @@ async function setWorkspaceMemberRole(workspaceId, email, role = 'contributor', 
 
   member.role = normalizeRole(role);
   member.sourceCredentialId = metadata.sourceCredentialId || member.sourceCredentialId || null;
+  // Records that administration came from a role assignment rather than from
+  // ownership or the dual wallet-challenge co-admin flow, so the role sync
+  // knows which grants are its own to withdraw again.
+  if (metadata.grantedByRole !== undefined) {
+    member.grantedByRole = Boolean(metadata.grantedByRole);
+  }
+  delete member.revokedRole;
+  delete member.revokedAt;
   member.updatedAt = new Date().toISOString();
   workspace.updatedAt = new Date().toISOString();
   await store.write(workspaces);
@@ -606,6 +627,7 @@ async function revokeWorkspaceMemberRole(workspaceId, email, role = 'administrat
     return {
       ...member,
       role: 'contributor',
+      grantedByRole: false,
       revokedRole: normalizeRole(role),
       revokedAt: new Date().toISOString()
     };
@@ -1224,10 +1246,12 @@ module.exports = {
   getPlatformDefinitions,
   getWorkspace,
   getWorkspaceAssurancePolicy,
+  listAllWorkspaces,
   listWorkspacesForSubscription,
   registerWorkspaceForSubscription,
   revokeWorkspaceMemberRole,
   runPlatformTest,
   savePlatformStep,
-  setWorkspaceMemberRole
+  setWorkspaceMemberRole,
+  workspaceBelongsToSubscription
 };

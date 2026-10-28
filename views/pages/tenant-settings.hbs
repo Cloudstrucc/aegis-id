@@ -1,0 +1,69 @@
+<section class="band band--white surface-app">
+  <div class="aeg-page">
+    <nav class="aeg-crumb" aria-label="Breadcrumb">
+      <a href="{{tenant.publicPath}}">{{tenant.organization}}</a> › Settings
+    </nav>
+
+    <div class="aeg-page-head">
+      <p class="aeg-eyebrow">{{scopeLabel}}</p>
+      <h1>{{tenant.organization}}</h1>
+      <p>
+        Everything that belongs to this organization. Platform-wide settings —
+        who may sign in across the deployment, how messages are delivered,
+        registration codes — are not here and are not yours to set unless you
+        administer the platform itself.
+      </p>
+    </div>
+
+    <div class="aeg-scope-head">
+      <h3 class="aeg-scope-head__label">This organization</h3>
+      <span class="pill pill--brand">You are an administrator</span>
+      {{#if tenant.handle}}<span class="pill pill--mute">{{tenant.handle}}</span>{{/if}}
+      {{#if tenant.isDomainVerified}}
+        <span class="pill pill--ok"><span class="pill__dot"></span>{{tenant.domain}} verified</span>
+      {{/if}}
+      <span class="aeg-scope-head__line"></span>
+    </div>
+
+    <div class="aeg-cards">
+      {{#each cards}}
+        <a class="aeg-stat-card" href="{{this.href}}">
+          <div class="aeg-stat-card__top">
+            <h4>{{this.title}}</h4>
+            {{#if this.pill}}
+              <span class="aeg-stat-card__pill"><span class="pill pill--{{this.pillTone}}">{{this.pill}}</span></span>
+            {{else}}
+              <span class="aeg-stat-card__stat">{{this.stat}}</span>
+            {{/if}}
+          </div>
+          <p>{{this.summary}}</p>
+          {{#if this.statLabel}}{{#unless this.pill}}<span class="aeg-stat-card__statlabel">{{this.statLabel}}</span>{{/unless}}{{/if}}
+          {{#if this.note}}
+            <span class="aeg-stat-card__statlabel">{{this.note}}</span>
+          {{/if}}
+        </a>
+      {{/each}}
+    </div>
+
+    <div class="aeg-callout aeg-callout--info">
+      <span class="aeg-callout__icon" aria-hidden="true">ⓘ</span>
+      <div class="aeg-callout__body">
+        <p class="aeg-callout__title">What administering this organization does and does not grant</p>
+        <p>
+          A role marked <em>Administers the organization</em> grants everything on
+          this page, for this organization, and nothing outside it. It does not
+          grant access to another organization, and it does not grant the
+          platform settings at <code>/admin</code> — those decide how everybody
+          on the deployment signs in. Every change here is written to the
+          evidence chain with the actor.
+        </p>
+      </div>
+    </div>
+
+    {{#if isGlobalAdmin}}
+      <div class="aeg-btns" style="margin-top:16px">
+        <a class="aeg-btn aeg-btn--ghost" href="/admin">Platform settings</a>
+      </div>
+    {{/if}}
+  </div>
+</section>

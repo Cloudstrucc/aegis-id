@@ -41,6 +41,7 @@ const { PLANS, describePrice } = require('../services/plan-service');
 const { listInstances: listAuthAdapters, isEnabled: authAdaptersEnabled } = require('../services/adapter-registry-service');
 const { listIdentities, revokeVerification } = require('../services/organization-identity-service');
 const { listBreakGlassCodes, redeemBreakGlassCode } = require('../services/break-glass-service');
+const { listAdministeredTenants } = require('../services/tenant-access-service');
 const { writeAuditEvent } = require('../services/audit-service');
 
 // The environments a code may be scoped to. Deliberately an explicit list
@@ -121,6 +122,12 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
     const unverifiedDomains = identities.length - verifiedDomains;
     const breakGlassRedeemed = glassCodes.filter((entry) => entry.isRedeemed).length;
 
+    // The organizations this person administers, so the index says plainly
+    // which settings are theirs and which are the deployment's. An invited
+    // administrator reaches their own organization's settings from the header
+    // without ever reaching this page.
+    const tenants = await listAdministeredTenants(req.user);
+
     res.render('pages/admin-dashboard', {
       title: 'Administration',
       description: 'Platform settings for Aegis ID.',
@@ -130,11 +137,12 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         checkoutEnabled: config.billing.checkoutEnabled,
         isTestMode: config.billing.isTestMode
       },
+      tenants: tenants.filter((tenant) => tenant.settingsPath),
       cards: [
         {
           href: '/admin/wallets',
           title: 'Registered wallets',
-          summary: 'Withdraw a wallet from service, restore one, or remove one that was never used.',
+          summary: 'Every wallet registered against this deployment. Withdraw one from service, restore it, or remove one that was never used.',
           stat: wallets.length,
           statLabel: wallets.length === 1 ? 'wallet' : 'wallets',
           note: revokedWallets ? `${revokedWallets} withdrawn from service` : null,
@@ -315,6 +323,12 @@ router.get('/admin/wallets', authorize('admin.wallets.manage'), async (req, res,
       description: 'Withdraw a wallet from service, restore one, or remove a wallet that was never used.',
       wallets: rows,
       revokedCount: rows.filter((row) => row.isRevoked).length,
+      // The same page serves the organization-scoped surface, which posts to
+      // its own path and is not offered deletion.
+      basePath: '/admin/wallets',
+      backHref: '/admin',
+      backLabel: 'All platform settings',
+      scopeLabel: 'Platform settings',
       saved: req.query.saved || null,
       errorMessage: req.query.error || null
     });

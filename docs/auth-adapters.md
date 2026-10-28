@@ -25,10 +25,16 @@ baseline:
 - `src/services/adapter-signin-service.js` — bridges a designated active adapter
   into the connected-app OAuth flow (begin authorization, complete SAML POST,
   complete header-forwarded Kerberos/CBA, mint the connected authorization code).
-- `src/routes/auth-adapters.js` — the `/admin/auth-adapters` admin surface.
+- `src/routes/auth-adapters.js` — the deployment-wide `/admin/auth-adapters`
+  surface, which sees every adapter.
+- `src/routes/tenant-admin.js` — the organization-scoped
+  `/orgs/:handle/settings/adapters` surface, which sees only that
+  organization's.
 - `src/routes/connected-oauth.js` — `/oauth2/authorize` fronting plus the
   adapter callback routes (see *Connected-app sign-in wiring* below).
-- `views/pages/auth-adapters.hbs` — the operator UI (grid, create, self-test).
+- `views/pages/auth-adapters.hbs` — the operator UI (grid, create, self-test),
+  shared by both surfaces and parameterised by `basePath` and
+  `canSetSignInDefault` so the two cannot drift apart.
 - `tests/auth-adapters.test.js` — unit coverage (see *Tests* below).
 
 ## Security properties
@@ -46,6 +52,18 @@ baseline:
   configured, rather than implying a check that did not happen.
 - **Evidence.** Every create, update, delete and self-test is written to the
   audit chain with the acting administrator.
+- **Organization scope.** Every adapter record carries an `organizationId`,
+  stamped from the resolved tenant and never from the form. `getInstance`,
+  `updateInstance`, `deleteInstance` and `runSelfTest` all take that scope and
+  answer **404** for a record outside it — not 403, because the existence of
+  another organization's adapter id is not theirs to learn. Enforced in the
+  service rather than only in the route, since the route is not the only
+  caller. Records written before scoping have no `organizationId`: they are
+  deployment-wide and appear only in the platform view.
+- **The sign-in default stays a platform action.** Designating an adapter as
+  the deployment-wide connected-app sign-in default decides how everybody signs
+  in, so it is offered on `/admin/auth-adapters` only. The organization page
+  says so rather than hiding the control silently.
 
 ## Self-test
 
@@ -106,14 +124,19 @@ Coverage:
 - **CBA** — `validateConfig` (refuses without trust anchors / trusted proxy),
   header rejection from an untrusted proxy, and a real OpenSSL-built chain
   validated end to end (skipped if `openssl` is absent).
-- **Registry** — draft-vs-active on create (invalid config parks as `draft`), and
-  self-test promotion (a passing live test moves `draft` → `active`).
+- **Registry** — draft-vs-active on create (invalid config parks as `draft`),
+  and self-test promotion (a passing live test moves `draft` → `active`).
+- **Organization scoping** — an adapter is listed only for the organization
+  that owns it; reaching another organization's adapter by id answers 404 on
+  read, update, delete and self-test; and an adapter created before scoping
+  stays deployment-wide rather than being assigned to a guess.
 
 ## Not yet (follow-ups)
 
 - WS-Federation adapter and provider presets (Entra/Okta/Keycloak/Google/Apple)
   over these protocol adapters.
-- The per-org Integrations-blade surfacing and the journey builder (DID-in-journey
-  step) from the Phase-1 mockups.
+- The journey builder (DID-in-journey step) from the Phase-1 mockups. The
+  per-organization surface itself has shipped — see
+  [Organization tenancy](organization-tenancy.md).
 - CBA CRL/OCSP fetching (the mode and URL are captured; fetching is stubbed and
   reported as not-checked).
