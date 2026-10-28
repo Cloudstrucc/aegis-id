@@ -121,6 +121,16 @@ Detailed implementation runbooks:
 - [Entra upstream OIDC broker build book](build-books/entra-upstream-oidc-broker.md)
 - [Power Pages and Aegis ID OIDC build book](build-books/power-pages-aegis-oidc.md)
 
+### Classic-protocol upstreams (SAML, Kerberos, CBA)
+
+Entra is not the only upstream. The **authentication adapter framework**
+generalizes this broker pattern to SAML 2.0, Kerberos/SPNEGO and
+certificate-based (X.509) sign-in. When an adapter is designated the sign-in
+default, `/oauth2/authorize` fronts the connected-app flow with it instead of
+Entra, maps its claims to an Aegis subject, and mints the same connected
+authorization code. It is gated by `ADAPTER_FRAMEWORK_ENABLED` and ships off in
+hosted environments until piloted. See [Authentication adapters](auth-adapters.md).
+
 ## Client Credentials
 
 For service-to-service access:
