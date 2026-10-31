@@ -597,3 +597,64 @@ pre {
     gap: 4px;
   }
 }
+
+/* ===========================================================================
+   Aegis brand layer — the same palette the platform uses.
+
+   This app is deployed separately and has its own stylesheet, so it does not
+   inherit the platform's brand layer. Its --aegis-* tokens are redefined here
+   from the official palette (#0F75BC, from AegisLogoColour) and given the
+   same three theme states, so the two applications a holder moves between do
+   not look like different products.
+   ========================================================================= */
+:root {
+  --ag-brand: #0F75BC; --ag-brand-ink: #0B5A91; --ag-brand-text: #0E6EB0;
+  --ag-bg: #f4f4f5; --ag-surface: #ffffff; --ag-surface-2: #f4f4f5;
+  --ag-line: #e4e4e7; --ag-line-strong: #d4d4d8;
+  --ag-text: #09090b; --ag-muted: #5f5f6a; --ag-subtle: #65656e;
+  --ag-good: #047857; --ag-display: Saira, "Segoe UI", system-ui, sans-serif;
+  --ag-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ag-brand: #0F75BC; --ag-brand-ink: #3B9FE0; --ag-brand-text: #3B9FE0;
+    --ag-bg: #09090b; --ag-surface: #111113; --ag-surface-2: #18181b;
+    --ag-line: #27272a; --ag-line-strong: #3f3f46;
+    --ag-text: #fafafa; --ag-muted: #a1a1aa; --ag-subtle: #8b8b94;
+    --ag-good: #34d399;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ag-brand: #0F75BC; --ag-brand-ink: #3B9FE0; --ag-brand-text: #3B9FE0;
+  --ag-bg: #09090b; --ag-surface: #111113; --ag-surface-2: #18181b;
+  --ag-line: #27272a; --ag-line-strong: #3f3f46;
+  --ag-text: #fafafa; --ag-muted: #a1a1aa; --ag-subtle: #8b8b94;
+  --ag-good: #34d399;
+  color-scheme: dark;
+}
+
+/* The app's own family, redefined from the palette above. */
+:root, :root[data-theme="dark"] {
+  --aegis-ink:       var(--ag-text);
+  --aegis-muted:     var(--ag-muted);
+  --aegis-blue:      var(--ag-brand);
+  --aegis-blue-dark: var(--ag-brand-ink);
+  --aegis-teal:      var(--ag-brand-ink);
+  --aegis-green:     var(--ag-good);
+  --aegis-border:    var(--ag-line);
+  --aegis-soft:      var(--ag-surface-2);
+}
+
+body { background: var(--ag-bg); color: var(--ag-text); font-family: var(--ag-sans); }
+h1, h2, h3, h4 { font-family: var(--ag-display); letter-spacing: -.012em; }
+
+.ag-logo { display: block; width: auto; }
+.ag-logo--dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ag-logo--light { display: none; }
+  :root:not([data-theme="light"]) .ag-logo--dark  { display: block; }
+}
+:root[data-theme="dark"] .ag-logo--light { display: none; }
+:root[data-theme="dark"] .ag-logo--dark  { display: block; }

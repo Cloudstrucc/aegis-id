@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{description}}">
     <title>{{#if (eq title appName)}}{{appName}}{{else}}{{title}} | {{appName}}{{/if}}</title>
-    {{#if site.branding.faviconUrl}}<link rel="icon" href="{{site.branding.faviconUrl}}">{{/if}}
+    {{!-- An organization's own favicon wins; otherwise the Aegis shield. The
+          browser asked for /favicon.ico on every page and got the 404 page. --}}
+    {{#if site.branding.faviconUrl}}
+      <link rel="icon" href="{{site.branding.faviconUrl}}">
+    {{else}}
+      <link rel="icon" href="/favicon.ico" sizes="any">
+      <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+      <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    {{/if}}
     {{!-- Before the stylesheets and without defer, so the stored theme is on
           the root element before anything paints. An inline script here would
           be blocked: the CSP is script-src 'self' with no 'unsafe-inline'. --}}
