@@ -558,7 +558,15 @@ function computeAssetVersion() {
   const crypto = require('node:crypto');
   const fs = require('node:fs');
   const hash = crypto.createHash('sha1');
-  for (const relative of ['styles/main.css', 'scripts/main.js']) {
+  // Every stylesheet and script the layout links, or a deploy that only
+  // changed one of them leaves customers on the cached old copy for a day.
+  for (const relative of [
+    'styles/fonts.css',
+    'styles/main.css',
+    'styles/brand-layer.css',
+    'scripts/theme-boot.js',
+    'scripts/main.js'
+  ]) {
     try {
       hash.update(fs.readFileSync(path.join(config.paths.public, relative)));
     } catch (error) {

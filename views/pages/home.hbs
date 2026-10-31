@@ -1,13 +1,21 @@
 <section class="hero">
-  <div class="hero__overlay"></div>
   <div class="hero__content">
-    <p class="eyebrow">Verified identity architecture</p>
-    <img class="hero__logo" src="/images/brand/aegis-id-lockup-white.svg" alt="{{site.branding.appName}}">
-    <p class="hero__lead">A secure identity assurance service for portable credentials, passkeys, wallet challenges, OIDC/SAML integrations, and cross-organization trust testing.</p>
+    <p class="hero__badge">Wallet-backed approval with an evidence chain</p>
+    <h1 class="hero__title">Identity your auditors can verify</h1>
+    <p class="hero__lead">{{site.branding.shortName}} issues the credentials, decides the policy and records the evidence. A standalone platform &mdash; Entra, Keycloak and YubiKey are integrations, not the thing it is built on.</p>
     <div class="hero__actions">
       <a class="button button--primary" href="#signup">Choose a plan</a>
-      <a class="button button--secondary" href="/docs/tutorial/get-started-guide.html">Get Started Guide</a>
+      <a class="button button--ghost" href="/docs/tutorial/get-started-guide.html">Get Started Guide</a>
     </div>
+    <p class="hero__note">No card for the trial &middot; Self-hosted or managed &middot; SOC 2 evidence export</p>
+
+    {{!--
+      The mockup opened with a strip of live counts. Deliberately not shipped
+      here: this page is anonymous, and "248 credentials issued, 12,804 chain
+      entries" tells any visitor the size of the deployment. The same strip is
+      used on the workspace dashboard, where the reader is a member of the
+      organization whose numbers they are reading.
+    --}}
   </div>
 </section>
 

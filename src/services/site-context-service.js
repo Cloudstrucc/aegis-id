@@ -36,7 +36,7 @@ function platformBranding() {
     productName: 'Aegis ID',
     // The platform chrome (header, hero, footer) is dark navy, so the reversed
     // lockup is the one that reads. The favicon uses the colour mark.
-    logoUrl: '/images/brand/aegis-id-lockup-white.svg',
+    logoUrl: '/images/brand/aegis-lockup-white.png',
     faviconUrl: '/images/brand/aegis-mark.svg',
     supportEmail: config.app.supportEmail || '',
     // The platform is Aegis ID; it does not say "powered by" itself.
@@ -58,9 +58,16 @@ function normalizeBranding(input = {}) {
   // organization that only set its name.
   const productName = String(input.productName || '').trim() || platform.productName;
   const logoUrl = String(input.logoDataUrl || input.logoUrl || '').trim();
+  // An organization's OWN uploaded mark, as distinct from the Aegis lockup the
+  // platform falls back to. The header needs to tell them apart: the Aegis
+  // lockup ships as a light/dark pair and swaps with the theme, while somebody
+  // else's logo has no reverse version and is shown as supplied.
+  const customLogoUrl = String(input.logoDataUrl || '').trim()
+    || (input.isPlatform ? '' : logoUrl);
   return {
     displayName,
     productName,
+    customLogoUrl,
     appName: productName && productName !== displayName ? `${displayName} - ${productName}` : displayName,
     // The short name for prose: "Sign in to Aegis ID", "Your Contoso ID code".
     shortName: productName || displayName,

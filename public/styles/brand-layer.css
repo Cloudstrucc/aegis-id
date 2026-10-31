@@ -1,0 +1,735 @@
+/* ===========================================================================
+   Aegis ID brand layer — appended last, so it is the final word on colour.
+   ===========================================================================
+
+   Why this is a layer and not a rewrite. The 10,000 lines above grew three
+   token families (the original --navy / --ink / --line set, the --workspace
+   set, and the --aeg set) and every rule in the file reads one of them.
+   Redefining those families here, from a
+   single palette, turns the whole stylesheet over to the new design and gives
+   it dark mode at the same time — without touching the rules that use them.
+
+   The palette is the official brand: #0F75BC from AegisLogoColour, black
+   wordmark, nothing invented. Display type is Saira (closest Google-hosted
+   match to the outlined logotype), body Inter, data JetBrains Mono.
+
+   Three theme states, because that is what a viewer actually has:
+     - no data-theme attribute  -> follow the operating system
+     - data-theme="light"       -> light, whatever the OS says
+     - data-theme="dark"        -> dark, whatever the OS says
+   Every token is first defined on bare :root. The two dark blocks only
+   redefine. A token that exists only inside a media query is the classic
+   unreadable-page bug, so nothing is declared that way.
+   ========================================================================= */
+
+:root {
+  /* --- brand ------------------------------------------------------------ */
+  --ag-brand:        #0F75BC;   /* the logo blue, exactly — fills and borders */
+  --ag-brand-ink:    #0B5A91;   /* pressed / deep */
+  /* Brand as TEXT is a shade darker than the logo. #0F75BC is 4.89:1 on pure
+     white but only 4.45:1 on --ag-bg, and most brand-coloured text sits on the
+     canvas, not on a card. This passes on both. Fills keep the exact logo
+     colour, where contrast is measured against the label instead. */
+  --ag-brand-text:   #0E6EB0;
+  --ag-brand-on:     #ffffff;   /* text on a brand fill (4.9:1) */
+  --ag-brand-soft:   #e8f3fb;
+  --ag-brand-line:   #b9d9ef;
+
+  /* --- surfaces --------------------------------------------------------- */
+  --ag-bg:           #f4f4f5;
+  --ag-surface:      #ffffff;
+  --ag-surface-2:    #f4f4f5;
+  --ag-surface-3:    #ebebed;
+  --ag-line:         #e4e4e7;
+  --ag-line-strong:  #d4d4d8;
+
+  /* --- ink -------------------------------------------------------------- */
+  --ag-text:         #09090b;
+  --ag-muted:        #5f5f6a;   /* 6.3:1 on --ag-surface */
+  --ag-subtle:       #65656e;   /* 5.1:1 on --ag-surface-2 — small labels */
+
+  /* --- state ------------------------------------------------------------ */
+  --ag-good:         #047857;  --ag-good-soft: #ecfdf5;  --ag-good-line: #a7f3d0;
+  --ag-warn:         #92400e;  --ag-warn-soft: #fffbeb;  --ag-warn-line: #fde68a;
+  --ag-bad:          #b91c1c;  --ag-bad-soft:  #fef2f2;  --ag-bad-line:  #fecaca;
+  --ag-info:         #0F75BC;  --ag-info-soft: #e8f3fb;  --ag-info-line: #b9d9ef;
+
+  /* --- dark chrome (the app's navy bar keeps its own scale) -------------- */
+  --ag-nav:          #0b1a26;
+  --ag-nav-2:        #12283a;
+  --ag-nav-line:     #1d3b52;
+  --ag-nav-text:     #e6eef6;
+  --ag-nav-muted:    #9db4c7;
+
+  /* --- type ------------------------------------------------------------- */
+  --ag-display: Saira, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --ag-sans:    Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ag-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+
+  /* --- shape ------------------------------------------------------------ */
+  --ag-r:       8px;
+  --ag-r-sm:    6px;
+  --ag-r-lg:    12px;
+  --ag-r-pill:  999px;
+  --ag-sh:      0 1px 2px rgba(9, 9, 11, .05), 0 1px 3px rgba(9, 9, 11, .04);
+  --ag-sh-lg:   0 12px 32px rgba(9, 9, 11, .10);
+
+  color-scheme: light;
+}
+
+/* --- dark: OS preference, unless an explicit light choice overrides ------ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ag-brand:        #0F75BC;
+    --ag-brand-ink:    #3B9FE0;
+    --ag-brand-text:   #3B9FE0;   /* 6.8:1 on --ag-bg; #0F75BC is only 4.0:1 there */
+    --ag-brand-on:     #ffffff;
+    --ag-brand-soft:   #0b1f2e;
+    --ag-brand-line:   #1c3f5c;
+
+    --ag-bg:           #09090b;
+    --ag-surface:      #111113;
+    --ag-surface-2:    #18181b;
+    --ag-surface-3:    #1f1f23;
+    --ag-line:         #27272a;
+    --ag-line-strong:  #3f3f46;
+
+    --ag-text:         #fafafa;
+    --ag-muted:        #a1a1aa;
+    --ag-subtle:       #8b8b94;
+
+    --ag-good: #34d399; --ag-good-soft: #052e22; --ag-good-line: #10b981;
+    --ag-warn: #fbbf24; --ag-warn-soft: #2b1f04; --ag-warn-line: #a16207;
+    --ag-bad:  #f87171; --ag-bad-soft:  #2d1113; --ag-bad-line:  #b91c1c;
+    --ag-info: #3B9FE0; --ag-info-soft: #0b1f2e; --ag-info-line: #1c3f5c;
+
+    --ag-nav:          #060d14;
+    --ag-nav-2:        #0e1d2a;
+    --ag-nav-line:     #17303f;
+    --ag-nav-text:     #e6eef6;
+    --ag-nav-muted:    #9db4c7;
+
+    --ag-sh:    0 1px 2px rgba(0, 0, 0, .40), 0 1px 3px rgba(0, 0, 0, .30);
+    --ag-sh-lg: 0 12px 32px rgba(0, 0, 0, .45);
+
+    color-scheme: dark;
+  }
+}
+
+/* --- dark: explicit choice, so the toggle wins both ways ----------------- */
+:root[data-theme="dark"] {
+  --ag-brand:        #0F75BC;
+  --ag-brand-ink:    #3B9FE0;
+  --ag-brand-text:   #3B9FE0;
+  --ag-brand-on:     #ffffff;
+  --ag-brand-soft:   #0b1f2e;
+  --ag-brand-line:   #1c3f5c;
+
+  --ag-bg:           #09090b;
+  --ag-surface:      #111113;
+  --ag-surface-2:    #18181b;
+  --ag-surface-3:    #1f1f23;
+  --ag-line:         #27272a;
+  --ag-line-strong:  #3f3f46;
+
+  --ag-text:         #fafafa;
+  --ag-muted:        #a1a1aa;
+  --ag-subtle:       #8b8b94;
+
+  --ag-good: #34d399; --ag-good-soft: #052e22; --ag-good-line: #10b981;
+  --ag-warn: #fbbf24; --ag-warn-soft: #2b1f04; --ag-warn-line: #a16207;
+  --ag-bad:  #f87171; --ag-bad-soft:  #2d1113; --ag-bad-line:  #b91c1c;
+  --ag-info: #3B9FE0; --ag-info-soft: #0b1f2e; --ag-info-line: #1c3f5c;
+
+  --ag-nav:          #060d14;
+  --ag-nav-2:        #0e1d2a;
+  --ag-nav-line:     #17303f;
+  --ag-nav-text:     #e6eef6;
+  --ag-nav-muted:    #9db4c7;
+
+  --ag-sh:    0 1px 2px rgba(0, 0, 0, .40), 0 1px 3px rgba(0, 0, 0, .30);
+  --ag-sh-lg: 0 12px 32px rgba(0, 0, 0, .45);
+
+  color-scheme: dark;
+}
+
+/* ===========================================================================
+   Legacy families, redefined from the palette above.
+
+   This is what turns the existing stylesheet over. Every --navy-900,
+   --workspace-line and --aeg-text in the 10,000 lines above now resolves to a
+   brand token that already knows about dark mode. Nothing above needed
+   editing, and nothing below re-states a colour.
+   ========================================================================= */
+:root,
+:root[data-theme="dark"] {
+  /* -- original family -- */
+  --navy-950:  var(--ag-nav);
+  --navy-900:  var(--ag-nav-2);
+  --navy-800:  var(--ag-nav-line);
+  --blue-600:  var(--ag-brand);
+  --cyan-500:  var(--ag-brand-ink);
+  --green-500: var(--ag-good);
+  --amber-400: var(--ag-warn);
+  --ink:       var(--ag-text);
+  --muted:     var(--ag-muted);
+  --line:      var(--ag-line);
+  --paper:     var(--ag-surface);
+  --mist:      var(--ag-bg);
+  --soft-blue: var(--ag-brand-soft);
+  --shadow:    var(--ag-sh-lg);
+
+  /* -- workspace family -- */
+  --workspace-ink:    var(--ag-text);
+  --workspace-muted:  var(--ag-muted);
+  --workspace-line:   var(--ag-line);
+  --workspace-soft:   var(--ag-surface-2);
+  --workspace-blue:   var(--ag-brand);
+  --workspace-cyan:   var(--ag-brand-ink);
+  --workspace-green:  var(--ag-good);
+  --workspace-shadow: var(--ag-sh);
+
+  /* -- aeg family -- */
+  --aeg-bg:            var(--ag-bg);
+  --aeg-surface:       var(--ag-surface);
+  --aeg-surface-2:     var(--ag-surface-2);
+  --aeg-surface-3:     var(--ag-surface-3);
+  --aeg-border:        var(--ag-line);
+  --aeg-border-strong: var(--ag-line-strong);
+  --aeg-text:          var(--ag-text);
+  --aeg-muted:         var(--ag-muted);
+  --aeg-subtle:        var(--ag-subtle);
+  --aeg-brand:         var(--ag-brand);
+  --aeg-brand-ink:     var(--ag-brand-ink);
+  --aeg-brand-soft:    var(--ag-brand-soft);
+  --aeg-brand-line:    var(--ag-brand-line);
+  --aeg-accent:        var(--ag-brand-ink);
+  --aeg-nav:           var(--ag-nav);
+  --aeg-nav-2:         var(--ag-nav-2);
+  --aeg-nav-line:      var(--ag-nav-line);
+  --aeg-nav-text:      var(--ag-nav-text);
+  --aeg-sh:            var(--ag-sh);
+  --aeg-sh-lg:         var(--ag-sh-lg);
+  --aeg-sh-brand:      0 3px 14px rgba(15, 117, 188, .14);
+
+  /* State triples. Status pills read these; without the alias they keep their
+     light hex values and stay light-on-light in dark mode. */
+  --aeg-ok:      var(--ag-good);  --aeg-ok-bg:   var(--ag-good-soft);  --aeg-ok-br:   var(--ag-good-line);
+  --aeg-warn:    var(--ag-warn);  --aeg-warn-bg: var(--ag-warn-soft);  --aeg-warn-br: var(--ag-warn-line);
+  --aeg-bad:     var(--ag-bad);   --aeg-bad-bg:  var(--ag-bad-soft);   --aeg-bad-br:  var(--ag-bad-line);
+}
+
+/* ===========================================================================
+   Typography
+   ========================================================================= */
+body {
+  font-family: var(--ag-sans);
+  background: var(--ag-bg);
+  color: var(--ag-text);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, h5, h6,
+.workspace-blade__head h1,
+.aeg-page-title, .aeg-section-title {
+  font-family: var(--ag-display);
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+code, pre, .mono, .aeg-mono { font-family: var(--ag-mono); }
+pre { background: var(--ag-nav); color: var(--ag-nav-text); border-color: var(--ag-nav-line); }
+
+/* ===========================================================================
+   Brand lockup. Two images, one per theme; CSS alone decides which shows, so
+   it is correct before any script runs and in all three theme states.
+
+   The light image must NOT carry an inline display, or it wins over the rule
+   that hides it and both render at once.
+   ========================================================================= */
+.ag-logo { display: block; width: auto; }
+.ag-logo--dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ag-logo--light { display: none; }
+  :root:not([data-theme="light"]) .ag-logo--dark  { display: block; }
+}
+:root[data-theme="dark"] .ag-logo--light { display: none; }
+:root[data-theme="dark"] .ag-logo--dark  { display: block; }
+
+.ag-lockup { display: inline-flex; align-items: center; text-decoration: none; }
+.ag-lockup img { height: auto; }
+
+/* ===========================================================================
+   Shell: header and footer
+   ========================================================================= */
+.site-header {
+  position: fixed; z-index: 20; top: 0; right: 0; left: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px; min-height: 68px; padding: 12px 6%;
+  color: var(--ag-nav-text);
+  background: var(--ag-nav);
+  border-bottom: 1px solid var(--ag-nav-line);
+  backdrop-filter: none;
+}
+.site-header a { color: var(--ag-nav-text); }
+.site-nav a:hover { color: #ffffff; }
+.site-footer {
+  background: var(--ag-surface);
+  border-top: 1px solid var(--ag-line);
+  color: var(--ag-muted);
+}
+.site-footer a { color: var(--ag-muted); }
+.site-footer a:hover { color: var(--ag-brand-text); }
+@media (max-width: 760px) { .site-header { position: static; } }
+
+/* ===========================================================================
+   Theme switch
+   ========================================================================= */
+.ag-theme-switch {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 2px; border-radius: var(--ag-r-pill);
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid var(--ag-nav-line);
+}
+.ag-theme-switch button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 24px; padding: 0;
+  border: 0; border-radius: var(--ag-r-pill);
+  background: transparent; color: var(--ag-nav-muted);
+  cursor: pointer;
+}
+.ag-theme-switch button:hover { color: #ffffff; }
+.ag-theme-switch button[aria-pressed="true"] {
+  background: var(--ag-brand); color: var(--ag-brand-on);
+}
+.ag-theme-switch svg { width: 14px; height: 14px; display: block; }
+
+/* ===========================================================================
+   Component vocabulary. New markup uses these; old markup keeps working
+   through the aliased families above.
+   ========================================================================= */
+.ag-card {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r);
+}
+.ag-card--pad { padding: 16px; }
+
+.ag-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; font-size: 13px; font-weight: 500;
+  padding: 7px 13px; border-radius: var(--ag-r-sm);
+  border: 1px solid var(--ag-line-strong);
+  background: var(--ag-surface); color: var(--ag-text);
+  cursor: pointer; text-decoration: none;
+}
+.ag-btn:hover { background: var(--ag-surface-2); }
+.ag-btn--primary {
+  background: var(--ag-brand); border-color: var(--ag-brand);
+  color: var(--ag-brand-on); font-weight: 550;
+}
+.ag-btn--primary:hover { background: var(--ag-brand-ink); border-color: var(--ag-brand-ink); color: var(--ag-brand-on); }
+.ag-btn--danger { color: var(--ag-bad); border-color: var(--ag-bad); }
+.ag-btn--block { width: 100%; justify-content: center; padding: 10px 14px; font-size: 14px; }
+.ag-btn[disabled] { opacity: .5; cursor: default; }
+
+.ag-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 600; padding: 2px 8px;
+  border-radius: var(--ag-r-pill); border: 1px solid;
+  white-space: nowrap;
+}
+.ag-pill--good { background: var(--ag-good-soft); color: var(--ag-good); border-color: var(--ag-good-line); }
+.ag-pill--warn { background: var(--ag-warn-soft); color: var(--ag-warn); border-color: var(--ag-warn-line); }
+.ag-pill--bad  { background: var(--ag-bad-soft);  color: var(--ag-bad);  border-color: var(--ag-bad-line); }
+.ag-pill--info { background: var(--ag-info-soft); color: var(--ag-info); border-color: var(--ag-info-line); }
+.ag-pill--mute { background: var(--ag-surface-2); color: var(--ag-muted); border-color: var(--ag-line); }
+
+.ag-field {
+  width: 100%; font: inherit; font-size: 14px;
+  padding: 9px 11px; border-radius: var(--ag-r-sm);
+  border: 1px solid var(--ag-line-strong);
+  background: var(--ag-bg); color: var(--ag-text);
+}
+.ag-field:focus { outline: 2px solid var(--ag-brand); outline-offset: 1px; }
+.ag-label { display: block; font-size: 12.5px; font-weight: 550; margin-bottom: 5px; color: var(--ag-text); }
+.ag-hint { margin: 5px 0 0; font-size: 12px; color: var(--ag-subtle); line-height: 1.5; }
+
+.ag-table-wrap { overflow-x: auto; }
+.ag-table { width: 100%; border-collapse: collapse; }
+.ag-table th {
+  text-align: left; font-family: var(--ag-display);
+  font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ag-subtle); padding: 0 14px 10px; white-space: nowrap;
+}
+.ag-table td { padding: 12px 14px; font-size: 13.5px; border-top: 1px solid var(--ag-line); vertical-align: middle; }
+.ag-table tbody tr:hover { background: var(--ag-surface-2); }
+
+.ag-banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+  padding: 14px 16px; border-radius: var(--ag-r); border: 1px solid;
+}
+.ag-banner--good { background: var(--ag-good-soft); border-color: var(--ag-good-line); }
+.ag-banner--warn { background: var(--ag-warn-soft); border-color: var(--ag-warn-line); }
+.ag-banner--bad  { background: var(--ag-bad-soft);  border-color: var(--ag-bad-line); }
+.ag-banner--info { background: var(--ag-info-soft); border-color: var(--ag-info-line); }
+.ag-banner__body { flex: 1 1 300px; min-width: 0; }
+.ag-banner__title { margin: 0 0 3px; font-family: var(--ag-display); font-size: 14px; font-weight: 600; }
+.ag-banner__text  { margin: 0; font-size: 13px; color: var(--ag-muted); line-height: 1.55; }
+
+/* A focus ring that is visible on every surface, in both themes. */
+:focus-visible { outline: 2px solid var(--ag-brand-text); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ===========================================================================
+   Structure — the part that makes a page look like the mockup.
+
+   The token layer above changed every colour. This changes the skeleton:
+   .page-hero (38 templates) and .band (47) are the shared page frame, so
+   restyling those two moves the whole application at once, without editing
+   every template.
+
+   What changes, against the old design:
+     - the hero loses its dark photographic band. The mockup opens on the
+       light canvas with type, not an illustration.
+     - the header follows the theme instead of being permanently navy, so the
+       colour lockup shows on light and the reverse lockup on dark.
+     - the type ramp drops: a 56px marketing h1 was being used on operational
+       pages that need 23px.
+   ========================================================================= */
+
+/* --- header: a surface, not a navy slab ---------------------------------- */
+.site-header {
+  position: sticky;
+  min-height: 64px;
+  padding: 10px max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  color: var(--ag-text);
+  background: var(--ag-surface);
+  border-bottom: 1px solid var(--ag-line);
+}
+.site-header a { color: var(--ag-muted); }
+.site-header a:hover { color: var(--ag-brand-text); }
+.site-header .brand-lockup { flex: none; }
+.site-header .brand-logo { width: auto; height: 30px; }
+.site-nav {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 18px;
+  font-size: 14px; font-weight: 500;
+}
+.site-nav a.is-active { color: var(--ag-text); font-weight: 600; }
+.site-nav .aeg-admin-link { color: var(--ag-text); }
+
+/* The switch sits on a light bar now, so it cannot rely on white-on-navy. */
+.ag-theme-switch { background: var(--ag-surface-2); border-color: var(--ag-line); }
+.ag-theme-switch button { color: var(--ag-subtle); }
+.ag-theme-switch button:hover { color: var(--ag-text); }
+.ag-theme-switch button[aria-pressed="true"] { background: var(--ag-brand); color: #fff; }
+
+/* main sits under a sticky header rather than a fixed one */
+main { padding-top: 0; }
+
+/* --- page header: type on the canvas, no illustration -------------------- */
+.page-hero {
+  padding: 56px max(16px, env(safe-area-inset-left, 0px)) 36px;
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  color: var(--ag-text);
+  background: var(--ag-bg);
+  background-image: none;
+}
+.page-hero > * { max-width: 1140px; margin-inline: auto; }
+.page-hero--compact { min-height: 0; }
+.page-hero h1 {
+  max-width: 17ch;
+  margin: 0 0 16px;
+  font-family: var(--ag-display);
+  font-size: clamp(2.1rem, 1.3rem + 2.6vw, 3.3rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -.022em;
+  color: var(--ag-text);
+}
+.page-hero p {
+  max-width: 62ch;
+  color: var(--ag-muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+.page-hero .eyebrow, .eyebrow {
+  display: inline-block;
+  margin: 0 0 14px;
+  font-family: var(--ag-display);
+  font-size: 11.5px; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase;
+  color: var(--ag-subtle);
+}
+/* An operational page is not a landing page: 23px, per the mockup. */
+.page-hero--compact h1 { font-size: 1.45rem; letter-spacing: -.014em; max-width: 30ch; }
+.page-hero--compact p  { font-size: .92rem; }
+
+/* --- bands: sections on the canvas --------------------------------------- */
+.band {
+  padding: 36px max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--ag-bg);
+}
+.band > * { max-width: 1140px; margin-inline: auto; }
+.band--light, .band--white { background: var(--ag-bg); }
+.band + .band { padding-top: 0; }
+
+.section-heading h2 {
+  font-family: var(--ag-display);
+  font-size: 1.35rem; font-weight: 650; letter-spacing: -.014em;
+  color: var(--ag-text); margin: 0 0 8px;
+}
+.section-heading p { color: var(--ag-muted); font-size: .92rem; line-height: 1.6; max-width: 62ch; }
+
+/* --- auth: one centred column, not a two-column marketing split ---------- */
+.auth-grid, .auth-grid--compact {
+  display: block;
+  max-width: 404px;
+  margin-inline: auto;
+}
+/* The explanatory column belongs beside a marketing hero, not above a login
+   form. "Passport.js" as an eyebrow was an implementation detail on screen. */
+.auth-grid > .section-heading { display: none; }
+.auth-panel {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r-lg);
+  padding: 26px 24px;
+  box-shadow: var(--ag-sh);
+}
+.auth-panel__form { display: flex; flex-direction: column; gap: 16px; }
+.auth-panel__links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.auth-panel__links p { margin: 0; font-size: .82rem; }
+.auth-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0 14px;
+  font-family: var(--ag-display);
+  font-size: 11px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--ag-subtle);
+}
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--ag-line); }
+.auth-panel__alternatives { display: flex; flex-direction: column; gap: 9px; }
+.auth-hint { margin: 0; font-size: .78rem; color: var(--ag-subtle); line-height: 1.5; }
+
+/* --- form controls ------------------------------------------------------- */
+.field-group { display: flex; flex-direction: column; gap: 0; }
+.field-group label { font-size: 12.5px; font-weight: 550; margin-bottom: 5px; color: var(--ag-text); }
+.field-group input, .field-group select, .field-group textarea {
+  width: 100%; font: inherit; font-size: 14px;
+  padding: 10px 12px; border-radius: var(--ag-r-sm);
+  border: 1px solid var(--ag-line-strong);
+  background: var(--ag-bg); color: var(--ag-text);
+  min-height: 0;
+}
+.field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+  outline: 2px solid var(--ag-brand); outline-offset: 1px; background: var(--ag-surface);
+}
+
+/* --- buttons ------------------------------------------------------------- */
+.button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: 14px; font-weight: 550;
+  padding: 10px 17px; border-radius: var(--ag-r-sm);
+  border: 1px solid var(--ag-line-strong);
+  background: var(--ag-surface); color: var(--ag-text);
+  cursor: pointer; text-decoration: none;
+  box-shadow: none;
+}
+.button:hover { background: var(--ag-surface-2); }
+.button--primary {
+  background: var(--ag-brand); border-color: var(--ag-brand); color: #fff;
+}
+.button--primary:hover { background: var(--ag-brand-ink); border-color: var(--ag-brand-ink); color: #fff; }
+.button--ghost { background: var(--ag-surface); color: var(--ag-text); }
+.button--ghost:hover { background: var(--ag-surface-2); border-color: var(--ag-brand); }
+
+/* --- the stat strip the mockup opens with -------------------------------- */
+.stat-strip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px; background: var(--ag-line);
+  border: 1px solid var(--ag-line); border-radius: var(--ag-r);
+  overflow: hidden; margin-top: 32px;
+}
+.stat-strip > div { background: var(--ag-surface); padding: 20px 18px; }
+.stat-strip dt, .stat-strip .stat-strip__label {
+  margin: 6px 0 0; font-size: .8rem; color: var(--ag-muted); font-weight: 500;
+}
+.stat-strip dd, .stat-strip .stat-strip__value {
+  margin: 0; font-family: var(--ag-display);
+  font-size: 1.85rem; font-weight: 700; letter-spacing: -.02em; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--ag-text);
+}
+
+@media (max-width: 760px) {
+  .site-header { position: static; }
+  .page-hero { padding-top: 32px; }
+}
+
+/* --- landing hero: type on the canvas, per the approved mockup ----------- */
+.hero {
+  position: static;
+  display: block;
+  min-height: 0;
+  padding: 72px max(16px, env(safe-area-inset-left, 0px)) 56px;
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  overflow: visible;
+  color: var(--ag-text);
+  background: var(--ag-bg);
+  background-image: none;
+}
+.hero__overlay { display: none; }
+.hero__content { max-width: 1140px; margin-inline: auto; }
+
+.hero__badge {
+  display: inline-block;
+  margin: 0 0 24px;
+  padding: 7px 15px;
+  border: 1px solid var(--ag-brand-line);
+  border-radius: var(--ag-r-pill);
+  background: var(--ag-surface);
+  color: var(--ag-brand-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.hero__title {
+  max-width: 18ch;
+  margin: 0 0 20px;
+  font-family: var(--ag-display);
+  font-size: clamp(2.3rem, 1.1rem + 3.8vw, 3.9rem);
+  font-weight: 700;
+  line-height: 1.03;
+  letter-spacing: -.028em;
+  color: var(--ag-text);
+  text-wrap: balance;
+}
+.hero__lead {
+  max-width: 58ch;
+  margin: 0 0 28px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ag-muted);
+}
+.hero__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.hero__actions .button { padding: 12px 22px; font-size: 15px; }
+.hero__note { margin: 18px 0 0; font-size: .84rem; color: var(--ag-subtle); }
+.hero__logo { display: none; }
+
+/* Header calls to action, per the mockup: the secondary action is outlined,
+   the primary one filled. A row of identical links gives a first-time visitor
+   nothing to aim at. */
+.site-nav__cta {
+  display: inline-flex; align-items: center;
+  padding: 7px 15px; border-radius: var(--ag-r-sm);
+  border: 1px solid var(--ag-line-strong);
+  background: var(--ag-surface);
+  font-size: 13.5px; font-weight: 600;
+  color: var(--ag-text);
+}
+.site-nav__cta:hover { background: var(--ag-surface-2); color: var(--ag-text); }
+.site-nav__cta--primary {
+  background: var(--ag-brand); border-color: var(--ag-brand); color: #fff;
+}
+.site-nav__cta--primary:hover { background: var(--ag-brand-ink); border-color: var(--ag-brand-ink); color: #fff; }
+
+/* --- button variants that were scoped to a context -----------------------
+   main.css carries higher-specificity copies of the button rules — the
+   sign-in panel's primary button was .auth-panel .button--primary with a navy
+   fill and, oddly, a GREEN hover. Those win over a plain .button--primary, so
+   the variants have to be restated at the same specificity rather than
+   relying on load order.
+   -------------------------------------------------------------------------- */
+.auth-panel .button--primary,
+.workspace-blade .button--primary,
+.workspace-blade .button--primary.button--blue,
+.organization-tile__actions > .button--blue:first-child,
+.button--blue {
+  background: var(--ag-brand);
+  border-color: var(--ag-brand);
+  color: #fff;
+}
+.auth-panel .button--primary:hover,
+.workspace-blade .button--primary:hover,
+.workspace-blade .button--primary.button--blue:hover,
+.organization-tile__actions > .button--blue:first-child:hover,
+.button--blue:hover,
+.button--primary:hover {
+  background: var(--ag-brand-ink);
+  border-color: var(--ag-brand-ink);
+  color: #fff;
+}
+.auth-panel .button--ghost,
+.workspace-blade .button--ghost,
+.organization-tile__actions .button--ghost,
+.button--secondary,
+.product-brief-panel .button--secondary {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line-strong);
+  color: var(--ag-text);
+}
+.auth-panel .button--ghost:hover,
+.workspace-blade .button--ghost:hover,
+.organization-tile__actions .button--ghost:hover,
+.button--secondary:hover,
+.product-brief-panel .button--secondary:hover {
+  background: var(--ag-surface-2);
+  border-color: var(--ag-brand);
+  color: var(--ag-text);
+}
+
+/* --- auth pages: one centred column, title included ---------------------
+   The page header was a separate full-width band above a centred card, which
+   left the title hard left and the lede floating mid-page. --------------- */
+body.auth-page .page-hero,
+.page-hero:has(+ .band .auth-grid) {
+  padding-bottom: 8px;
+  text-align: center;
+}
+.page-hero:has(+ .band .auth-grid) > * { max-width: 404px; }
+.page-hero:has(+ .band .auth-grid) h1 {
+  max-width: none; margin-inline: auto;
+  font-size: 1.6rem; letter-spacing: -.016em;
+}
+.page-hero:has(+ .band .auth-grid) p { max-width: none; font-size: .92rem; }
+.page-hero:has(+ .band .auth-grid) .eyebrow { margin-bottom: 10px; }
+
+/* --- one left edge for every band ---------------------------------------
+   Constraining `.band > *` lines up the CHILDREN, so a band that is itself a
+   grid (.mobile-downloads) measured from a different origin than a plain one
+   and its heading sat further right. Now the band is the measured element and
+   its internals can lay out however they like. Safe because every band shares
+   the canvas colour: there is no full-bleed background left to preserve.
+   ------------------------------------------------------------------------ */
+.band, .page-hero, .hero {
+  max-width: 1188px;         /* 1140 content + the 24px gutters */
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+.band > *, .page-hero > *, .hero__content { max-width: none; margin-inline: 0; }
+.page-hero:has(+ .band .auth-grid) > * { max-width: 404px; margin-inline: auto; }
+.mobile-downloads { border-bottom: 1px solid var(--ag-line); padding-bottom: 32px; }
+.mobile-downloads__copy { max-width: 62ch; }
+
+/* --- store badges: cards on the canvas, not navy slabs ------------------- */
+.store-badge {
+  color: var(--ag-text);
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  box-shadow: var(--ag-sh);
+}
+.store-badge:hover { border-color: var(--ag-brand); }
+.store-badge small, .store-badge__label {
+  color: var(--ag-subtle);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.store-badge strong, .store-badge__value {
+  color: var(--ag-text);
+  font-family: var(--ag-display); font-weight: 650;
+}
+.store-badge-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+@media (max-width: 860px) {
+  .mobile-downloads { grid-template-columns: minmax(0, 1fr); }
+}

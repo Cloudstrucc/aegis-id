@@ -14,7 +14,7 @@ test('platform branding is the Aegis ID defaults, and an organization record ove
   const platform = platformBranding();
   assert.equal(platform.appName, 'Aegis ID');
   assert.equal(platform.shortName, 'Aegis ID');
-  assert.equal(platform.logoUrl, '/images/brand/aegis-id-lockup-white.svg');
+  assert.equal(platform.logoUrl, '/images/brand/aegis-lockup-white.png');
   assert.equal(platform.poweredByHidden, true, 'the platform never says "powered by" itself');
 
   const contoso = normalizeBranding({

@@ -2145,3 +2145,59 @@ function renderImportProgress(panel, job) {
     panel.hidden = true;
   };
 }
+
+/* ---------------------------------------------------------------------------
+ * Colour theme: light, dark, or follow the system.
+ *
+ * The layout's inline head script has already applied the stored choice before
+ * first paint. This only wires the switch and keeps the pressed state honest,
+ * including when the choice is "system" and the OS flips while the page is
+ * open.
+ *
+ * Storage can throw (private window, blocked site data), so every access is
+ * guarded and the page stays correct without it — it just forgets the choice.
+ * ------------------------------------------------------------------------- */
+(function initThemeSwitch() {
+  var KEY = 'aegis-theme';
+  var root = document.documentElement;
+
+  function stored() {
+    try {
+      var value = localStorage.getItem(KEY);
+      return value === 'light' || value === 'dark' ? value : 'system';
+    } catch (error) {
+      return 'system';
+    }
+  }
+
+  function apply(mode) {
+    if (mode === 'system') {
+      root.removeAttribute('data-theme');
+    } else {
+      root.setAttribute('data-theme', mode);
+    }
+    try {
+      if (mode === 'system') {
+        localStorage.removeItem(KEY);
+      } else {
+        localStorage.setItem(KEY, mode);
+      }
+    } catch (error) { /* choice is not remembered; the page is still right */ }
+    paint(mode);
+  }
+
+  function paint(mode) {
+    document.querySelectorAll('[data-theme-set]').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.dataset.themeSet === mode));
+    });
+  }
+
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-theme-set]');
+    if (button) {
+      apply(button.dataset.themeSet);
+    }
+  });
+
+  paint(stored());
+})();

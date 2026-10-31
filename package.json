@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
+    "dev": "node --watch --watch-path=src --watch-path=views src/server.js",
     "test": "node --test",
     "docs:validate": "node scripts/validate-docs.js",
     "video:setup": "node scripts/generate-setup-video.js",
