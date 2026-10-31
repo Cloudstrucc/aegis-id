@@ -733,3 +733,39 @@ body.auth-page .page-hero,
 @media (max-width: 860px) {
   .mobile-downloads { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* --- marks on a brand fill take pure white ------------------------------
+   --ag-nav-text (#e6eef6) is tuned for the navy chrome. On the brand blue it
+   measures 4.18:1, under AA for the small capitals these tiles carry. Pure
+   white on #0F75BC is 4.89:1. Caught on every authenticated page by the
+   contrast sweep.
+   ------------------------------------------------------------------------ */
+.platform-icon,
+.store-badge__mark,
+.aeg-tenant-switcher__icon,
+.workspace-brand-mark,
+.m-mark {
+  color: #ffffff;
+}
+
+/* --- header: the avatar was wrapping to a second row --------------------
+   Eight items plus a switcher plus the theme control overflowed at laptop
+   width and the profile button dropped below the logo. The link list is the
+   part that may shrink and scroll; the controls stay put.
+   ------------------------------------------------------------------------ */
+.site-header { flex-wrap: nowrap; gap: 14px; }
+.site-nav {
+  flex: 1 1 auto; min-width: 0;
+  flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none; gap: 14px;
+  justify-content: flex-end;
+}
+.site-nav::-webkit-scrollbar { display: none; }
+.site-nav > a { white-space: nowrap; }
+.site-nav > .ag-theme-switch,
+.site-nav > .site-header__profile-trigger,
+.site-nav > details { flex: none; }
+@media (max-width: 760px) {
+  .site-header { flex-wrap: wrap; }
+  .site-nav { justify-content: flex-start; }
+}

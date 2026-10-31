@@ -260,7 +260,7 @@ h3 {
 }
 
 .button--blue {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--blue-600);
 }
 
@@ -402,7 +402,7 @@ h3 {
   width: 42px;
   height: 42px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--cyan-500) 58%, var(--green-500));
   border-radius: 8px;
   font-size: 12px;
@@ -800,7 +800,7 @@ h3 {
 
 .arch-col--blue .arch-col__kicker {
   background: var(--blue-600);
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
 }
 
 .arch-col--blue .arch-col__list li {
@@ -1130,7 +1130,7 @@ label {
   height: 20px;
   flex: 0 0 20px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--blue-600);
   border-radius: 999px;
   cursor: help;
@@ -1270,7 +1270,7 @@ textarea:focus {
   width: 64px;
   height: 64px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--cyan-500) 58%, var(--green-500));
   border-radius: 8px;
   font-size: 15px;
@@ -1365,7 +1365,7 @@ textarea:focus {
   height: 46px;
   flex: 0 0 46px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--green-500));
   border-radius: 8px;
   font-size: 14px;
@@ -1422,7 +1422,7 @@ textarea:focus {
 
 .mock-wallet-hero .wallet-qr-card__copy:hover,
 .mock-wallet-hero .wallet-qr-card__copy:focus-visible {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--blue-600);
   border-color: var(--blue-600);
 }
@@ -1441,7 +1441,7 @@ textarea:focus {
   max-width: 1100px;
   margin: 0 auto;
   padding: 28px;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--ag-brand);
 }
 
@@ -1762,7 +1762,7 @@ textarea:focus {
   width: 34px;
   height: 34px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--cyan-500));
   border-radius: 8px;
   font-size: 14px;
@@ -1916,7 +1916,7 @@ textarea:focus {
   height: 34px;
   flex: 0 0 auto;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--green-500));
   border-radius: 8px;
   font-weight: 950;
@@ -2000,7 +2000,7 @@ textarea:focus {
 }
 
 .workspace-blade__menu a.is-active span {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--cyan-500));
 }
 
@@ -2190,7 +2190,7 @@ textarea:focus {
   width: 44px;
   height: 44px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--cyan-500));
   border-radius: 8px;
   font-weight: 900;
@@ -2279,7 +2279,7 @@ textarea:focus {
   width: 52px;
   height: 52px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--org-primary, var(--navy-800)), var(--org-accent, var(--blue-600)));
   border-radius: 8px;
   font-size: 20px;
@@ -2362,7 +2362,7 @@ textarea:focus {
   height: 48px;
   flex: 0 0 48px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--cyan-500));
   border-radius: 8px;
   font-weight: 900;
@@ -2739,7 +2739,7 @@ textarea:focus {
 
 .icon-button:hover,
 .icon-button:focus-visible {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--blue-600);
   border-color: var(--blue-600);
 }
@@ -2900,7 +2900,7 @@ textarea:focus {
   width: 40px;
   height: 40px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--blue-600), var(--green-500));
   border-radius: 8px;
   font-weight: 900;
@@ -3298,7 +3298,7 @@ textarea:focus {
   height: 30px;
   flex: 0 0 30px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--ag-brand);
   border-radius: 999px;
   font-size: 13px;
@@ -3756,7 +3756,7 @@ textarea:focus {
 }
 
 .protected-panel--primary {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--navy-900), var(--blue-600));
   border-color: var(--ag-muted);
 }
@@ -4472,7 +4472,7 @@ body:has(.workspace-blade) main {
 
 .workspace-blade .button--primary,
 .workspace-blade .button--primary.button--blue {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--workspace-blue);
   border-color: var(--workspace-blue);
   box-shadow: 0 10px 24px rgba(7, 22, 38, 0.06);
@@ -4480,7 +4480,7 @@ body:has(.workspace-blade) main {
 
 .workspace-blade .button--primary:hover,
 .workspace-blade .button--primary.button--blue:hover {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--ag-brand);
   border-color: var(--ag-brand-line);
 }
@@ -4610,7 +4610,7 @@ body:has(.workspace-blade) main {
   width: 42px;
   height: 42px;
   place-items: center;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(135deg, var(--workspace-blue), var(--workspace-cyan));
   border-radius: 8px;
   font-size: 12px;
@@ -5538,7 +5538,7 @@ body:has(.workspace-blade) .site-footer div span {
   overflow: hidden;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--ag-brand), var(--ag-brand));
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   font-size: 18px;
   font-weight: 950;
 }
@@ -6021,7 +6021,7 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 .credential-invite-switch input:checked + label {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--blue-600);
 }
 
@@ -6553,7 +6553,7 @@ body:has(.workspace-blade) .site-footer div span {
   height: 44px;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--ag-brand), var(--ag-brand));
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   font-weight: 900;
 }
 
@@ -6743,7 +6743,7 @@ body:has(.workspace-blade) .site-footer div span {
   border: 0;
   border-radius: 8px;
   padding: 10px 12px;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--ag-brand);
   font: inherit;
   font-size: 14px;
@@ -7943,7 +7943,7 @@ main > .band:first-child:not(.band--page-top) {
 
 .auth-stepper__item--current::before {
   background: var(--blue-600);
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
 }
 
 .issuer-org-layout--onboarding {
@@ -9119,7 +9119,7 @@ main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .section
 }
 
 .aeg-btn--primary {
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--aeg-brand);
   border-color: var(--aeg-brand);
 }
@@ -9500,7 +9500,7 @@ main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .section
   height: 18px;
   place-items: center;
   flex: 0 0 auto;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: var(--aeg-brand);
   border-radius: 4px;
   font-size: 9.5px;
@@ -9809,7 +9809,7 @@ main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .section
   height: 42px;
   place-items: center;
   flex: 0 0 auto;
-  color: var(--ag-nav-text);
+  color: var(--ag-brand-on);
   background: linear-gradient(140deg, var(--aeg-accent), var(--aeg-brand));
   border-radius: 50%;
   font-size: 15px;
