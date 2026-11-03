@@ -11,46 +11,55 @@
   lived inside the page. Everything else is an ordinary link to a route.
 --}}
 <aside class="app-side" aria-label="Application">
-  {{#if appShell.organization}}
-    <a class="app-side__org" href="{{appShell.organization.href}}">
-      <span class="app-side__org-mark" aria-hidden="true">{{appShell.organization.initials}}</span>
-      <span class="app-side__org-text">
-        <strong>{{appShell.organization.name}}</strong>
-        {{#if appShell.organization.handle}}<small>{{appShell.organization.handle}}</small>{{/if}}
-      </span>
-    </a>
-  {{/if}}
+  {{!--
+    The rail fills the row; this inner column is what sticks and scrolls.
+    Sticky positioning needs something to scroll past, so an <aside> that
+    both stretched and stuck could not do either — it was sized to its own
+    content, which left the page canvas showing below it where the rail
+    and its border should have continued.
+  --}}
+  <div class="app-side__inner">
+    {{#if appShell.organization}}
+      <a class="app-side__org" href="{{appShell.organization.href}}">
+        <span class="app-side__org-mark" aria-hidden="true">{{appShell.organization.initials}}</span>
+        <span class="app-side__org-text">
+          <strong>{{appShell.organization.name}}</strong>
+          {{#if appShell.organization.handle}}<small>{{appShell.organization.handle}}</small>{{/if}}
+        </span>
+      </a>
+    {{/if}}
 
-  <nav class="app-side__nav" aria-label="Sections">
-    {{#each appShell.sections}}
-      <p class="app-side__label">{{label}}</p>
-      {{#each items}}
-        <a class="app-nav{{#if isActive}} is-active{{/if}}"
-           href="{{href}}"
-           {{#if isBlade}}data-blade-link="{{key}}"{{/if}}
-           {{#if isActive}}aria-current="page"{{/if}}>
-          {{agIcon iconName 17}}
-          <span class="app-nav__label">{{label}}</span>
-          {{#if statusTone}}<i class="app-nav__dot app-nav__dot--{{statusTone}}" title="{{statusLabel}}"></i>{{/if}}
-        </a>
+    <nav class="app-side__nav" aria-label="Sections">
+      {{#each appShell.sections}}
+        <p class="app-side__label">{{label}}</p>
+        {{#each items}}
+          <a class="app-nav{{#if isActive}} is-active{{/if}}"
+             href="{{href}}"
+             {{#if isBlade}}data-blade-link="{{key}}"{{/if}}
+             {{#if isActive}}aria-current="page"{{/if}}>
+            {{agIcon iconName 17}}
+            <span class="app-nav__label">{{label}}</span>
+            {{#if statusTone}}<i class="app-nav__dot app-nav__dot--{{statusTone}}" title="{{statusLabel}}"></i>{{/if}}
+          </a>
+        {{/each}}
       {{/each}}
-    {{/each}}
-  </nav>
+    </nav>
 
-  {{#if appShell.advice}}
-    <article class="app-side__advice">
-      <strong>Next best action</strong>
-      <span>{{appShell.advice}}</span>
-    </article>
-  {{/if}}
+    {{#if appShell.advice}}
+      <article class="app-side__advice">
+        <strong>Next best action</strong>
+        <span>{{appShell.advice}}</span>
+      </article>
+    {{/if}}
 
-  {{#if appShell.viewer}}
-    <div class="app-side__viewer">
-      <span class="app-side__viewer-mark" aria-hidden="true">{{appShell.viewer.initials}}</span>
-      <span class="app-side__viewer-text">
-        <strong>{{appShell.viewer.name}}</strong>
-        <small>{{appShell.viewer.roleLabel}}</small>
-      </span>
-    </div>
-  {{/if}}
+    {{#if appShell.viewer}}
+      <div class="app-side__viewer">
+        <span class="app-side__viewer-mark" aria-hidden="true">{{appShell.viewer.initials}}</span>
+        <span class="app-side__viewer-text">
+          <strong>{{appShell.viewer.name}}</strong>
+          <small>{{appShell.viewer.roleLabel}}</small>
+        </span>
+      </div>
+    {{/if}}
+  </div>
 </aside>

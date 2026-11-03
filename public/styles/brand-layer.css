@@ -832,13 +832,23 @@ body.auth-page .page-hero,
 .app-shell {
   display: grid;
   grid-template-columns: minmax(210px, 248px) minmax(0, 1fr);
-  align-items: start;
+  /* `start` here, with the sidebar itself sticky, sized the rail to its own
+     content — so on a long page the surface and its right border stopped
+     part way down and the canvas showed through below them. The rail
+     stretches; `.app-side__inner` is what sticks. */
+  align-items: stretch;
   min-height: calc(100vh - 64px);
   background: var(--ag-bg);
 }
 
 /* --- the sidebar --------------------------------------------------------- */
 .app-side {
+  min-width: 0;
+  background: var(--ag-surface);
+  border-right: 1px solid var(--ag-line);
+}
+
+.app-side__inner {
   position: sticky;
   /* Under the sticky site header rather than over it. */
   top: 64px;
@@ -848,8 +858,6 @@ body.auth-page .page-hero,
   max-height: calc(100vh - 64px);
   padding: 14px 10px;
   overflow-y: auto;
-  background: var(--ag-surface);
-  border-right: 1px solid var(--ag-line);
   scrollbar-width: thin;
 }
 
@@ -1070,8 +1078,26 @@ body.auth-page .page-hero,
    are drawn at. Each rule here restates an existing one at matching
    specificity rather than reaching for !important.
    ------------------------------------------------------------------------ */
+/* The bands centre themselves on a plain page with `max-width` plus
+   `margin-inline: auto`. Inside the shell's main column that is wrong twice
+   over: the column is already the measure, and an auto inline margin on a
+   flex-column child cancels the stretch — so each band shrank to its own
+   content and floated in the middle, which read as a page indented by a
+   couple of hundred pixels for no reason. */
 .app-shell .blade-panel,
-.app-shell .band { max-width: none; padding: 0; background: transparent; }
+.app-shell .band,
+.app-shell .page-hero,
+.app-shell .hero {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0;
+  background: transparent;
+}
+
+.app-shell .band { padding: 0; }
+.app-shell .page-hero { padding: 0; }
+.app-shell .page-hero > * { max-width: none; margin-inline: 0; }
 
 .app-shell .section-heading,
 .app-shell .blade-overview {
@@ -1172,7 +1198,8 @@ body.auth-page .page-hero,
    ---------------------------------------------------------------------- */
 @media (max-width: 900px) {
   .app-shell { grid-template-columns: minmax(0, 1fr); }
-  .app-side {
+  .app-side { border-right: 0; border-bottom: 1px solid var(--ag-line); }
+  .app-side__inner {
     position: static;
     max-height: none;
     flex-direction: row;
@@ -1182,8 +1209,6 @@ body.auth-page .page-hero,
     overflow-x: auto;
     overflow-y: hidden;
     padding: 10px 12px;
-    border-right: 0;
-    border-bottom: 1px solid var(--ag-line);
   }
   .app-side__nav { flex-direction: row; gap: 4px; }
   .app-side__label { display: none; }
