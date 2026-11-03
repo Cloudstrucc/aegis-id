@@ -31,12 +31,30 @@ async function dropToFilesystem(channel, message) {
     `Channel: ${channel}`,
     `To: ${message.to}`,
     message.subject ? `Subject: ${message.subject}` : null,
+    message.locale ? `Locale: ${message.locale}` : null,
     `Sent: ${new Date().toISOString()}`,
     '',
     message.text || message.body || ''
   ].filter((line) => line !== null);
   await fs.writeFile(file, lines.join('\n'), 'utf8');
-  return { delivered: true, channel, to: maskRecipient(message.to), file };
+
+  // The HTML part, openable in a browser. Without it the only way to see
+  // what a rendered message actually looks like is to send one, which
+  // locally is the thing this preset exists to avoid.
+  //
+  // In its own directory, not in the drop: everything that reads the drop
+  // treats it as one file per message — the delivery tests count the entries
+  // and the end-to-end harness reads them all — so a second file there
+  // doubles every count, and a subdirectory makes readFile throw EISDIR.
+  let htmlFile = null;
+  if (message.html) {
+    const htmlDir = config.paths.mailHtmlDrop;
+    await fs.mkdir(htmlDir, { recursive: true });
+    htmlFile = path.join(htmlDir, `${stamp}-${channel}.html`);
+    await fs.writeFile(htmlFile, message.html, 'utf8');
+  }
+
+  return { delivered: true, channel, to: maskRecipient(message.to), file, htmlFile };
 }
 
 function maskRecipient(value = '') {
@@ -48,13 +66,13 @@ function maskRecipient(value = '') {
   return raw.length > 4 ? `***${raw.slice(-4)}` : '***';
 }
 
-async function sendEmail(settings, { to, subject, text, html }) {
+async function sendEmail(settings, { to, subject, text, html, locale }) {
   const email = settings.email || {};
   if (!email.enabled) {
     return { delivered: false, reason: 'email-disabled' };
   }
   if (email.preset === 'filesystem') {
-    return dropToFilesystem('email', { to, subject, text });
+    return dropToFilesystem('email', { to, subject, text, html, locale });
   }
   if (!email.host || !email.fromAddress) {
     return { delivered: false, reason: 'email-not-configured' };

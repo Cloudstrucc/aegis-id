@@ -68,7 +68,11 @@ test('a sign-in code is actually sent, not just generated', async () => {
     const messages = await readMailDrop(dir);
     assert.equal(messages.length, 1, 'exactly one message was sent');
 
-    const code = /code is (\d{6})/.exec(messages[0])?.[1];
+    // Matched as "a six-digit code somewhere in the message" rather than
+    // against a sentence: the wording is in a per-locale catalogue now, and
+    // a test that pins the English phrasing fails the moment it is reworded
+    // or the recipient's locale changes.
+    const code = /\b(\d{6})\b/.exec(messages[0])?.[1];
     assert.ok(code, 'the message carries the six-digit code');
     assert.equal(await verifyOtpChallenge(user.id, code), true, 'the sent code is the one that verifies');
   });

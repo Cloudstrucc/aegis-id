@@ -14,6 +14,7 @@ const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { deliverMessage } = require('./otp-delivery-service');
 const { writeAuditEvent } = require('./audit-service');
+const { localeForUser } = require('./i18n-service');
 
 const store = new FileJsonStore(config.paths.emailVerifications, []);
 const userStore = new FileJsonStore(config.paths.users, []);
@@ -54,9 +55,10 @@ async function sendVerificationEmail(user, { baseUrl } = {}) {
   const verifyUrl = `${String(baseUrl || platformBaseUrl()).replace(/\/$/, '')}/auth/verify-email/${token}`;
   const delivery = await deliverMessage({
     type: 'email-verification',
+    locale: localeForUser(user),
     email: user.email,
     variables: { verifyUrl, expiresInHours: TOKEN_TTL_HOURS, displayName: user.displayName },
-    context: { userId: user.id }
+    context: { userId: user.id, baseUrl }
   });
 
   await writeAuditEvent('auth.email.verification.sent', {

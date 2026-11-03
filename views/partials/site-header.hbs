@@ -155,6 +155,32 @@
           {{/if}}
         </article>
       </div>
+      {{!--
+        The language this account is written to in.
+
+        Here rather than on a settings page because it is a preference about
+        the person, not about an organization, and because it changes what
+        arrives in their inbox — a sign-in code at two in the morning is not
+        the moment to discover the product only writes in English.
+
+        A form per choice rather than a <select> with a submit button: two
+        options need one click, not three, and it works with no JavaScript.
+      --}}
+      <div class="profile-locale">
+        <p class="profile-locale__label">Language</p>
+        <div class="profile-locale__choices">
+          {{#each localeChoices}}
+            <form action="/account/language" method="post">
+              <input type="hidden" name="locale" value="{{id}}">
+              <input type="hidden" name="returnTo" value="{{../currentPath}}">
+              <button type="submit"
+                      class="profile-locale__option{{#if (eq ../locale id)}} is-active{{/if}}"
+                      {{#if (eq ../locale id)}}aria-current="true"{{/if}}>{{label}}</button>
+            </form>
+          {{/each}}
+        </div>
+      </div>
+
       {{!-- Secondary actions left, primary right, sign-out de-emphasised. --}}
       <div class="modal-actions modal-actions--profile">
         {{#if currentTenant.settingsPath}}

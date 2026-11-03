@@ -19,6 +19,7 @@ const FileJsonStore = require('./file-json-store');
 const { deliverMessage } = require('./otp-delivery-service');
 const { writeAuditEvent } = require('./audit-service');
 const { getRemainingAccountCodeCount } = require('./account-recovery-service');
+const { localeForUser } = require('./i18n-service');
 
 const grantStore = new FileJsonStore(config.paths.accountReenrolmentGrants, []);
 const userStore = new FileJsonStore(config.paths.users, []);
@@ -123,9 +124,10 @@ async function grantReenrolment(userId, { actorEmail, baseUrl, reason } = {}) {
   const reenrolUrl = `${String(baseUrl || platformBaseUrl()).replace(/\/$/, '')}/auth/reenrol/${token}`;
   const delivery = await deliverMessage({
     type: 'account-reenrolment',
+    locale: localeForUser(user),
     email: user.email,
     variables: { reenrolUrl, expiresInMinutes: GRANT_TTL_MINUTES, displayName: user.displayName },
-    context: { userId }
+    context: { userId, baseUrl }
   });
 
   await writeAuditEvent('auth.account.reenrolment.granted', {

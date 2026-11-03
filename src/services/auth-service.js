@@ -10,6 +10,7 @@ const {
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { deliverMessage } = require('./otp-delivery-service');
+const { localeForUser, normalizeLocale, SUPPORTED_LOCALES } = require('./i18n-service');
 
 const store = new FileJsonStore(config.paths.users, []);
 const mfaMethods = new Set(['email', 'sms', 'passkey']);
@@ -43,6 +44,11 @@ async function registerUser(input = {}) {
     phone: validation.values.phone,
     passwordHash: await bcrypt.hash(validation.values.password, 12),
     preferredMfa: validation.values.preferredMfa,
+    // The language this person is written to in. Captured from the browser
+    // at registration and changeable afterwards; stored rather than guessed
+    // each time, because most messages are sent by a background path with no
+    // request to read an Accept-Language from.
+    locale: normalizeLocale(input.locale),
     mfaMethods: {
       email: true,
       sms: Boolean(validation.values.phone),
@@ -149,6 +155,7 @@ async function createOtpChallenge(userId, requestedMethod) {
   // NODE_ENV=production. Locally the filesystem transport writes it to disk.
   const delivery = await deliverMessage({
     type: 'mfa-otp',
+    locale: localeForUser(user),
     email: method === 'email' ? user.email : null,
     phone: method === 'sms' ? user.phone : null,
     variables: { code },
@@ -336,6 +343,29 @@ async function finishPasskeyAuthentication(userId, response, requestInfo) {
   return true;
 }
 
+/**
+ * Change the language this account is written to in.
+ *
+ * An unsupported value clears the preference rather than being stored, so
+ * the account falls back to the browser and then to en-CA. Storing it would
+ * leave a locale with no catalogue on the record, which resolves to English
+ * anyway but reads as a setting that did not take.
+ */
+async function setUserLocale(userId, locale) {
+  const normalized = normalizeLocale(locale);
+  const users = await store.read();
+  const user = users.find((entry) => entry.id === userId);
+  if (!user) {
+    const error = new Error('Account not found.');
+    error.status = 404;
+    throw error;
+  }
+  user.locale = normalized;
+  user.updatedAt = new Date().toISOString();
+  await store.write(users);
+  return publicUser(user);
+}
+
 function publicUser(user) {
   return {
     id: user.id,
@@ -343,6 +373,7 @@ function publicUser(user) {
     displayName: user.displayName,
     phone: user.phone,
     preferredMfa: user.preferredMfa || 'email',
+    locale: user.locale || '',
     mfaMethods: user.mfaMethods || { email: true },
     passkeyCount: user.passkeys?.length || 0,
     passwordless: Boolean(user.passwordless) || !user.passwordHash,
@@ -631,6 +662,8 @@ async function finishPasswordlessRegistration(response, requestInfo, pending) {
 }
 
 module.exports = {
+  setUserLocale,
+  SUPPORTED_LOCALES,
   createOtpChallenge,
   finishPasskeyLogin,
   finishPasswordlessRegistration,

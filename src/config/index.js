@@ -286,7 +286,17 @@ const config = {
     ),
     // Where the filesystem mail transport drops messages during local
     // development. Outside the repo's data directory because it is not state.
-    mailDrop: resolveFromRoot(process.env.MAIL_DROP_PATH, 'artifacts/mail')
+    mailDrop: resolveFromRoot(process.env.MAIL_DROP_PATH, 'artifacts/mail'),
+    // The rendered HTML part, beside the drop rather than inside it: several
+    // things treat the drop as exactly one file per message — the delivery
+    // tests count its entries and the end-to-end harness reads them all — so
+    // a second file per message belongs somewhere else.
+    //
+    // Derived from the drop rather than given its own variable. It only
+    // exists under the filesystem transport, which is a localhost
+    // affordance, so a hosted app setting for it would be one more thing the
+    // deploy script has to forward and nothing would ever read.
+    mailHtmlDrop: `${resolveFromRoot(process.env.MAIL_DROP_PATH, 'artifacts/mail')}-html`
   },
   auth: {
     sessionSecret: process.env.SESSION_SECRET || 'dev-change-this-session-secret',

@@ -1545,3 +1545,57 @@ body.auth-page .page-hero,
   --workspace-green:  var(--ag-good);
   --workspace-shadow: none;
 }
+
+/* --- the language control in the profile modal -------------------------- */
+.profile-locale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ag-line);
+}
+
+.profile-locale__label {
+  margin: 0;
+  color: var(--ag-subtle);
+  font-family: var(--ag-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.profile-locale__choices { display: flex; gap: 6px; }
+
+.profile-locale__option {
+  padding: 5px 12px;
+  border: 1px solid var(--ag-line-strong);
+  border-radius: var(--ag-r-pill);
+  background: var(--ag-surface);
+  color: var(--ag-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.profile-locale__option:hover {
+  border-color: var(--ag-brand);
+  background: var(--ag-surface-2);
+  color: var(--ag-text);
+}
+
+.profile-locale__option.is-active {
+  background: var(--ag-brand);
+  border-color: var(--ag-brand);
+  color: var(--ag-brand-on);
+  font-weight: 600;
+}
+
+.profile-locale__option.is-active:hover {
+  background: var(--ag-brand-hover);
+  border-color: var(--ag-brand-hover);
+  color: var(--ag-brand-hover-on);
+}

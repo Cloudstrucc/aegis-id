@@ -58,6 +58,7 @@ const {
   requirePendingSecondFactor
 } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
+const { localeForRequest, SUPPORTED_LOCALES } = require('../services/i18n-service');
 const {
   SESSION_KEY: SIGNUP_INTENT_KEY,
   attachCodeGrant,
@@ -94,7 +95,9 @@ router.post('/auth/register', requireAnonymous, authorize('auth.register'), asyn
       }));
     }
 
-    const user = await registerUser(req.body);
+    // The browser's language is the only signal we have about a person who
+    // does not have an account yet. It is a guess, and they can change it.
+    const user = await registerUser({ ...req.body, locale: localeForRequest(req) });
     req.session.pendingSecondFactorUserId = user.id;
     req.session.pendingSecondFactorMethod = user.preferredMfa;
     if (shouldCreateSubscriptionDraft(req)) {

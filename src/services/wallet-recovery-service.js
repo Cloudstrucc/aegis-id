@@ -20,6 +20,7 @@ const FileJsonStore = require('./file-json-store');
 const { getWalletByEmail, getWalletByWalletId } = require('./wallet-registry-service');
 const { writeAuditEvent } = require('./audit-service');
 const { deliverRecoveryCode } = require('./otp-delivery-service');
+const { localeForUser } = require('./i18n-service');
 
 const codeStore = new FileJsonStore(config.paths.walletRecoveryCodes, []);
 const requestStore = new FileJsonStore(config.paths.walletRecoveryRequests, []);
@@ -193,6 +194,7 @@ async function startRecovery(input = {}) {
   const delivery = await deliverRecoveryCode({
     code: otp,
     walletId: wallet.walletId,
+    locale: localeForUser(wallet),
     email: wallet.email,
     phone: wallet.phone
   });

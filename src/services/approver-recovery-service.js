@@ -46,6 +46,7 @@ const { isWorkspaceAdmin } = require('./org-admin-service');
 const { listAdministeredSubscriptions } = require('./admin-access-service');
 const { grantReenrolment } = require('./account-reenrolment-service');
 const { parseWalletId } = require('./wallet-id');
+const { localeForUser } = require('./i18n-service');
 
 const store = new FileJsonStore(config.paths.approverRecoveryRequests, []);
 const userStore = new FileJsonStore(config.paths.users, []);
@@ -269,6 +270,7 @@ async function startApproverRecovery(emailInput, { baseUrl, context = {} } = {})
     }
     const delivery = await deliverMessage({
       type: 'approver-recovery',
+      locale: localeForUser(wallet),
       email: wallet.email,
       phone: wallet.phone,
       variables: {
@@ -277,7 +279,7 @@ async function startApproverRecovery(emailInput, { baseUrl, context = {} } = {})
         organizationName: organization.organizationName,
         requesterEmail: user.email
       },
-      context: { userId: user.id, walletId: approver.walletId }
+      context: { userId: user.id, walletId: approver.walletId, baseUrl }
     });
     if (delivery.delivered) {
       notified += 1;
@@ -293,6 +295,7 @@ async function startApproverRecovery(emailInput, { baseUrl, context = {} } = {})
   const statusUrl = `${String(baseUrl || platformBaseUrl()).replace(/\/$/, '')}/auth/recover/approvals/${statusToken}`;
   await deliverMessage({
     type: 'approver-recovery-status',
+    locale: localeForUser(user),
     email: user.email,
     variables: {
       statusUrl,
@@ -300,7 +303,7 @@ async function startApproverRecovery(emailInput, { baseUrl, context = {} } = {})
       organizationName: organization.organizationName,
       approvalsRequired: APPROVALS_REQUIRED
     },
-    context: { userId: user.id }
+    context: { userId: user.id, baseUrl }
   });
 
   await writeAuditEvent('auth.account.approverRecovery.requested', {

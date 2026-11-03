@@ -17,6 +17,7 @@ const { platformBaseUrl } = require('./site-context-service');
 const FileJsonStore = require('./file-json-store');
 const { deliverMessage } = require('./otp-delivery-service');
 const { writeAuditEvent } = require('./audit-service');
+const { localeForUser } = require('./i18n-service');
 
 const resetStore = new FileJsonStore(config.paths.passwordResets, []);
 const userStore = new FileJsonStore(config.paths.users, []);
@@ -85,10 +86,11 @@ async function requestPasswordReset(emailInput, { baseUrl, context = {} } = {}) 
   const resetUrl = `${String(baseUrl || platformBaseUrl()).replace(/\/$/, '')}/auth/reset/${token}`;
   const delivery = await deliverMessage({
     type: 'password-reset',
+    locale: localeForUser(user),
     email: user.email,
     phone: user.phone,
     variables: { resetUrl, expiresInMinutes: TOKEN_TTL_MINUTES },
-    context: { userId: user.id }
+    context: { userId: user.id, baseUrl }
   });
 
   await writeAuditEvent('auth.password-reset.requested', {

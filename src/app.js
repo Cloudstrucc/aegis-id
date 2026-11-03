@@ -36,6 +36,13 @@ const { attachAppShell } = require('./middleware/app-shell');
 const { organizationHostRouting } = require('./middleware/organization-host');
 const { configurePassport } = require('./services/passport-service');
 const { iconSvg } = require('./lib/app-icons');
+const { localeForRequest, SUPPORTED_LOCALES } = require('./services/i18n-service');
+
+// The language names are written in their own language, which is the one
+// convention every language picker agrees on: somebody who cannot read the
+// current one still has to be able to find theirs.
+const LOCALE_LABELS = { 'en-CA': 'English', 'fr-CA': 'Français' };
+const LOCALE_CHOICES = SUPPORTED_LOCALES.map((id) => ({ id, label: LOCALE_LABELS[id] || id }));
 
 function registerHandlebars() {
   const partialsDir = path.join(config.paths.views, 'partials');
@@ -439,6 +446,11 @@ function createApp() {
     // that organization. The platform host still resolves to config.app.name.
     res.locals.appName = req.site?.branding?.appName || config.app.name;
     res.locals.currentPath = req.path;
+    // The language control in the profile modal, and the lang attribute on
+    // <html>. Resolved per request so a visitor with no account still gets
+    // the page in the language their browser asked for.
+    res.locals.locale = localeForRequest(req);
+    res.locals.localeChoices = LOCALE_CHOICES;
     res.locals.verifiedIdMode = config.verifiedId.mode;
     res.locals.testFixturesEnabled = config.app.testFixturesEnabled;
     next();

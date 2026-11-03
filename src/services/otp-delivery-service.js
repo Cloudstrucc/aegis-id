@@ -6,130 +6,23 @@
 //
 // Codes are never returned to the caller. For local development configure the
 // "filesystem" preset, which writes messages to disk instead of sending them.
+//
+// Wording lives in src/emails, one catalogue per supported locale, and is
+// rendered to HTML, plain text and SMS from a single block list so the parts
+// cannot drift. The locale is decided by the caller — it is a property of the
+// recipient, and only the caller knows who they are.
 
 const config = require('../config');
 const FileJsonStore = require('./file-json-store');
 const { channelAllowed, getNotificationSettings } = require('./notification-settings-service');
 const { sendEmail, sendSms, maskRecipient } = require('../adapters/notify/notification-adapter');
 const { writeAuditEvent } = require('./audit-service');
-const { normalizeBranding } = require('./site-context-service');
+const { normalizeBranding, platformBaseUrl } = require('./site-context-service');
+const { DEFAULT_LOCALE } = require('./i18n-service');
+const { buildMessage, messageTypes } = require('../emails');
 
 const logStore = new FileJsonStore(config.paths.notificationLog, []);
 const LOG_LIMIT = 200;
-
-/**
- * Message templates. Each returns { subject, text, sms } from its variables, so
- * wording lives in one place rather than being spread across call sites.
- */
-const TEMPLATES = {
-  'mfa-otp': ({ brand, code }) => ({
-    subject: `Your ${brand} sign-in code`,
-    text: [
-      `Your ${brand} sign-in code is ${code}.`,
-      '',
-      'This code expires in 10 minutes and can only be used once.',
-      '',
-      'If you did not try to sign in, change your password immediately.'
-    ].join('\n'),
-    sms: `${brand} sign-in code: ${code}`
-  }),
-  'password-reset': ({ brand, resetUrl, expiresInMinutes }) => ({
-    subject: `Reset your ${brand} password`,
-    text: [
-      `Someone asked to reset the password on your ${brand} account.`,
-      '',
-      resetUrl,
-      '',
-      `This link expires in ${expiresInMinutes} minutes and can only be used once.`,
-      '',
-      'If this was not you, no action is needed — your password has not changed.'
-    ].join('\n'),
-    sms: `Reset your ${brand} password: ${resetUrl}`
-  }),
-  'email-verification': ({ brand, verifyUrl, expiresInHours, displayName }) => ({
-    subject: `Confirm your ${brand} email address`,
-    text: [
-      `${displayName ? `Hello ${displayName},` : 'Hello,'}`,
-      '',
-      `Confirm this address to finish setting up your ${brand} account:`,
-      '',
-      verifyUrl,
-      '',
-      `This link expires in ${expiresInHours} hours and can only be used once.`,
-      '',
-      'If you did not create an account, you can ignore this message.'
-    ].join('\n'),
-    sms: `Confirm your ${brand} email: ${verifyUrl}`
-  }),
-  'account-reenrolment': ({ brand, reenrolUrl, expiresInMinutes, displayName }) => ({
-    subject: `Set up a new passkey for your ${brand} account`,
-    text: [
-      `${displayName ? `Hello ${displayName},` : 'Hello,'}`,
-      '',
-      'An administrator has authorised you to register a new passkey, because',
-      'you no longer have your old one or any recovery codes.',
-      '',
-      reenrolUrl,
-      '',
-      `This link expires in ${expiresInMinutes} minutes and can only be used once.`,
-      '',
-      'If you did not ask for this, tell your administrator immediately —',
-      'someone may be trying to take over your account.'
-    ].join('\n'),
-    sms: `Set up a new ${brand} passkey: ${reenrolUrl}`
-  }),
-  'approver-recovery': ({ brand, approvalUrl, expiresInHours, organizationName, requesterEmail }) => ({
-    subject: `Approve a recovery for ${organizationName || 'your organization'}`,
-    text: [
-      'Hello,',
-      '',
-      `Your wallet is a root wallet of ${organizationName || `a ${brand} organization`}.`,
-      `${requesterEmail || 'An administrator'} has asked to recover their access,`,
-      'and two root wallets have to approve before anything is issued.',
-      '',
-      'Open this on the device holding that wallet:',
-      approvalUrl,
-      '',
-      `This link expires in ${expiresInHours} hours and works only with your wallet.`,
-      '',
-      'If you were not expecting this, do not approve it. Someone may be trying',
-      'to take over that account — tell the other root wallet holders.'
-    ].join('\n'),
-    sms: `Approve an ${brand} recovery for ${organizationName || 'your organization'}: ${approvalUrl}`
-  }),
-  'approver-recovery-status': ({ brand, statusUrl, expiresInHours, organizationName, approvalsRequired }) => ({
-    subject: `Your ${brand} recovery is waiting on your root wallets`,
-    text: [
-      'Hello,',
-      '',
-      `You asked to recover your access to ${organizationName || 'your organization'}.`,
-      `${approvalsRequired} of your organization's root wallet holders have been asked to`,
-      'approve from their own wallets. You can watch the progress here:',
-      '',
-      statusUrl,
-      '',
-      `This page expires in ${expiresInHours} hours.`,
-      '',
-      'This link grants nothing on its own — the approvals were sent to the',
-      'wallet holders, not to you. If you did not ask for this, no action is',
-      'needed; nothing can be issued without those approvals.'
-    ].join('\n'),
-    sms: `Your ${brand} recovery is waiting on root wallet approvals: ${statusUrl}`
-  }),
-  'wallet-recovery': ({ brand, code, walletId }) => ({
-    subject: `Your ${brand} wallet recovery code`,
-    text: [
-      `Your ${brand} verification code is ${code}.`,
-      '',
-      `Wallet: ${walletId}`,
-      'This code expires in 10 minutes and can only be used once.',
-      '',
-      'If you did not request this, someone may be attempting to recover your wallet.',
-      'Contact your organization administrator immediately.'
-    ].join('\n'),
-    sms: `${brand} verification code: ${code}`
-  })
-};
 
 async function recordDelivery(entry) {
   const log = await logStore.read();
@@ -142,24 +35,34 @@ async function recordDelivery(entry) {
  * recipient. Returns { delivered, channels, failures } — never the message
  * body, and never the code.
  */
-async function deliverMessage({ type, email, phone, variables = {}, context = {} }) {
-  const template = TEMPLATES[type];
-  if (!template) {
-    throw new Error(`Unknown message type: ${type}`);
-  }
-
+async function deliverMessage({ type, email, phone, locale, variables = {}, context = {} }) {
   const settings = await getNotificationSettings();
   // Every message names the product. On the platform that is "Aegis ID"; a
   // message sent on an organization's behalf carries its own name via
   // context.branding, so a Contoso holder's code arrives from Contoso.
-  const brand = normalizeBranding(context.branding || {}).shortName;
-  const { subject, text, sms } = template({ ...variables, brand });
+  const branding = normalizeBranding(context.branding || {});
+  const message = buildMessage({
+    type,
+    locale: locale || DEFAULT_LOCALE,
+    variables,
+    brand: branding.shortName,
+    // Absolute, because the lockup in the message is fetched by the reader's
+    // mail client and a relative path would resolve against nothing.
+    baseUrl: context.baseUrl || platformBaseUrl(),
+    // Named in the footer only when the message really is on somebody's
+    // behalf. A caller that passes no branding at all gets the platform
+    // defaults back, whose displayName is the brand itself — so the test is
+    // "did a caller supply one", not "is this the platform".
+    organizationName: context.branding?.displayName ? branding.displayName : '',
+    supportEmail: branding.supportEmail
+  });
+  const { subject, text, html, sms } = message;
   const channels = [];
   const failures = [];
 
   if (email && channelAllowed(settings, type, 'email')) {
     try {
-      const result = await sendEmail(settings, { to: email, subject, text });
+      const result = await sendEmail(settings, { to: email, subject, text, html, locale: message.locale });
       if (result.delivered) {
         channels.push({ channel: 'email', to: result.to });
       } else {
@@ -189,6 +92,7 @@ async function deliverMessage({ type, email, phone, variables = {}, context = {}
   await recordDelivery({
     at: new Date().toISOString(),
     type,
+    locale: message.locale,
     delivered,
     recipient,
     channels: channels.map((entry) => entry.channel),
@@ -198,6 +102,7 @@ async function deliverMessage({ type, email, phone, variables = {}, context = {}
 
   await writeAuditEvent('notification.dispatched', {
     messageType: type,
+    locale: message.locale,
     delivered,
     channels: channels.map((entry) => entry.channel),
     failures: failures.map((entry) => `${entry.channel}: ${entry.message}`),
@@ -212,11 +117,12 @@ async function deliverMessage({ type, email, phone, variables = {}, context = {}
  * Deliver a wallet recovery code. Fails closed: if nothing was sent the caller
  * must not proceed, because the code cannot reach its owner.
  */
-async function deliverRecoveryCode({ code, walletId, email, phone }) {
+async function deliverRecoveryCode({ code, walletId, email, phone, locale }) {
   const result = await deliverMessage({
     type: 'wallet-recovery',
     email,
     phone,
+    locale,
     variables: { code, walletId },
     context: { walletId }
   });
@@ -239,4 +145,4 @@ async function listDeliveryLog(limit = 50) {
   return log.slice(0, limit);
 }
 
-module.exports = { deliverMessage, deliverRecoveryCode, listDeliveryLog };
+module.exports = { deliverMessage, deliverRecoveryCode, listDeliveryLog, messageTypes };
