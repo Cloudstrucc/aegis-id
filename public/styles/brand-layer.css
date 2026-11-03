@@ -1599,3 +1599,204 @@ body.auth-page .page-hero,
   border-color: var(--ag-brand-hover);
   color: var(--ag-brand-hover-on);
 }
+
+/* ===========================================================================
+   The embedded documents
+   ---------------------------------------------------------------------------
+   The Get Started Guide and the Product Brief are standalone HTML files with
+   their own stylesheets, rendered inside the application by
+   `buildDocumentPage`. That scoping rewrites their `:root` to
+   `.embedded-document`, which is the hook used here: their palette is
+   redefined from the application's tokens, so one block turns both documents
+   over to the brand and gives them dark mode.
+
+   Scoped under `body.document-page` to outrank the document's own block —
+   its <style> is emitted in the body, after this stylesheet, so at equal
+   specificity the document would win on source order.
+
+   The documents themselves are left alone. They are real deliverables that
+   open from disk and get served statically, where `--ag-*` does not exist
+   and their own light palette is the right one.
+   ========================================================================= */
+body.document-page .embedded-document {
+  --ink:    var(--ag-text);
+  --ink-2:  var(--ag-text);
+  --muted:  var(--ag-muted);
+  --blue:   var(--ag-brand);
+  --cyan:   var(--ag-teal);
+  --green:  var(--ag-good);
+  --amber:  var(--ag-warn);
+  --red:    var(--ag-bad);
+  --paper:  var(--ag-surface);
+  --mist:   var(--ag-surface-2);
+  --soft:   var(--ag-surface-2);
+  --line:   var(--ag-line);
+  --line-2: var(--ag-line);
+  --shadow: none;
+  /* The documents declare `color-scheme: light`, which forces light form
+     controls and scrollbars inside a dark page. */
+  color-scheme: light dark;
+  color: var(--ag-text);
+  background: var(--ag-bg);
+  font-family: var(--ag-sans);
+}
+
+body.document-page { background: var(--ag-bg); }
+
+/* --- the guide's own section navigation ---------------------------------
+   Kept for the navigation, restyled as a sub-bar under the application
+   header. The document styles it as a translucent white slab with a
+   backdrop blur, which on a dark page is a white stripe.
+   ---------------------------------------------------------------------- */
+body.document-page .embedded-document .doc-topbar {
+  background: var(--ag-surface);
+  border-bottom: 1px solid var(--ag-line);
+  backdrop-filter: none;
+  /* Not sticky here. `.embedded-document` is `overflow: hidden`, which makes
+     it the sticky container rather than the viewport — so the bar cannot
+     stick to the page at all, and a `top` offset on it is applied
+     immediately as a gap instead. That gap, plus the old 90px clearance on
+     main, was the black strip under the site header. The site header is
+     sticky on its own; the guide's section nav scrolls with the guide. */
+  position: static;
+}
+
+body.document-page .embedded-document .doc-topbar__inner { min-height: 56px; }
+
+body.document-page .embedded-document .doc-nav a {
+  color: var(--ag-muted);
+  background: var(--ag-surface);
+  border-color: var(--ag-line);
+}
+
+body.document-page .embedded-document .doc-nav a:hover {
+  color: var(--ag-brand-text);
+  background: var(--ag-surface-2);
+  border-color: var(--ag-brand-line);
+}
+
+/* --- headings and body copy --------------------------------------------- */
+body.document-page .embedded-document h1,
+body.document-page .embedded-document h2,
+body.document-page .embedded-document h3,
+body.document-page .embedded-document h4 {
+  color: var(--ag-text);
+  font-family: var(--ag-display);
+}
+
+/* No blanket rule for body copy. The documents set it from their own --ink
+   and --muted, both of which are mapped onto the theme above, and forcing
+   every <p> to full-strength ink flattened the lead-versus-body hierarchy
+   they were written with. Inheritance from `.embedded-document` covers
+   anything that sets no colour at all.
+   ---------------------------------------------------------------------- */
+
+body.document-page .embedded-document code,
+body.document-page .embedded-document pre {
+  background: var(--ag-surface-2);
+  border-color: var(--ag-line);
+  color: var(--ag-text);
+  font-family: var(--ag-mono);
+}
+
+/* --- the documents' accent, which is text far more often than it is a fill
+   ----------------------------------------------------------------------
+   `--blue` does the same double duty `--ink` does: link and accent text, and
+   the fill of a handful of buttons and numbered steps. As text on the dark
+   theme's ground the logo blue is 3.5:1, so the token follows the text role
+   and the few fills are restated below with the label colour that goes with
+   them. Same reasoning as --ag-brand-text existing at all.
+   ---------------------------------------------------------------------- */
+body.document-page .embedded-document { --blue: var(--ag-brand-text); }
+
+/* Every fill the documents paint with `--blue`, restated with the solid
+   brand and the label colour that belongs to it. Listed rather than
+   pattern-matched because there is no way to select "an element whose
+   background happens to be the accent", and because each one's label has to
+   be decided deliberately — which is the whole lesson of this refit. */
+body.document-page .embedded-document .doc-button--primary,
+body.document-page .embedded-document .doc-ui-button,
+body.document-page .embedded-document .doc-step-number,
+body.document-page .embedded-document .doc-aegis-mark,
+body.document-page .embedded-document .doc-ms-mark,
+body.document-page .embedded-document .doc-app-mark,
+body.document-page .embedded-document .doc-yubikey-mark,
+body.document-page .embedded-document .doc-connector-chip span,
+body.document-page .embedded-document .doc-avatar,
+body.document-page .embedded-document .doc-steps li::before,
+body.document-page .embedded-document .doc-mini-steps li::before {
+  background: var(--ag-brand);
+  border-color: var(--ag-brand);
+  color: var(--ag-brand-on);
+}
+
+/* The status fills. These colours invert between themes — dark inks on the
+   light page, light inks on the dark one — so the label comes from the pair
+   rather than being assumed white. */
+body.document-page .embedded-document .doc-phone-action,
+body.document-page .embedded-document .doc-verified-dot {
+  background: var(--ag-good);
+  border-color: var(--ag-good);
+  color: var(--ag-good-on);
+}
+
+body.document-page .embedded-document .doc-meter__fill { background: var(--ag-good); }
+
+/* The dark-chrome rules above set every descendant's colour, which also
+   catches the brand-filled marks sitting inside them — nav ink on the brand
+   blue is 4.18:1, the same pairing that was wrong across the application
+   chrome. Restated one level deeper so the mark keeps its own label. */
+body.document-page .embedded-document .doc-portal-hero .doc-app-mark,
+body.document-page .embedded-document .doc-portal-hero .doc-aegis-mark,
+body.document-page .embedded-document .doc-portal-hero .doc-ms-mark,
+body.document-page .embedded-document .doc-portal-hero .doc-avatar,
+body.document-page .embedded-document .doc-phone-card .doc-app-mark,
+body.document-page .embedded-document .doc-phone-card .doc-avatar {
+  color: var(--ag-brand-on);
+}
+
+/* A screenshot of the portal: dark chrome in both themes, like the phone.
+   Its gradient ended on `--blue`, which now follows the text role and is a
+   light blue on the dark theme — pale type on a pale blue. */
+body.document-page .embedded-document .doc-portal-hero {
+  background: var(--ag-nav);
+}
+
+/* --- type inside the drawn device chrome --------------------------------
+   `.doc-phone-card` is the screen of an illustrated phone, so it stays dark
+   in both themes — it is a picture of a device, not a surface the reader's
+   theme applies to. Its contents therefore need the chrome ink rather than
+   the page ink, which in light mode is near-black on that dark screen.
+   ---------------------------------------------------------------------- */
+body.document-page .embedded-document .doc-quote-panel,
+body.document-page .embedded-document .doc-quote-panel h1,
+body.document-page .embedded-document .doc-quote-panel h2,
+body.document-page .embedded-document .doc-quote-panel h3,
+body.document-page .embedded-document .doc-quote-panel p,
+body.document-page .embedded-document .doc-quote-panel li,
+body.document-page .embedded-document .doc-quote-panel strong,
+body.document-page .embedded-document .doc-quote-panel span,
+body.document-page .embedded-document .doc-portal-hero,
+body.document-page .embedded-document .doc-portal-hero h1,
+body.document-page .embedded-document .doc-portal-hero h2,
+body.document-page .embedded-document .doc-portal-hero h3,
+body.document-page .embedded-document .doc-portal-hero p,
+body.document-page .embedded-document .doc-portal-hero li,
+body.document-page .embedded-document .doc-portal-hero strong,
+body.document-page .embedded-document .doc-portal-hero span,
+body.document-page .embedded-document .doc-phone-card,
+body.document-page .embedded-document .doc-phone-card h1,
+body.document-page .embedded-document .doc-phone-card h2,
+body.document-page .embedded-document .doc-phone-card h3,
+body.document-page .embedded-document .doc-phone-card h4,
+body.document-page .embedded-document .doc-phone-card p,
+body.document-page .embedded-document .doc-phone-card li,
+body.document-page .embedded-document .doc-phone-card strong,
+body.document-page .embedded-document .doc-phone-card span {
+  color: var(--ag-nav-text);
+}
+
+body.document-page .embedded-document .doc-phone-card .doc-eyebrow,
+body.document-page .embedded-document .doc-phone-card small {
+  color: var(--ag-nav-muted);
+}

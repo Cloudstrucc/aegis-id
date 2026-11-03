@@ -3623,9 +3623,13 @@ body.document-page {
   background: var(--ag-surface);
 }
 
+/* No clearance: the site header is in normal flow now. The 90px dated from
+   when it was `position: fixed`, and all it did was expose a bare strip of
+   the body background between the header and the document — a black band in
+   dark mode. */
 body.document-page main {
   min-height: auto;
-  padding-top: 90px;
+  padding-top: 0;
 }
 
 body.document-page .embedded-document {

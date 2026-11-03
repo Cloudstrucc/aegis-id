@@ -293,3 +293,49 @@ test('main.css carries almost no literal colours left', () => {
     `opaque literal colours cannot follow the theme:\n  ${[...new Set(opaque)].slice(0, 12).join('\n  ')}`
   );
 });
+
+test('the embedded documents keep their own colours when opened standalone', () => {
+  // The Get Started Guide and the Product Brief are rendered inside the
+  // application, where `--ag-*` resolves and they follow the theme. They are
+  // also real files: served statically, opened from disk, handed to somebody
+  // as a deliverable. There `--ag-*` does not exist, so every reference has
+  // to carry the colour it replaced as its fallback — otherwise the token
+  // resolves to nothing and the declaration is dropped, which is how a
+  // stylesheet turns into Times on a transparent background.
+  const docs = [
+    'docs/tutorial/get-started-guide.html',
+    'public/docs/aegis-verified-id-value-story.html'
+  ];
+  for (const relative of docs) {
+    const html = fs.readFileSync(path.join(ROOT, relative), 'utf8');
+    const bare = [...html.matchAll(/var\(\s*(--ag-[a-z0-9-]+)\s*\)/g)].map((m) => m[1]);
+    assert.deepEqual(
+      [...new Set(bare)], [],
+      `${relative}: these token references have no fallback, so the standalone file loses them`
+    );
+    // And the application side has to actually define what they reference.
+    const referenced = [...new Set([...html.matchAll(/var\(\s*(--ag-[a-z0-9-]+)\s*,/g)].map((m) => m[1]))];
+    for (const token of referenced) {
+      assert.ok(
+        new RegExp(`${token}\\s*:`).test(BRAND),
+        `${relative} references ${token}, which brand-layer.css does not define`
+      );
+    }
+  }
+});
+
+test('the embedded documents are themed, not just recoloured once', () => {
+  // The scoping in buildDocumentPage rewrites the documents' `:root` to
+  // `.embedded-document`, and brand-layer redefines their palette from
+  // there. If that block ever goes, both documents silently revert to their
+  // own light palette inside a dark page.
+  const block = BRAND.indexOf('body.document-page .embedded-document {');
+  assert.ok(block > -1, 'brand-layer no longer redefines the embedded documents\' palette');
+  const body = BRAND.slice(block, BRAND.indexOf('}', block));
+  for (const token of ['--ink', '--muted', '--paper', '--line', '--blue']) {
+    assert.ok(
+      new RegExp(`${token}\\s*:\\s*var\\(--ag-`).test(body),
+      `the embedded documents' ${token} is not mapped onto a theme token`
+    );
+  }
+});

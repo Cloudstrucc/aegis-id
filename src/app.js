@@ -130,6 +130,16 @@ function stripDocumentChrome(content, options = {}) {
     output = output.replace(/<div\s+class="topbar"[\s\S]*?<\/div>\s*/i, '');
   }
 
+  // The document's own brand lockup, when its topbar is being kept for the
+  // navigation it carries. Embedded in the application the page already has
+  // the Aegis lockup in the site header, so the document's Vanguard mark is
+  // the same page claiming two brands — and it is a light-background PNG, so
+  // in dark mode it sat in a white box of its own. The standalone file keeps
+  // it: opened on its own it is the only branding there is.
+  if (options.removeDocumentBrand) {
+    output = output.replace(/<a\s+class="brand"[\s\S]*?<\/a>\s*/i, '');
+  }
+
   output = output.replace(/href="get-started-guide\.html#/g, 'href="/docs/tutorial/get-started-guide.html#');
   output = output.replace(/href="aegis-verified-id-value-story\.html#/g, 'href="/docs/aegis-verified-id-value-story.html#');
   output = output.replace(/target="_blank"\s+rel="noopener"\s*(?=href="#|href="\/docs)/g, '');
@@ -467,7 +477,11 @@ function createApp() {
       title: 'Get Started Guide',
       description: 'Vanguard Aegis ID onboarding and assurance setup guide.',
       extract: 'main',
+      // The topbar stays: it carries the guide's own section navigation,
+      // which the application chrome has no equivalent of. Only the lockup
+      // inside it goes.
       removeTopbar: false,
+      removeDocumentBrand: true,
       scripts: [{ src: '/docs/tutorial/assets/get-started-guide.js' }]
     })
   );
