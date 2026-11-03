@@ -154,14 +154,6 @@ pre {
   background-size: cover;
 }
 
-.hero__overlay {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(6, 22, 37, 0.94) 0%, rgba(6, 22, 37, 0.78) 40%, rgba(6, 22, 37, 0.28) 100%),
-    linear-gradient(180deg, rgba(6, 22, 37, 0.25) 0%, rgba(6, 22, 37, 0.72) 100%);
-}
-
 .hero__content {
   position: relative;
   z-index: 1;
@@ -446,20 +438,6 @@ h3 {
   background: var(--ag-nav-2);
 }
 
-.store-badge__watermark {
-  position: absolute;
-  inset: auto -32px 10px auto;
-  width: 170px;
-  padding: 4px 0;
-  color: var(--ag-nav-text);
-  background: rgba(25, 185, 122, 0.92);
-  font-size: 11px;
-  font-weight: 900;
-  text-align: center;
-  text-transform: uppercase;
-  transform: rotate(-28deg);
-}
-
 .section-heading {
   max-width: 760px;
   margin-bottom: 34px;
@@ -607,12 +585,13 @@ h3 {
   gap: 22px;
   align-content: space-between;
   padding: 28px;
-  color: var(--ag-nav-text);
-  background:
-    linear-gradient(135deg, rgba(23, 105, 224, 0.94), rgba(0, 183, 199, 0.9) 56%, rgba(25, 185, 122, 0.9)),
-    var(--navy-950);
+  /* Was a blue-to-green gradient. No text colour passes on it: the green
+     end composites to about #1ba971, where white is 2.4:1 and the muted ink
+     it actually carried was 1.2:1. */
+  color: var(--ag-text);
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
   border-radius: 8px;
-  box-shadow: var(--shadow);
 }
 
 .product-brief-panel p {
@@ -639,7 +618,7 @@ h3 {
   display: block;
   padding: 14px 16px;
   color: var(--ag-text);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--ag-surface);
   border-radius: 8px;
   font-weight: 900;
 }
@@ -1287,12 +1266,12 @@ textarea:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* The photograph and its scrim are gone: an interior page opens on the
+   canvas now, and a fixed dark scrim could not follow the theme anyway. */
 .page-hero {
   padding: 156px 6% 74px;
-  color: var(--ag-nav-text);
-  background:
-    linear-gradient(90deg, rgba(6, 22, 37, 0.92), rgba(6, 22, 37, 0.58)),
-    url("/images/vanguard-identity-architecture.png") center / cover;
+  color: var(--ag-text);
+  background: var(--ag-bg);
 }
 
 .page-hero--compact {
@@ -1338,7 +1317,7 @@ textarea:focus {
   gap: 16px;
   padding: 22px;
   color: var(--ag-text);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--ag-surface);
   border: 1px solid rgba(255, 255, 255, 0.56);
   border-radius: 8px;
   box-shadow: 0 26px 80px rgba(0, 0, 0, 0.28);
@@ -1725,38 +1704,6 @@ textarea:focus {
   margin: 4px 0 0;
   color: var(--muted);
 }
-
-.workspace-blade {
-  display: grid;
-  grid-template-columns: 68px minmax(280px, 312px) minmax(0, 1fr);
-  grid-template-rows: 64px minmax(0, 1fr);
-  min-height: calc(100vh - 86px);
-  color: var(--ag-text);
-  background:
-    linear-gradient(135deg, rgba(48, 104, 220, 0.08), transparent 34%),
-    linear-gradient(220deg, rgba(0, 171, 185, 0.1), transparent 38%),
-    var(--ag-surface-2);
-}
-
-.workspace-blade__topbar {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 0 24px;
-  color: var(--ag-nav-text);
-  background: var(--navy-950);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.workspace-blade__product {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  color: inherit;
-  text-decoration: none;
-}
-
 .workspace-brand-mark {
   display: grid;
   width: 34px;
@@ -1768,43 +1715,6 @@ textarea:focus {
   font-size: 14px;
   font-weight: 950;
 }
-
-.workspace-blade__product strong,
-.workspace-blade__product small {
-  display: block;
-  line-height: 1.12;
-}
-
-.workspace-blade__product strong {
-  font-size: 15px;
-}
-
-.workspace-blade__product small {
-  color: var(--ag-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.workspace-blade__topbar nav {
-  display: flex;
-  gap: 18px;
-  margin-left: auto;
-  color: var(--ag-muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.workspace-blade__topbar nav a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.workspace-blade__topbar nav a:hover,
-.workspace-blade__topbar nav a:focus-visible,
-.workspace-blade__topbar nav a.is-active {
-  color: var(--ag-nav-text);
-}
-
 .workspace-blade__avatar {
   display: grid;
   width: 32px;
@@ -1828,182 +1738,6 @@ textarea:focus {
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
   outline: none;
 }
-
-.workspace-blade__rail {
-  grid-column: 1;
-  grid-row: 2;
-  padding: 14px 10px;
-  color: var(--ag-muted);
-  background: var(--ag-brand);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.workspace-blade__rail a {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  place-items: center;
-  margin-bottom: 8px;
-  color: inherit;
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 950;
-}
-
-.workspace-blade__rail a:hover,
-.workspace-blade__rail a:focus-visible,
-.workspace-blade__rail a.is-active {
-  color: var(--ag-nav-text);
-  background: rgba(255, 255, 255, 0.11);
-}
-
-.workspace-blade__nav {
-  position: sticky;
-  top: 0;
-  grid-column: 2;
-  grid-row: 2;
-  max-height: calc(100vh - 64px);
-  overflow: auto;
-  color: var(--ag-text);
-  background: rgba(255, 255, 255, 0.94);
-  border-right: 1px solid var(--line);
-  box-shadow: 8px 0 24px rgba(7, 22, 38, 0.06);
-}
-
-.workspace-blade__head {
-  padding: 22px 22px 16px;
-  border-bottom: 1px solid var(--line);
-}
-
-.workspace-blade__head p {
-  margin: 0;
-  color: var(--ag-brand-text);
-  font-size: 11px;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.workspace-blade__head h1 {
-  margin: 8px 0;
-  font-size: 24px;
-  line-height: 1.05;
-}
-
-.workspace-blade__head > span {
-  display: block;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 750;
-  line-height: 1.55;
-}
-
-.workspace-blade__org-chip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 16px;
-  padding: 10px;
-  background: var(--ag-surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
-.workspace-blade__org-chip > span {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  place-items: center;
-  color: var(--ag-brand-on);
-  background: linear-gradient(135deg, var(--blue-600), var(--green-500));
-  border-radius: 8px;
-  font-weight: 950;
-}
-
-.workspace-blade__org-chip strong,
-.workspace-blade__org-chip small {
-  display: block;
-}
-
-.workspace-blade__org-chip small {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.workspace-blade__menu {
-  display: grid;
-  gap: 2px;
-  padding: 14px;
-}
-
-.workspace-blade__section-label {
-  margin: 14px 10px 8px;
-  color: var(--ag-brand-text);
-  font-size: 11px;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.workspace-blade__menu a {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  min-height: 52px;
-  padding: 10px;
-  color: var(--ag-brand-text);
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.workspace-blade__menu a span {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  color: var(--ag-brand-text);
-  background: rgba(48, 104, 220, 0.1);
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 950;
-}
-
-.workspace-blade__menu a strong {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 7px;
-}
-
-.workspace-blade__menu a small {
-  display: block;
-}
-
-.workspace-blade__menu a small {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 850;
-}
-
-.workspace-blade__menu a:hover,
-.workspace-blade__menu a:focus-visible,
-.workspace-blade__menu a.is-active {
-  color: var(--ag-brand-text);
-  background: var(--ag-brand-soft);
-}
-
-.workspace-blade__menu a.is-active span {
-  color: var(--ag-brand-on);
-  background: linear-gradient(135deg, var(--blue-600), var(--cyan-500));
-}
-
 .blade-menu-status {
   display: inline-block;
   width: 9px;
@@ -2021,44 +1755,12 @@ textarea:focus {
   background: var(--ag-good);
 }
 
-.workspace-blade__advice {
-  display: grid;
-  gap: 6px;
-  margin: 0 14px 18px;
-  padding: 14px;
-  color: var(--ag-text);
-  background: var(--ag-surface);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--green-500);
-  border-radius: 8px;
-}
-
-.workspace-blade__advice strong {
-  color: var(--ag-text);
-}
-
-.workspace-blade__advice span {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.45;
-}
-
-.workspace-blade__content {
-  grid-column: 3;
-  grid-row: 2;
-  min-width: 0;
-  padding: 24px;
-  overflow: auto;
-}
-
-.workspace-blade .band {
+.app-shell .band {
   padding: 0;
   background: transparent;
 }
 
-.workspace-blade .section-heading {
+.app-shell .section-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -2066,13 +1768,13 @@ textarea:focus {
   margin-bottom: 18px;
 }
 
-.workspace-blade .section-heading h2 {
+.app-shell .section-heading h2 {
   margin: 8px 0;
   font-size: clamp(28px, 4vw, 48px);
   line-height: 0.98;
 }
 
-.workspace-blade .section-heading p:last-child {
+.app-shell .section-heading p:last-child {
   max-width: 760px;
   color: var(--muted);
   font-size: 16px;
@@ -2080,7 +1782,7 @@ textarea:focus {
   line-height: 1.55;
 }
 
-.workspace-blade .toolbar {
+.app-shell .toolbar {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -2088,15 +1790,18 @@ textarea:focus {
   min-width: 240px;
 }
 
-.workspace-blade .platform-card,
-.workspace-blade .people-directory,
-.workspace-blade .config-tile,
-.workspace-blade .brand-preview-card {
-  background: rgba(255, 255, 255, 0.94);
+/* `.brand-preview-card` is deliberately absent: it previews the customer's
+   own palette, so it supplies its own paper to go with its own ink. Giving
+   it the app surface left the organization's dark brand text on the dark
+   theme's dark card. */
+.app-shell .platform-card,
+.app-shell .people-directory,
+.app-shell .config-tile {
+  background: var(--ag-surface);
   box-shadow: 0 18px 44px rgba(7, 22, 38, 0.08);
 }
 
-.workspace-blade .people-table th {
+.app-shell .people-table th {
   color: var(--ag-brand-text);
   background: var(--ag-surface);
   border-color: var(--line);
@@ -2105,7 +1810,7 @@ textarea:focus {
   text-transform: uppercase;
 }
 
-.workspace-blade .identity-reminder {
+.app-shell .identity-reminder {
   grid-template-columns: 44px minmax(0, 1fr) auto;
 }
 
@@ -2178,7 +1883,7 @@ textarea:focus {
   padding: 18px;
   color: var(--ag-text);
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--ag-surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
@@ -2525,7 +2230,7 @@ textarea:focus {
   margin-top: 18px;
   gap: 10px;
   color: var(--ag-text);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--ag-surface);
 }
 
 .note-panel--portal .button-row {
@@ -3991,47 +3696,6 @@ body.document-page .embedded-document {
     grid-template-columns: 1fr;
   }
 
-  .workspace-blade {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-  }
-
-  .workspace-blade__topbar {
-    height: auto;
-    flex-wrap: wrap;
-    padding: 14px;
-  }
-
-  .workspace-blade__topbar nav {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .workspace-blade__rail {
-    display: none;
-  }
-
-  .workspace-blade__nav {
-    position: static;
-    grid-column: 1;
-    grid-row: auto;
-    max-height: none;
-  }
-
-  .workspace-blade__content {
-    grid-column: 1;
-    grid-row: auto;
-    padding: 16px;
-  }
-
-  .workspace-blade__menu {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .workspace-blade__section-label {
-    grid-column: 1 / -1;
-  }
-
   .blade-overview,
   .blade-action-grid,
   .split-panel {
@@ -4262,10 +3926,10 @@ body.document-page .embedded-document {
 /* The --workspace-* palette is promoted to :root because several rules that use
    it are global, not blade-scoped: .people-table-wrap, .definition-list,
    .profile-summary-card h3 and .profile-org-row all live outside
-   .workspace-blade (the profile modal is in the site header, on every page).
+   .app-shell (the profile modal is in the site header, on every page).
    Unset custom properties make the whole declaration invalid, so those borders,
    backgrounds and shadows were simply never drawn off the dashboard. The
-   .workspace-blade block below keeps its own identical copy, so blade pages
+   .app-shell block below keeps its own identical copy, so blade pages
    resolve exactly the same values they did before. */
 :root {
   --workspace-site-header: 90px;
@@ -4280,9 +3944,10 @@ body.document-page .embedded-document {
   --workspace-shadow: 0 18px 44px rgba(7, 22, 38, 0.08);
 }
 
-/* Organization workspace blade refresh. Scoped to the dashboard so legacy site pages keep their styling. */
-.workspace-blade {
-  --workspace-site-header: 90px;
+/* The tokens the panels inside the application shell read. The shell's own
+   layout — the sidebar track, the breadcrumb row, the scrolling main column —
+   is in brand-layer.css with the rest of the structural layer. */
+.app-shell {
   --workspace-ink: #0a1626;
   --workspace-muted: #64748b;
   --workspace-line: #d9e4ef;
@@ -4291,116 +3956,48 @@ body.document-page .embedded-document {
   --workspace-cyan: #00a6b8;
   --workspace-green: #15915f;
   --workspace-shadow: 0 18px 44px rgba(7, 22, 38, 0.08);
-  grid-template-columns: 68px minmax(280px, 312px) minmax(0, 1fr);
-  grid-template-rows: 64px minmax(0, 1fr);
-  height: calc(100vh - var(--workspace-site-header));
-  min-height: calc(100vh - var(--workspace-site-header));
-  margin-top: var(--workspace-site-header);
-  overflow: hidden;
   color: var(--ag-text);
-  background:
-    linear-gradient(135deg, rgba(34, 104, 232, 0.08), transparent 34%),
-    linear-gradient(220deg, rgba(0, 166, 184, 0.10), transparent 38%),
-    var(--ag-surface-2);
 }
 
-body:has(.workspace-blade) {
+body:has(.app-shell) {
   background: var(--ag-surface-2);
 }
 
-body:has(.workspace-blade) .site-footer {
+body:has(.app-shell) .site-footer {
   display: none;
 }
 
-body:has(.workspace-blade) main {
+body:has(.app-shell) main {
   min-height: 100vh;
 }
 
-.workspace-blade h1,
-.workspace-blade h2,
-.workspace-blade h3,
-.workspace-blade p,
-.workspace-blade a,
-.workspace-blade button,
-.workspace-blade input,
-.workspace-blade select,
-.workspace-blade textarea {
+.app-shell h1,
+.app-shell h2,
+.app-shell h3,
+.app-shell p,
+.app-shell a,
+.app-shell button,
+.app-shell input,
+.app-shell select,
+.app-shell textarea {
   letter-spacing: 0;
 }
 
-.workspace-blade a {
+.app-shell a {
   text-decoration: none;
 }
 
-.workspace-blade__topbar {
-  position: relative;
-  z-index: 5;
-  min-height: 64px;
-  padding: 0 24px;
-  background: var(--ag-brand);
-}
-
-.workspace-blade__product strong {
-  color: var(--ag-nav-text);
-  font-size: 15px;
-}
-
-.workspace-blade__product small {
-  color: var(--ag-muted);
-  font-size: 12px;
-}
-
-.workspace-blade__topbar nav {
-  gap: 18px;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.workspace-blade__rail {
-  overflow: auto;
-  background: var(--ag-brand);
-}
-
-.workspace-blade__nav {
-  position: static;
-  height: 100%;
-  max-height: none;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 8px 0 24px rgba(7, 22, 38, 0.06);
-}
-
-.workspace-blade__head h1 {
-  margin: 8px 0;
-  color: var(--ag-text);
-  font-size: 24px;
-  line-height: 1.05;
-}
-
-.workspace-blade__head > span,
-.workspace-blade__org-chip small,
-.workspace-blade__menu a small,
-.workspace-blade__advice span {
-  color: var(--workspace-muted);
-}
-
-.workspace-blade__content {
-  height: 100%;
-  min-width: 0;
-  padding: 24px;
-  overflow: auto;
-}
-
-.workspace-blade .blade-panel {
+.app-shell .blade-panel {
   min-height: auto;
   max-width: 1280px;
   margin: 0 auto;
 }
 
-.workspace-blade .blade-panel[hidden] {
+.app-shell .blade-panel[hidden] {
   display: none !important;
 }
 
-.workspace-blade .section-heading,
+.app-shell .section-heading,
 .blade-overview {
   display: flex;
   align-items: flex-start;
@@ -4409,19 +4006,19 @@ body:has(.workspace-blade) main {
   margin-bottom: 18px;
 }
 
-.workspace-blade .section-heading > div,
+.app-shell .section-heading > div,
 .blade-overview > div:first-child {
   min-width: 0;
 }
 
-.workspace-blade .eyebrow {
+.app-shell .eyebrow {
   color: var(--workspace-cyan);
   font-size: 12px;
   font-weight: 950;
   letter-spacing: 0.08em;
 }
 
-.workspace-blade .section-heading h2,
+.app-shell .section-heading h2,
 .blade-overview h1 {
   max-width: 880px;
   margin: 8px 0;
@@ -4434,7 +4031,7 @@ body:has(.workspace-blade) main {
   font-size: clamp(34px, 4vw, 52px);
 }
 
-.workspace-blade .section-heading p:last-child,
+.app-shell .section-heading p:last-child,
 .blade-overview p:not(.eyebrow) {
   max-width: 760px;
   margin: 0;
@@ -4444,7 +4041,7 @@ body:has(.workspace-blade) main {
   line-height: 1.55;
 }
 
-.workspace-blade .toolbar,
+.app-shell .toolbar,
 .platform-card__actions,
 .modal-actions,
 .row-actions {
@@ -4453,14 +4050,14 @@ body:has(.workspace-blade) main {
   gap: 10px;
 }
 
-.workspace-blade .toolbar {
+.app-shell .toolbar {
   justify-content: flex-end;
   min-width: 240px;
 }
 
-.workspace-blade .button,
-.workspace-blade .icon-button,
-.workspace-blade .nav-button {
+.app-shell .button,
+.app-shell .icon-button,
+.app-shell .nav-button {
   min-height: 40px;
   padding: 0 14px;
   border-radius: 8px;
@@ -4470,84 +4067,83 @@ body:has(.workspace-blade) main {
   white-space: nowrap;
 }
 
-.workspace-blade .button--primary,
-.workspace-blade .button--primary.button--blue {
+.app-shell .button--primary,
+.app-shell .button--primary.button--blue {
   color: var(--ag-brand-on);
   background: var(--workspace-blue);
   border-color: var(--workspace-blue);
   box-shadow: 0 10px 24px rgba(7, 22, 38, 0.06);
 }
 
-.workspace-blade .button--primary:hover,
-.workspace-blade .button--primary.button--blue:hover {
+.app-shell .button--primary:hover,
+.app-shell .button--primary.button--blue:hover {
   color: var(--ag-brand-on);
   background: var(--ag-brand);
   border-color: var(--ag-brand-line);
 }
 
-.workspace-blade .button--secondary,
-.workspace-blade .button--dark-text,
-.workspace-blade .icon-button {
+.app-shell .button--secondary,
+.app-shell .button--dark-text,
+.app-shell .icon-button {
   color: var(--ag-text);
   background: var(--ag-surface);
   border-color: var(--workspace-line);
   box-shadow: 0 10px 24px rgba(7, 22, 38, 0.04);
 }
 
-.workspace-blade .button--secondary:hover,
-.workspace-blade .button--dark-text:hover,
-.workspace-blade .icon-button:hover {
+.app-shell .button--secondary:hover,
+.app-shell .button--dark-text:hover,
+.app-shell .icon-button:hover {
   color: var(--ag-brand-text);
   background: var(--ag-brand-soft);
   border-color: rgba(34, 104, 232, 0.34);
 }
 
-.workspace-blade .button--ghost {
+.app-shell .button--ghost {
   color: var(--ag-bad);
   background: var(--ag-surface);
   border-color: var(--ag-bad-line);
 }
 
-.workspace-blade .button--ghost:hover,
-.workspace-blade .icon-button--danger:hover {
+.app-shell .button--ghost:hover,
+.app-shell .icon-button--danger:hover {
   color: var(--ag-nav-text);
   background: var(--ag-bad);
   border-color: var(--ag-bad-line);
 }
 
-.workspace-blade .dashboard-summary,
-.workspace-blade .dashboard-summary--four {
+.app-shell .dashboard-summary,
+.app-shell .dashboard-summary--four {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin: 0 0 14px;
 }
 
-.workspace-blade .dashboard-summary article,
-.workspace-blade .platform-card,
-.workspace-blade .people-directory,
-.workspace-blade .config-tile,
-.workspace-blade .brand-preview-card,
-.workspace-blade .policy,
-.workspace-blade .note-panel,
-.workspace-blade .demo-qr-card {
+.app-shell .dashboard-summary article,
+.app-shell .platform-card,
+.app-shell .people-directory,
+.app-shell .config-tile,
+.app-shell .policy,
+.app-shell .note-panel,
+.app-shell .demo-qr-card {
   min-width: 0;
   padding: 18px;
   color: var(--ag-text);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--ag-surface);
   border: 1px solid var(--workspace-line);
   border-radius: 8px;
   box-shadow: var(--workspace-shadow);
 }
 
-.workspace-blade .dashboard-summary .metric {
+.app-shell .dashboard-summary .metric {
   margin-top: 8px;
   color: var(--ag-text);
   font-size: 28px;
   line-height: 1;
 }
 
-.workspace-blade .dashboard-summary p {
+.app-shell .dashboard-summary p {
   margin: 4px 0 0;
   color: var(--workspace-muted);
   font-size: 12px;
@@ -4578,7 +4174,7 @@ body:has(.workspace-blade) main {
   min-height: 148px;
   padding: 18px;
   color: var(--ag-text);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--ag-surface);
   border: 1px solid var(--workspace-line);
   border-radius: 8px;
   box-shadow: var(--workspace-shadow);
@@ -4588,7 +4184,7 @@ body:has(.workspace-blade) main {
 .platform-card h3,
 .config-tile h3,
 .people-directory h3,
-.workspace-blade .policy strong {
+.app-shell .policy strong {
   color: var(--ag-text);
 }
 
@@ -4597,15 +4193,15 @@ body:has(.workspace-blade) main {
 .platform-card p,
 .config-tile p,
 .people-directory p,
-.workspace-blade .policy span,
-.workspace-blade .note-panel span {
+.app-shell .policy span,
+.app-shell .note-panel span {
   color: var(--workspace-muted);
   font-weight: 650;
   line-height: 1.52;
 }
 
 .blade-action-card span,
-.workspace-blade .platform-icon {
+.app-shell .platform-icon {
   display: grid;
   width: 42px;
   height: 42px;
@@ -4741,9 +4337,9 @@ body:has(.workspace-blade) main {
   align-items: center;
 }
 
-.workspace-blade input,
-.workspace-blade select,
-.workspace-blade textarea {
+.app-shell input,
+.app-shell select,
+.app-shell textarea {
   width: 100%;
   min-height: 40px;
   padding: 9px 10px;
@@ -4755,14 +4351,14 @@ body:has(.workspace-blade) main {
   font-size: 13px;
 }
 
-.workspace-blade textarea {
+.app-shell textarea {
   min-height: 88px;
   resize: vertical;
 }
 
-.workspace-blade label,
-.workspace-blade .field-label,
-.workspace-blade .form-note {
+.app-shell label,
+.app-shell .field-label,
+.app-shell .form-note {
   color: var(--ag-brand-text);
   font-size: 12px;
   font-weight: 850;
@@ -4792,7 +4388,7 @@ body:has(.workspace-blade) main {
   vertical-align: top;
 }
 
-.workspace-blade .people-table th {
+.app-shell .people-table th {
   color: var(--ag-brand-text);
   background: var(--ag-surface);
   font-size: 11px;
@@ -4831,11 +4427,11 @@ body:has(.workspace-blade) main {
   gap: 12px;
 }
 
-.workspace-blade .app-modal__panel {
+.app-shell .app-modal__panel {
   border-radius: 8px;
 }
 
-.workspace-blade .app-modal__head h2 {
+.app-shell .app-modal__head h2 {
   color: var(--ag-text);
   font-size: clamp(26px, 4vw, 42px);
   line-height: 1;
@@ -4900,13 +4496,9 @@ body:has(.workspace-blade) main {
 }
 
 @media (max-width: 1180px) {
-  .workspace-blade {
-    grid-template-columns: 60px minmax(260px, 290px) minmax(0, 1fr);
-  }
-
   .blade-action-grid,
-  .workspace-blade .dashboard-summary,
-  .workspace-blade .dashboard-summary--four,
+  .app-shell .dashboard-summary,
+  .app-shell .dashboard-summary--four,
   .platform-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4926,51 +4518,7 @@ body:has(.workspace-blade) main {
   }
 }
 
-@media (max-width: 780px) {
-  .workspace-blade {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto minmax(0, 1fr);
-    height: auto;
-    min-height: calc(100vh - var(--workspace-site-header));
-    overflow: visible;
-  }
-
-  .workspace-blade__topbar {
-    height: auto;
-    flex-wrap: wrap;
-    padding: 14px;
-  }
-
-  .workspace-blade__topbar nav {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .workspace-blade__rail {
-    display: none;
-  }
-
-  .workspace-blade__nav,
-  .workspace-blade__content {
-    grid-column: 1;
-    grid-row: auto;
-    height: auto;
-    overflow: visible;
-  }
-
-  .workspace-blade__content {
-    padding: 16px;
-  }
-
-  .workspace-blade__menu {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .workspace-blade__section-label {
-    grid-column: 1 / -1;
-  }
-
-  .workspace-blade .section-heading,
+@media (max-width: 780px) {  .app-shell .section-heading,
   .blade-overview,
   .people-directory__head,
   .identity-reminder {
@@ -4978,7 +4526,7 @@ body:has(.workspace-blade) main {
     grid-template-columns: 1fr;
   }
 
-  .workspace-blade .toolbar,
+  .app-shell .toolbar,
   .people-directory__tools {
     justify-content: flex-start;
     justify-items: stretch;
@@ -4986,8 +4534,8 @@ body:has(.workspace-blade) main {
   }
 
   .blade-action-grid,
-  .workspace-blade .dashboard-summary,
-  .workspace-blade .dashboard-summary--four,
+  .app-shell .dashboard-summary,
+  .app-shell .dashboard-summary--four,
   .configuration-grid,
   .platform-grid,
   .policy-row,
@@ -4997,14 +4545,14 @@ body:has(.workspace-blade) main {
   }
 
   .blade-overview h1,
-  .workspace-blade .section-heading h2 {
+  .app-shell .section-heading h2 {
     font-size: 36px;
   }
 }
 
 /* Workspace blade production polish: keep the app shell isolated from global page chrome. */
 body.workspace-page,
-body:has(.workspace-blade) {
+body:has(.app-shell) {
   --workspace-site-header: 90px;
   --workspace-footer-height: 0px;
   overflow: auto;
@@ -5012,36 +4560,18 @@ body:has(.workspace-blade) {
 }
 
 body.workspace-page main,
-body:has(.workspace-blade) main {
+body:has(.app-shell) main {
   height: auto;
   min-height: 0;
   overflow: visible;
 }
-
-body.workspace-page .workspace-blade,
-.workspace-blade {
-  --workspace-site-header: 90px;
-  --workspace-footer-height: 0px;
-  height: calc(100dvh - var(--workspace-site-header));
-  min-height: calc(100dvh - var(--workspace-site-header));
-  margin-top: var(--workspace-site-header);
-  overflow: hidden;
-}
-
-.workspace-blade__content {
-  min-height: 100%;
-  padding-bottom: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-.workspace-blade .blade-panel {
+.app-shell .blade-panel {
   width: 100%;
   max-width: 1240px;
   min-height: 0;
 }
 
-.workspace-blade .section-heading,
+.app-shell .section-heading,
 .blade-overview {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -5050,23 +4580,23 @@ body.workspace-page .workspace-blade,
   max-width: 1040px;
 }
 
-.workspace-blade .section-heading > .eyebrow {
+.app-shell .section-heading > .eyebrow {
   grid-column: 1;
   grid-row: auto;
 }
 
-.workspace-blade .section-heading > h2 {
+.app-shell .section-heading > h2 {
   grid-column: 1;
   grid-row: auto;
 }
 
-.workspace-blade .section-heading > p:last-child {
+.app-shell .section-heading > p:last-child {
   grid-column: 1;
   grid-row: auto;
   align-self: start;
 }
 
-.workspace-blade .section-heading h2,
+.app-shell .section-heading h2,
 .blade-overview h1 {
   max-width: 860px;
   margin-bottom: 0;
@@ -5074,14 +4604,14 @@ body.workspace-page .workspace-blade,
   line-height: 1.02;
 }
 
-.workspace-blade .section-heading p:last-child,
+.app-shell .section-heading p:last-child,
 .blade-overview p:not(.eyebrow) {
   max-width: 860px;
   font-size: 15px;
 }
 
 body.workspace-page .site-footer,
-body:has(.workspace-blade) .site-footer {
+body:has(.app-shell) .site-footer {
   display: flex !important;
   height: auto;
   min-height: auto;
@@ -5091,12 +4621,12 @@ body:has(.workspace-blade) .site-footer {
 }
 
 body.workspace-page .site-footer .footer-logo,
-body:has(.workspace-blade) .site-footer .footer-logo {
+body:has(.app-shell) .site-footer .footer-logo {
   width: 118px;
 }
 
 body.workspace-page .site-footer div,
-body:has(.workspace-blade) .site-footer div {
+body:has(.app-shell) .site-footer div {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -5104,13 +4634,13 @@ body:has(.workspace-blade) .site-footer div {
 
 body.workspace-page .site-footer strong,
 body.workspace-page .site-footer div span,
-body:has(.workspace-blade) .site-footer strong,
-body:has(.workspace-blade) .site-footer div span {
+body:has(.app-shell) .site-footer strong,
+body:has(.app-shell) .site-footer div span {
   display: none;
 }
 
-.workspace-blade .dashboard-summary,
-.workspace-blade .dashboard-summary--four {
+.app-shell .dashboard-summary,
+.app-shell .dashboard-summary--four {
   grid-template-columns: repeat(4, minmax(150px, 1fr));
 }
 
@@ -5191,19 +4721,19 @@ body:has(.workspace-blade) .site-footer div span {
   font-weight: 750;
 }
 
-.workspace-blade .policy {
+.app-shell .policy {
   display: grid;
   min-width: 0;
   gap: 8px;
   align-content: start;
 }
 
-.workspace-blade .policy strong,
-.workspace-blade .policy span {
+.app-shell .policy strong,
+.app-shell .policy span {
   display: block;
 }
 
-.workspace-blade .policy strong {
+.app-shell .policy strong {
   font-size: 20px;
   line-height: 1.1;
 }
@@ -5233,11 +4763,11 @@ body:has(.workspace-blade) .site-footer div span {
   overflow: hidden;
 }
 
-.workspace-blade .org-chart-card {
+.app-shell .org-chart-card {
   padding: 22px;
 }
 
-.workspace-blade .org-chart-card .platform-card__head {
+.app-shell .org-chart-card .platform-card__head {
   margin-bottom: 18px;
 }
 
@@ -5663,7 +5193,7 @@ body:has(.workspace-blade) .site-footer div span {
   font-weight: 750;
 }
 
-.workspace-blade .app-modal__head .video-modal__close {
+.app-shell .app-modal__head .video-modal__close {
   flex: 0 0 46px;
   width: 46px;
   min-width: 46px;
@@ -5674,12 +5204,12 @@ body:has(.workspace-blade) .site-footer div span {
   line-height: 1;
 }
 
-.workspace-blade .checkbox-grid {
+.app-shell .checkbox-grid {
   grid-template-columns: repeat(2, minmax(120px, 1fr));
   gap: 8px;
 }
 
-.workspace-blade .checkline {
+.app-shell .checkline {
   align-items: center;
   min-width: 0;
   gap: 8px;
@@ -5688,8 +5218,8 @@ body:has(.workspace-blade) .site-footer div span {
   line-height: 1.25;
 }
 
-.workspace-blade input[type="checkbox"],
-.workspace-blade input[type="radio"] {
+.app-shell input[type="checkbox"],
+.app-shell input[type="radio"] {
   flex: 0 0 16px;
   width: 16px;
   min-width: 16px;
@@ -5699,17 +5229,17 @@ body:has(.workspace-blade) .site-footer div span {
   padding: 0;
 }
 
-.workspace-blade .checkline span {
+.app-shell .checkline span {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.workspace-blade .platform-card__head,
-.workspace-blade .config-tile__head {
+.app-shell .platform-card__head,
+.app-shell .config-tile__head {
   grid-template-columns: 46px minmax(0, 1fr);
 }
 
-.workspace-blade .platform-icon,
+.app-shell .platform-icon,
 .blade-action-card span {
   width: 40px;
   height: 40px;
@@ -5717,7 +5247,7 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 @media (max-width: 1180px) {
-  .workspace-blade .section-heading,
+  .app-shell .section-heading,
   .blade-overview,
   .people-directory__head,
   .org-chart-toolbar {
@@ -5750,15 +5280,8 @@ body:has(.workspace-blade) .site-footer div span {
     height: auto;
     overflow: visible;
   }
-
-  body.workspace-page .workspace-blade,
-  .workspace-blade {
-    height: auto;
-    overflow: visible;
-  }
-
   .people-filters,
-  .workspace-blade .checkbox-grid,
+  .app-shell .checkbox-grid,
   .policy-row,
   .org-chart-metrics {
     grid-template-columns: 1fr;
@@ -5827,7 +5350,7 @@ body:has(.workspace-blade) .site-footer div span {
 .health-log-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--ag-surface);
   box-shadow: var(--shadow);
 }
 
@@ -6081,16 +5604,16 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 /* Workspace people directory responsive polish */
-.workspace-blade .people-directory {
+.app-shell .people-directory {
   overflow: visible;
 }
 
-.workspace-blade .people-directory__head {
+.app-shell .people-directory__head {
   grid-template-columns: minmax(260px, 0.6fr) minmax(0, 1fr);
   align-items: end;
 }
 
-.workspace-blade .people-directory__tools {
+.app-shell .people-directory__tools {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -6100,54 +5623,54 @@ body:has(.workspace-blade) .site-footer div span {
   min-width: 0;
 }
 
-.workspace-blade .people-directory__tools > .button {
+.app-shell .people-directory__tools > .button {
   flex: 0 0 auto;
   justify-self: auto;
   white-space: nowrap;
 }
 
-.workspace-blade .people-filters {
+.app-shell .people-filters {
   flex: 1 1 720px;
   min-width: min(100%, 620px);
   grid-template-columns: minmax(160px, 1fr) repeat(3, minmax(112px, 0.7fr)) minmax(88px, auto);
 }
 
-.workspace-blade .people-table {
+.app-shell .people-table {
   min-width: 1080px;
   font-size: 12.5px;
 }
 
-.workspace-blade .people-table th,
-.workspace-blade .people-table td {
+.app-shell .people-table th,
+.app-shell .people-table td {
   padding: 11px 10px;
 }
 
-.workspace-blade .people-table th:first-child,
-.workspace-blade .people-table td:first-child {
+.app-shell .people-table th:first-child,
+.app-shell .people-table td:first-child {
   min-width: 130px;
 }
 
-.workspace-blade .people-table th:nth-child(2),
-.workspace-blade .people-table td:nth-child(2) {
+.app-shell .people-table th:nth-child(2),
+.app-shell .people-table td:nth-child(2) {
   min-width: 190px;
 }
 
-.workspace-blade .people-table th:last-child,
-.workspace-blade .people-table td:last-child {
+.app-shell .people-table th:last-child,
+.app-shell .people-table td:last-child {
   min-width: 124px;
 }
 
-.workspace-blade .row-actions {
+.app-shell .row-actions {
   flex-wrap: wrap;
   min-width: 0;
 }
 
-.workspace-blade .connected-app-directory .people-directory__head {
+.app-shell .connected-app-directory .people-directory__head {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
 }
 
-.workspace-blade .connected-app-directory .connected-app-create-button {
+.app-shell .connected-app-directory .connected-app-create-button {
   width: auto;
   min-width: 220px;
   max-width: 260px;
@@ -6155,28 +5678,28 @@ body:has(.workspace-blade) .site-footer div span {
   white-space: nowrap;
 }
 
-.workspace-blade .connected-app-filters {
+.app-shell .connected-app-filters {
   width: 100%;
   min-width: 0;
   grid-template-columns: minmax(190px, 1.4fr) repeat(4, minmax(120px, 0.75fr)) minmax(96px, auto);
 }
 
-.workspace-blade .connected-app-table-wrap,
-.workspace-blade .connected-app-card .table-wrap {
+.app-shell .connected-app-table-wrap,
+.app-shell .connected-app-card .table-wrap {
   overflow-x: hidden;
 }
 
-.workspace-blade .connected-app-table {
+.app-shell .connected-app-table {
   width: 100%;
   min-width: 0;
   table-layout: fixed;
   font-size: 12px;
 }
 
-.workspace-blade .connected-app-table th,
-.workspace-blade .connected-app-table td,
-.workspace-blade .connected-app-subtable th,
-.workspace-blade .connected-app-subtable td {
+.app-shell .connected-app-table th,
+.app-shell .connected-app-table td,
+.app-shell .connected-app-subtable th,
+.app-shell .connected-app-subtable td {
   padding: 10px 8px;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -6185,7 +5708,7 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 /* Headers stay on one line and never break mid-word ("CREDENTIALS"). */
-.workspace-blade .connected-app-table th {
+.app-shell .connected-app-table th {
   white-space: nowrap;
   overflow-wrap: normal;
   color: var(--muted);
@@ -6194,87 +5717,87 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 /* Short, single-token cells should not wrap ("example", "web", a date). */
-.workspace-blade .connected-app-table td:nth-child(3),
-.workspace-blade .connected-app-table td:nth-child(4),
-.workspace-blade .connected-app-table td:nth-child(7) {
+.app-shell .connected-app-table td:nth-child(3),
+.app-shell .connected-app-table td:nth-child(4),
+.app-shell .connected-app-table td:nth-child(7) {
   white-space: nowrap;
 }
 
-.workspace-blade .connected-app-table th:first-child,
-.workspace-blade .connected-app-table td:first-child {
+.app-shell .connected-app-table th:first-child,
+.app-shell .connected-app-table td:first-child {
   width: 26%;
   min-width: 0;
 }
 
-.workspace-blade .connected-app-table th:nth-child(2),
-.workspace-blade .connected-app-table td:nth-child(2) {
+.app-shell .connected-app-table th:nth-child(2),
+.app-shell .connected-app-table td:nth-child(2) {
   width: 13%;
   min-width: 0;
 }
 
-.workspace-blade .connected-app-table th:nth-child(3),
-.workspace-blade .connected-app-table td:nth-child(3) {
+.app-shell .connected-app-table th:nth-child(3),
+.app-shell .connected-app-table td:nth-child(3) {
   width: 9%;
 }
 
-.workspace-blade .connected-app-table th:nth-child(4),
-.workspace-blade .connected-app-table td:nth-child(4) {
+.app-shell .connected-app-table th:nth-child(4),
+.app-shell .connected-app-table td:nth-child(4) {
   width: 9%;
 }
 
-.workspace-blade .connected-app-table th:nth-child(5),
-.workspace-blade .connected-app-table td:nth-child(5) {
+.app-shell .connected-app-table th:nth-child(5),
+.app-shell .connected-app-table td:nth-child(5) {
   width: 10%;
 }
 
-.workspace-blade .connected-app-table th:nth-child(6),
-.workspace-blade .connected-app-table td:nth-child(6) {
+.app-shell .connected-app-table th:nth-child(6),
+.app-shell .connected-app-table td:nth-child(6) {
   width: 9%;
 }
 
-.workspace-blade .connected-app-table th:nth-child(7),
-.workspace-blade .connected-app-table td:nth-child(7) {
+.app-shell .connected-app-table th:nth-child(7),
+.app-shell .connected-app-table td:nth-child(7) {
   width: 9%;
 }
 
-.workspace-blade .connected-app-table th:last-child,
-.workspace-blade .connected-app-table td:last-child {
+.app-shell .connected-app-table th:last-child,
+.app-shell .connected-app-table td:last-child {
   width: 15%;
   min-width: 0;
 }
 
 /* The built-in example relying party: a subtle tint and a single, full-width
    action so it reads as a curated entry rather than a registration. */
-.workspace-blade .connected-app-table tr.connected-app-row--builtin {
+.app-shell .connected-app-table tr.connected-app-row--builtin {
   background: var(--soft-blue);
 }
 
-.workspace-blade .connected-app-table tr.connected-app-row--builtin td:first-child strong {
+.app-shell .connected-app-table tr.connected-app-row--builtin td:first-child strong {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
-.workspace-blade .connected-app-table tr.connected-app-row--builtin .row-actions {
+.app-shell .connected-app-table tr.connected-app-row--builtin .row-actions {
   grid-template-columns: 1fr;
 }
 
-.workspace-blade .connected-app-table tr.connected-app-row--builtin .row-actions .button {
+.app-shell .connected-app-table tr.connected-app-row--builtin .row-actions .button {
   white-space: nowrap;
 }
 
-.workspace-blade .connected-app-table .row-actions {
+.app-shell .connected-app-table .row-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
-.workspace-blade .connected-app-table .row-actions form {
+.app-shell .connected-app-table .row-actions form {
   min-width: 0;
 }
 
-.workspace-blade .connected-app-table .icon-button,
-.workspace-blade .connected-app-subtable .icon-button {
+.app-shell .connected-app-table .icon-button,
+.app-shell .connected-app-subtable .icon-button {
   width: 100%;
   min-width: 0;
   padding-inline: 8px;
@@ -6282,17 +5805,17 @@ body:has(.workspace-blade) .site-footer div span {
   line-height: 1.15;
 }
 
-.workspace-blade .connected-app-modal {
+.app-shell .connected-app-modal {
   align-content: start;
 }
 
-.workspace-blade .connected-app-modal-grid {
+.app-shell .connected-app-modal-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
 }
 
-.workspace-blade .connected-app-subtable {
+.app-shell .connected-app-subtable {
   min-width: 0;
   width: 100%;
   table-layout: fixed;
@@ -6300,20 +5823,20 @@ body:has(.workspace-blade) .site-footer div span {
 }
 
 @media (max-width: 1380px) {
-  .workspace-blade .people-directory__head {
+  .app-shell .people-directory__head {
     grid-template-columns: 1fr;
   }
 
-  .workspace-blade .people-directory__tools {
+  .app-shell .people-directory__tools {
     justify-content: flex-start;
   }
 
-  .workspace-blade .connected-app-directory .people-directory__head,
-  .workspace-blade .connected-app-filters {
+  .app-shell .connected-app-directory .people-directory__head,
+  .app-shell .connected-app-filters {
     grid-template-columns: 1fr;
   }
 
-  .workspace-blade .connected-app-directory .connected-app-create-button {
+  .app-shell .connected-app-directory .connected-app-create-button {
     width: min(100%, 260px);
     justify-self: start;
   }
@@ -6322,11 +5845,11 @@ body:has(.workspace-blade) .site-footer div span {
 @media (max-width: 920px) {
   .health-summary,
   .health-card-grid,
-  .workspace-blade .people-filters {
+  .app-shell .people-filters {
     grid-template-columns: 1fr;
   }
 
-  .workspace-blade .people-filters {
+  .app-shell .people-filters {
     min-width: 100%;
   }
 
@@ -6355,7 +5878,7 @@ body:has(.workspace-blade) .site-footer div span {
 .connected-app-card {
   border: 1px solid rgba(148, 170, 196, 0.32);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--ag-surface);
   box-shadow: 0 18px 48px rgba(7, 25, 40, 0.08);
   padding: 24px;
 }
@@ -6541,7 +6064,7 @@ body:has(.workspace-blade) .site-footer div span {
 .authorize-panel {
   border: 1px solid rgba(148, 170, 196, 0.32);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--ag-surface);
   padding: 28px;
   box-shadow: 0 22px 56px rgba(7, 25, 40, 0.08);
 }
@@ -6662,7 +6185,7 @@ body:has(.workspace-blade) .site-footer div span {
 .docs-reader {
   border: 1px solid rgba(148, 170, 196, 0.34);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--ag-surface);
   box-shadow: 0 18px 44px rgba(7, 25, 40, 0.06);
 }
 
@@ -7070,10 +6593,13 @@ body:has(.workspace-blade) .site-footer div span {
   }
 }
 
-/* Testing page — purpose line and the list of what each app exercises. */
+/* Testing page — purpose line and the list of what each app exercises.
+
+   `--navy-800` is the navy bar's hairline, not an ink. It resolved to a dark
+   slate in dark mode and put the chips below at 1.2:1 on their own tint. */
 .example-app-card__purpose {
   font-weight: 600;
-  color: var(--navy-800, var(--ag-brand-text));
+  color: var(--ag-brand-text);
   margin-bottom: 6px;
 }
 
@@ -7089,9 +6615,9 @@ body:has(.workspace-blade) .site-footer div span {
 .example-app-card__tests li {
   font-size: 12px;
   font-weight: 600;
-  color: var(--navy-800, var(--ag-brand-text));
-  background: var(--soft-blue, var(--ag-brand-soft));
-  border: 1px solid var(--line, var(--ag-line));
+  color: var(--ag-brand-text);
+  background: var(--ag-brand-soft);
+  border: 1px solid var(--ag-brand-line);
   border-radius: 999px;
   padding: 3px 10px;
 }
@@ -7606,7 +7132,6 @@ main > .band:first-child:not(.band--page-top) {
   min-width: 160px;
 }
 
-
 /* Subscribing an organization: the form leads, the plan sits beside it.
    Previously the heading, the plan card and the form were three children of a
    two-column grid, so they landed in whichever cell came next and the page
@@ -8120,7 +7645,6 @@ main > .band:first-child:not(.band--page-top) {
   border-color: var(--blue-600);
 }
 
-
 /* Bootstrap-5 outline variants.
    The tile actions were five near-identical white buttons, so nothing carried
    meaning. Colour is the meaning now: the primary action stays filled, the
@@ -8177,46 +7701,6 @@ main > .band:first-child:not(.band--page-top) {
 /* The capacity bar now leads the section rather than trailing it. */
 .capacity-bar {
   margin: 0 0 22px;
-}
-
-/* The workspace shell collapses to one column as soon as the icon rail is
-   hidden.
-   
-   It already tried to, at max-width: 980px, but two later rules re-declare
-   .workspace-blade with the three-column desktop template — so between 781px
-   and 980px the rail and nav were moved into column 1 while the grid still
-   reserved three tracks. Column 1 is 60px, which is where the content ended up:
-   a dashboard heading rendered one word per line with two empty columns beside
-   it. Below 781px a separate block happened to fix it, which is why this only
-   showed on tablets, split-screen windows, and phones asking for the desktop
-   site.
-   
-   Kept at the end of the file deliberately. The collapse has to outrank every
-   earlier .workspace-blade declaration, and source order is what decides that
-   between rules of equal specificity. */
-@media (max-width: 980px) {
-  .workspace-blade {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
-  }
-
-  .workspace-blade__rail {
-    display: none;
-  }
-
-  /* Both carry an explicit grid-area at every width, so neither lands in the
-     single column without being told to. */
-  .workspace-blade__nav,
-  .workspace-blade__content {
-    grid-column: 1;
-    grid-row: auto;
-    max-height: none;
-    position: static;
-  }
-
-  .workspace-blade__content {
-    min-width: 0;
-  }
 }
 
 /* Wallet sign-in for connected applications. */
@@ -9124,9 +8608,13 @@ main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .section
   border-color: var(--aeg-brand);
 }
 
+/* The label has to move with the fill. `--aeg-brand-ink` aliases the hover
+   blue, which lightens rather than darkens in dark mode, and the inherited
+   white on it is 2.9:1. */
 .aeg-btn--primary:hover {
-  background: var(--aeg-brand-ink);
-  border-color: var(--aeg-brand-ink);
+  color: var(--ag-brand-hover-on);
+  background: var(--ag-brand-hover);
+  border-color: var(--ag-brand-hover);
 }
 
 .aeg-btn--secondary {
@@ -10022,7 +9510,7 @@ details.aeg-card[open] > summary {
 @media (max-width: 760px) {
   .site-header {
     position: static;
-    background: rgba(6, 22, 37, 0.96);
+    background: var(--ag-surface);
   }
 
   main > .band:first-child:not(.band--page-top) {

@@ -1,0 +1,20 @@
+{{!--
+  The breadcrumb bar above the page content.
+
+  Two levels, scope then page, which is as deep as this product nests. It
+  replaces the back links that each settings template carried its own copy of:
+  a trail says where you are as well as where you came from, and a back link
+  only says the second.
+--}}
+<header class="app-top">
+  <nav class="app-crumb" aria-label="Breadcrumb">
+    {{#each appShell.crumbs}}
+      {{#if @index}}<span class="app-crumb__sep" aria-hidden="true">/</span>{{/if}}
+      {{#if href}}
+        <a href="{{href}}">{{label}}</a>
+      {{else}}
+        <span aria-current="page">{{label}}</span>
+      {{/if}}
+    {{/each}}
+  </nav>
+</header>

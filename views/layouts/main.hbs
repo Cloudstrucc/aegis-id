@@ -29,9 +29,31 @@
   </head>
   <body{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>
     {{> site-header}}
-    <main>
-      {{{body}}}
-    </main>
+    {{!--
+      Two body shapes. An application page gets the sidebar shell; everything
+      else — anonymous pages, the sign-in and recovery flows, checkout, the
+      rendered documents — gets the plain single column it had.
+
+      `data-workspace-blade` goes on the shell rather than inside the page,
+      because the blade links now live in the sidebar: the script looks for
+      links and panels within one shell element, and they are on opposite
+      sides of it.
+    --}}
+    {{#if appShell}}
+      <div class="app-shell"{{#if appShell.hasBlades}} data-workspace-blade{{/if}}>
+        {{> app-sidebar}}
+        <div class="app-shell__body">
+          {{> app-topbar}}
+          <main class="app-shell__main">
+            {{{body}}}
+          </main>
+        </div>
+      </div>
+    {{else}}
+      <main>
+        {{{body}}}
+      </main>
+    {{/if}}
     {{> site-footer}}
     {{#each pageScripts}}
       <script src="{{src}}" defer></script>

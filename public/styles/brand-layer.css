@@ -32,6 +32,13 @@
      colour, where contrast is measured against the label instead. */
   --ag-brand-text:   #0E6EB0;
   --ag-brand-on:     #ffffff;   /* text on a brand fill (4.9:1) */
+  /* The hover fill for a brand button, and the text that goes on it.
+     A single "pressed" colour cannot serve both themes: pressing means
+     DARKER on a light page and LIGHTER on a dark one, and white on the
+     lighter blue is 2.9:1. The two move together, so the label follows the
+     fill instead of being assumed white. */
+  --ag-brand-hover:    #0B5A91;
+  --ag-brand-hover-on: #ffffff;   /* 8.0:1 */
   --ag-brand-soft:   #e8f3fb;
   --ag-brand-line:   #b9d9ef;
 
@@ -52,6 +59,18 @@
   --ag-good:         #047857;  --ag-good-soft: #ecfdf5;  --ag-good-line: #a7f3d0;
   --ag-warn:         #92400e;  --ag-warn-soft: #fffbeb;  --ag-warn-line: #fde68a;
   --ag-bad:          #b91c1c;  --ag-bad-soft:  #fef2f2;  --ag-bad-line:  #fecaca;
+  /* Text on a status FILL. The status colours invert between themes — they
+     are dark inks on the light page and light inks on the dark one, because
+     most of their use is as text. Used as a fill they therefore need the
+     opposite label colour, and a hard-coded white fails in dark: white on
+     the dark theme's #f87171 is 2.5:1. */
+  --ag-good-on:      #ffffff;   /* 5.6:1 */
+  --ag-warn-on:      #ffffff;   /* 7.1:1 */
+  --ag-bad-on:       #ffffff;   /* 6.5:1 */
+  /* The third accent, for the middle architecture column. A token rather
+     than a literal so it inverts with the rest of them. */
+  --ag-teal:         #0e7490;
+  --ag-teal-on:      #ffffff;   /* 5.1:1 */
   --ag-info:         #0F75BC;  --ag-info-soft: #e8f3fb;  --ag-info-line: #b9d9ef;
 
   /* --- dark chrome (the app's navy bar keeps its own scale) -------------- */
@@ -84,6 +103,8 @@
     --ag-brand-ink:    #3B9FE0;
     --ag-brand-text:   #3B9FE0;   /* 6.8:1 on --ag-bg; #0F75BC is only 4.0:1 there */
     --ag-brand-on:     #ffffff;
+    --ag-brand-hover:    #3B9FE0;
+    --ag-brand-hover-on: #06243a;   /* 5.5:1 — dark ink on the lifted blue */
     --ag-brand-soft:   #0b1f2e;
     --ag-brand-line:   #1c3f5c;
 
@@ -101,6 +122,11 @@
     --ag-good: #34d399; --ag-good-soft: #052e22; --ag-good-line: #10b981;
     --ag-warn: #fbbf24; --ag-warn-soft: #2b1f04; --ag-warn-line: #a16207;
     --ag-bad:  #f87171; --ag-bad-soft:  #2d1113; --ag-bad-line:  #b91c1c;
+    --ag-good-on: #09090b;  /* 10.4:1 */
+    --ag-warn-on: #09090b;  /* 12.0:1 */
+    --ag-bad-on:  #09090b;  /*  7.2:1 */
+    --ag-teal:    #22d3ee;
+    --ag-teal-on: #09090b;  /* 11.0:1 */
     --ag-info: #3B9FE0; --ag-info-soft: #0b1f2e; --ag-info-line: #1c3f5c;
 
     --ag-nav:          #060d14;
@@ -122,6 +148,8 @@
   --ag-brand-ink:    #3B9FE0;
   --ag-brand-text:   #3B9FE0;
   --ag-brand-on:     #ffffff;
+  --ag-brand-hover:    #3B9FE0;
+  --ag-brand-hover-on: #06243a;
   --ag-brand-soft:   #0b1f2e;
   --ag-brand-line:   #1c3f5c;
 
@@ -139,6 +167,11 @@
   --ag-good: #34d399; --ag-good-soft: #052e22; --ag-good-line: #10b981;
   --ag-warn: #fbbf24; --ag-warn-soft: #2b1f04; --ag-warn-line: #a16207;
   --ag-bad:  #f87171; --ag-bad-soft:  #2d1113; --ag-bad-line:  #b91c1c;
+  --ag-good-on: #09090b;
+  --ag-warn-on: #09090b;
+  --ag-bad-on:  #09090b;
+  --ag-teal:    #22d3ee;
+  --ag-teal-on: #09090b;
   --ag-info: #3B9FE0; --ag-info-soft: #0b1f2e; --ag-info-line: #1c3f5c;
 
   --ag-nav:          #060d14;
@@ -270,7 +303,6 @@ pre { background: var(--ag-nav); color: var(--ag-nav-text); border-color: var(--
   backdrop-filter: none;
 }
 .site-header a { color: var(--ag-nav-text); }
-.site-nav a:hover { color: #ffffff; }
 .site-footer {
   background: var(--ag-surface);
   border-top: 1px solid var(--ag-line);
@@ -326,7 +358,7 @@ pre { background: var(--ag-nav); color: var(--ag-nav-text); border-color: var(--
   background: var(--ag-brand); border-color: var(--ag-brand);
   color: var(--ag-brand-on); font-weight: 550;
 }
-.ag-btn--primary:hover { background: var(--ag-brand-ink); border-color: var(--ag-brand-ink); color: var(--ag-brand-on); }
+.ag-btn--primary:hover { background: var(--ag-brand-hover); border-color: var(--ag-brand-hover); color: var(--ag-brand-hover-on); }
 .ag-btn--danger { color: var(--ag-bad); border-color: var(--ag-bad); }
 .ag-btn--block { width: 100%; justify-content: center; padding: 10px 14px; font-size: 14px; }
 .ag-btn[disabled] { opacity: .5; cursor: default; }
@@ -541,7 +573,7 @@ main { padding-top: 0; }
 .button--primary {
   background: var(--ag-brand); border-color: var(--ag-brand); color: #fff;
 }
-.button--primary:hover { background: var(--ag-brand-ink); border-color: var(--ag-brand-ink); color: #fff; }
+.button--primary:hover { background: var(--ag-brand-hover); border-color: var(--ag-brand-hover); color: var(--ag-brand-hover-on); }
 .button--ghost { background: var(--ag-surface); color: var(--ag-text); }
 .button--ghost:hover { background: var(--ag-surface-2); border-color: var(--ag-brand); }
 
@@ -627,11 +659,18 @@ main { padding-top: 0; }
   font-size: 13.5px; font-weight: 600;
   color: var(--ag-text);
 }
-.site-nav__cta:hover { background: var(--ag-surface-2); color: var(--ag-text); }
-.site-nav__cta--primary {
-  background: var(--ag-brand); border-color: var(--ag-brand); color: #fff;
+/* Scoped to the header on purpose. `.site-header a` is 0,1,1 and sets the
+   muted link colour for the whole bar, so a bare `.site-nav__cta` at 0,1,0
+   loses to it — which painted "Start a trial" in #5f5f6a on the brand fill,
+   1.5:1 and effectively unreadable. These restate it one class higher. */
+.site-header .site-nav__cta { color: var(--ag-text); }
+.site-header .site-nav__cta:hover { background: var(--ag-surface-2); color: var(--ag-text); }
+.site-header .site-nav__cta--primary {
+  background: var(--ag-brand); border-color: var(--ag-brand); color: var(--ag-brand-on);
 }
-.site-nav__cta--primary:hover { background: var(--ag-brand-ink); border-color: var(--ag-brand-ink); color: #fff; }
+.site-header .site-nav__cta--primary:hover {
+  background: var(--ag-brand-hover); border-color: var(--ag-brand-hover); color: var(--ag-brand-hover-on);
+}
 
 /* --- button variants that were scoped to a context -----------------------
    main.css carries higher-specificity copies of the button rules — the
@@ -655,9 +694,9 @@ main { padding-top: 0; }
 .organization-tile__actions > .button--blue:first-child:hover,
 .button--blue:hover,
 .button--primary:hover {
-  background: var(--ag-brand-ink);
-  border-color: var(--ag-brand-ink);
-  color: #fff;
+  background: var(--ag-brand-hover);
+  border-color: var(--ag-brand-hover);
+  color: var(--ag-brand-hover-on);
 }
 .auth-panel .button--ghost,
 .workspace-blade .button--ghost,
@@ -768,4 +807,716 @@ body.auth-page .page-hero,
 @media (max-width: 760px) {
   .site-header { flex-wrap: wrap; }
   .site-nav { justify-content: flex-start; }
+}
+
+/* ===========================================================================
+   The application shell
+   ---------------------------------------------------------------------------
+   One sidebar for every authenticated surface, replacing the dashboard's own
+   icon rail and menu blade.
+
+   Three things the old shell did that this one deliberately does not:
+
+     - it was `height: 100vh; overflow: hidden` with its content column as the
+       scrolling element. A nested scroller means the browser's own
+       scroll-to-anchor, find-in-page and restore-position all act on the wrong
+       box, and on iOS the address bar never collapses. This scrolls the
+       document and makes the sidebar sticky instead.
+     - it reserved a 68px icon rail of single capital letters beside a menu
+       that spelled the same destinations out. One labelled list is not a
+       downgrade from two unlabelled ones.
+     - it used the marketing type ramp inside an operational page, so a panel
+       heading rendered at up to 46px. The ramp here tops out at 21px, which is
+       what AGENTS.md's "avoid oversized typography in dashboards" is about.
+   ========================================================================= */
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(210px, 248px) minmax(0, 1fr);
+  align-items: start;
+  min-height: calc(100vh - 64px);
+  background: var(--ag-bg);
+}
+
+/* --- the sidebar --------------------------------------------------------- */
+.app-side {
+  position: sticky;
+  /* Under the sticky site header rather than over it. */
+  top: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100vh - 64px);
+  padding: 14px 10px;
+  overflow-y: auto;
+  background: var(--ag-surface);
+  border-right: 1px solid var(--ag-line);
+  scrollbar-width: thin;
+}
+
+.app-side__org {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  margin-bottom: 6px;
+  padding: 7px 9px;
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r-sm);
+  color: var(--ag-text);
+  text-decoration: none;
+}
+
+.app-side__org:hover { border-color: var(--ag-line-strong); background: var(--ag-surface-2); }
+
+.app-side__org-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--ag-brand);
+  color: var(--ag-brand-on);
+  font-family: var(--ag-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.app-side__org-text { min-width: 0; line-height: 1.25; }
+
+.app-side__org-text strong {
+  display: block;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.app-side__org-text small {
+  display: block;
+  overflow: hidden;
+  color: var(--ag-subtle);
+  font-family: var(--ag-mono);
+  font-size: 10.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.app-side__nav { display: flex; flex-direction: column; gap: 1px; }
+
+.app-side__label {
+  margin: 15px 0 5px;
+  padding: 0 9px;
+  color: var(--ag-subtle);
+  font-family: var(--ag-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.app-side__label:first-child { margin-top: 2px; }
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 9px;
+  border-radius: var(--ag-r-sm);
+  color: var(--ag-muted);
+  font-size: 13px;
+  font-weight: 450;
+  text-decoration: none;
+}
+
+.app-nav .ag-icon { flex: none; color: var(--ag-subtle); }
+.app-nav:hover { background: var(--ag-surface-2); color: var(--ag-text); }
+.app-nav:hover .ag-icon { color: var(--ag-text); }
+
+.app-nav__label { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* `is-active` is set by the blade script for an in-page panel and by the
+   shell service for a route. One appearance for both, so the reader cannot
+   tell which kind of destination a row is — and should not need to. */
+.app-nav.is-active {
+  background: var(--ag-brand-soft);
+  color: var(--ag-brand-text);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--ag-brand);
+}
+
+.app-nav.is-active .ag-icon { color: var(--ag-brand-text); }
+
+.app-nav__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--ag-subtle);
+}
+
+.app-nav__dot--success { background: var(--ag-good); }
+.app-nav__dot--warning { background: var(--ag-warn); }
+.app-nav__dot--danger  { background: var(--ag-bad); }
+
+.app-side__advice {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 16px 0 0;
+  padding: 10px 11px;
+  border: 1px solid var(--ag-brand-line);
+  border-radius: var(--ag-r-sm);
+  background: var(--ag-brand-soft);
+}
+
+.app-side__advice strong {
+  color: var(--ag-brand-text);
+  font-family: var(--ag-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.app-side__advice span { color: var(--ag-text); font-size: 12px; line-height: 1.5; }
+
+.app-side__viewer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  /* Pushed to the bottom of the rail when the nav is shorter than the
+     viewport, and immediately after it when it is not. */
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--ag-line);
+}
+
+.app-side__viewer-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r-pill);
+  background: var(--ag-surface-2);
+  color: var(--ag-text);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.app-side__viewer-text { min-width: 0; line-height: 1.3; }
+
+.app-side__viewer-text strong {
+  display: block;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.app-side__viewer-text small { display: block; color: var(--ag-subtle); font-size: 11px; }
+
+/* --- the body column ---------------------------------------------------- */
+.app-shell__body { display: flex; min-width: 0; flex-direction: column; }
+
+.app-top {
+  position: sticky;
+  top: 64px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  background: var(--ag-surface);
+  border-bottom: 1px solid var(--ag-line);
+}
+
+.app-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: var(--ag-muted);
+  font-size: 13px;
+}
+
+.app-crumb a { color: var(--ag-muted); text-decoration: none; }
+.app-crumb a:hover { color: var(--ag-brand-text); text-decoration: underline; }
+.app-crumb [aria-current="page"] { color: var(--ag-text); font-weight: 500; }
+/* A hairline token on a white bar is 1.5:1 — the separator was there and
+   nobody could see it. The same grey as the links reads as a separator
+   anyway, because it is one thin glyph between two words. */
+.app-crumb__sep { color: var(--ag-subtle); }
+
+.app-shell__main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+}
+
+/* --- the panels inside it ------------------------------------------------
+   The dashboard's blades keep their own markup; what changes is the ramp they
+   are drawn at. Each rule here restates an existing one at matching
+   specificity rather than reaching for !important.
+   ------------------------------------------------------------------------ */
+.app-shell .blade-panel,
+.app-shell .band { max-width: none; padding: 0; background: transparent; }
+
+.app-shell .section-heading,
+.app-shell .blade-overview {
+  max-width: none;
+  margin-bottom: 4px;
+  gap: 4px;
+}
+
+.app-shell .section-heading h2,
+.app-shell .section-heading > h2,
+.app-shell .blade-overview h1 {
+  max-width: 48ch;
+  margin: 0;
+  font-family: var(--ag-display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -.012em;
+  line-height: 1.2;
+}
+
+.app-shell .section-heading p:last-child,
+.app-shell .section-heading > p:last-child,
+.app-shell .blade-overview p:not(.eyebrow) {
+  max-width: 68ch;
+  color: var(--ag-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.app-shell .eyebrow {
+  color: var(--ag-subtle);
+  font-family: var(--ag-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.app-shell h3 { font-family: var(--ag-display); font-size: 15px; font-weight: 600; }
+
+/* Cards: one surface, one hairline, no drop shadow. The old panels carried a
+   44px-blur shadow each, which on a page of twelve of them read as haze
+   rather than as elevation. */
+.app-shell .platform-card,
+.app-shell .people-directory,
+.app-shell .config-tile,
+.app-shell .policy,
+.app-shell .note-panel,
+.app-shell .demo-qr-card,
+.app-shell .dashboard-summary article {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r);
+  box-shadow: none;
+}
+
+.app-shell .dashboard-summary,
+.app-shell .dashboard-summary--four {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.app-shell .dashboard-summary article { padding: 16px; }
+
+.app-shell .dashboard-summary .metric {
+  font-family: var(--ag-display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -.018em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .dashboard-summary p { margin: 6px 0 0; color: var(--ag-muted); font-size: 12px; }
+
+/* Tables read as data rather than as prose: an uppercase micro-label header
+   row, hairline row rules, and tabular figures. */
+.app-shell .people-table th,
+.app-shell .connected-app-table th {
+  padding: 0 14px 9px;
+  background: transparent;
+  border-color: var(--ag-line);
+  color: var(--ag-subtle);
+  font-family: var(--ag-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.app-shell .people-table td { font-size: 13px; }
+
+/* --- narrow widths ------------------------------------------------------
+   The sidebar becomes a horizontally-scrolling strip above the content rather
+   than disappearing: these rows are the only navigation on the page, so
+   hiding them with nothing behind a button would strand the reader.
+   ---------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .app-shell { grid-template-columns: minmax(0, 1fr); }
+  .app-side {
+    position: static;
+    max-height: none;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ag-line);
+  }
+  .app-side__nav { flex-direction: row; gap: 4px; }
+  .app-side__label { display: none; }
+  .app-side__org { flex: none; margin-bottom: 0; }
+  .app-side__advice { display: none; }
+  .app-side__viewer { display: none; }
+  .app-nav { flex: none; }
+  .app-nav.is-active { box-shadow: inset 0 -2px 0 var(--ag-brand); }
+  .app-top { top: 0; }
+  .app-shell__main { padding: 16px 14px; }
+}
+
+/* --- the admin and settings pages inside the shell ----------------------
+   These templates open with `.band > .aeg-page`, a centred 1140px column with
+   its own 26px/64px padding — correct when the page was the whole window, and
+   a second set of margins now that the shell's main column already provides
+   them. The band and the page both become plain blocks here.
+
+   `.aeg-crumb` goes with them: each settings template carried its own
+   breadcrumb, and the shell draws one above every page.
+   ---------------------------------------------------------------------- */
+.app-shell .aeg-page {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.app-shell .aeg-crumb { display: none; }
+
+.app-shell .aeg-page-head { margin-bottom: 4px; }
+
+.app-shell .aeg-page-head h1 {
+  font-family: var(--ag-display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -.012em;
+  line-height: 1.2;
+}
+
+.app-shell .aeg-page-head p { font-size: 13px; line-height: 1.6; }
+
+.app-shell .aeg-eyebrow {
+  color: var(--ag-subtle);
+  font-family: var(--ag-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* The card grids read as one system with the dashboard's: a surface, a
+   hairline, no shadow, and the brand hairline on hover. */
+.app-shell .aeg-stat-card {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r);
+  box-shadow: none;
+}
+
+.app-shell .aeg-stat-card:hover {
+  border-color: var(--ag-brand-line);
+  background: var(--ag-surface);
+}
+
+/* ===========================================================================
+   The architecture band
+   ---------------------------------------------------------------------------
+   `.band--ink` was a navy slab, and everything inside it was coloured for
+   that ground: `--ag-nav-text` type, white-alpha card fills, a translucent
+   amber lab panel. The facelift turned every band onto the light canvas —
+   `.band` sets the background and outranks `.band--ink`, which only ever set
+   `color` — so the band went light while its contents stayed dressed for the
+   dark. The lab panel ended up near-white type on cream at 1.1:1, and the
+   column headings disappeared entirely.
+
+   Recoloured here rather than by deleting `.band--ink`, because the class
+   still marks the section that carries the architecture diagram and the
+   spacing that goes with it. Every value is a token, so dark mode follows.
+   ========================================================================= */
+.band--ink { color: var(--ag-text); background: var(--ag-bg); }
+.section-heading--inverse { color: var(--ag-text); }
+.section-heading--inverse p { color: var(--ag-muted); }
+
+.arch-flow { color: var(--ag-text); }
+
+.arch-col {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-r);
+  color: var(--ag-text);
+}
+
+.arch-col__head h3 { color: var(--ag-text); }
+.arch-col__head p { color: var(--ag-muted); }
+
+/* The three columns were told apart by three different translucent fills on
+   navy, which on a white card is three barely-different whites. A coloured
+   top edge says the same thing and survives both themes. */
+.arch-col--blue  { border-top: 3px solid var(--ag-brand); }
+.arch-col--cyan  { border-top: 3px solid var(--ag-teal); }
+.arch-col--green { border-top: 3px solid var(--ag-good); }
+
+.arch-col__list li {
+  background: var(--ag-surface-2);
+  border: 1px solid var(--ag-line);
+  color: var(--ag-text);
+}
+
+.arch-col__list li strong { color: var(--ag-text); }
+.arch-col__list li span { color: var(--ag-muted); }
+
+.arch-lab {
+  background: var(--ag-warn-soft);
+  border: 1px solid var(--ag-warn-line);
+  color: var(--ag-text);
+}
+
+.arch-lab__copy h3 { color: var(--ag-text); }
+.arch-lab__copy p { color: var(--ag-muted); }
+
+.arch-lab__label {
+  background: var(--ag-warn);
+  color: var(--ag-warn-on);
+}
+
+.arch-lab__list li {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-warn-line);
+  color: var(--ag-warn);
+}
+
+/* --- the architecture kickers -------------------------------------------
+   `.arch-col--green .arch-col__kicker` set a green fill and green text: a
+   1.0:1 pill reading "Step 3" that nobody could see at any point in the
+   product's life, dark band or light. The cyan one inherited the base
+   `--ag-text` onto its own fill at 2.7:1. All three now say the same thing
+   the blue one always did.
+   ---------------------------------------------------------------------- */
+.arch-col--blue .arch-col__kicker  { background: var(--ag-brand); color: var(--ag-brand-on); }
+.arch-col--cyan .arch-col__kicker  { background: var(--ag-teal);  color: var(--ag-teal-on); }
+.arch-col--green .arch-col__kicker { background: var(--ag-good);  color: var(--ag-good-on); }
+
+/* --- the product-brief panel --------------------------------------------
+   A blue-to-cyan-to-green gradient carrying `--ag-muted` body text at
+   1.2:1. White would not have saved it either: the green end composites to
+   roughly #1ba971, and white on that is 2.4:1. A gradient that no text can
+   sit on is not a surface, so this is a card like every other one.
+   ---------------------------------------------------------------------- */
+.product-brief-panel {
+  color: var(--ag-text);
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  box-shadow: none;
+}
+
+.product-brief-panel p { color: var(--ag-muted); font-weight: 400; }
+
+.product-brief-panel .button--secondary {
+  color: var(--ag-text);
+  background: var(--ag-surface);
+  border-color: var(--ag-line-strong);
+}
+
+.brief-path span {
+  color: var(--ag-text);
+  background: var(--ag-surface-2);
+  border: 1px solid var(--ag-line);
+  font-weight: 600;
+}
+
+.brief-path i { background: var(--ag-line-strong); }
+
+/* --- the journey path ----------------------------------------------------
+   Four equal grid tracks of a fixed 86px, with 16px of side padding each, so
+   every chip had 54px for its label: "credential" needs 93px and simply ran
+   out past the chip's edge. The step names are not all the same length and
+   never will be, so the row sizes to its content and wraps instead of
+   dividing the width equally and hoping.
+   ---------------------------------------------------------------------- */
+.brief-path {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.brief-path span {
+  display: flex;
+  align-items: center;
+  padding: 9px 13px;
+  border-radius: var(--ag-r-sm);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+/* The connector between two steps. Vertical in the stacked form. */
+.brief-path i {
+  align-self: center;
+  width: 2px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Four steps side by side need about 440px, and the panel only has that much
+   once the two-column brief layout has room for it. Below that the path
+   stacks rather than wrapping: a wrapped row leaves one chip stretched across
+   its own line with a connector dangling off the row above. */
+@media (min-width: 1100px) {
+  .brief-path { flex-direction: row; align-items: stretch; gap: 7px; }
+  .brief-path span {
+    /* `flex: 1 1 0` with `min-width: 0`, not `min-width: max-content`. The
+       latter sizes each chip to its longest word, which pushed the whole
+       panel wider than its grid column and slid it under the card grid
+       beside it. Equal shares that may shrink means the label wraps to a
+       second line at worst, and the panel always stays in its column. */
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding: 9px 10px;
+    text-align: center;
+    overflow-wrap: break-word;
+  }
+  .brief-path i { width: 12px; height: 2px; flex: 0 0 12px; }
+}
+
+/* --- the icon tiles ------------------------------------------------------
+   `.platform-icon` was sized for a two- or three-letter abbreviation. It
+   holds an SVG now, which has to be centred and told what colour to stroke.
+   ---------------------------------------------------------------------- */
+.platform-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* A blue-to-cyan gradient, and the cyan end was light enough that the white
+     12px label on it measured 2.9:1. A tile this small cannot carry a
+     gradient and legible type at the same time, so it carries one of them. */
+  background: var(--ag-brand);
+  color: var(--ag-brand-on);
+}
+
+.platform-icon .ag-icon { color: var(--ag-brand-on); }
+
+/* Inside the shell the same tiles are restated at 0,2,0 with the workspace
+   gradient, so the flat fill has to be restated there too. */
+.app-shell .platform-icon,
+.app-shell .blade-action-card span {
+  background: var(--ag-brand);
+  color: var(--ag-brand-on);
+}
+
+/* --- outline buttons inside an organization tile -------------------------
+   `.organization-tile__actions .button--outline-success` (0,2,0) re-asserts
+   the white background, and it is declared after
+   `.button--outline-success:hover` (also 0,2,0) — so hovering swapped the
+   text to the light-on-fill colour while the fill stayed white. 1.07:1, and
+   the label vanished under the pointer on "Root wallets" and "Delete".
+
+   The warning variant had the mirror of it everywhere: `--ag-text` on
+   `--ag-warn`, dark brown on dark amber at 1.9:1.
+   ---------------------------------------------------------------------- */
+.organization-tile__actions .button--outline-success:hover {
+  color: var(--ag-good-on); background: var(--ag-good); border-color: var(--ag-good);
+}
+.organization-tile__actions .button--outline-danger:hover {
+  color: var(--ag-bad-on); background: var(--ag-bad); border-color: var(--ag-bad);
+}
+.organization-tile__actions .button--outline-warning:hover {
+  color: var(--ag-warn-on); background: var(--ag-warn); border-color: var(--ag-warn);
+}
+.organization-tile__actions .button--outline-info:hover,
+.organization-tile__actions .button--outline-secondary:hover {
+  color: var(--ag-brand-on); background: var(--ag-brand); border-color: var(--ag-brand);
+}
+
+.button--outline-success:hover { color: var(--ag-good-on); background: var(--ag-good); border-color: var(--ag-good); }
+.button--outline-danger:hover  { color: var(--ag-bad-on);   background: var(--ag-bad);  border-color: var(--ag-bad); }
+.button--outline-warning:hover { color: var(--ag-warn-on); background: var(--ag-warn); border-color: var(--ag-warn); }
+
+/* --- two more hovers written for the navy header and the old shell -------
+   `.aeg-admin-link:hover` lifted a 16% white veil and set `--ag-nav-text`:
+   correct on navy, and on a surface header it is a light grey word on a
+   slightly different light grey, 3.2:1.
+
+   `.button--ghost:hover` shared a declaration with `.icon-button--danger`
+   inside the shell, so every ghost button in the admin pages turned red on
+   hover — and in dark mode `--ag-bad` is a light red, which put `--ag-nav-text`
+   on it at 2.4:1. Separated: a ghost is not a destructive action.
+   ---------------------------------------------------------------------- */
+.aeg-admin-link:hover {
+  color: var(--ag-brand-text);
+  background: var(--ag-surface-2);
+  border-color: var(--ag-brand-line);
+}
+
+.app-shell .button--ghost:hover {
+  color: var(--ag-text);
+  background: var(--ag-surface-2);
+  border-color: var(--ag-brand);
+}
+
+.app-shell .icon-button--danger:hover {
+  color: var(--ag-bad-on);
+  background: var(--ag-bad);
+  border-color: var(--ag-bad);
+}
+
+/* --- the small marks ----------------------------------------------------
+   `.store-badge__mark` and its Android variant fill with a gradient that
+   ends on `--ag-good`. In dark that token is a light mint (#34d399), because
+   the status colours invert, and the white "iOS"/"AOS" capitals on it
+   measure 1.9:1. The same answer as the icon tiles: one flat brand fill,
+   where the label's contrast is a property of the pair rather than of
+   whichever end of a gradient the glyph happens to sit on.
+   ---------------------------------------------------------------------- */
+.store-badge__mark,
+.store-badge--android .store-badge__mark {
+  background: var(--ag-brand);
+  color: var(--ag-brand-on);
+}
+
+/* --- the shell's legacy workspace tokens --------------------------------
+   main.css sets these on `.app-shell` as fixed hexes, which beat the `:root`
+   aliases for anything inside the shell — so the body copy on the onboarding
+   page stayed at #64748b and measured 4.0:1 on the dark surface. Pointed at
+   the theme tokens, where they follow light and dark like everything else.
+   ---------------------------------------------------------------------- */
+.app-shell {
+  --workspace-ink:    var(--ag-text);
+  --workspace-muted:  var(--ag-muted);
+  --workspace-line:   var(--ag-line);
+  --workspace-soft:   var(--ag-surface-2);
+  --workspace-blue:   var(--ag-brand);
+  --workspace-cyan:   var(--ag-brand-ink);
+  --workspace-green:  var(--ag-good);
+  --workspace-shadow: none;
 }

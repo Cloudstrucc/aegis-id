@@ -82,19 +82,22 @@ function getHomeContent(overrides = {}) {
         meta: 'Runs inside Aegis ID'
       }
     ],
+    // `glyph` names an icon in src/lib/app-icons. These three used to be the
+    // strings '01', '02' and '03' set in white on a brand-blue tile, which
+    // read as three empty blue squares rather than as anything at all.
     productBriefCards: [
       {
-        icon: '01',
+        glyph: 'badge',
         title: 'Credential proof',
         summary: 'Verified credentials present portable employee, contractor, partner, or badge proof across trusted workflows.'
       },
       {
-        icon: '02',
+        glyph: 'key',
         title: 'Hardware assurance',
         summary: 'YubiKey and FIDO2 add phishing-resistant proof for sign-in, admin step-up, and sensitive actions.'
       },
       {
-        icon: '03',
+        glyph: 'phone',
         title: 'Wallet evidence',
         summary: 'The Aegis ID mobile app records approval, consent, revocation, and high-value decision challenges.'
       }
@@ -182,19 +185,22 @@ function getHomeContent(overrides = {}) {
         items: ['ACA-Py issuer, verifier, mediator', 'VON / Indy dev ledger', 'DIDComm and AnonCreds']
       }
     },
+    // The same card component as productBriefCards, so the same treatment:
+    // 'VID', 'YK' and 'LOG' were three-letter abbreviations in 11px white on
+    // a 36px tile, and read as the same empty squares.
     assuranceModes: [
       {
-        icon: 'VID',
+        glyph: 'badge',
         title: 'Verified ID credential proof',
         summary: 'Use Microsoft Authenticator to present portable employee, contractor, badge, or eligibility credentials.'
       },
       {
-        icon: 'YK',
+        glyph: 'key',
         title: 'YubiKey FIDO2 step-up',
         summary: 'Use YubiKey 5C NFC for phishing-resistant sign-in, administrator step-up, and sensitive workflow protection.'
       },
       {
-        icon: 'LOG',
+        glyph: 'chain',
         title: 'Aegis wallet challenge ledger',
         summary: 'Capture approval, consent, revocation, promotion, and high-value decision evidence across web apps and portals.'
       }

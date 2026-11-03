@@ -29,20 +29,26 @@
     {{/if}}
 
     {{!--
-      The settings link an administrator was missing.
+      The settings and platform links an administrator was missing.
 
       Shown on tenant administration — which an invited administrator has —
       rather than on the platform gate, which they do not. The routes enforce
       the same rule server-side; this is a signpost, not a permission.
+
+      Suppressed on the application pages, where the sidebar lists both scopes
+      in full: two routes to the same place, one of them a bare word in a bar
+      of eight, is how the header came to overflow in the first place.
     --}}
-    {{#if currentTenant.settingsPath}}
-      {{#if canAdministerTenant}}
-        <a class="aeg-admin-link" href="{{currentTenant.settingsPath}}">Settings</a>
+    {{#unless appShell}}
+      {{#if currentTenant.settingsPath}}
+        {{#if canAdministerTenant}}
+          <a class="aeg-admin-link" href="{{currentTenant.settingsPath}}">Settings</a>
+        {{/if}}
       {{/if}}
-    {{/if}}
-    {{#if isGlobalAdmin}}
-      <a class="aeg-admin-link {{#if (eq currentPath '/admin')}}is-active{{/if}}" href="/admin">Platform</a>
-    {{/if}}
+      {{#if isGlobalAdmin}}
+        <a class="aeg-admin-link {{#if (eq currentPath '/admin')}}is-active{{/if}}" href="/admin">Platform</a>
+      {{/if}}
+    {{/unless}}
     {{#if canViewHealth}}
       <a href="/health">Health</a>
     {{/if}}

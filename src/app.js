@@ -32,8 +32,10 @@ const tenantAdminRoutes = require('./routes/tenant-admin');
 const { attachAuthLocals } = require('./middleware/auth');
 const { attachLocalTestMode } = require('./middleware/local-test-mode');
 const { attachSiteContext } = require('./middleware/site-context');
+const { attachAppShell } = require('./middleware/app-shell');
 const { organizationHostRouting } = require('./middleware/organization-host');
 const { configurePassport } = require('./services/passport-service');
+const { iconSvg } = require('./lib/app-icons');
 
 function registerHandlebars() {
   const partialsDir = path.join(config.paths.views, 'partials');
@@ -47,6 +49,14 @@ function registerHandlebars() {
   hbs.registerHelper('json', (value) => new hbs.handlebars.SafeString(safeJson(value, 2)));
   hbs.registerHelper('jsonScript', (value) => new hbs.handlebars.SafeString(safeJson(value)));
   hbs.registerHelper('year', () => new Date().getFullYear());
+  // Inline SVG for the navigation glyphs. The paths are fixed in app-icons and
+  // carry nothing from the caller, so marking the result trusted does not let
+  // page data reach the markup.
+  // Not `icon`: a helper shadows a context property of the same name, and
+  // several templates render an `icon` field of their own data.
+  hbs.registerHelper('agIcon', (name, size) => new hbs.handlebars.SafeString(
+    iconSvg(String(name || ''), typeof size === 'number' ? size : 16)
+  ));
 }
 
 function safeJson(value, spaces = 0) {
@@ -435,6 +445,9 @@ function createApp() {
   });
   app.use(attachLocalTestMode);
   app.use(attachAuthLocals);
+  // After the auth locals, because the shell is built from them — and after
+  // nothing else, because it only wraps res.render.
+  app.use(attachAppShell);
 
   app.get(
     '/docs/tutorial/get-started-guide.html',

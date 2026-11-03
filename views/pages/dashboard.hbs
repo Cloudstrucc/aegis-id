@@ -1,71 +1,22 @@
-<section class="workspace-blade" data-workspace-blade>
-  <header class="workspace-blade__topbar">
-    <a class="workspace-blade__product" href="{{organizationsPath}}">
-      <span class="workspace-brand-mark">V</span>
-      <span>
-        <strong>Vanguard Aegis ID</strong>
-        <small>Organization workspace</small>
-      </span>
-    </a>
-    <nav aria-label="Workspace shortcuts">
-      <a href="#dashboard-overview" data-blade-link="dashboard">Portal</a>
-      {{#if orgAdmin.canViewIntegrations}}
-        <a href="#identity-platforms" data-blade-link="platforms">Integrations</a>
-      {{/if}}
-      <a href="#external-wallet-ledger" data-blade-link="ledger">Ledger</a>
-    </nav>
-  </header>
+{{!--
+  The workspace blades.
 
-  <aside class="workspace-blade__rail" aria-label="Global workspace navigation">
-    <a href="#dashboard-overview" data-blade-link="dashboard" aria-label="Dashboard">D</a>
-    <a href="#credential-admin" data-blade-link="people" aria-label="People">P</a>
-    {{#if orgAdmin.canViewIntegrations}}
-      <a href="#identity-platforms" data-blade-link="platforms" aria-label="Integrations">I</a>
-    {{/if}}
-    <a href="#external-wallet-ledger" data-blade-link="ledger" aria-label="Ledger">L</a>
-    {{#if orgAdmin.isAdmin}}
-      <a href="#workspace-settings" data-blade-link="settings" aria-label="Settings">S</a>
-    {{/if}}
-  </aside>
+  The shell this page used to draw for itself — a topbar, an icon rail of
+  single letters, and a menu blade — is now the application sidebar in the
+  layout, shared with the organization and platform pages. What is left here is
+  the panels, which is all this template was ever really about.
 
-  <aside class="workspace-blade__nav" aria-label="{{workspace.organization}} workspace menu">
-    <div class="workspace-blade__head">
-      <p>Organization</p>
-      <h1>{{workspace.organization}}</h1>
-      <span>{{#if orgAdmin.viewer.canViewAllCredentials}}Manage people, credentials, roles, claims, integrations, branding, and audit evidence for this workspace.{{else}}Review your credential, consented claims, and wallet evidence for this organization.{{/if}}</span>
-      <div class="workspace-blade__org-chip">
-        <span>V</span>
-        <div>
-          <strong>Workspace active</strong>
-          <small>{{orgAdmin.viewer.modeLabel}}</small>
-        </div>
-      </div>
-    </div>
-    <nav class="workspace-blade__menu">
-      {{#each orgAdmin.bladeNavSections}}
-        <p class="workspace-blade__section-label">{{label}}</p>
-        {{#each items}}
-          <a href="{{href}}" data-blade-link="{{key}}">
-            <span>{{icon}}</span>
-            <strong>{{label}}{{#if statusTone}}<i class="blade-menu-status blade-menu-status--{{statusTone}}" title="{{statusLabel}}"></i>{{/if}}</strong>
-            <small>{{description}}</small>
-          </a>
-        {{/each}}
-      {{/each}}
-    </nav>
-    <article class="workspace-blade__advice">
-      <strong>Next best action</strong>
-      <span>{{orgAdmin.viewer.nextActionAdvice}}</span>
-    </article>
-  </aside>
-
-  <div class="workspace-blade__content">
+  `blade-panels` keeps the descendant styling the panels rely on, and the
+  sidebar's rows still carry `data-blade-link`, so switching panels works
+  exactly as before.
+--}}
+<div class="blade-panels">
     <section id="dashboard-overview" class="band band--white blade-panel blade-panel--overview" data-blade-panel="dashboard">
       <div class="blade-overview">
         <div>
           <p class="eyebrow">Dashboard</p>
-          <h1>Choose a workspace blade.</h1>
-          <p>{{#if welcome}}Subscription captured. Start with a focused blade for people, credentials, integrations, and assurance policies.{{else}}This default view stays intentionally light. Use the menu blade or the tiles below to open focused management surfaces for people, credentials, claims, roles, integrations, branding, and audit evidence.{{/if}}</p>
+          <h1>{{workspace.organization}}</h1>
+          <p>{{#if welcome}}Subscription captured. Start with people, credentials, integrations, or the assurance policies.{{else}}This view stays intentionally light. Use the sidebar or the tiles below to open people, credentials, claims, roles, integrations, branding, and audit evidence.{{/if}}</p>
         </div>
       </div>
 
@@ -2698,5 +2649,4 @@
     {{/each}}
   </div>
 </section>
-  </div>
-</section>
+</div>

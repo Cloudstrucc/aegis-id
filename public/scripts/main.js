@@ -382,7 +382,9 @@ function activateWorkspaceBlade(key, hash) {
 
 function resetWorkspaceBladeScroll(shell, smooth = true) {
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  const content = shell.querySelector('.workspace-blade__content');
+  // The scrolling region is the shell's main column now that the panels live
+  // inside the layout's shell rather than inside the page.
+  const content = shell.querySelector('.app-shell__main');
   if (content) {
     content.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
   }

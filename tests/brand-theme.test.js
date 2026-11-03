@@ -225,16 +225,25 @@ test('no rule paints text in a token that is a surface or chrome colour', () => 
   // background becomes --ag-surface; the same white as type on the navy bar is
   // --ag-nav-text. Get it backwards and the heading is invisible — which is
   // exactly what happened to the hero h1 and then to the plan card titles.
+  //
+  // The hairline and tint tokens are in the same list for the same reason.
+  // A breadcrumb separator in --ag-line-strong measured 1.5:1, and the test
+  // chips on /testing painted --navy-800 on --ag-brand-soft at 1.2:1 — both
+  // are colours chosen to be barely visible against a surface, which is the
+  // opposite of what type needs.
   const SURFACE_ONLY = new Set([
     '--ag-surface', '--ag-surface-2', '--ag-surface-3',
     '--ag-nav', '--ag-nav-2', '--ag-nav-line',
+    '--ag-line', '--ag-line-strong',
+    '--ag-brand-soft', '--ag-good-soft', '--ag-warn-soft', '--ag-bad-soft',
     '--navy-950', '--navy-900', '--navy-800',
+    '--line', '--workspace-line', '--soft-blue',
     '--paper', '--mist', '--workspace-ink', '--ink'
   ]);
   const body = stripComments(MAIN);
   const offenders = [];
   for (const match of body.matchAll(/(?:^|[{;])\s*(color|-webkit-text-fill-color)\s*:\s*([^;}]+)/g)) {
-    for (const ref of match[2].matchAll(/var\((--[a-z0-9-]+)\)/g)) {
+    for (const ref of match[2].matchAll(/var\(\s*(--[a-z0-9-]+)/g)) {
       if (SURFACE_ONLY.has(ref[1])) {
         offenders.push(`${match[1]}: var(${ref[1]})`);
       }
@@ -252,7 +261,7 @@ test('no rule paints a background in a text-only token', () => {
   const body = stripComments(MAIN);
   const offenders = [];
   for (const match of body.matchAll(/(?:^|[{;])\s*(background|background-color)\s*:\s*([^;}]+)/g)) {
-    for (const ref of match[2].matchAll(/var\((--[a-z0-9-]+)\)/g)) {
+    for (const ref of match[2].matchAll(/var\(\s*(--[a-z0-9-]+)/g)) {
       if (TEXT_ONLY.has(ref[1])) offenders.push(`${match[1]}: var(${ref[1]})`);
     }
   }
@@ -262,13 +271,21 @@ test('no rule paints a background in a text-only token', () => {
 test('main.css carries almost no literal colours left', () => {
   // Anything still literal cannot respond to the theme. The remainder should
   // be alpha overlays only, which work over any ground.
+  //
+  // "Overlay" is judged more strictly for a background than for anything
+  // else. A card filled with rgba(255,255,255,.94) composites to white over
+  // any ground, so it is a surface wearing an alpha — eleven cards stayed
+  // white under the dark theme while the ink on them went light, and the
+  // 0.98 cutoff waved every one of them through.
+  const BACKGROUND = /^background(-color)?$/;
   const body = stripComments(MAIN);
   const opaque = [];
   for (const match of body.matchAll(/(?:^|[{;])\s*([-a-z]+)\s*:\s*([^;}]+)/g)) {
     if (match[1].startsWith('--')) continue;
+    const ceiling = BACKGROUND.test(match[1].trim()) ? 0.85 : 0.98;
     for (const colour of match[2].match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)/g) || []) {
       const alpha = colour.match(/rgba\([^)]*,\s*([\d.]+)\s*\)$/);
-      if (!alpha || Number(alpha[1]) >= 0.98) opaque.push(`${match[1]}: ${colour}`);
+      if (!alpha || Number(alpha[1]) >= ceiling) opaque.push(`${match[1]}: ${colour}`);
     }
   }
   assert.equal(
