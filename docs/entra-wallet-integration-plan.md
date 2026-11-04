@@ -16,7 +16,7 @@ genuinely missing.
 |---|---|---|
 | **Second factor (MFA)** | **External authentication method (EAM)**. Documented, GA-path, driven by a Conditional Access policy. **This is the headline demo.** | CA exists in external tenants; whether EAM is offered there has to be confirmed in a live tenant (see §6). |
 | **First factor ("sign in with…")** | Not reachable by EAM. Only by domain federation, which replaces sign-in for a whole verified domain — far too blunt for a demo. | **Custom OIDC identity provider.** Gives a literal *Sign in with Aegis ID* button on the sign-in page. Preview feature. |
-| **A real passkey** | Wallet registers as a FIDO2 credential with Entra, allow-listed by AAGUID. No Aegis server integration at all. | Same. |
+| **A real passkey** | Wallet registers as a FIDO2 credential with Entra. No Aegis server integration at all — but **blocked in the wallets**, see Track C. | Same, and Entra refuses passkey registration for guest and B2B users. |
 
 Three tracks, and they are independent — A and B can ship in either order.
 
@@ -27,15 +27,18 @@ Three tracks, and they are independent — A and B can ship in either order.
 - **Track B — custom OIDC IdP (External ID, first factor).** The wallet becomes
   a sign-in button for a customer-facing app. This is the one that *looks* like
   "passkey" to an audience.
-- **Track C — real FIDO2 passkey.** No platform work. The wallets are already
-  FIDO2 credential providers (`docs/wallet-passkey-provider.md`). The work is
-  Entra configuration plus getting an AAGUID allow-listed, and the honest
-  framing is that it is a passkey because it *is* one — with the same-device
-  limit we already state in the wallet UI.
+- **Track C — real FIDO2 passkey.** No *platform* work, but **blocked in the
+  wallets today**. `docs/wallet-passkey-provider.md` is explicit: neither wallet
+  ships the credential provider in 1.0, and on both platforms the end-to-end
+  path is unfinished — iOS registration is rejected by Safari with a bare
+  `NotAllowedError` after the extension hands the credential over, and on
+  Android registration succeeds but the *assertion* is rejected. The
+  cryptography verifies against `@simplewebauthn/server` on both. Until those
+  two are closed, Track C cannot be demonstrated at all.
 
-The sharpest demo is A and C side by side: the same wallet satisfies a
-Conditional Access MFA requirement *and* holds a passkey, and they are different
-mechanisms doing different jobs.
+The sharpest demo would be A and C side by side — the same wallet satisfying a
+Conditional Access MFA requirement *and* holding a passkey, two mechanisms doing
+different jobs. A is reachable now; C is not.
 
 ---
 
@@ -217,9 +220,23 @@ pointed at it. Confirm in a live tenant before committing to that: the feature
 is in preview and the public reports of it conflict.
 
 ### Phase 5 — Track C, passkey
-Entra configuration only: enable passkey (FIDO2), allow-list the wallet's
-AAGUID, register from the wallet. Worth doing early precisely *because* there is
-no code — it is the cheapest demo in the set.
+**The Entra half is configuration; the wallet half is unfinished work, and it is
+the long pole.**
+
+Entra, perhaps fifteen minutes: opt in to passkey profiles, **Enforce
+attestation = No** and **Enforce key restrictions = No** (the wallet attests
+`none` and reports an all-zero AAGUID, which is the correct value for an
+unattested credential and cannot meaningfully appear in an allow-list), allow
+self-service set-up, then register at Security info. Worth doing now with a
+security key or Microsoft Authenticator, because it proves the policy
+independently of the wallet.
+
+The wallet, unbounded: ship the provider — `providesPasskeysForOtherServices`
+on iOS, `passkeyProviderEnabled` on Android — **and first close the two
+end-to-end failures**, which are the real work. Neither is a flag flip.
+
+Note also that Entra refuses passkey registration for guest and B2B
+collaboration users, so the demo account must be a member of the tenant.
 
 ---
 
@@ -231,9 +248,13 @@ no code — it is the cheapest demo in the set.
 2. **Is the custom OIDC IdP still preview, and does it work?** Microsoft's own
    Q&A threads contradict each other on whether the Custom tab works in external
    tenants. Thirty minutes in a tenant settles it.
-3. **AAGUID allow-listing.** Does the Aegis wallet's AAGUID need to be in the
-   FIDO2 metadata service for Entra to accept it, or is a manual allow-list
-   enough? Decides whether Track C is an afternoon or a certification project.
+3. ~~**AAGUID allow-listing.**~~ **Answered.** Entra accepts an unattested
+   third-party provider as long as the passkey profile has **Enforce
+   attestation** off and **Enforce key restrictions** off; no FIDO metadata
+   service entry is needed. Microsoft says outright to treat AAGUID lists as a
+   policy guide rather than a security control when attestation is off — which
+   is the only honest reading for an authenticator reporting sixteen zero bytes.
+   So Track C is not a certification project. It is a wallet bug-fixing project.
 4. **Which tenant hosts the multitenant app registration?** It is a published
    artefact of the product, not a per-environment one — the same shape as the
    App Store Connect credentials, which live in `.env.ios` for exactly that
@@ -250,6 +271,7 @@ no code — it is the cheapest demo in the set.
 
 ## 8. What I'd cut if this has to be small
 
-Phase 0 and Phase 5 alone make a demo: a Conditional Access policy that visibly
-routes to Aegis, and a wallet holding a real passkey. Phases 1–3 are what make
-it a product.
+Phases 0 to 1 alone make a demo: a Conditional Access policy that visibly routes
+to Aegis and a wallet approval that satisfies it. Phases 2–3 are what make it a
+product. Phase 5 is not a shortcut to either — it reads like the cheapest item
+on this list and is in fact the only one with an open bug on both platforms.
