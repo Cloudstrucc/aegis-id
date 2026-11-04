@@ -138,9 +138,11 @@ WEBSITE_NODE_DEFAULT_VERSION="${WEBSITE_NODE_DEFAULT_VERSION:-~20}"
 if [ -n "${ZIP_PATH:-}" ]; then
   ZIP_PATH_IS_TEMPORARY=0
 else
+  zip_tmp_dir="${TMPDIR:-/tmp}"
+  zip_tmp_dir="${zip_tmp_dir%/}"
   zip_tenant_slug="${TENANT_PROFILE:-default}"
   zip_tenant_slug="${zip_tenant_slug//[^A-Za-z0-9]/-}"
-  ZIP_PATH="${TMPDIR:-/tmp}/aegis-id-web-${DEPLOY_ENV}-${zip_tenant_slug}-$$.zip"
+  ZIP_PATH="${zip_tmp_dir}/aegis-id-web-${DEPLOY_ENV}-${zip_tenant_slug}-$$.zip"
   ZIP_PATH_IS_TEMPORARY=1
 fi
 
