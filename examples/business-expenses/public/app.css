@@ -325,19 +325,29 @@ pre {
   font-weight: 700;
 }
 
-/* Paper is white in both themes — these sit on a rendered PDF page, so they
-   are deliberately NOT themed. */
+/* Paper is white in both themes — a rendered page IS paper, so the canvas is
+   deliberately not themed. The frame around it is not paper, and an empty
+   <canvas> keeps its intrinsic 300x150, so before a PDF was uploaded the
+   designer showed a 460px slab of white in the middle of a dark page.
+   pdf.js reflects canvas.width to the attribute when it renders, so the
+   absence of that attribute is exactly "no page here yet". */
 .pdf-canvas-wrap {
   position: relative;
   width: min(100%, 920px);
+  min-height: 180px;
   margin: 0 auto;
-  background: #ffffff;
+  background: var(--aegis-inset);
 }
 
 .pdf-canvas-wrap canvas {
   display: block;
   width: 100%;
   height: auto;
+  background: #ffffff;
+}
+
+.pdf-canvas-wrap canvas:not([width]) {
+  display: none;
 }
 
 .signature-field {
@@ -361,7 +371,7 @@ pre {
 }
 
 .signature-field small {
-  color: var(--aegis-muted);
+  color: #475569;
   font-weight: 700;
 }
 
@@ -782,6 +792,24 @@ body {
   --bs-card-border-color: var(--aegis-border);
   --bs-card-cap-bg:       var(--aegis-surface-2);
   --bs-card-cap-color:    var(--ag-text);
+  --bs-secondary-bg:      var(--aegis-surface-2);
+  --bs-tertiary-bg:       var(--aegis-surface-2);
+  --bs-light-bg-subtle:       var(--aegis-surface-2);
+  --bs-secondary-bg-subtle:   var(--aegis-surface-2);
+  --bs-dark-bg-subtle:        var(--aegis-surface-2);
+  --bs-primary-bg-subtle:     var(--aegis-tint);
+  --bs-info-bg-subtle:        var(--aegis-tint);
+  --bs-success-bg-subtle:     var(--aegis-chip-good-bg);
+  --bs-warning-bg-subtle:     var(--aegis-chip-warn-bg);
+  --bs-danger-bg-subtle:      var(--aegis-chip-bad-bg);
+  --bs-light-border-subtle:     var(--aegis-border);
+  --bs-secondary-border-subtle: var(--aegis-border);
+  --bs-dark-border-subtle:      var(--aegis-border);
+  --bs-primary-text-emphasis: var(--aegis-link);
+  --bs-success-text-emphasis: var(--aegis-chip-good-fg);
+  --bs-warning-text-emphasis: var(--aegis-chip-warn-fg);
+  --bs-danger-text-emphasis:  var(--aegis-chip-bad-fg);
+  --bs-info-text-emphasis:    var(--aegis-chip-info-fg);
 }
 
 /* `.text-muted` resolves through --bs-body-color-rgb, which Flatly compiled to
@@ -883,7 +911,10 @@ hr, .dropdown-divider { border-color: var(--aegis-border); }
 .alert-secondary,
 .alert-light,
 .alert-dark    { background-color: var(--aegis-neutral); }
-.alert a, .alert .alert-link, .alert strong, .alert code { color: #ffffff; }
+.alert a, .alert .alert-link, .alert strong, .alert code,
+.alert h1, .alert h2, .alert h3, .alert h4, .alert h5, .alert h6,
+.alert small, .alert pre { color: #ffffff; }
+.alert .text-muted { color: #ffffff !important; }
 
 .btn-success { --bs-btn-bg: var(--aegis-success); --bs-btn-border-color: var(--aegis-success);
   --bs-btn-hover-bg: #03624a; --bs-btn-hover-border-color: #03624a; --bs-btn-color: #ffffff;
@@ -912,6 +943,7 @@ hr, .dropdown-divider { border-color: var(--aegis-border); }
   --bs-btn-hover-color: #ffffff; }
 
 .text-bg-dark      { background-color: #3f4b4c !important; color: #ffffff !important; }
+.text-bg-primary   { background-color: var(--ag-brand) !important; color: #ffffff !important; }
 .text-bg-secondary { background-color: var(--aegis-neutral) !important; color: #ffffff !important; }
 .text-bg-success   { background-color: var(--aegis-success) !important; color: #ffffff !important; }
 .text-bg-info      { background-color: var(--aegis-info) !important; color: #ffffff !important; }
@@ -920,3 +952,10 @@ hr, .dropdown-divider { border-color: var(--aegis-border); }
 .text-success { color: var(--aegis-success-text) !important; }
 .text-danger  { color: var(--aegis-danger-text) !important; }
 .text-warning { color: var(--aegis-warning-text) !important; }
+
+/* A `g-5` row carries -24px side margins, which only the container's `px-lg-5`
+   absorbs. Below lg that padding drops to 12px, so the home hero bled 12px
+   past the viewport on each side and the whole page scrolled sideways. */
+@media (max-width: 991.98px) {
+  .container-fluid > .row.g-5 { --bs-gutter-x: 1.5rem; }
+}
