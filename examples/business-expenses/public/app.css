@@ -30,7 +30,7 @@ a {
   z-index: 20;
   min-height: 78px;
   border-bottom: 1px solid var(--aegis-border);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--aegis-nav);
   backdrop-filter: blur(18px);
 }
 
@@ -40,21 +40,27 @@ a {
   padding: 0;
 }
 
+/* Sized by HEIGHT, not width. The lockup is 1984x306, so a rule that fails to
+   constrain it renders a 1984px banner and a 339px-tall navbar — which is
+   exactly what `.ag-logo { width: auto }` in the brand layer below did, being
+   the same specificity and written later. Height is the dimension that has to
+   fit the bar, so it is the one that is stated. */
 .app-logo {
-  width: clamp(180px, 18vw, 260px);
-  height: auto;
+  width: auto;
+  height: clamp(26px, 2.5vw, 36px);
+  max-width: min(60vw, 280px);
   object-fit: contain;
 }
 
 .nav-link,
 .navbar-text {
   color: var(--aegis-ink);
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .nav-link:hover,
 .app-logo-link:hover {
-  color: var(--aegis-blue);
+  color: var(--aegis-link);
 }
 
 .navbar-toggler {
@@ -67,7 +73,7 @@ a {
 
 .btn {
   border-radius: 12px;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
@@ -77,20 +83,20 @@ a {
 }
 
 .btn-primary:hover {
-  border-color: var(--aegis-blue-dark);
-  background: var(--aegis-blue-dark);
+  border-color: var(--aegis-blue-hover);
+  background: var(--aegis-blue-hover);
 }
 
 .btn-outline-primary {
-  color: var(--aegis-blue);
+  color: var(--aegis-link);
   border-color: var(--aegis-border);
-  background: #ffffff;
+  background: var(--aegis-surface);
 }
 
 .btn-outline-primary:hover {
   border-color: var(--aegis-blue);
-  background: #eaf3ff;
-  color: var(--aegis-blue-dark);
+  background: var(--aegis-tint);
+  color: var(--aegis-link);
 }
 
 .auth-menu {
@@ -109,42 +115,43 @@ a {
 
 .auth-menu .dropdown-item:hover,
 .dropdown-menu .dropdown-item:hover {
-  color: var(--aegis-blue-dark);
-  background: #eef6ff;
+  color: var(--aegis-link);
+  background: var(--aegis-tint);
 }
 
 .example-hero,
 .app-detail-hero {
-  background: linear-gradient(180deg, #ffffff, #eef5fb);
+  background: var(--aegis-hero);
   border-bottom: 1px solid var(--aegis-border);
 }
 
 .example-hero h1 {
   max-width: 820px;
-  font-size: clamp(2.4rem, 5vw, 5.1rem);
-  line-height: 1.02;
-  font-weight: 900;
+  font-size: clamp(1.9rem, 3.2vw, 2.9rem);
+  line-height: 1.08;
+  font-weight: 700;
 }
 
 .app-detail-hero h1 {
   max-width: 760px;
-  font-size: clamp(2.6rem, 5.4vw, 6rem);
-  line-height: 1;
-  font-weight: 900;
+  font-size: clamp(1.95rem, 3.4vw, 3rem);
+  line-height: 1.06;
+  font-weight: 700;
 }
 
 .hero-copy {
-  max-width: 760px;
-  color: #3d4b60;
-  font-size: clamp(1.12rem, 1.55vw, 1.58rem);
-  line-height: 1.34;
+  max-width: 70ch;
+  color: var(--aegis-body);
+  font-size: clamp(1rem, 1.1vw, 1.12rem);
+  line-height: 1.6;
 }
 
 .eyebrow,
 .card-kicker {
-  color: var(--aegis-teal);
-  font-size: 0.82rem;
-  font-weight: 900;
+  color: var(--aegis-link);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: .07em;
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -154,8 +161,8 @@ a {
 .app-tile {
   border: 1px solid var(--aegis-border);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 24px 70px rgba(7, 23, 39, 0.08);
+  background: var(--aegis-surface);
+  box-shadow: var(--aegis-shadow-lg);
 }
 
 .assurance-panel {
@@ -172,7 +179,7 @@ a {
   padding: 18px;
   border: 1px solid var(--aegis-border);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--aegis-inset);
 }
 
 .assurance-panel span:last-child {
@@ -184,7 +191,7 @@ a {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--aegis-blue), var(--aegis-teal));
+  background: var(--aegis-gradient);
 }
 
 .section-heading {
@@ -202,13 +209,14 @@ a {
 }
 
 .section-heading h2 {
-  font-size: clamp(2rem, 3.6vw, 4.2rem);
-  line-height: 1;
+  font-size: clamp(1.45rem, 2.2vw, 1.95rem);
+  line-height: 1.15;
 }
 
 .section-heading p {
   color: var(--aegis-muted);
-  font-size: 1.15rem;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .app-tile-grid {
@@ -231,13 +239,14 @@ a {
 
 .app-tile h3 {
   margin: 0;
-  font-size: clamp(2rem, 3vw, 3.3rem);
-  font-weight: 900;
+  font-size: clamp(1.25rem, 1.8vw, 1.6rem);
+  font-weight: 700;
 }
 
 .app-tile p:not(.eyebrow) {
   color: var(--aegis-muted);
-  font-size: 1.08rem;
+  font-size: .95rem;
+  line-height: 1.6;
 }
 
 .app-tile .btn {
@@ -252,7 +261,7 @@ a {
   place-items: center;
   border-radius: 14px;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--aegis-blue), var(--aegis-teal));
+  background: var(--aegis-gradient);
   font-size: 1.7rem;
 }
 
@@ -261,7 +270,7 @@ a {
 }
 
 .table thead th {
-  color: #48566b;
+  color: var(--aegis-table-head);
   font-size: 0.82rem;
   text-transform: uppercase;
 }
@@ -269,13 +278,13 @@ a {
 .status-pending,
 .status-pending-wallet,
 .status-sent {
-  color: #153e78;
-  background: #e9f3ff;
+  color: var(--aegis-chip-info-fg);
+  background: var(--aegis-chip-info-bg);
 }
 
 .status-challenge-unavailable {
-  color: #6f4e07;
-  background: #fff4d8;
+  color: var(--aegis-chip-warn-fg);
+  background: var(--aegis-chip-warn-bg);
 }
 
 .status-approved,
@@ -283,13 +292,13 @@ a {
 .status-accepted,
 .status-pilot-simulated,
 .status-signed {
-  color: #075f3f;
-  background: #dff8ec;
+  color: var(--aegis-chip-good-fg);
+  background: var(--aegis-chip-good-bg);
 }
 
 .status-rejected {
-  color: #8a2118;
-  background: #ffe5e2;
+  color: var(--aegis-chip-bad-fg);
+  background: var(--aegis-chip-bad-bg);
 }
 
 pre {
@@ -311,11 +320,13 @@ pre {
   padding: 14px 16px;
   color: var(--aegis-muted);
   border-bottom: 1px solid var(--aegis-border);
-  background: #ffffff;
+  background: var(--aegis-inset);
   font-size: 0.95rem;
   font-weight: 700;
 }
 
+/* Paper is white in both themes — these sit on a rendered PDF page, so they
+   are deliberately NOT themed. */
 .pdf-canvas-wrap {
   position: relative;
   width: min(100%, 920px);
@@ -365,7 +376,7 @@ pre {
 .signature-field.is-envelope.status-signed,
 .signature-field.status-signed {
   border-color: var(--aegis-green);
-  background: #f0fff8;
+  background: var(--aegis-signed-paper);
 }
 
 .detail-list {
@@ -404,12 +415,14 @@ pre {
 
 .app-access-card h2 {
   margin: 0;
-  font-size: clamp(1.8rem, 2.6vw, 3rem);
+  font-size: clamp(1.2rem, 1.7vw, 1.5rem);
+  font-weight: 700;
 }
 
 .app-access-card p {
   color: var(--aegis-muted);
-  font-size: 1.05rem;
+  font-size: .95rem;
+  line-height: 1.6;
 }
 
 .workflow-grid {
@@ -424,8 +437,8 @@ pre {
   padding: 24px;
   border: 1px solid var(--aegis-border);
   border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 18px 50px rgba(7, 23, 39, 0.06);
+  background: var(--aegis-inset);
+  box-shadow: var(--aegis-shadow-md);
 }
 
 .workflow-step span {
@@ -435,15 +448,16 @@ pre {
   place-items: center;
   border-radius: 14px;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--aegis-blue), var(--aegis-teal));
+  background: var(--aegis-gradient);
   font-weight: 900;
 }
 
 .workflow-step p {
   margin: 0;
-  color: #3d4b60;
-  font-size: 1.05rem;
-  font-weight: 700;
+  color: var(--aegis-body);
+  font-size: .95rem;
+  line-height: 1.6;
+  font-weight: 500;
 }
 
 .app-footer {
@@ -482,7 +496,7 @@ pre {
   place-items: center;
   border-radius: 12px;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--aegis-blue), var(--aegis-teal));
+  background: var(--aegis-gradient);
 }
 
 .footer-links {
@@ -501,7 +515,7 @@ pre {
   padding: 22px;
   border: 1px solid var(--aegis-border);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--aegis-inset);
 }
 
 .verified-id-card img {
@@ -520,7 +534,7 @@ pre {
   padding: 24px;
   border: 1px solid var(--aegis-border);
   border-radius: 12px;
-  background: linear-gradient(135deg, #ffffff, #eef7ff);
+  background: var(--aegis-yubikey-card);
 }
 
 .yubikey-device {
@@ -576,11 +590,11 @@ pre {
 
 @media (max-width: 768px) {
   .example-hero h1 {
-    font-size: 2.75rem;
+    font-size: 1.85rem;
   }
 
   .app-logo {
-    width: 180px;
+    height: 26px;
   }
 
   .yubikey-card {
@@ -644,13 +658,14 @@ pre {
   --aegis-teal:      var(--ag-brand-ink);
   --aegis-green:     var(--ag-good);
   --aegis-border:    var(--ag-line);
+  --aegis-border-strong: var(--ag-line-strong);
   --aegis-soft:      var(--ag-surface-2);
 }
 
 body { background: var(--ag-bg); color: var(--ag-text); font-family: var(--ag-sans); }
 h1, h2, h3, h4 { font-family: var(--ag-display); letter-spacing: -.012em; }
 
-.ag-logo { display: block; width: auto; }
+.ag-logo { display: block; }
 .ag-logo--dark { display: none; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .ag-logo--light { display: none; }
@@ -658,3 +673,250 @@ h1, h2, h3, h4 { font-family: var(--ag-display); letter-spacing: -.012em; }
 }
 :root[data-theme="dark"] .ag-logo--light { display: none; }
 :root[data-theme="dark"] .ag-logo--dark  { display: block; }
+
+/* ===========================================================================
+   Surfaces, in all three theme states.
+
+   The brand layer above redefined the *text* tokens for dark mode but every
+   background in this stylesheet was a literal light value, so a holder in
+   dark mode got white headings on a white hero, a white lockup on a white
+   navbar, and cards that were rgba(255,255,255,.92) over black. Every surface
+   is a token now, and the tokens flip with the theme.
+
+   Three states, matching the platform: no attribute follows the OS, an
+   explicit data-theme wins over it.
+   ========================================================================= */
+:root {
+  --aegis-link:            var(--ag-brand-text);
+  /* White-on-these, in BOTH themes, so they never lighten. */
+  --aegis-blue-hover:      #0B5A91;
+  --aegis-gradient:        linear-gradient(135deg, #0F75BC, #0B5A91);
+  --aegis-success:         #047857;
+  --aegis-info:            #1a6da8;
+  --aegis-warning:         #8a5a00;
+  --aegis-danger:          #a4231a;
+  --aegis-neutral:         #4b5a5b;
+  --aegis-nav:             rgba(255, 255, 255, 0.94);
+  --aegis-hero:            linear-gradient(180deg, #ffffff, #eef5fb);
+  --aegis-surface:         rgba(255, 255, 255, 0.92);
+  --aegis-surface-2:       #f4f8fc;
+  --aegis-inset:           #ffffff;
+  --aegis-body:            #3d4b60;
+  --aegis-table-head:      #48566b;
+  --aegis-tint:            #eaf3ff;
+  --aegis-shadow-lg:       0 24px 70px rgba(7, 23, 39, 0.08);
+  --aegis-shadow-md:       0 18px 50px rgba(7, 23, 39, 0.06);
+  --aegis-chip-info-fg:    #153e78;  --aegis-chip-info-bg: #e9f3ff;
+  --aegis-chip-warn-fg:    #6f4e07;  --aegis-chip-warn-bg: #fff4d8;
+  --aegis-chip-good-fg:    #075f3f;  --aegis-chip-good-bg: #dff8ec;
+  --aegis-chip-bad-fg:     #8a2118;  --aegis-chip-bad-bg:  #ffe5e2;
+  --aegis-success-text:    #06634a;
+  --aegis-danger-text:     #a4231a;
+  --aegis-warning-text:    #7a4f00;
+  --aegis-yubikey-card:    linear-gradient(135deg, #ffffff, #eef7ff);
+  /* Paper, not a surface — a signed field sits on a rendered PDF page. */
+  --aegis-signed-paper:    #f0fff8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --aegis-nav:           rgba(17, 17, 19, 0.94);
+    --aegis-hero:          linear-gradient(180deg, #141417, #09090b);
+    --aegis-surface:       #141417;
+    --aegis-surface-2:     #202024;
+    --aegis-inset:         #1b1b1f;
+    --aegis-body:          #c4c4cf;
+    --aegis-table-head:    #a1a1aa;
+    --aegis-tint:          #16293a;
+    --aegis-shadow-lg:     0 24px 70px rgba(0, 0, 0, 0.5);
+    --aegis-shadow-md:     0 18px 50px rgba(0, 0, 0, 0.4);
+    --aegis-chip-info-fg:  #9ecbff;  --aegis-chip-info-bg: #13263a;
+    --aegis-chip-warn-fg:  #f3cd73;  --aegis-chip-warn-bg: #352a10;
+    --aegis-chip-good-fg:  #6ee7b7;  --aegis-chip-good-bg: #0d2b21;
+    --aegis-chip-bad-fg:   #fca5a5;  --aegis-chip-bad-bg:  #3a1715;
+    --aegis-success-text:  #6ee7b7;
+    --aegis-danger-text:   #fca5a5;
+    --aegis-warning-text:  #f3cd73;
+    --aegis-yubikey-card:  linear-gradient(135deg, #17171b, #12263a);
+  }
+}
+
+:root[data-theme="dark"] {
+  --aegis-nav:             rgba(17, 17, 19, 0.94);
+  --aegis-hero:            linear-gradient(180deg, #141417, #09090b);
+  --aegis-surface:         #141417;
+  --aegis-surface-2:       #202024;
+  --aegis-inset:           #1b1b1f;
+  --aegis-body:            #c4c4cf;
+  --aegis-table-head:      #a1a1aa;
+  --aegis-tint:            #16293a;
+  --aegis-shadow-lg:       0 24px 70px rgba(0, 0, 0, 0.5);
+  --aegis-shadow-md:       0 18px 50px rgba(0, 0, 0, 0.4);
+  --aegis-chip-info-fg:    #9ecbff;  --aegis-chip-info-bg: #13263a;
+  --aegis-chip-warn-fg:    #f3cd73;  --aegis-chip-warn-bg: #352a10;
+  --aegis-chip-good-fg:    #6ee7b7;  --aegis-chip-good-bg: #0d2b21;
+  --aegis-chip-bad-fg:     #fca5a5;  --aegis-chip-bad-bg:  #3a1715;
+  --aegis-success-text:    #6ee7b7;
+  --aegis-danger-text:     #fca5a5;
+  --aegis-warning-text:    #f3cd73;
+  --aegis-yubikey-card:    linear-gradient(135deg, #17171b, #12263a);
+}
+
+/* ---------------------------------------------------------------------------
+   Bootswatch Flatly underneath is a light theme with its colours compiled in.
+   Pointing its own custom properties at ours themes every component at once,
+   so these are written once rather than twice per theme state.
+   ------------------------------------------------------------------------ */
+body {
+  --bs-body-color:        var(--ag-text);
+  --bs-body-bg:           var(--ag-bg);
+  --bs-emphasis-color:    var(--ag-text);
+  --bs-secondary-color:   var(--ag-muted);
+  --bs-tertiary-color:    var(--ag-subtle);
+  --bs-border-color:      var(--aegis-border);
+  --bs-link-color:        var(--aegis-link);
+  --bs-link-hover-color:  var(--ag-brand-ink);
+  --bs-heading-color:     var(--ag-text);
+  --bs-card-bg:           var(--aegis-surface);
+  --bs-card-color:        var(--ag-text);
+  --bs-card-border-color: var(--aegis-border);
+  --bs-card-cap-bg:       var(--aegis-surface-2);
+  --bs-card-cap-color:    var(--ag-text);
+}
+
+/* `.text-muted` resolves through --bs-body-color-rgb, which Flatly compiled to
+   a dark slate — unreadable on a dark card. It is a utility, so it carries
+   !important and has to be met with one. */
+.text-muted { color: var(--ag-muted) !important; }
+.bg-white   { background-color: var(--aegis-inset) !important; }
+.bg-light   { background-color: var(--aegis-surface-2) !important; }
+.border     { border-color: var(--aegis-border) !important; }
+
+.card {
+  background-color: var(--aegis-surface);
+  border-color: var(--aegis-border);
+  color: var(--ag-text);
+}
+.card-header { background-color: var(--aegis-surface-2); border-bottom-color: var(--aegis-border); }
+
+.list-group {
+  --bs-list-group-bg: transparent;
+  --bs-list-group-color: var(--ag-text);
+  --bs-list-group-border-color: var(--aegis-border);
+  --bs-list-group-action-color: var(--ag-text);
+  --bs-list-group-action-hover-color: var(--ag-text);
+  --bs-list-group-action-hover-bg: var(--aegis-tint);
+  --bs-list-group-action-active-bg: var(--aegis-tint);
+}
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--ag-text);
+  --bs-table-border-color: var(--aegis-border);
+  --bs-table-striped-color: var(--ag-text);
+  --bs-table-striped-bg: var(--aegis-surface-2);
+  --bs-table-hover-color: var(--ag-text);
+  --bs-table-hover-bg: var(--aegis-tint);
+}
+.table > :not(caption) > * > * { background-color: transparent; color: var(--ag-text); }
+.table-light > :not(caption) > * > * { background-color: var(--aegis-surface-2); color: var(--aegis-table-head); }
+
+.form-label { color: var(--ag-text); font-weight: 600; }
+.form-control,
+.form-select,
+.input-group-text {
+  color: var(--ag-text);
+  background-color: var(--aegis-inset);
+  border-color: var(--aegis-border-strong);
+}
+.form-control:focus,
+.form-select:focus {
+  color: var(--ag-text);
+  background-color: var(--aegis-inset);
+  border-color: var(--aegis-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ag-brand) 28%, transparent);
+}
+.form-control::placeholder { color: var(--ag-subtle); opacity: 1; }
+.form-control::file-selector-button {
+  color: var(--ag-text);
+  background-color: var(--aegis-surface-2);
+  border-color: var(--aegis-border);
+}
+.form-check-input { background-color: var(--aegis-inset); border-color: var(--aegis-border-strong); }
+.form-check-input:checked { background-color: var(--aegis-blue); border-color: var(--aegis-blue); }
+
+.dropdown-menu {
+  --bs-dropdown-bg: var(--aegis-surface);
+  --bs-dropdown-color: var(--ag-text);
+  --bs-dropdown-border-color: var(--aegis-border);
+  --bs-dropdown-link-color: var(--ag-text);
+  --bs-dropdown-link-hover-color: var(--aegis-link);
+  --bs-dropdown-link-hover-bg: var(--aegis-tint);
+  --bs-dropdown-divider-bg: var(--aegis-border);
+}
+
+.modal-content {
+  background-color: var(--aegis-surface);
+  color: var(--ag-text);
+  border-color: var(--aegis-border);
+}
+.modal-header, .modal-footer { border-color: var(--aegis-border); }
+.btn-close { filter: none; }
+:root[data-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) brightness(1.6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .btn-close { filter: invert(1) grayscale(100%) brightness(1.6); }
+}
+
+code, pre { color: var(--ag-text); }
+hr, .dropdown-divider { border-color: var(--aegis-border); }
+
+/* ---------------------------------------------------------------------------
+   Flatly's semantic colours are picked for a light marketing page and carry
+   white text at 2.1:1 to 3.6:1 — a solid #18bc9c success alert with white text
+   fails in either theme. Darkened to the point where white actually holds.
+   ------------------------------------------------------------------------ */
+.alert { border: none; color: #ffffff; }
+.alert-success { background-color: var(--aegis-success); }
+.alert-info    { background-color: var(--aegis-info); }
+.alert-warning { background-color: var(--aegis-warning); }
+.alert-danger  { background-color: var(--aegis-danger); }
+.alert-secondary,
+.alert-light,
+.alert-dark    { background-color: var(--aegis-neutral); }
+.alert a, .alert .alert-link, .alert strong, .alert code { color: #ffffff; }
+
+.btn-success { --bs-btn-bg: var(--aegis-success); --bs-btn-border-color: var(--aegis-success);
+  --bs-btn-hover-bg: #03624a; --bs-btn-hover-border-color: #03624a; --bs-btn-color: #ffffff;
+  --bs-btn-hover-color: #ffffff; --bs-btn-disabled-bg: var(--aegis-success);
+  --bs-btn-disabled-border-color: var(--aegis-success); }
+.btn-danger  { --bs-btn-bg: var(--aegis-danger); --bs-btn-border-color: var(--aegis-danger);
+  --bs-btn-hover-bg: #871a13; --bs-btn-hover-border-color: #871a13; --bs-btn-color: #ffffff;
+  --bs-btn-hover-color: #ffffff; }
+.btn-warning { --bs-btn-bg: var(--aegis-warning); --bs-btn-border-color: var(--aegis-warning);
+  --bs-btn-hover-bg: #6f4800; --bs-btn-hover-border-color: #6f4800; --bs-btn-color: #ffffff;
+  --bs-btn-hover-color: #ffffff; }
+.btn-secondary { --bs-btn-bg: var(--aegis-neutral); --bs-btn-border-color: var(--aegis-neutral);
+  --bs-btn-hover-bg: #3b4849; --bs-btn-hover-border-color: #3b4849; --bs-btn-color: #ffffff;
+  --bs-btn-hover-color: #ffffff; }
+
+/* Outline buttons read their colour from the same scale, so they inherit the
+   same problem on a pale ground. */
+.btn-outline-secondary { --bs-btn-color: var(--ag-text); --bs-btn-border-color: var(--aegis-border-strong);
+  --bs-btn-hover-bg: var(--aegis-surface-2); --bs-btn-hover-border-color: var(--aegis-border-strong);
+  --bs-btn-hover-color: var(--ag-text); }
+.btn-outline-danger { --bs-btn-color: var(--aegis-danger-text); --bs-btn-border-color: var(--aegis-danger-text);
+  --bs-btn-hover-bg: var(--aegis-danger); --bs-btn-hover-border-color: var(--aegis-danger);
+  --bs-btn-hover-color: #ffffff; }
+.btn-outline-success { --bs-btn-color: var(--aegis-success-text); --bs-btn-border-color: var(--aegis-success-text);
+  --bs-btn-hover-bg: var(--aegis-success); --bs-btn-hover-border-color: var(--aegis-success);
+  --bs-btn-hover-color: #ffffff; }
+
+.text-bg-dark      { background-color: #3f4b4c !important; color: #ffffff !important; }
+.text-bg-secondary { background-color: var(--aegis-neutral) !important; color: #ffffff !important; }
+.text-bg-success   { background-color: var(--aegis-success) !important; color: #ffffff !important; }
+.text-bg-info      { background-color: var(--aegis-info) !important; color: #ffffff !important; }
+.text-bg-warning   { background-color: var(--aegis-warning) !important; color: #ffffff !important; }
+.text-bg-danger    { background-color: var(--aegis-danger) !important; color: #ffffff !important; }
+.text-success { color: var(--aegis-success-text) !important; }
+.text-danger  { color: var(--aegis-danger-text) !important; }
+.text-warning { color: var(--aegis-warning-text) !important; }

@@ -10,6 +10,16 @@
       ],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "business-expenses",
+      "cwd": "examples/business-expenses",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "start"
+      ],
+      "port": 4300,
+      "autoPort": true
     }
   ]
 }
