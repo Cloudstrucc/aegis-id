@@ -5,18 +5,7 @@
 </section>
 
 <section class="band band--white">
-  <div class="auth-grid auth-grid--compact">
-    <div class="section-heading">
-      <p class="eyebrow">Passport.js</p>
-      {{#if passkeyLoginEnabled}}
-        <h2>Choose how you sign in.</h2>
-        <p>Organization subscription and administration require a verified session — a password plus a second factor, or a passkey on its own.</p>
-      {{else}}
-        <h2>Password first, second factor next.</h2>
-        <p>Organization subscription and administration require an authenticated user session plus email, SMS, or passkey verification.</p>
-      {{/if}}
-    </div>
-
+  <div class="auth-grid auth-grid--split">
     <div class="auth-panel">
       <form class="auth-panel__form" action="/auth/login" method="post" novalidate>
         {{#if errorMessage}}<p class="form-alert">{{errorMessage}}</p>{{/if}}
@@ -70,5 +59,41 @@
         </div>
       {{/if}}
     </div>
+
+    <aside class="auth-aside" aria-labelledby="auth-aside-title">
+      <h2 class="auth-aside__title" id="auth-aside-title">Why signing in asks for more than a password.</h2>
+
+      <ul class="auth-aside__list">
+        <li>
+          <span class="auth-aside__icon">{{agIcon "shield" 18}}</span>
+          <div>
+            <h3>Two kinds of proof, not two passwords</h3>
+            <p>A password is something you know, so on its own it never finishes a sign-in.{{#if passkeyLoginEnabled}} A passkey is something you have and something you are at once, so it can.{{/if}}</p>
+          </div>
+        </li>
+
+        {{#if walletLoginEnabled}}
+          <li>
+            <span class="auth-aside__icon">{{agIcon "chain" 18}}</span>
+            <div>
+              <h3>A wallet approval is evidence</h3>
+              <p>Approving and declining are both real answers, and both are written to an immutable ledger with the wallet that gave them.</p>
+            </div>
+          </li>
+        {{/if}}
+
+        <li>
+          <span class="auth-aside__icon">{{agIcon "lifebuoy" 18}}</span>
+          <div>
+            <h3>Losing the device is not losing the account</h3>
+            <p>Recover with a code sent to your registered address, or have two of your organization&rsquo;s root wallets approve. No administrator ever sees a credential of yours.</p>
+          </div>
+        </li>
+      </ul>
+
+      <p class="auth-aside__foot">
+        New to {{site.branding.shortName}}? <a href="/plans">Compare the plans</a> &mdash; the trial needs no card.
+      </p>
+    </aside>
   </div>
 </section>

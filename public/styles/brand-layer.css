@@ -747,6 +747,89 @@ body.auth-page .page-hero,
 }
 .band > *, .page-hero > *, .hero__content { max-width: none; margin-inline: 0; }
 .page-hero:has(+ .band .auth-grid) > * { max-width: 404px; margin-inline: auto; }
+
+/* --- auth cards: put back the width the band rule took away -------------
+   `.band > *` above is also (0,1,0) and is written later in this file, so it
+   beat `.auth-grid { max-width: 404px }` and every sign-in, registration,
+   reset and recovery card stretched to the full 1140px content width. Stating
+   it as `.band > .auth-grid` (0,2,0) settles it on specificity rather than on
+   which rule happens to come last.
+   ------------------------------------------------------------------------ */
+.band > .auth-grid,
+.band > .auth-grid--compact { max-width: 404px; margin-inline: auto; }
+
+/* --- the sign-in page is a split, not a column --------------------------
+   A single 404px card left two thirds of the page empty, and widening the
+   card alone would have given a login form line lengths no form wants. The
+   form keeps a form's width; the space beside it carries what somebody
+   actually wonders about at a sign-in screen.
+   ------------------------------------------------------------------------ */
+.band > .auth-grid--split {
+  display: grid;
+  grid-template-columns: minmax(0, 404px) minmax(0, 1fr);
+  align-items: start;
+  gap: 56px;
+  max-width: 920px;
+}
+.auth-grid--split > .auth-panel { min-width: 0; }
+
+.auth-aside { min-width: 0; padding-top: 4px; }
+.auth-aside__title {
+  font-family: var(--ag-display);
+  font-size: 1.12rem; font-weight: 650; letter-spacing: -.012em; line-height: 1.35;
+  color: var(--ag-text);
+  margin: 0 0 20px;
+  max-width: 26ch;
+}
+.auth-aside__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+.auth-aside__list > li { display: flex; gap: 12px; align-items: flex-start; }
+.auth-aside__icon {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: var(--ag-brand-soft);
+  border: 1px solid var(--ag-brand-line);
+  color: var(--ag-brand-text);
+}
+.auth-aside__list h3 {
+  font-family: var(--ag-display);
+  font-size: .9rem; font-weight: 640; letter-spacing: -.004em;
+  color: var(--ag-text);
+  margin: 3px 0 4px;
+}
+.auth-aside__list p {
+  margin: 0;
+  font-size: .855rem; line-height: 1.6;
+  color: var(--ag-muted);
+  max-width: 44ch;
+}
+.auth-aside__foot {
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--ag-line);
+  font-size: .845rem; line-height: 1.6;
+  color: var(--ag-muted);
+}
+.auth-aside__foot a { color: var(--ag-brand-text); }
+
+/* The hero sits over the grid, so it stops being a centred column once there
+   is a second column for it to be off-centre against. */
+.page-hero:has(+ .band .auth-grid--split) {
+  max-width: 968px;            /* 920 content + the 24px gutters */
+  text-align: left;
+}
+.page-hero:has(+ .band .auth-grid--split) > * { max-width: 60ch; margin-inline: 0; }
+
+@media (max-width: 860px) {
+  .band > .auth-grid--split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+    max-width: 404px;
+  }
+  .page-hero:has(+ .band .auth-grid--split) { max-width: 452px; }
+  .auth-aside { padding-top: 0; }
+}
 .mobile-downloads { border-bottom: 1px solid var(--ag-line); padding-bottom: 32px; }
 .mobile-downloads__copy { max-width: 62ch; }
 
