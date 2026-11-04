@@ -87,7 +87,25 @@ AEGIS_ID_BASE_URL="${AEGIS_ID_BASE_URL:-https://vanguard-aegis-id-65067d.azurewe
 AEGIS_ORGANIZATION_ID="${AEGIS_ORGANIZATION_ID:-}"
 BUSINESS_SESSION_SECRET="${BUSINESS_SESSION_SECRET:-${SESSION_SECRET:-}}"
 WEBSITE_NODE_DEFAULT_VERSION="${WEBSITE_NODE_DEFAULT_VERSION:-~20}"
-ZIP_PATH="${ZIP_PATH:-/tmp/vanguard-business-expenses.zip}"
+# One run must not overwrite another's package. Two deployments of different
+# environments overlap routinely — dev while qa is still building — and a fixed
+# path means the second `zip` truncates the file the first is still uploading.
+# An explicit ZIP_PATH is the caller's file and is left where they put it.
+if [ -n "${ZIP_PATH:-}" ]; then
+  ZIP_PATH_IS_TEMPORARY=0
+else
+  zip_tenant_slug="${TENANT_PROFILE:-default}"
+  zip_tenant_slug="${zip_tenant_slug//[^A-Za-z0-9]/-}"
+  ZIP_PATH="${TMPDIR:-/tmp}/vanguard-business-expenses-${DEPLOY_ENV}-${zip_tenant_slug}-$$.zip"
+  ZIP_PATH_IS_TEMPORARY=1
+fi
+
+cleanup_zip() {
+  if [ "${ZIP_PATH_IS_TEMPORARY:-0}" = "1" ] && [ -n "${ZIP_PATH:-}" ]; then
+    rm -f "$ZIP_PATH"
+  fi
+}
+trap cleanup_zip EXIT
 DEPLOY_TIMEOUT_SECONDS="${DEPLOY_TIMEOUT_SECONDS:-900}"
 POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-10}"
 AZURE_LOGIN="${AZURE_LOGIN:-auto}"
