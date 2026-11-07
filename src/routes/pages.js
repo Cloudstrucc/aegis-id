@@ -456,6 +456,17 @@ router.get('/privacy', authorize('public.home'), (req, res) => {
   });
 });
 
+// A short, quotable URL for the cookie section, which is what the footer and
+// the notice bar point at. The content lives on the privacy policy rather than
+// being duplicated here: two pages describing the same cookies is two pages to
+// keep in step, and one of them would drift.
+//
+// Public for the same reason /privacy is — somebody reading the notice bar has
+// no account.
+router.get('/cookies', authorize('public.home'), (req, res) => {
+  res.redirect(302, '/privacy#cookies');
+});
+
 // Sideloading instructions for the Android wallet. Public, because the badge
 // that links here is on the public home page — but deliberately a page rather
 // than a bare link to the .apk, so nobody meets Android's "unknown source"

@@ -128,6 +128,13 @@ app.get('/', (req, res) => {
   });
 });
 
+// Public: somebody reading the notice bar on a landing page has no account,
+// and this app is on its own hostname with its own session cookie, so it
+// cannot lean on the platform's notice.
+app.get('/cookies', (req, res) => {
+  res.render('pages/cookies', { title: 'Cookies' });
+});
+
 app.get('/apps/:appId', (req, res, next) => {
   try {
     const exampleApp = getExampleApp(req.params.appId);

@@ -959,3 +959,76 @@ hr, .dropdown-divider { border-color: var(--aegis-border); }
 @media (max-width: 991.98px) {
   .container-fluid > .row.g-5 { --bs-gutter-x: 1.5rem; }
 }
+
+/* --- cookie notice -------------------------------------------------------
+   A bar, not a dialog. Everything this app stores is strictly necessary, so
+   the notice informs rather than asks: it never covers the page, never traps
+   focus and carries no Accept/Decline pair. Below the navbar's sticky layer
+   (z 20) in meaning but above page content.
+
+   `[hidden]` is (0,2,0) against the block's (0,1,0), so it wins whatever the
+   order — the bar stays invisible until app.js has read storage.
+   ------------------------------------------------------------------------ */
+.cookie-notice {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px clamp(16px, 4vw, 40px);
+  background: var(--aegis-surface);
+  border-top: 1px solid var(--aegis-border-strong);
+  box-shadow: 0 -10px 34px rgb(9 9 11 / .10);
+}
+.cookie-notice[hidden] { display: none; }
+
+.cookie-notice__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: .875rem;
+  line-height: 1.55;
+  color: var(--ag-muted);
+  max-width: 78ch;
+}
+
+.cookie-notice__link {
+  flex: 0 0 auto;
+  font-size: .845rem;
+  font-weight: 600;
+  color: var(--aegis-link);
+}
+
+.cookie-notice__dismiss {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 9px 22px;
+  font: inherit;
+  font-size: .845rem;
+  font-weight: 600;
+  color: var(--ag-text);
+  background: var(--aegis-surface);
+  border: 1px solid var(--aegis-border-strong);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.cookie-notice__dismiss:hover {
+  border-color: var(--aegis-blue);
+  color: var(--aegis-link);
+}
+.cookie-notice__dismiss:focus-visible {
+  outline: 2px solid var(--aegis-blue);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .cookie-notice {
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+  .cookie-notice__text { flex: 1 1 100%; }
+  .cookie-notice__dismiss { margin-left: auto; }
+}

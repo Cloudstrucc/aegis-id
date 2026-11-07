@@ -1,0 +1,96 @@
+{{!--
+  This app is deployed separately, on its own hostname, and sets its own
+  session cookie — so it needs its own notice rather than pointing at the
+  platform's. Keep the table in step with what src/server.js actually sets.
+--}}
+<section class="container-fluid py-4 px-lg-5">
+  <div class="mb-4">
+    <p class="eyebrow">Cookies</p>
+    <h1 class="mb-1">Cookies and local storage</h1>
+    <p class="text-muted mb-0" style="max-width: 70ch">
+      This app sets no analytics, advertising or tracking cookies, and no third
+      party sets a cookie through it. Everything below is needed for it to work,
+      which is why you are told about it rather than asked to agree to it.
+    </p>
+  </div>
+
+  <div class="surface-card">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Set by</th>
+            <th scope="col">What it does</th>
+            <th scope="col">How long</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>expenses.sid</code></td>
+            <td>This app</td>
+            <td>
+              Keeps you signed in after you approve the wallet challenge. It is
+              only set once you start signing in &mdash; browsing the landing
+              pages sets no session cookie at all.
+            </td>
+            <td>Until you sign out or close the browser</td>
+          </tr>
+          <tr>
+            <td><code>ARRAffinity</code><br><code>ARRAffinitySameSite</code></td>
+            <td>Our host, Azure App Service</td>
+            <td>
+              Keeps you on the same server for the length of a visit, so a
+              request does not land on a machine that has never heard of your
+              session.
+            </td>
+            <td>Until you close the browser</td>
+          </tr>
+          <tr>
+            <td><code>aegis.cookie-notice</code></td>
+            <td>This app</td>
+            <td>
+              Remembers that you have read the notice at the bottom of the page.
+              Stored on your device by the browser, never sent to us.
+            </td>
+            <td>Until you clear it</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-lg-4">
+      <div class="surface-card h-100">
+        <h2 class="h5">If you block them</h2>
+        <p class="text-muted mb-0">
+          You can clear or block any of this in your browser, and nothing here
+          works around that. Blocking the session cookie means you cannot sign
+          in, because it is the thing that remembers you are signed in. No other
+          feature changes.
+        </p>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="surface-card h-100">
+        <h2 class="h5">Why there is no Accept or Decline</h2>
+        <p class="text-muted mb-0">
+          Consent is for storage that is not strictly necessary &mdash;
+          analytics, advertising, anything that builds a profile. This app runs
+          none of it, so there is nothing you could decline.
+        </p>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="surface-card h-100">
+        <h2 class="h5">Signing in with Aegis ID</h2>
+        <p class="text-muted mb-0">
+          Signing in sends you to {{aegisBaseUrl}}, which is a separate site with
+          its own cookies and its own notice. Nothing about you is shared with a
+          third party by either.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

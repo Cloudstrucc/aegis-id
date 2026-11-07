@@ -290,3 +290,118 @@
     </div>
   {{/if}}
 </section>
+
+{{!--
+  The cookie section, linked from the footer and from the notice bar.
+
+  Every row here is strictly necessary, which is why the bar informs rather
+  than asks. Keep this table in step with what is actually set — it is the
+  page somebody checks when they want to know whether the claim above it is
+  true, and a stale row is worse than no table.
+--}}
+<section class="band band--white" id="cookies">
+  <div class="section-heading">
+    <p class="eyebrow">Cookies</p>
+    <h2>Cookies and local storage.</h2>
+    <p>
+      We set no analytics, advertising or tracking cookies, and no third party
+      sets a cookie through this site. Everything below is needed for the site
+      to work, which is why you are told about it rather than asked to agree
+      to it.
+    </p>
+  </div>
+
+  <div class="cookie-table-wrap">
+    <table class="cookie-table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Set by</th>
+          <th scope="col">What it does</th>
+          <th scope="col">How long</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>aegis.sid</code></td>
+          <td>This site</td>
+          <td>
+            Keeps you signed in. It is only set once you start signing in &mdash;
+            browsing without an account sets no session cookie at all. It cannot
+            be read by scripts and is not sent to other sites.
+          </td>
+          <td>Until you sign out or close the browser</td>
+        </tr>
+        <tr>
+          <td><code>ARRAffinity</code><br><code>ARRAffinitySameSite</code></td>
+          <td>Our host, Azure App Service</td>
+          <td>
+            Keeps you on the same server for the length of a visit, so a request
+            does not land on a machine that has never heard of your session.
+          </td>
+          <td>Until you close the browser</td>
+        </tr>
+        <tr>
+          <td><code>aegis-theme</code></td>
+          <td>This site</td>
+          <td>
+            Remembers whether you chose light or dark. Stored on your device by
+            the browser, never sent to us.
+          </td>
+          <td>Until you clear it</td>
+        </tr>
+        <tr>
+          <td><code>aegis.cookie-notice</code></td>
+          <td>This site</td>
+          <td>
+            Remembers that you have read the notice at the bottom of the page,
+            so it is not shown again. Stored on your device, never sent to us.
+          </td>
+          <td>Until you clear it</td>
+        </tr>
+        <tr>
+          <td>Interface state</td>
+          <td>This site</td>
+          <td>
+            A few short-lived values remembering which panel you had open or
+            which message you dismissed. Stored on your device for the length of
+            a visit.
+          </td>
+          <td>Until you close the tab</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="assurance-grid">
+    <article class="assurance-card">
+      <h3>If you block them</h3>
+      <p>
+        You can clear or block any of this in your browser, and nothing here
+        works around that. Blocking the session cookie means you cannot sign in,
+        because it is the thing that remembers you are signed in; blocking the
+        rest resets your theme and shows you this notice again. No other feature
+        changes.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>Why there is no Accept or Decline</h3>
+      <p>
+        Consent is for storage that is not strictly necessary &mdash; analytics,
+        advertising, anything that builds a profile. We run none of it, so there
+        is nothing you could decline. A choice that changes nothing is worse
+        than no choice, and we would rather tell you plainly what is stored.
+      </p>
+    </article>
+
+    <article class="assurance-card">
+      <h3>If that ever changes</h3>
+      <p>
+        If something non-essential is ever added, this page says so first, you
+        are asked before it loads rather than after, and declining will be
+        exactly as easy as accepting. Until then there is nothing to ask about.
+      </p>
+    </article>
+  </div>
+</section>

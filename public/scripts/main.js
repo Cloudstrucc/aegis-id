@@ -252,6 +252,7 @@ document.querySelectorAll('[data-role-template-select]').forEach((select) => {
 });
 
 restoreDismissibleBanners();
+initCookieNotice();
 // Workspace tour is disabled while the onboarding guide is being redesigned.
 // The setup/configuration wizards remain available from the portal.
 // initWorkspaceTour();
@@ -1369,6 +1370,63 @@ function restoreDismissibleBanners() {
     const key = `aegis.banner.${banner.dataset.dismissibleBanner}`;
     if (window.sessionStorage.getItem(key) === 'dismissed') {
       banner.remove();
+    }
+  });
+}
+
+// The cookie notice.
+//
+// localStorage rather than the sessionStorage the dashboard banners use: a
+// cookie notice that comes back every time the browser restarts is the thing
+// everyone hates about cookie bars, and there is nothing here urgent enough
+// to re-read. The stored value is the notice's version, so a materially
+// different notice can be shown again without clearing anyone's other state.
+//
+// Revealed from script rather than rendered visible, so somebody who has
+// already dismissed it never watches it appear and vanish on every page.
+// Storage throws in a private window or with site data blocked; the notice
+// then simply shows, which is the safe direction to fail in.
+function initCookieNotice() {
+  const notice = document.querySelector('[data-cookie-notice]');
+  if (!notice) {
+    return;
+  }
+
+  const key = 'aegis.cookie-notice';
+  const version = notice.dataset.cookieNotice;
+
+  try {
+    if (window.localStorage.getItem(key) === version) {
+      notice.remove();
+      return;
+    }
+  } catch (error) { /* no storage: show it */ }
+
+  notice.hidden = false;
+
+  // Reserve the bar's own height at the end of the document. It is fixed, so
+  // without this it sits on top of whatever happens to be at the bottom of the
+  // page — on the sign-in page that was the wallet button. Re-measured on
+  // resize because the bar wraps to two rows on a narrow screen.
+  const reserveSpace = () => {
+    document.body.style.paddingBottom = `${notice.offsetHeight}px`;
+  };
+  reserveSpace();
+  window.addEventListener('resize', reserveSpace);
+
+  const dismiss = () => {
+    try {
+      window.localStorage.setItem(key, version);
+    } catch (error) { /* no storage: it will be shown again, which is honest */ }
+    window.removeEventListener('resize', reserveSpace);
+    document.body.style.paddingBottom = '';
+    notice.remove();
+  };
+
+  notice.querySelector('[data-cookie-dismiss]')?.addEventListener('click', dismiss);
+  notice.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      dismiss();
     }
   });
 }

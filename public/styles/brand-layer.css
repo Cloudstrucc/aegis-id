@@ -1883,3 +1883,117 @@ body.document-page .embedded-document .doc-phone-card .doc-eyebrow,
 body.document-page .embedded-document .doc-phone-card small {
   color: var(--ag-nav-muted);
 }
+
+/* --- cookie notice -------------------------------------------------------
+   A bar, not a dialog. What this deployment stores is strictly necessary, so
+   the notice is information rather than a decision: it never covers the page,
+   never traps focus, never locks scrolling and carries no Accept/Decline
+   pair. It sits under the modal layer (z 80+) and over ordinary content.
+
+   `[hidden]` is (0,2,0) against the block's own (0,1,0), so it wins whatever
+   the order — the bar stays invisible until the script has read storage.
+   ------------------------------------------------------------------------ */
+.cookie-notice {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px clamp(16px, 4vw, 40px);
+  background: var(--ag-surface);
+  border-top: 1px solid var(--ag-line-strong);
+  box-shadow: 0 -10px 34px rgb(9 9 11 / .10);
+}
+.cookie-notice[hidden] { display: none; }
+
+.cookie-notice__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: .875rem;
+  line-height: 1.55;
+  color: var(--ag-muted);
+  max-width: 78ch;
+}
+
+.cookie-notice__link {
+  flex: 0 0 auto;
+  font-size: .845rem;
+  font-weight: 600;
+  color: var(--ag-brand-text);
+}
+
+.cookie-notice__dismiss {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 9px 22px;
+  font: inherit;
+  font-size: .845rem;
+  font-weight: 600;
+  color: var(--ag-text);
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line-strong);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.cookie-notice__dismiss:hover {
+  border-color: var(--ag-brand);
+  color: var(--ag-brand-text);
+}
+.cookie-notice__dismiss:focus-visible {
+  outline: 2px solid var(--ag-brand);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .cookie-notice {
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+  .cookie-notice__text { flex: 1 1 100%; }
+  .cookie-notice__dismiss { margin-left: auto; }
+}
+
+/* --- the cookie table on /privacy#cookies -------------------------------- */
+
+/* The site header is sticky and 64px tall, so following /cookies landed the
+   section's eyebrow and heading underneath it. */
+#cookies { scroll-margin-top: 80px; }
+
+.cookie-table-wrap { overflow-x: auto; }
+
+.cookie-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+}
+.cookie-table th {
+  text-align: left;
+  padding: 0 16px 10px 0;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ag-muted);
+  border-bottom: 1px solid var(--ag-line-strong);
+  white-space: nowrap;
+}
+.cookie-table td {
+  padding: 13px 16px 13px 0;
+  line-height: 1.6;
+  color: var(--ag-muted);
+  border-bottom: 1px solid var(--ag-line);
+  vertical-align: top;
+}
+.cookie-table td:first-child { color: var(--ag-text); }
+.cookie-table code {
+  font-size: .82rem;
+  background: var(--ag-surface-2);
+  padding: 1px 6px;
+  border-radius: 5px;
+  color: var(--ag-text);
+}
+.cookie-table tr:last-child td { border-bottom: 0; }

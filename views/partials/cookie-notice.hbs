@@ -1,0 +1,24 @@
+{{!--
+  The cookie notice.
+
+  Information, not consent. Everything this deployment stores is strictly
+  necessary — the session cookie that signs you in, the host's load-balancing
+  cookie, and a theme choice kept on the device — so there is nothing here to
+  accept or refuse. It deliberately carries no Accept/Decline pair: a Decline
+  that switches nothing off asks for a decision that does not exist, and
+  asking permission that is not needed is its own kind of misleading.
+
+  The day a non-essential tag is added, this becomes a consent gate and the
+  two buttons arrive with it. Not before.
+
+  `hidden` until the script has read local storage, so somebody who has
+  already read it never watches it appear and vanish on every navigation.
+--}}
+<aside class="cookie-notice" data-cookie-notice="v1" role="region" aria-label="Cookie notice" hidden>
+  <p class="cookie-notice__text">
+    {{site.branding.shortName}} uses only the cookies needed to sign you in and
+    to remember your theme. No analytics, no tracking, no advertising.
+  </p>
+  <a class="cookie-notice__link" href="/privacy#cookies">What we store</a>
+  <button class="cookie-notice__dismiss" type="button" data-cookie-dismiss>Got it</button>
+</aside>
