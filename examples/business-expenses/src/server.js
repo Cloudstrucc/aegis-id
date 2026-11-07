@@ -74,16 +74,27 @@ function resolveEnvFile(baseDir) {
 
 app.use(
   helmet({
+    // Everything this app loads comes from its own origin. Bootstrap,
+    // Bootswatch, Bootstrap Icons and pdf.js used to come from
+    // cdn.jsdelivr.net, which meant admitting a whole external origin for
+    // scripts, styles, fonts and workers — four of the directives below
+    // naming the one place an injected tag would most plausibly point. They
+    // are vendored under public/vendor now (scripts/fetch-example-vendor.sh),
+    // so the policy says 'self' and means it.
+    //
+    // blob: stays on workerSrc because pdf.js falls back to a blob worker when
+    // a module worker cannot start; 'unsafe-inline' stays on styleSrc for the
+    // inline style attributes in the views.
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        defaultSrc: ["'self'"],
         baseUri: ["'self'"],
         formAction: ["'self'", config.aegisBaseUrl],
         imgSrc: ["'self'", 'data:'],
-        scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-        fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
-        workerSrc: ["'self'", 'blob:', 'https://cdn.jsdelivr.net']
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'"],
+        workerSrc: ["'self'", 'blob:']
       }
     }
   })

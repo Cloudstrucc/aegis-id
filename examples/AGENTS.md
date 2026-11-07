@@ -62,6 +62,32 @@ files, and expenses re-seed on the next read.
 When adding a store, decide whether it is per-holder (default) or belongs in
 `GLOBAL_FILES`.
 
+### Third-party browser assets
+
+**Nothing is loaded from a CDN.** Bootstrap, the Bootswatch Flatly theme,
+Bootstrap Icons and pdf.js are served from the app's own origin out of
+`public/vendor/`, and the committed `public/vendor/manifest.txt` records what
+each file is and its hash.
+
+Re-download or upgrade with `scripts/fetch-example-vendor.sh`, which pins the
+versions in one place, strips the Google Fonts `@import` that Bootswatch themes
+carry, and prints the two files that reference the result. The output is
+committed, because the deploy zip excludes `node_modules` — these are assets,
+not dependencies.
+
+This matters more here than it looks. A CDN link is a request the holder's
+browser makes to someone else's server, so it hands a third party their IP
+address and the page they were on, for every page view of an identity demo —
+while `/cookies` tells them no third party is involved. It also forces the
+Content Security Policy to admit a whole external origin for scripts, styles,
+fonts and workers, which is most of that policy's value gone. The policy in
+`src/server.js` is now `'self'` throughout, and
+`tests/example-app-assets.test.js` at the repo root fails if an absolute
+`src`/`href` reappears, if the policy names an origin again, or if the vendored
+tree stops matching its manifest. That test is at the root because this app has
+no runner of its own, which is how the CDN links survived unnoticed in the
+first place.
+
 ### Configuration
 
 Reads its own `.env`: `PORT` (4300), `AEGIS_ID_BASE_URL`, `OIDC_CLIENT_ID`,

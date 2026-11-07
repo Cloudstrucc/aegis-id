@@ -2,8 +2,11 @@ const designer = document.querySelector('[data-pdf-designer]');
 const documentPreview = document.querySelector('[data-pdf-document]');
 
 if (designer || documentPreview) {
-  const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs');
-  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+  // Our own origin, not a CDN — see views/layouts/main.hbs. Version pinned in
+  // scripts/fetch-example-vendor.sh; the import and the worker must stay on the
+  // same build, because pdf.js refuses a worker whose version does not match.
+  const pdfjs = await import('/vendor/pdfjs/pdf.min.mjs');
+  pdfjs.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.mjs';
 
   if (designer) {
     setupDesigner(pdfjs, designer);

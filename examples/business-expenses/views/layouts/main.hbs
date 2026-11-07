@@ -4,8 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{title}} | Aegis ID Examples</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/flatly/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    {{!--
+      Served from our own origin, not from a CDN: a CDN link hands a third
+      party the holder's IP address and the page they are on, for every page
+      view of an identity demo. Re-download with
+      scripts/fetch-example-vendor.sh, which pins the versions and records
+      hashes in public/vendor/manifest.txt.
+    --}}
+    <link href="/vendor/bootstrap/bootstrap.flatly.min.css" rel="stylesheet">
+    <link href="/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/fonts.css" rel="stylesheet">
     <link href="/app.css" rel="stylesheet">
   </head>
@@ -102,7 +109,7 @@
       <a class="cookie-notice__link" href="/cookies">What we store</a>
       <button class="cookie-notice__dismiss" type="button" data-cookie-dismiss>Got it</button>
     </aside>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/app.js"></script>
     <script type="module" src="/signature.js"></script>
   </body>

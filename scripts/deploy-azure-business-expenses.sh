@@ -206,6 +206,42 @@ wait_for_http_status() {
   done
 }
 
+assert_content_type_contains() {
+  local url="$1"
+  local expected="$2"
+  local headers
+  headers="$(curl -k -L -sS -I "$url" | tr -d '\r')"
+
+  if ! printf '%s\n' "$headers" | awk 'tolower($0) ~ /^content-type:/ { print tolower($0) }' | grep -q "$expected"; then
+    printf '%s\n' "$headers" >&2
+    fail "$url did not return expected Content-Type containing '$expected'."
+  fi
+
+  log "Verified Content-Type for $url contains '$expected'"
+}
+
+# The deployed page must not send the holder's browser to anybody else. A
+# missing vendored file fails loudly above; a re-introduced CDN tag would not,
+# because the page still renders — it just renders by asking a third party.
+assert_body_has_no_third_party_origin() {
+  local url="$1"
+  local body
+  body="$(curl -k -L -sS "$url")"
+
+  local offenders
+  offenders="$(printf '%s' "$body" \
+    | grep -ohE '(src|href)="https?://[^"]+"' \
+    | grep -vE "$(printf '%s' "$APP_PUBLIC_BASE_URL" | sed 's/[.[\*^$]/\\&/g')" \
+    || true)"
+
+  if [ -n "$offenders" ]; then
+    printf '%s\n' "$offenders" >&2
+    fail "$url loads assets from an origin that is not this app. Vendor them with scripts/fetch-example-vendor.sh."
+  fi
+
+  log "Verified $url loads nothing from a third-party origin"
+}
+
 require_cmd az
 require_cmd curl
 require_cmd npm
@@ -332,6 +368,26 @@ wait_for_kudu_deployment "$previous_deployment_id" "$DEPLOY_TIMEOUT_SECONDS"
 
 log "Polling deployed app"
 wait_for_http_status "$APP_PUBLIC_BASE_URL" 200 "$DEPLOY_TIMEOUT_SECONDS"
+
+# Bootstrap, Bootswatch, Bootstrap Icons and pdf.js are served from this app's
+# own origin, so a page that renders is no longer proof they arrived: a missing
+# vendored file leaves an unstyled page that still answers 200. Check the files
+# themselves, and that nothing points off-origin any more.
+log "Verifying self-hosted assets"
+wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/vendor/bootstrap/bootstrap.flatly.min.css" 200 180
+assert_content_type_contains "${APP_PUBLIC_BASE_URL%/}/vendor/bootstrap/bootstrap.flatly.min.css" "text/css"
+wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/vendor/bootstrap/bootstrap.bundle.min.js" 200 180
+assert_content_type_contains "${APP_PUBLIC_BASE_URL%/}/vendor/bootstrap/bootstrap.bundle.min.js" "javascript"
+wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/vendor/bootstrap-icons/bootstrap-icons.min.css" 200 180
+wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2" 200 180
+assert_content_type_contains "${APP_PUBLIC_BASE_URL%/}/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2" "font/woff2"
+# pdf.js and its worker must be the same build or pdf.js refuses the worker,
+# and a .mjs served as anything but JavaScript is rejected by the module loader.
+wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/vendor/pdfjs/pdf.min.mjs" 200 180
+assert_content_type_contains "${APP_PUBLIC_BASE_URL%/}/vendor/pdfjs/pdf.min.mjs" "javascript"
+wait_for_http_status "${APP_PUBLIC_BASE_URL%/}/vendor/pdfjs/pdf.worker.min.mjs" 200 180
+assert_content_type_contains "${APP_PUBLIC_BASE_URL%/}/vendor/pdfjs/pdf.worker.min.mjs" "javascript"
+assert_body_has_no_third_party_origin "$APP_PUBLIC_BASE_URL"
 
 log "Deployment complete"
 printf '\nOpen: %s\n' "$APP_PUBLIC_BASE_URL"
