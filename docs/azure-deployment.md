@@ -221,6 +221,34 @@ az webapp browse \
   --name "<globally-unique-app-name>"
 ```
 
+### What actually gets packaged
+
+Both deploy scripts build the zip from the **working tree** — `zip -r "$ZIP_PATH" .`
+— and not from a commit. Whatever is on disk is what ships. A one-line
+cache-bust probe dropped into `public/` to test a hunch was packaged into dev,
+qa and prod that way, and was found later by reading the deployed page rather
+than by anything that was watching.
+
+So both scripts now refuse a checkout they cannot name, in
+`scripts/git-guard.sh`, before anything is installed, built or uploaded:
+
+- **A tree that differs from its commit is refused.** Modified tracked files
+  and files git has never seen both count; the second is the dangerous one,
+  because `zip -r .` packages it and `git status` is the only thing that would
+  have mentioned it. `.gitignore` is honoured, so `node_modules`, the `.env`
+  files, `data/` and `artifacts/` are not dirt.
+- **An unpushed commit is refused on prod**, and only mentioned on dev and qa.
+  Prod is the environment somebody will ask "what is running?" about, and a
+  commit that exists on one laptop is not an answer. On dev it is a normal way
+  to work.
+- Every run prints the branch, short SHA and subject of what it is packaging,
+  so the answer is in the log of the deploy itself.
+
+`--allow-dirty` (or `ALLOW_DIRTY=1`) overrides both, prints the full list of
+what is going out anyway, and says plainly that nothing afterwards can
+reconstruct it. `VERIFY_ONLY=1` skips the check, because it packages and
+uploads nothing.
+
 ### How the zip deploy is watched
 
 Kudu builds the package on the App Service host (`SCM_DO_BUILD_DURING_DEPLOYMENT`

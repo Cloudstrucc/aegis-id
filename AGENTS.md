@@ -48,6 +48,11 @@ deploy. A new JSON store therefore needs its `*_STORE_PATH` added to
 `scripts/deploy-azure-webapp.sh` and set as an app setting, or it will be
 silently wiped on the next deployment.
 
+Both deploy scripts package the working tree rather than a commit, so they
+refuse a checkout that does not match its commit — and, on prod, one whose
+commit is not pushed. `scripts/git-guard.sh`; `--allow-dirty` overrides it
+loudly. Commit before deploying.
+
 ## Output and workflow
 
 - Be concise. No chatty narration.

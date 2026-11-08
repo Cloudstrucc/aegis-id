@@ -13,6 +13,7 @@ set -Eeuo pipefail
 #   AZURE_TENANT_ID=... AZURE_SUBSCRIPTION_ID=... AZURE_RESOURCE_GROUP=...
 #   AZURE_WEBAPP_NAME=... APP_PUBLIC_BASE_URL=... BUSINESS_EXPENSES_APP_URL=...
 #   SKIP_NPM_INSTALL=1 SKIP_TESTS=1 VERIFY_ONLY=1 AZURE_LOGIN=always
+#   --allow-dirty (ALLOW_DIRTY=1) to package a tree that does not match its commit
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEPLOY_ENV="${DEPLOY_ENV:-prod}"
@@ -53,6 +54,10 @@ while [[ $# -gt 0 ]]; do
       TENANT_PROFILE="${1#*=}"
       shift
       ;;
+    --allow-dirty)
+      ALLOW_DIRTY=1
+      shift
+      ;;
     --verify-only)
       VERIFY_ONLY=1
       shift
@@ -73,6 +78,8 @@ done
 
 # shellcheck source=./env-loader.sh
 source "$ROOT_DIR/scripts/env-loader.sh"
+# shellcheck source=./git-guard.sh
+source "$ROOT_DIR/scripts/git-guard.sh"
 ENV_FILE_PATH="$(resolve_env_file "$ROOT_DIR" "$DEPLOY_ENV" "$ENV_FILE")"
 load_env_file "$ENV_FILE_PATH" || die "Environment file not found: $ENV_FILE_PATH"
 TENANT_KEYS=(
@@ -156,6 +163,7 @@ DEPLOY_TIMEOUT_SECONDS="${DEPLOY_TIMEOUT_SECONDS:-900}"
 POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-10}"
 AZURE_LOGIN="${AZURE_LOGIN:-auto}"
 VERIFY_ONLY="${VERIFY_ONLY:-0}"
+ALLOW_DIRTY="${ALLOW_DIRTY:-0}"
 
 log() {
   printf '\n[%s] %s\n' "$(date '+%H:%M:%S')" "$*"
@@ -301,6 +309,16 @@ require_cmd curl
 require_cmd npm
 require_cmd node
 require_cmd zip
+
+# Before anything is installed, built or uploaded. The zip further down is
+# made from the working tree rather than from a commit, so this is the last
+# point at which a tree nobody could reconstruct can still be refused.
+# VERIFY_ONLY packages and uploads nothing, so it has nothing to be wrong
+# about — it is the one mode that may run against whatever is on disk.
+if [[ "$VERIFY_ONLY" != "1" ]]; then
+  assert_clean_checkout "$ROOT_DIR" "$DEPLOY_ENV" "$ALLOW_DIRTY" \
+    || fail "Refusing to deploy a checkout that cannot be named by a commit."
+fi
 
 clean_test_env=(
   env -i

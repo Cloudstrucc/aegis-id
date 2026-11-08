@@ -13,12 +13,14 @@ set -Eeuo pipefail
 #   AZURE_TENANT_ID=... AZURE_SUBSCRIPTION_ID=... AZURE_RESOURCE_GROUP=...
 #   AZURE_WEBAPP_NAME=... APP_PUBLIC_BASE_URL=... AEGIS_ID_BASE_URL=...
 #   AEGIS_ORGANIZATION_ID=... BUSINESS_SESSION_SECRET=... SKIP_NPM_INSTALL=1 AZURE_LOGIN=always
+#   --allow-dirty (ALLOW_DIRTY=1) to package a tree that does not match its commit
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="$ROOT_DIR/examples/business-expenses"
 DEPLOY_ENV="${DEPLOY_ENV:-prod}"
 ENV_FILE="${ENV_FILE:-}"
 TENANT_PROFILE="${TENANT_PROFILE:-}"
+ALLOW_DIRTY="${ALLOW_DIRTY:-0}"
 
 die() {
   printf '\nERROR: %s\n' "$*" >&2
@@ -54,6 +56,10 @@ while [[ $# -gt 0 ]]; do
       TENANT_PROFILE="${1#*=}"
       shift
       ;;
+    --allow-dirty)
+      ALLOW_DIRTY=1
+      shift
+      ;;
     --skip-npm-install)
       SKIP_NPM_INSTALL=1
       shift
@@ -66,6 +72,8 @@ done
 
 # shellcheck source=./env-loader.sh
 source "$ROOT_DIR/scripts/env-loader.sh"
+# shellcheck source=./git-guard.sh
+source "$ROOT_DIR/scripts/git-guard.sh"
 ENV_FILE_PATH="$(resolve_env_file "$APP_DIR" "$DEPLOY_ENV" "$ENV_FILE")"
 load_env_file "$ENV_FILE_PATH" || die "Environment file not found: $ENV_FILE_PATH"
 TENANT_KEYS=(
@@ -247,6 +255,12 @@ require_cmd curl
 require_cmd npm
 require_cmd node
 require_cmd zip
+
+# Before anything is installed, built or uploaded. The zip below is made from
+# the working tree rather than from a commit, so this is the last point at
+# which a tree nobody could reconstruct can still be refused.
+assert_clean_checkout "$ROOT_DIR" "$DEPLOY_ENV" "$ALLOW_DIRTY" \
+  || fail "Refusing to deploy a checkout that cannot be named by a commit."
 
 # AEGIS_ORGANIZATION_ID is no longer required: holders choose their organization
 # from the ones their own token carries. It stays supported as a fallback.
