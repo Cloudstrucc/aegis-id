@@ -115,8 +115,16 @@ resolve_target() {
     set +u
     load_env_file "$env_file" >/dev/null 2>&1
     if [[ "$tenant" != "default" ]]; then
-      apply_tenant_profile "$tenant" APP_PUBLIC_BASE_URL AZURE_WEBAPP_NAME AZURE_RESOURCE_GROUP \
-        >/dev/null 2>&1
+      # A profile that does not resolve must not fall through to the values
+      # already in the file — those are the *default* tenant's, so the health
+      # check would quietly probe the Cloudstrucc host after deploying to the
+      # VanguardCS one and report it healthy. Empty is the honest answer; the
+      # caller warns rather than checking the wrong site.
+      if ! apply_tenant_profile "$tenant" \
+             APP_PUBLIC_BASE_URL AZURE_WEBAPP_NAME AZURE_RESOURCE_GROUP >/dev/null 2>&1; then
+        printf '\t\t\n'
+        exit 0
+      fi
     fi
     printf '%s\t%s\t%s\n' "${APP_PUBLIC_BASE_URL:-}" "${AZURE_WEBAPP_NAME:-}" "${AZURE_RESOURCE_GROUP:-}"
   )
@@ -316,8 +324,14 @@ for stage in "${STAGES[@]}"; do
   tenant_flag=()
   [[ "$tenant" != "default" ]] && tenant_flag=(--tenant "$tenant")
 
+  # `"${arr[@]}"` on an empty array is an unbound-variable error under `set -u`
+  # in bash 3.2, which is what macOS ships and what this runs on. The
+  # `${arr[@]+...}` form expands to nothing when the array is empty and is
+  # correct on both 3.2 and 4+.
   if ! bash "$ROOT_DIR/scripts/deploy-azure-webapp.sh" \
-        --env "$env_name" "${tenant_flag[@]}" "${ALLOW_DIRTY_FLAG[@]}"; then
+        --env "$env_name" \
+        ${tenant_flag[@]+"${tenant_flag[@]}"} \
+        ${ALLOW_DIRTY_FLAG[@]+"${ALLOW_DIRTY_FLAG[@]}"}; then
     printf '\n'
     die "$label failed. The output above is the whole of it — nothing after this stage ran.$(
       [[ ${#DONE[@]} -gt 0 ]] && printf '\n  Already deployed: %s' "${DONE[*]}")"
@@ -326,8 +340,10 @@ for stage in "${STAGES[@]}"; do
   if (( SKIP_HEALTH == 0 )); then
     if ! wait_until_serving "$base_url" "$label"; then
       printf '\n'
+      # printf, not a heredoc: a heredoc passes \033 through as four literal
+      # characters, so the warning printed its own escape codes as text.
+      printf '\033[31m  %s deployed but the site is not answering.\033[0m\n' "$label" >&2
       cat >&2 <<EOF
-  \033[31m$label deployed but the site is not answering.\033[0m
 
   Azure accepted the package; the container did not come up. The usual cause is
   a build that finished half-done, which leaves the source in place with no
@@ -350,7 +366,7 @@ done
 elapsed=$(( SECONDS - started_at ))
 printf '\n'
 ok "All ${#DONE[@]} stages deployed and serving in $(( elapsed / 60 ))m $(( elapsed % 60 ))s:"
-for entry in "${DONE[@]}"; do
+for entry in ${DONE[@]+"${DONE[@]}"}; do
   printf '    %s\n' "$entry"
 done
 printf '\n'
