@@ -139,6 +139,11 @@ io.open(dst, 'w', encoding='utf-8').write(''.join(out))
   printf '%s\n' "${value//,/$'\n'}" | sed 's/^/    /'
 done
 
+# --list changed nothing, so it has nothing to tell anybody to deploy.
+if [[ "$MODE" == "list" ]]; then
+  exit 0
+fi
+
 printf '\n'
 cat <<'EOF'
 These files are gitignored, so this changes nothing a deploy can see on its
