@@ -1,11 +1,14 @@
 {{!--
   The platform administration index.
 
-  Split into two scopes so what each setting applies to is visible rather than
-  implied: the organizations this person administers, and the deployment itself.
-  Only a subscriber who administers their own organization reaches this page at
-  all; an invited administrator reaches their own organization's settings from
-  the header without ever seeing the platform section.
+  Everything here applies to the whole deployment, which is why only its
+  operator reaches it: sign-in methods decide how everybody signs in, the
+  registers below list every wallet, domain and delivered message on the
+  installation, and a registration code grants a paid plan without payment.
+
+  A subscriber administers their own organization at /orgs/<handle>/settings
+  and does not see this page. An invited administrator reaches those same
+  organization settings from the header. See admin-access-service.
 --}}
 <section class="band band--white surface-app">
   <div class="aeg-page">
@@ -13,9 +16,10 @@
       <p class="aeg-eyebrow">Administration</p>
       <h1>Administration</h1>
       <p>
-        Settings for the organizations you administer, and for this deployment as
-        a whole — who may sign in, how messages are delivered, which wallets are
-        in service, and which registration codes exist.
+        Settings for this deployment as a whole — who may sign in, how messages
+        are delivered, which wallets are in service, and which registration
+        codes exist. They apply to every organization on the installation, not
+        only to yours.
       </p>
     </div>
 

@@ -6,15 +6,22 @@ const path = require('node:path');
 
 // Who reaches the platform administration area.
 //
-// The distinction that matters: a subscriber bought a plan and administers
-// their own organizations, while a credential holder exists only because an
-// organization invited them. Both sign in, and both get a subscription record —
-// but the holder's is a placeholder created so they have somewhere to land.
-//
 // Sign-in methods, notification delivery, wallet revocation and registration
-// codes are platform-wide. An invited holder reaching those would be able to
-// change how everybody signs in, so this is a privilege boundary, not a
-// nicety.
+// codes are deployment-wide, and so are the registers that list every wallet,
+// domain and delivered message on the installation. Reaching them is a
+// privilege boundary, not a nicety.
+//
+// Three populations sign in. A credential holder exists only because an
+// organization invited them, and gets a placeholder subscription so they have
+// somewhere to land — they must never get in, which is what most of this file
+// proves and what it has always proved. A subscriber bought a plan and
+// administers their own organizations — organization scope, not this. And the
+// deployment operator runs the installation.
+//
+// The tests below were written when the gate admitted the first two groups,
+// and they still pass: on a deployment with one administering subscriber, that
+// subscriber *is* the operator, which is what the grandfather rule says. The
+// cases that separate the two are at the end of the file.
 
 const MODULES = [
   '../src/config',
@@ -89,7 +96,7 @@ test('an invited credential holder never gets in', async () => {
     assert.equal(subscriptions.isAccountAccessSubscription(placeholder), true);
 
     assert.equal(await access.canViewAdminOperations(HOLDER), false);
-    await assert.rejects(() => access.assertAdminOperations(HOLDER), /subscribers who administer/);
+    await assert.rejects(() => access.assertAdminOperations(HOLDER), /operator of this deployment/);
   });
 });
 
@@ -124,7 +131,7 @@ test('signed out is refused', async () => {
   await withEnv(async ({ access }) => {
     assert.equal(await access.canViewAdminOperations(null), false);
     assert.equal(await access.canViewAdminOperations(undefined), false);
-    await assert.rejects(() => access.assertAdminOperations(null), /subscribers who administer/);
+    await assert.rejects(() => access.assertAdminOperations(null), /operator of this deployment/);
   });
 });
 
@@ -143,5 +150,86 @@ test('every admin route is behind the same gate', () => {
 
   for (const policyId of adminPolicies) {
     assert.equal(getPolicy(policyId)?.type, 'adminAnyWorkspace', `${policyId} is not admin-gated`);
+  }
+});
+
+// --- operator, as distinct from subscriber ---------------------------------
+
+const SECOND_SUBSCRIBER = { id: 'user-second', email: 'second@example.com' };
+
+async function administeringSubscriber(platform, subscriptions, user, organization) {
+  const subscription = await subscriptions.createSubscription(
+    { organization, consent: 'yes', plan: 'pro' },
+    user
+  );
+  await platform.registerWorkspaceForSubscription(subscription, {
+    organization,
+    role: 'administrator'
+  });
+  return subscription;
+}
+
+test('a second subscriber on the same deployment is not the operator', async () => {
+  await withEnv(async ({ access, platform, subscriptions }) => {
+    // This is the case the gate was wrong about, and it is what a hosted
+    // deployment is: two customers who have each bought a plan. The second one
+    // could read the first one's wallets and delivered messages.
+    await administeringSubscriber(platform, subscriptions, SUBSCRIBER, 'First Co');
+    await administeringSubscriber(platform, subscriptions, SECOND_SUBSCRIBER, 'Second Co');
+
+    assert.equal(await access.canViewAdminOperations(SUBSCRIBER), true);
+    assert.equal(await access.canViewAdminOperations(SECOND_SUBSCRIBER), false);
+    await assert.rejects(
+      () => access.assertAdminOperations(SECOND_SUBSCRIBER),
+      /operator of this deployment/
+    );
+  });
+});
+
+test('a configured operator list decides it outright', async () => {
+  process.env.PLATFORM_OPERATOR_EMAILS = 'second@example.com';
+  try {
+    await withEnv(async ({ access, platform, subscriptions }) => {
+      await administeringSubscriber(platform, subscriptions, SUBSCRIBER, 'First Co');
+      await administeringSubscriber(platform, subscriptions, SECOND_SUBSCRIBER, 'Second Co');
+
+      // Nothing is inferred once the deployment has said. The oldest
+      // subscription is no longer special, and the named account does not need
+      // to be the oldest — or, below, to own anything at all.
+      assert.equal(await access.canViewAdminOperations(SUBSCRIBER), false);
+      assert.equal(await access.canViewAdminOperations(SECOND_SUBSCRIBER), true);
+    });
+  } finally {
+    delete process.env.PLATFORM_OPERATOR_EMAILS;
+  }
+});
+
+test('a configured operator does not have to be a subscriber', async () => {
+  process.env.PLATFORM_OPERATOR_EMAILS = 'ops@example.com, Other@Example.com';
+  try {
+    await withEnv(async ({ access, platform, subscriptions }) => {
+      await administeringSubscriber(platform, subscriptions, SUBSCRIBER, 'First Co');
+
+      // Whoever runs the installation need not have bought anything on it.
+      // Matched case-insensitively, because an address is not case-sensitive
+      // and a capitalised entry in an app setting should not silently fail.
+      assert.equal(await access.canViewAdminOperations({ id: 'u1', email: 'ops@example.com' }), true);
+      assert.equal(await access.canViewAdminOperations({ id: 'u2', email: 'other@example.com' }), true);
+      assert.equal(await access.canViewAdminOperations(SUBSCRIBER), false);
+    });
+  } finally {
+    delete process.env.PLATFORM_OPERATOR_EMAILS;
+  }
+});
+
+test('an invited holder is still out, configured or not', async () => {
+  process.env.PLATFORM_OPERATOR_EMAILS = 'ops@example.com';
+  try {
+    await withEnv(async ({ access, subscriptions }) => {
+      await subscriptions.ensureAccountAccessSubscription(HOLDER);
+      assert.equal(await access.canViewAdminOperations(HOLDER), false);
+    });
+  } finally {
+    delete process.env.PLATFORM_OPERATOR_EMAILS;
   }
 });

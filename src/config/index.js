@@ -137,6 +137,22 @@ const config = {
     // a support URL where somebody can actually get help, so set it before
     // submitting. It is deliberately not defaulted to a guess at a domain.
     supportEmail: process.env.SUPPORT_EMAIL || '',
+    // Who runs the deployment, as opposed to who buys a plan on it.
+    //
+    // /admin is deployment-wide: sign-in methods for everybody, the SMTP and
+    // SMS transport, registration codes that grant paid plans, break-glass
+    // redemption, and registers that list every wallet, domain and message on
+    // the installation. On a single-customer installation the subscriber and
+    // the operator are the same person. On a hosted one they are not, and
+    // every subscriber could read every other subscriber's holders.
+    //
+    // Empty is not "everybody": admin-access-service then grandfathers the
+    // one account that demonstrably set the deployment up — the owner of the
+    // oldest subscription that administers an organization — and startup says
+    // so. Set it explicitly and nothing is inferred.
+    platformOperatorEmails: csvList(process.env.PLATFORM_OPERATOR_EMAILS).map((entry) =>
+      entry.trim().toLowerCase()
+    ),
     // The published listings and the privacy policy behind them. Production
     // only — the deploy script blanks all four on dev and qa, because a test
     // site offering the public App Store build sends a tester to the wrong

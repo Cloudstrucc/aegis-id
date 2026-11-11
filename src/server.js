@@ -4,6 +4,10 @@ const { logLocalTestModeBanner } = require('./middleware/local-test-mode');
 const { logBillingModeBanner } = require('./services/billing-service');
 const { backfillOrganizationIdentities } = require('./services/platform-service');
 const { backfillAdminMemberships } = require('./services/org-admin-service');
+const {
+  hasConfiguredOperators,
+  inferDeploymentOperatorEmail
+} = require('./services/admin-access-service');
 
 const app = createApp();
 
@@ -35,4 +39,24 @@ app.listen(config.app.port, () => {
       }
     })
     .catch((error) => console.error('Administrator membership backfill failed:', error.message));
+
+  // Who gets /admin. It decides who can read every wallet, domain and
+  // delivered message on this installation, so an installation that has not
+  // said is told what it is doing instead — once, at startup, where whoever
+  // deployed it is looking.
+  if (hasConfiguredOperators()) {
+    console.log('Platform administration is restricted to PLATFORM_OPERATOR_EMAILS.');
+  } else {
+    inferDeploymentOperatorEmail()
+      .then((email) => {
+        console.warn(
+          'PLATFORM_OPERATOR_EMAILS is not set. Platform administration is ' +
+            (email
+              ? `grandfathered to ${email}, the owner of the oldest subscription that administers an organization.`
+              : 'unavailable: no subscription on this deployment administers an organization yet.') +
+            ' Set the variable to name the operators explicitly.'
+        );
+      })
+      .catch((error) => console.error('Could not determine the platform operator:', error.message));
+  }
 });

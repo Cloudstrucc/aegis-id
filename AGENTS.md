@@ -430,15 +430,35 @@ redemption, account recovery, and the deployment-wide wallet register and domain
 overview. Before the index existed those pages were reachable only by typing the
 URL, which is how two of them shipped broken.
 
-**Platform scope is for subscribers, not for everyone who can sign in.** Two
-populations have accounts: people who bought a plan and administer their own
-organizations, and credential holders who exist only because an organization
-invited them. The second group gets a `portal-account` subscription so they have
-somewhere to land; `admin-access-service` filters those records out before
-looking at workspaces, so an invited holder can never reach settings that decide
-how everybody signs in. **Opening organization settings to invited
-administrators did not change that filter**, and `tests/admin-access.test.js` is
-deliberately unchanged as the proof.
+**Platform scope is for the operator of the deployment, not for its
+customers.** Three populations have accounts: whoever runs this installation,
+subscribers who bought a plan and administer their own organizations, and
+credential holders who exist only because an organization invited them.
+
+This gate used to admit the first two, on the reasoning that a subscriber who
+administers an organization is an administrator. That holds for an installation
+with one customer on it. On a hosted one it meant every paying customer could
+open `/admin/wallets` and read every other customer's holders — Wallet IDs,
+email addresses, phone numbers — and `/admin/notifications` and see who had been
+sent what. Nothing was misconfigured; the scope was wrong.
+
+`PLATFORM_OPERATOR_EMAILS` names the operators. **Empty is not "everybody":**
+`admin-access-service` grandfathers the owner of the oldest subscription that
+administers an organization — the account that demonstrably stood the
+deployment up — and startup says so, because refusing everybody would lock a
+running installation out of the settings it needs to notice that happened. The
+deploy script forwards the variable, per tenant.
+
+Nothing is stranded by this. Every equivalent already exists in organization
+scope: `/orgs/<handle>/settings/wallets` lists the wallets holding a credential
+from that organization, and a domain is claimed and proven at
+`/organizations/<id>/<workspace>/domain`.
+
+An invited holder reaches none of it, which is what `tests/admin-access.test.js`
+has always proved and still does — every one of its original cases passes
+unchanged, because on a deployment with one administering subscriber that
+subscriber *is* the operator. Only the refusal message moved. The cases that
+separate a subscriber from an operator are at the end of that file.
 
 Designating an adapter as the deployment-wide **sign-in default** is a platform
 action for the same reason, even though the adapters themselves are
