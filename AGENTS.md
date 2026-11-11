@@ -138,6 +138,17 @@ prod start fail-closed until an admin configures SMTP or SMS at
 `/admin/notifications`, where a per-message-type channel matrix decides what may
 go over email and what over SMS.
 
+**A transport set in the environment overrides the stored one and turns email
+on**, so a deployment can guarantee delivery without an admin configuring
+anything — and so localhost can send real mail instead of writing to disk.
+`GRAPH_MAIL_*` is checked before `SMTP_*`: the sender is an unlicensed shared
+mailbox, and Exchange refuses SMTP AUTH for one whatever the password is, so
+Microsoft 365 goes through Graph app-only — no licence, no password, and the
+application fenced to the one mailbox by an `ApplicationAccessPolicy` rather
+than by trusting it to address its mail correctly. Full notes in
+[`docs/graph-mail-sender.md`](docs/graph-mail-sender.md); the mailbox itself is
+`scripts/create-noreply-mailbox.ps1`.
+
 **Which sign-in methods exist is configured, not hardcoded** —
 `src/services/sign-in-methods-service.js` and `/admin/sign-in-methods`. Two flags
 per method: `firstFactor` (may start a sign-in) and `satisfiesSecond`

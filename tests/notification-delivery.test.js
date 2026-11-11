@@ -212,3 +212,203 @@ test('without SMTP env, a hosted environment stays runtime-configured', async ()
     assert.equal(settings.email.fromAddress, '');
   });
 });
+
+// --- Microsoft Graph, app-only -------------------------------------------
+//
+// The sender is an unlicensed shared mailbox, and Exchange Online refuses SMTP
+// AUTH for one whatever the password is. Graph is how it sends: no licence, no
+// password, and the application fenced to one mailbox by an
+// ApplicationAccessPolicy rather than by trusting it to address its mail
+// correctly.
+
+const GRAPH_ENV = {
+  GRAPH_MAIL_TENANT_ID: 'tenant-1234',
+  GRAPH_MAIL_CLIENT_ID: 'client-5678',
+  GRAPH_MAIL_CLIENT_SECRET: 'secret-value-never-rendered',
+  GRAPH_MAIL_FROM_ADDRESS: 'no-reply-aegis-id@example.test'
+};
+
+test('Graph beats SMTP when both are configured', async () => {
+  // The two can both be set during a migration. The one that needs no licence,
+  // no password and is not being retired is the one that should win.
+  await withEnv(
+    {
+      ...GRAPH_ENV,
+      SMTP_HOST: 'smtp.office365.com',
+      SMTP_FROM_ADDRESS: 'someone-else@example.test'
+    },
+    async () => {
+      const { getNotificationSettings } = require('../src/services/notification-settings-service');
+      const settings = await getNotificationSettings();
+
+      assert.equal(settings.email.preset, 'microsoft-graph');
+      assert.equal(settings.email.enabled, true);
+      assert.equal(settings.email.managedByEnv, true);
+      assert.equal(settings.email.fromAddress, GRAPH_ENV.GRAPH_MAIL_FROM_ADDRESS);
+      assert.equal(settings.email.clientSecret, GRAPH_ENV.GRAPH_MAIL_CLIENT_SECRET);
+    }
+  );
+});
+
+test('a half-configured Graph transport is not used at all', async () => {
+  // Three of the four values is not a transport, it is a 401 on every message.
+  // Falling through to the stored settings is right; pretending to be
+  // configured is not.
+  await withEnv(
+    { GRAPH_MAIL_TENANT_ID: 'tenant-1234', GRAPH_MAIL_CLIENT_ID: 'client-5678' },
+    async () => {
+      const { getNotificationSettings } = require('../src/services/notification-settings-service');
+      const settings = await getNotificationSettings();
+      assert.notEqual(settings.email.preset, 'microsoft-graph');
+      assert.notEqual(settings.email.managedByEnv, true);
+    }
+  );
+});
+
+test('the from-address falls back to the one SMTP already names', async () => {
+  await withEnv(
+    {
+      GRAPH_MAIL_TENANT_ID: 'tenant-1234',
+      GRAPH_MAIL_CLIENT_ID: 'client-5678',
+      GRAPH_MAIL_CLIENT_SECRET: 'secret-value-never-rendered',
+      SMTP_FROM_ADDRESS: 'no-reply-aegis-id@example.test'
+    },
+    async () => {
+      const { getNotificationSettings } = require('../src/services/notification-settings-service');
+      const settings = await getNotificationSettings();
+      assert.equal(settings.email.preset, 'microsoft-graph');
+      assert.equal(settings.email.fromAddress, 'no-reply-aegis-id@example.test');
+    }
+  );
+});
+
+test('the client secret never reaches the browser', async () => {
+  // getNotificationSettingsForDisplay is the one function that promises not to
+  // leak a stored secret. The Graph client secret is as good as the SMTP
+  // password and has to be covered by the same promise.
+  await withEnv(GRAPH_ENV, async () => {
+    const {
+      getNotificationSettingsForDisplay
+    } = require('../src/services/notification-settings-service');
+    const view = await getNotificationSettingsForDisplay();
+
+    assert.equal(view.email.clientSecret, '');
+    assert.equal(view.email.hasClientSecret, true);
+    assert.equal(view.email.isGraph, true);
+    assert.ok(
+      !JSON.stringify(view).includes(GRAPH_ENV.GRAPH_MAIL_CLIENT_SECRET),
+      'the client secret is somewhere in the view model'
+    );
+  });
+});
+
+test('Graph sends raw MIME, as the application, and asks for one token', async () => {
+  // Posted as MIME rather than as a Graph message resource, because a message
+  // resource carries one body and ours carry two — the plain text part is what
+  // a text-only client and most spam filters read.
+  await withEnv(GRAPH_ENV, async () => {
+    const { sendEmail } = require('../src/adapters/notify/notification-adapter');
+    const { getNotificationSettings } = require('../src/services/notification-settings-service');
+    const settings = await getNotificationSettings();
+
+    const calls = [];
+    const realFetch = global.fetch;
+    global.fetch = async (url, options) => {
+      calls.push({ url: String(url), options });
+      if (String(url).includes('login.microsoftonline.com')) {
+        return {
+          ok: true,
+          json: async () => ({ access_token: 'token-abc', expires_in: 3600 })
+        };
+      }
+      return { ok: true, text: async () => '' };
+    };
+
+    try {
+      const first = await sendEmail(settings, {
+        to: 'holder@example.test',
+        subject: 'Your Aegis ID sign-in code',
+        text: 'Plain text part',
+        html: '<p>HTML part</p>'
+      });
+      assert.equal(first.delivered, true);
+      // Masked, as every delivery result is.
+      assert.equal(first.to, 'ho***@example.test');
+
+      await sendEmail(settings, {
+        to: 'holder@example.test',
+        subject: 'Again',
+        text: 'Plain text part',
+        html: '<p>HTML part</p>'
+      });
+    } finally {
+      global.fetch = realFetch;
+    }
+
+    const tokenCalls = calls.filter((call) => call.url.includes('login.microsoftonline.com'));
+    const sendCalls = calls.filter((call) => call.url.includes('graph.microsoft.com'));
+
+    // One token for two messages. A token per message would make a sign-in
+    // code wait on a second round trip to a second service.
+    assert.equal(tokenCalls.length, 1);
+    assert.equal(sendCalls.length, 2);
+
+    // Client credentials, not a user flow.
+    assert.match(String(tokenCalls[0].options.body), /grant_type=client_credentials/);
+    assert.match(String(tokenCalls[0].options.body), /scope=https%3A%2F%2Fgraph.microsoft.com%2F.default/);
+
+    // Sent as the configured mailbox, with the token, as MIME.
+    assert.equal(
+      sendCalls[0].url,
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(GRAPH_ENV.GRAPH_MAIL_FROM_ADDRESS)}/sendMail`
+    );
+    assert.equal(sendCalls[0].options.headers.Authorization, 'Bearer token-abc');
+    assert.equal(sendCalls[0].options.headers['Content-Type'], 'text/plain');
+
+    const mime = Buffer.from(String(sendCalls[0].options.body), 'base64').toString('utf8');
+    assert.match(mime, /multipart\/alternative/);
+    assert.match(mime, /text\/plain/);
+    assert.match(mime, /text\/html/);
+    assert.match(mime, new RegExp(GRAPH_ENV.GRAPH_MAIL_FROM_ADDRESS));
+  });
+});
+
+test('Graph failures say what went wrong without quoting the secret', async () => {
+  await withEnv(GRAPH_ENV, async () => {
+    const { sendEmail } = require('../src/adapters/notify/notification-adapter');
+    const { getNotificationSettings } = require('../src/services/notification-settings-service');
+    const settings = await getNotificationSettings();
+
+    const realFetch = global.fetch;
+    global.fetch = async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({
+        error: 'invalid_client',
+        error_description: 'AADSTS7000215: Invalid client secret provided.'
+      })
+    });
+
+    try {
+      await assert.rejects(
+        () =>
+          sendEmail(settings, {
+            to: 'holder@example.test',
+            subject: 's',
+            text: 't',
+            html: '<p>h</p>'
+          }),
+        (error) => {
+          assert.match(error.message, /AADSTS7000215/);
+          assert.ok(
+            !error.message.includes(GRAPH_ENV.GRAPH_MAIL_CLIENT_SECRET),
+            'the secret is in the error message'
+          );
+          return true;
+        }
+      );
+    } finally {
+      global.fetch = realFetch;
+    }
+  });
+});

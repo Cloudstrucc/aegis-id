@@ -370,6 +370,26 @@ const config = {
       password: process.env.SMTP_PASSWORD || '',
       fromAddress: (process.env.SMTP_FROM_ADDRESS || '').trim(),
       fromName: process.env.SMTP_FROM_NAME || 'Vanguard Aegis ID'
+    },
+    // Microsoft Graph, app-only. Preferred over SMTP for Microsoft 365 and
+    // checked first, because it needs no licence on the sending mailbox, no
+    // password anywhere, and Microsoft is retiring SMTP AUTH client
+    // submission. The application is granted Mail.Send as an *application*
+    // permission and then fenced to one mailbox with an
+    // ApplicationAccessPolicy, so the secret below cannot send as anybody
+    // else even if it leaks.
+    //
+    // The from-address falls back to SMTP_FROM_ADDRESS so an environment that
+    // already names its sender does not have to name it twice.
+    graph: {
+      tenantId: (process.env.GRAPH_MAIL_TENANT_ID || '').trim(),
+      clientId: (process.env.GRAPH_MAIL_CLIENT_ID || '').trim(),
+      clientSecret: process.env.GRAPH_MAIL_CLIENT_SECRET || '',
+      fromAddress: (
+        process.env.GRAPH_MAIL_FROM_ADDRESS || process.env.SMTP_FROM_ADDRESS || ''
+      ).trim(),
+      fromName:
+        process.env.GRAPH_MAIL_FROM_NAME || process.env.SMTP_FROM_NAME || 'Vanguard Aegis ID'
     }
   },
   hosting: {

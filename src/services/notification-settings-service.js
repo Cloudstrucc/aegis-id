@@ -11,9 +11,19 @@ const store = new FileJsonStore(config.paths.notificationSettings, {});
 // Well-known SMTP hosts so admins do not have to look them up. "custom" leaves
 // every field editable for on-prem or other providers.
 const EMAIL_PRESETS = Object.freeze({
+  'microsoft-graph': {
+    id: 'microsoft-graph',
+    label: 'Microsoft 365 (Graph, app-only)',
+    host: '',
+    port: 0,
+    secure: false,
+    requireTls: false,
+    hint:
+      'Set by the deployment (GRAPH_MAIL_*), not here. No licence on the mailbox and no password anywhere — the application holds Mail.Send and an ApplicationAccessPolicy fences it to the one sending mailbox.'
+  },
   'microsoft-exchange': {
     id: 'microsoft-exchange',
-    label: 'Microsoft 365 / Exchange Online',
+    label: 'Microsoft 365 / Exchange Online (SMTP)',
     host: 'smtp.office365.com',
     port: 587,
     secure: false,
@@ -154,12 +164,36 @@ function defaults() {
   };
 }
 
-// Email transport set at the deployment level (SMTP_* env). When a host and
-// from-address are present it is authoritative — it overrides the stored
-// settings and turns email on — so an environment can guarantee delivery
-// without an admin configuring anything. Returns null when not configured, so
-// the runtime-configured behaviour stands.
+// Email transport set at the deployment level. When one is configured it is
+// authoritative — it overrides the stored settings and turns email on — so an
+// environment can guarantee delivery without an admin configuring anything.
+// Returns null when neither is configured, so the runtime-configured
+// behaviour stands.
+//
+// Graph is checked first. The two can both be set during a migration, and the
+// one that needs no licence, no password and is not being retired is the one
+// that should win.
 function envEmailTransport() {
+  const graph = config.notifications?.graph || {};
+  if (graph.tenantId && graph.clientId && graph.clientSecret && graph.fromAddress) {
+    return {
+      enabled: true,
+      preset: 'microsoft-graph',
+      host: '',
+      port: 0,
+      secure: false,
+      requireTls: true,
+      username: '',
+      password: '',
+      tenantId: graph.tenantId,
+      clientId: graph.clientId,
+      clientSecret: graph.clientSecret,
+      fromAddress: graph.fromAddress,
+      fromName: graph.fromName || 'Vanguard Aegis ID',
+      managedByEnv: true
+    };
+  }
+
   const env = config.notifications?.email || {};
   if (!env.host || !env.fromAddress) {
     return null;
@@ -214,7 +248,17 @@ async function getNotificationSettingsForDisplay() {
   const settings = await getNotificationSettings();
   return {
     ...settings,
-    email: { ...settings.email, password: '', hasPassword: Boolean(settings.email.password) },
+    email: {
+      ...settings.email,
+      password: '',
+      hasPassword: Boolean(settings.email.password),
+      // The Graph client secret is as good as the password and must not reach
+      // the browser either. Masked here rather than at the template, because
+      // this is the one function that promises not to leak a stored secret.
+      clientSecret: '',
+      hasClientSecret: Boolean(settings.email.clientSecret),
+      isGraph: settings.email.preset === 'microsoft-graph'
+    },
     sms: { ...settings.sms, authToken: '', hasAuthToken: Boolean(settings.sms.authToken) },
     emailPresets: Object.values(EMAIL_PRESETS),
     smsPresets: Object.values(SMS_PRESETS),
