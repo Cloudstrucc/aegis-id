@@ -1567,6 +1567,25 @@ async function getOrganizationProfile(organizationId) {
   };
 }
 
+/**
+ * Every organization's branding, keyed by workspace id.
+ *
+ * One read for a page that shows several organizations at once. The landing
+ * page needs the logo and the two palette colours for each tile it draws, and
+ * calling getOrganizationBranding per tile re-reads the whole store each time.
+ */
+async function listBrandingByWorkspace() {
+  const states = await stateStore.read();
+  const branding = new Map();
+
+  for (const state of states) {
+    normalizeState(state);
+    branding.set(state.workspaceId, state.branding);
+  }
+
+  return branding;
+}
+
 async function getOrganizationBranding(organizationId) {
   const states = await stateStore.read();
   const state = states.find((record) => record.workspaceId === organizationId);
@@ -3376,6 +3395,7 @@ module.exports = {
   PERSON_TYPES,
   countCredentialsByWalletId,
   countCredentialsByWorkspace,
+  listBrandingByWorkspace,
   listWalletScopeForWorkspace,
   assertOrgPrivilege,
   createClaimDefinition,

@@ -21,7 +21,9 @@
   <div class="app-side__inner">
     {{#if appShell.organization}}
       <a class="app-side__org" href="{{appShell.organization.href}}">
-        <span class="app-side__org-mark" aria-hidden="true">{{appShell.organization.initials}}</span>
+        <span class="app-side__org-mark{{#if appShell.organization.logoDataUrl}} has-logo{{/if}}"
+              style="--org-primary: {{appShell.organization.primaryColor}}; --org-accent: {{appShell.organization.accentColor}};"
+              aria-hidden="true">{{#if appShell.organization.logoDataUrl}}<img src="{{appShell.organization.logoDataUrl}}" alt="">{{else}}{{appShell.organization.initials}}{{/if}}</span>
         <span class="app-side__org-text">
           <strong>{{appShell.organization.name}}</strong>
           {{#if appShell.organization.handle}}<small>{{appShell.organization.handle}}</small>{{/if}}

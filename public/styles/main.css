@@ -10398,3 +10398,47 @@ body > .site-footer {
   flex: none;
   margin-top: auto;
 }
+
+/* ---------------------------------------------------------------------------
+   An organization's own mark.
+
+   Wherever the product names an organization it drew the first letter of its
+   name on the platform's gradient — the landing panels, the sidebar chip, the
+   switcher in the header — even for an organization that had uploaded a logo.
+   Branding exists so a holder recognises who is asking; a letter on somebody
+   else's blue is the opposite of that.
+
+   The plate turns white behind a logo, because a logo is usually drawn for a
+   light background and most have a transparent one.
+   --------------------------------------------------------------------------- */
+.panel__mark--logo,
+.app-side__org-mark.has-logo,
+.aeg-tenant-switcher__icon.has-logo {
+  /* White in both themes, which --ag-surface is not: it is near-black in the
+     dark one, and a logo drawn for a light background loses its dark parts
+     against it — the Cloudstrucc mark's own wordmark disappears entirely.
+     --ag-brand-on is the token for ink on an arbitrary fill and is #ffffff in
+     both themes, which is what a logo plate needs to be. */
+  background: var(--ag-brand-on);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.panel__mark--logo img,
+.app-side__org-mark.has-logo img,
+.aeg-tenant-switcher__icon.has-logo img,
+.organization-tile__mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3px;
+  background: var(--ag-brand-on);
+}
+
+/* The two chrome marks are small, so the padding that stops a square logo
+   touching the edge would eat most of them. */
+.app-side__org-mark.has-logo img,
+.aeg-tenant-switcher__icon.has-logo img {
+  padding: 2px;
+}

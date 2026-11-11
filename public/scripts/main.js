@@ -936,6 +936,79 @@ function renderDemoResult(payload, actionName) {
 }
 
 // Same shape as the logo, much smaller: a favicon over 64 KB is a mistake.
+/**
+ * Read an image file and return a data URL small enough to store.
+ *
+ * Scaled to fit `maxEdge` and re-encoded as PNG, rather than passed through
+ * whatever the holder picked. Two reasons, and the first one was a bug:
+ *
+ * The browser used to check the file's own size and the server checks the
+ * length of the base64 string, which is a third longer again. A logo between
+ * about 675 KB and the 850 KB the browser allowed therefore passed here and
+ * was discarded server-side, where `normalizeLogoDataUrl` returns '' and the
+ * record keeps whatever it had. No error anywhere: the administrator chose a
+ * file, saved, and the old logo — usually none — stayed. An 800x800 PNG lands
+ * squarely in that band.
+ *
+ * And a logo is drawn at 40px in a tile and 64px in the wallet. Sending four
+ * megapixels of it costs the holder's bandwidth on every page that shows the
+ * organization, for pixels nothing can display.
+ *
+ * PNG rather than JPEG because a logo has a transparent background and JPEG
+ * would fill it with white.
+ */
+function readScaledImage(file, maxEdge) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener('error', () => reject(new Error('That file could not be read.')));
+    reader.addEventListener('load', () => {
+      const source = String(reader.result || '');
+      const image = new Image();
+      image.addEventListener('error', () => reject(new Error('That file is not an image this browser can open.')));
+      image.addEventListener('load', () => {
+        const longest = Math.max(image.naturalWidth, image.naturalHeight) || 1;
+        const scale = Math.min(1, maxEdge / longest);
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          // No canvas: fall back to the original, which the server may still
+          // refuse — but refusing is now reported rather than silent.
+          resolve(source);
+          return;
+        }
+        context.drawImage(image, 0, 0, width, height);
+        try {
+          resolve(canvas.toDataURL('image/png'));
+        } catch (error) {
+          resolve(source);
+        }
+      });
+      image.src = source;
+    });
+    reader.readAsDataURL(file);
+  });
+}
+
+function reportUploadProblem(input, message) {
+  const field = input.closest('.field-group') || input.parentElement;
+  let note = field?.querySelector('[data-upload-note]');
+  if (!note && field) {
+    note = document.createElement('p');
+    note.className = 'field-error';
+    note.setAttribute('data-upload-note', '');
+    field.appendChild(note);
+  }
+  if (note) {
+    note.textContent = message || '';
+    note.hidden = !message;
+  }
+}
+
 function handleFaviconUpload(input) {
   const file = input.files?.[0];
   const hiddenInput = input.closest('form')?.querySelector('[data-favicon-data-url]');
@@ -943,19 +1016,19 @@ function handleFaviconUpload(input) {
     return;
   }
   hiddenInput.value = '';
+  reportUploadProblem(input, '');
   if (!file) {
     return;
   }
-  if (file.size > 64 * 1024) {
-    input.value = '';
-    window.alert('Please choose a favicon under 64 KB.');
-    return;
-  }
-  const reader = new FileReader();
-  reader.addEventListener('load', () => {
-    hiddenInput.value = String(reader.result || '');
-  });
-  reader.readAsDataURL(file);
+  // A favicon is drawn at 32px. 64 is enough for a high-density screen.
+  readScaledImage(file, 64)
+    .then((dataUrl) => {
+      hiddenInput.value = dataUrl;
+    })
+    .catch((error) => {
+      input.value = '';
+      reportUploadProblem(input, error.message);
+    });
 }
 
 // A Wallet ID is AEG-XXXX-XXXX-XXXX-XXXX in a fixed alphabet. As the admin
@@ -985,21 +1058,29 @@ function handleLogoUpload(input) {
   }
 
   hiddenInput.value = '';
+  reportUploadProblem(input, '');
   if (!file) {
     return;
   }
 
-  if (file.size > 850 * 1024) {
-    input.value = '';
-    window.alert('Please choose a logo under 850 KB for this local pilot.');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.addEventListener('load', () => {
-    hiddenInput.value = String(reader.result || '');
-  });
-  reader.readAsDataURL(file);
+  // Scaled rather than size-checked: a logo is shown at 40px in a tile and
+  // 64px in the wallet, so 512 is generous, and any file the holder picks
+  // comes out the same manageable size. There is no longer a band of file
+  // sizes the browser accepts and the server throws away.
+  readScaledImage(file, 512)
+    .then((dataUrl) => {
+      hiddenInput.value = dataUrl;
+      // Preview it where it will actually be used, so a logo that is white on
+      // white or the wrong crop is obvious before it is saved.
+      const preview = document.querySelector('[data-brand-preview] img');
+      if (preview) {
+        preview.src = dataUrl;
+      }
+    })
+    .catch((error) => {
+      input.value = '';
+      reportUploadProblem(input, error.message);
+    });
 }
 
 function handleImageEvidence(input) {

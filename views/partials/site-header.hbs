@@ -60,7 +60,9 @@
     {{#if currentTenant}}
       <details class="aeg-tenant-switcher">
         <summary class="aeg-tenant-switcher__button" aria-label="Switch organization">
-          <span class="aeg-tenant-switcher__icon" aria-hidden="true">{{currentTenant.initials}}</span>
+          <span class="aeg-tenant-switcher__icon{{#if currentTenant.logoDataUrl}} has-logo{{/if}}"
+                style="--org-primary: {{currentTenant.primaryColor}}; --org-accent: {{currentTenant.accentColor}};"
+                aria-hidden="true">{{#if currentTenant.logoDataUrl}}<img src="{{currentTenant.logoDataUrl}}" alt="">{{else}}{{currentTenant.initials}}{{/if}}</span>
           <span class="aeg-tenant-switcher__name">{{currentTenant.organization}}</span>
           <span class="aeg-tenant-switcher__caret" aria-hidden="true">▾</span>
         </summary>

@@ -26,6 +26,7 @@ const { listSubscriptionsForUser } = require('./subscription-service');
 const {
   getViewerAccessForEmail,
   isWorkspaceAdmin,
+  listBrandingByWorkspace,
   listCredentialMembershipsForEmail
 } = require('./org-admin-service');
 const { getIdentity } = require('./organization-identity-service');
@@ -78,6 +79,9 @@ async function listTenantsForUser(user) {
   ]);
   const credentialWorkspaceIds = new Set(memberships.map((membership) => membership.workspaceId));
 
+  // One read for the whole loop: the chrome draws a mark for every
+  // organization this person belongs to.
+  const branding = await listBrandingByWorkspace();
   const tenants = [];
   for (const workspace of workspaces) {
     if (!isMemberOf(workspace, email, credentialWorkspaceIds)) {
@@ -85,6 +89,7 @@ async function listTenantsForUser(user) {
     }
 
     const identity = await getIdentity(workspace.id);
+    const brand = branding.get(workspace.id);
     const access = await getViewerAccessForEmail(workspace, email);
     const isOwner = normalizeEmail(workspace.ownerEmail) === email;
 
@@ -93,6 +98,13 @@ async function listTenantsForUser(user) {
       organization: workspace.organization,
       handle: identity?.handle || null,
       initials: initialsFor(workspace.organization),
+      // The organization's own logo and palette. The chrome names the
+      // organization in three places — the sidebar chip, the switcher in the
+      // header, the breadcrumb — and drew a letter on the platform's own
+      // gradient in all three, which is the opposite of what branding is for.
+      logoDataUrl: brand?.logoDataUrl || '',
+      primaryColor: brand?.primaryColor || '',
+      accentColor: brand?.accentColor || '',
       domain: identity?.domain || null,
       isDomainVerified: Boolean(identity?.isVerified),
       displayIdentity: identity?.displayIdentity || workspace.organization,

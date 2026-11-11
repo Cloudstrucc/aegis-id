@@ -36,7 +36,16 @@
       {{#each organizations}}
         <article class="panel panel--org">
           <div class="panel__identity">
-            <span class="panel__mark" aria-hidden="true">{{mark}}</span>
+            {{!--
+              The organization's own logo when it has one. Holders recognise
+              the mark, not the initial, and the organization went to the
+              trouble of uploading it.
+            --}}
+            <span class="panel__mark{{#if logoDataUrl}} panel__mark--logo{{/if}}"
+                  style="--org-primary: {{primaryColor}}; --org-accent: {{accentColor}};"
+                  aria-hidden="true">
+              {{#if logoDataUrl}}<img src="{{logoDataUrl}}" alt="">{{else}}{{mark}}{{/if}}
+            </span>
             <div>
               <h2>{{subscription.organization}}</h2>
               <p class="panel__sub">{{workspaceSummary}}</p>
@@ -171,7 +180,11 @@
       {{#each memberships}}
         <article class="panel panel--org">
           <div class="panel__identity">
-            <span class="panel__mark" aria-hidden="true">{{mark}}</span>
+            <span class="panel__mark{{#if logoDataUrl}} panel__mark--logo{{/if}}"
+                  style="--org-primary: {{primaryColor}}; --org-accent: {{accentColor}};"
+                  aria-hidden="true">
+              {{#if logoDataUrl}}<img src="{{logoDataUrl}}" alt="">{{else}}{{mark}}{{/if}}
+            </span>
             <div>
               <h2>{{organizationName}}</h2>
               <p class="panel__sub">{{credentialSummary}}</p>

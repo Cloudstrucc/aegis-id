@@ -27,6 +27,7 @@ const {
 const { listWorkspacesForSubscription } = require('./platform-service');
 const {
   countCredentialsByWorkspace,
+  listBrandingByWorkspace,
   listCredentialMembershipsForEmail
 } = require('./org-admin-service');
 const {
@@ -65,7 +66,33 @@ function formatDate(value) {
  * employee badge and a contractor badge — and three tiles for one company
  * would read as three companies.
  */
-function summariseMemberships(memberships, destination) {
+/**
+ * The logo and palette to draw an organization's mark with.
+ *
+ * First workspace that has a logo wins; a subscription with several
+ * organizations under it is drawn by the first one that has said what it looks
+ * like. Empty strings rather than nulls, because the template tests them.
+ */
+function brandMark(workspaceIds, branding) {
+  for (const workspaceId of workspaceIds) {
+    const record = branding.get(workspaceId);
+    if (record && record.logoDataUrl) {
+      return {
+        logoDataUrl: record.logoDataUrl,
+        primaryColor: record.primaryColor || '',
+        accentColor: record.accentColor || ''
+      };
+    }
+  }
+  const first = workspaceIds.map((id) => branding.get(id)).find(Boolean);
+  return {
+    logoDataUrl: '',
+    primaryColor: first?.primaryColor || '',
+    accentColor: first?.accentColor || ''
+  };
+}
+
+function summariseMemberships(memberships, destination, branding) {
   const byWorkspace = new Map();
 
   for (const membership of memberships) {
@@ -96,6 +123,7 @@ function summariseMemberships(memberships, destination) {
 
   return [...byWorkspace.values()].map((entry) => ({
     ...entry,
+    ...brandMark([entry.workspaceId], branding),
     statusLabel: entry.isAccepted ? 'Member' : 'Invited',
     statusKey: entry.isAccepted ? 'accepted' : 'invited',
     roleSummary: entry.roleLabels.length > 0 ? entry.roleLabels.join(', ') : 'No role assigned yet',
@@ -311,6 +339,9 @@ async function buildAccountLanding(user, { session } = {}) {
   // plan allows, and a figure that is not the real one is worse there than no
   // figure at all.
   const credentialCounts = await countCredentialsByWorkspace();
+  // The organization's own logo and palette, so a tile shows the mark its
+  // holders recognise rather than a letter on the platform's gradient.
+  const branding = await listBrandingByWorkspace();
   const organizations = [];
   const workspaceCounts = new Map();
 
@@ -323,6 +354,7 @@ async function buildAccountLanding(user, { session } = {}) {
       0
     );
     organizations.push({
+      ...brandMark(workspaces.map((workspace) => workspace.id), branding),
       issued,
       issuedSummary: `${issued} credential${issued === 1 ? '' : 's'} issued`,
       subscription,
@@ -348,7 +380,8 @@ async function buildAccountLanding(user, { session } = {}) {
     await listWorkspacesForSubscription(accountAccessSubscription, { membershipWorkspaceIds });
     memberships = summariseMemberships(
       credentialMemberships,
-      `/organizations/${accountAccessSubscription.id}`
+      `/organizations/${accountAccessSubscription.id}`,
+      branding
     );
   }
 
