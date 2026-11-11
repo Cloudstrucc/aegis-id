@@ -70,12 +70,38 @@ function formatDate(value) {
   if (Number.isNaN(date.getTime())) {
     return '';
   }
-  return date.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' });
+  // In UTC, because a tag's timestamp is a point in time and the date part is
+  // what a reader wants. Formatted in the server's zone, a release cut at
+  // 00:00 UTC shows as the previous day anywhere west of Greenwich — and the
+  // same page then disagrees with the tag it is describing.
+  return date.toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC'
+  });
 }
 
 /** `v2.3.0` and `2.3.0` are the same version; the tag's `v` is decoration. */
 function normalizeVersion(value) {
   return String(value || '').trim().replace(/^v/i, '');
+}
+
+/**
+ * When the release was cut.
+ *
+ * `created_at` is the tag's date. For a release tagged at the commit it
+ * describes — which is every one of them — that is when the work landed.
+ * `published_at` is when the notes were written, which for a backfilled
+ * history is all the same afternoon.
+ */
+function releaseDate(release) {
+  const created = Date.parse(release?.created_at || '');
+  if (!Number.isNaN(created)) {
+    return created;
+  }
+  const published = Date.parse(release?.published_at || '');
+  return Number.isNaN(published) ? 0 : published;
 }
 
 /**
@@ -119,7 +145,24 @@ function parseVersion(value) {
  * feature release. The oldest release has nothing before it to compare with
  * and is simply a release.
  */
-function classify(version, previousVersion) {
+function classify(version, previousVersion, body = '') {
+  // A release may declare its own kind, and for a backfilled history it has
+  // to. The version step is the right signal when the numbers were assigned
+  // as the work landed; it is no signal at all when they were assigned
+  // afterwards to a history that already happened — the baseline that turned
+  // this repository into four applications is `0.1.1` only because `0.1.0`
+  // and `0.2.0` were already spoken for, and calling it a patch would be a
+  // worse lie than letting it say what it is.
+  //
+  // A marker in the notes, not a field somebody fills in a form: it lives
+  // with the text it describes and is visible to anyone reading the source of
+  // the release.
+  const declared = /<!--\s*release-kind:\s*(major|feature|fix)\s*-->/i.exec(String(body || ''));
+  if (declared) {
+    const kind = declared[1].toLowerCase();
+    return { kind, label: { major: 'Major', feature: 'Feature', fix: 'Fix' }[kind] };
+  }
+
   const current = parseVersion(version);
   const previous = parseVersion(previousVersion);
   if (current.major === null) {
@@ -177,39 +220,47 @@ async function loadReleases({ force = false } = {}) {
     const raw = await fetchReleases();
     const published = (Array.isArray(raw) ? raw : [])
       .filter((release) => !release.draft)
-      // By version, not by publication date. Notes written after the fact —
-      // a history backfilled in one sitting — all carry the same timestamp,
-      // and ordering a release history by when somebody got round to writing
-      // it up puts 0.1.0 above 1.0.0. Falls back to the date when a version
-      // cannot be parsed.
+      // Newest first, by the date the release was cut — `created_at`, which is
+      // the tag's own date, not `published_at`, which is when somebody got
+      // round to writing the notes. A history backfilled in one sitting has
+      // one publication date and twelve real ones.
+      //
+      // Version breaks the tie, and has to: releases cut in the same minute
+      // share a timestamp, and arbitrary order among them is wrong in a way a
+      // reader notices immediately.
       .sort((left, right) => {
-        const byVersion = compareVersions(
+        const byDate = releaseDate(right) - releaseDate(left);
+        if (byDate !== 0) {
+          return byDate;
+        }
+        return compareVersions(
           normalizeVersion(right.tag_name),
           normalizeVersion(left.tag_name)
         );
-        if (byVersion !== 0) {
-          return byVersion;
-        }
-        return new Date(right.published_at || 0) - new Date(left.published_at || 0);
       });
 
     const releases = published.map((release, index) => {
       const version = normalizeVersion(release.tag_name);
       // The one published before it, which is the next in this list.
       const previous = published[index + 1];
-      const kind = classify(version, previous ? normalizeVersion(previous.tag_name) : '');
+      const kind = classify(version, previous ? normalizeVersion(previous.tag_name) : '', release.body);
       return {
         id: String(release.id),
         version,
         tag: release.tag_name,
         name: release.name || release.tag_name,
-        publishedAt: release.published_at,
-        publishedLabel: formatDate(release.published_at),
+        publishedAt: release.created_at || release.published_at,
+        publishedLabel: formatDate(release.created_at || release.published_at),
         isPrerelease: Boolean(release.prerelease),
         url: release.html_url,
         kind: kind.kind,
         kindLabel: kind.label,
-        bodyHtml: renderMarkdown(release.body || '_No notes were written for this release._')
+        bodyHtml: renderMarkdown(
+          String(release.body || '_No notes were written for this release._')
+            // The kind marker has done its job by now; it is metadata, not
+            // something a reader should meet in the middle of the notes.
+            .replace(/<!--\s*release-kind:\s*\w+\s*-->\s*/gi, '')
+        )
       };
     });
 

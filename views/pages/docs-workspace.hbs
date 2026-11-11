@@ -76,7 +76,15 @@
       --}}
       {{#if isReleases}}
         <div class="docs-reader__meta">
-          <span>Release notes</span>
+          {{!-- The trail, not just the section: which release is open matters
+                as much as the fact that these are release notes. --}}
+          <span class="docs-crumbs">
+            <span>Release notes</span>
+            {{#if releases.selected}}
+              <span class="docs-crumbs__sep" aria-hidden="true">/</span>
+              <span class="docs-crumbs__here">{{releases.selected.version}}</span>
+            {{/if}}
+          </span>
           <a href="{{releases.repoUrl}}" target="_blank" rel="noopener">All releases ↗</a>
         </div>
         {{> docs-releases releases=releases}}
@@ -88,7 +96,16 @@
         {{> docs-landing}}
       {{else if selected}}
         <div class="docs-reader__meta">
-          <span>{{selected.categoryTitle}}</span>
+          {{!--
+            The category alone said which shelf a document was on but not which
+            document, so the bar read the same on all eight pages of a section.
+            The trail names both.
+          --}}
+          <span class="docs-crumbs">
+            <span>{{selected.categoryTitle}}</span>
+            <span class="docs-crumbs__sep" aria-hidden="true">/</span>
+            <span class="docs-crumbs__here">{{selected.title}}</span>
+          </span>
           <a href="/developer/openapi.json" target="_blank" rel="noopener">OpenAPI JSON</a>
         </div>
         <div class="docs-reader__content">

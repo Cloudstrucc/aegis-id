@@ -360,3 +360,71 @@ test('every view in the reader panel carries the same header bar', () => {
   assert.ok(!read('views/partials/docs-landing.hbs').includes('class="eyebrow"'));
   assert.ok(!read('views/partials/docs-releases.hbs').includes('class="eyebrow"'));
 });
+
+test('the panel header names the document, not just its section', () => {
+  // The category alone read the same on all eight pages of a section, so the
+  // bar told you which shelf you were on and not which book.
+  const view = read('views/pages/docs-workspace.hbs');
+  assert.match(view, /class="docs-crumbs"/);
+  assert.match(view, /\{\{selected\.categoryTitle\}\}[\s\S]{0,220}\{\{selected\.title\}\}/);
+  // And the release notes name the release.
+  assert.match(view, /Release notes[\s\S]{0,220}\{\{releases\.selected\.version\}\}/);
+
+  const css = read('public/styles/main.css');
+  // The separator is text, so it takes a text token. --ag-line-strong is a
+  // border colour and measured 1.48:1 against the panel.
+  assert.match(css, /\.docs-crumbs__sep \{[^}]*color: var\(--ag-subtle\)/s);
+});
+
+test('a backfilled release may declare its own kind', () => {
+  // The version step is the right signal when numbers were assigned as the
+  // work landed, and no signal at all when they were assigned afterwards to a
+  // history that already happened.
+  const service = freshService();
+  assert.equal(service.classify('0.1.1', '0.1.0').label, 'Fix');
+  assert.equal(
+    service.classify('0.1.1', '0.1.0', '<!-- release-kind: major -->\nnotes').label,
+    'Major'
+  );
+});
+
+test('the kind marker never reaches the reader', () => {
+  const service = freshService();
+  return withGitHub(
+    githubReleases([{ tag: 'v0.1.1', body: '<!-- release-kind: major -->\n\nThe baseline.' }]),
+    async () => {
+      service.clearReleaseCache();
+      const history = await service.getReleaseHistory({});
+      assert.equal(history.releases[0].kindLabel, 'Major');
+      assert.ok(
+        !/release-kind/.test(history.releases[0].bodyHtml),
+        'the marker leaked into the rendered notes'
+      );
+      assert.match(history.releases[0].bodyHtml, /The baseline/);
+    }
+  );
+});
+
+test('the history is newest first by the date the release was cut', () => {
+  // `created_at` is the tag's date. `published_at` is when somebody wrote the
+  // notes, which for a backfilled history is all one afternoon.
+  const service = freshService();
+  return withGitHub(
+    [
+      { id: 1, tag_name: 'v0.1.0', name: 'old', body: '', draft: false, prerelease: false,
+        created_at: '2026-06-13T00:00:00Z', published_at: '2026-11-11T09:00:00Z',
+        html_url: 'https://example.test/1' },
+      { id: 2, tag_name: 'v2.0.0', name: 'new', body: '', draft: false, prerelease: false,
+        created_at: '2026-10-28T00:00:00Z', published_at: '2026-11-11T08:00:00Z',
+        html_url: 'https://example.test/2' }
+    ],
+    async () => {
+      service.clearReleaseCache();
+      const history = await service.getReleaseHistory({});
+      // By publication date 0.1.0 would come first. By the date it was cut,
+      // 2.0.0 does.
+      assert.deepEqual(history.releases.map((r) => r.version), ['2.0.0', '0.1.0']);
+      assert.equal(history.releases[0].publishedLabel, 'Oct 28, 2026');
+    }
+  );
+});

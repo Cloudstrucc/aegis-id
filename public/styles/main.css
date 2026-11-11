@@ -11488,3 +11488,29 @@ body > .site-footer {
   opacity: 0.5;
   pointer-events: none;
 }
+
+/* The trail in the panel header.
+   Same type as the label it replaces — this is the section header, not a
+   second navigation — with the current document carried in the text colour so
+   the eye lands on where it is rather than on how it got there. */
+.docs-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.docs-crumbs__sep {
+  /* A separator is quiet, but it is still text: --ag-line-strong is a border
+     colour and measured 1.48:1 against the panel. --ag-subtle is the token
+     for a small label and clears AA. */
+  color: var(--ag-subtle);
+  font-weight: 700;
+}
+
+.docs-crumbs__here {
+  color: var(--ag-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
