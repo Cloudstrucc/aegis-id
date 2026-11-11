@@ -1,0 +1,176 @@
+{{!--
+  What `/developer/docs` opens on.
+
+  It used to open on whichever document sorted first alphabetically, which made
+  the first impression of the documentation an arbitrary page about one
+  integration and told a reader nothing about what else was here.
+
+  The diagram is the one thing worth saying before any of the guides: the same
+  holder, the same wallet, proving themselves to three different kinds of
+  thing. That is the product in one picture, and it is what every guide below
+  is a detail of.
+--}}
+<div class="docs-landing">
+
+  <header class="docs-landing__hero">
+    <p class="eyebrow">Aegis ID</p>
+    <h2>One wallet. Every door.</h2>
+    <p class="docs-landing__lede">
+      Aegis ID is the policy decision point for who may do what, and the Aegis
+      wallet is how a person proves it is them. The same credential on the same
+      phone opens a desktop sign-in, an app on the phone itself, and a door in
+      a building — and every approval and refusal lands on an immutable
+      evidence chain.
+    </p>
+  </header>
+
+  {{!--
+    Inline SVG rather than an image: it has to follow the theme, and a picture
+    of a diagram goes blurry on a retina screen and illegible in dark mode.
+    Every colour comes from the brand tokens for the same reason.
+  --}}
+  <figure class="docs-landing__figure">
+    <svg class="docs-diagram" viewBox="0 0 980 360" role="img"
+         aria-labelledby="docs-diagram-title docs-diagram-desc">
+      <title id="docs-diagram-title">One wallet proving identity to three kinds of relying party</title>
+      <desc id="docs-diagram-desc">
+        A credential holder with the Aegis wallet on their phone. The wallet
+        answers challenges from Aegis ID, which fronts a desktop application, a
+        mobile application, and a physical building. Every answer is written to
+        the evidence chain.
+      </desc>
+
+      <!-- the holder -->
+      <g class="dg-actor">
+        <circle class="dg-avatar-ring" cx="92" cy="138" r="40"/>
+        <circle class="dg-avatar-head" cx="92" cy="126" r="14"/>
+        <path class="dg-avatar-body" d="M66 162c4-15 14-22 26-22s22 7 26 22z"/>
+        <!-- the phone in their hand -->
+        <rect class="dg-phone" x="118" y="150" width="30" height="50" rx="6"/>
+        <rect class="dg-phone-screen" x="123" y="157" width="20" height="33" rx="2"/>
+        <path class="dg-phone-check" d="M127.5 173.5l4 4 7.5-8" />
+        <text class="dg-label" x="92" y="222" text-anchor="middle">Credential holder</text>
+        <text class="dg-sub" x="92" y="240" text-anchor="middle">Aegis wallet</text>
+      </g>
+
+      <!-- holder to platform -->
+      <path class="dg-flow" d="M158 170 H300"/>
+      <text class="dg-flow-label" x="229" y="158" text-anchor="middle">challenge</text>
+      <text class="dg-flow-label" x="229" y="192" text-anchor="middle">approve · decline</text>
+
+      <!-- the platform -->
+      <g class="dg-platform">
+        <rect class="dg-platform-box" x="302" y="112" width="188" height="116" rx="14"/>
+        <text class="dg-platform-title" x="396" y="152" text-anchor="middle">Aegis ID</text>
+        <text class="dg-sub" x="396" y="174" text-anchor="middle">policy decision point</text>
+        <text class="dg-sub" x="396" y="192" text-anchor="middle">deny by default</text>
+      </g>
+
+      <!-- platform to the three relying parties -->
+      <path class="dg-flow" d="M492 170 H560 V74 H612"/>
+      <path class="dg-flow" d="M492 170 H612"/>
+      <path class="dg-flow" d="M492 170 H560 V268 H612"/>
+
+      <!-- desktop -->
+      <g class="dg-rp" transform="translate(620 36)">
+        <rect class="dg-rp-box" x="0" y="0" width="300" height="76" rx="12"/>
+        <g class="dg-glyph" transform="translate(22 20)">
+          <rect x="0" y="0" width="34" height="24" rx="3"/>
+          <path d="M11 30h12M17 24v6"/>
+        </g>
+        <text class="dg-rp-title" x="72" y="32">Desktop application</text>
+        <text class="dg-sub" x="72" y="52">OIDC · SAML · connected apps</text>
+      </g>
+
+      <!-- mobile -->
+      <g class="dg-rp" transform="translate(620 132)">
+        <rect class="dg-rp-box" x="0" y="0" width="300" height="76" rx="12"/>
+        <g class="dg-glyph" transform="translate(28 16)">
+          <rect x="0" y="0" width="22" height="34" rx="4"/>
+          <path d="M8 29h6"/>
+        </g>
+        <text class="dg-rp-title" x="72" y="32">Mobile application</text>
+        <text class="dg-sub" x="72" y="52">passkeys · wallet approval</text>
+      </g>
+
+      <!-- building -->
+      <g class="dg-rp" transform="translate(620 230)">
+        <rect class="dg-rp-box" x="0" y="0" width="300" height="76" rx="12"/>
+        <g class="dg-glyph" transform="translate(22 18)">
+          <path d="M2 30V8l14-6 14 6v22"/>
+          <path d="M11 30v-9h10v9"/>
+          <path d="M11 14h3M18 14h3"/>
+        </g>
+        <text class="dg-rp-title" x="72" y="32">Physical access</text>
+        <text class="dg-sub" x="72" y="52">a door, a desk, a controlled room</text>
+      </g>
+
+      <!-- evidence -->
+      <g class="dg-evidence">
+        <path class="dg-flow dg-flow--muted" d="M396 228 V292 H306"/>
+        <rect class="dg-evidence-box" x="96" y="268" width="206" height="48" rx="10"/>
+        <text class="dg-evidence-text" x="199" y="290" text-anchor="middle">Evidence chain</text>
+        <text class="dg-sub" x="199" y="306" text-anchor="middle">every approval and refusal, immutable</text>
+      </g>
+    </svg>
+    <figcaption>
+      The wallet answers; Aegis decides; the ledger remembers. A decline is
+      recorded exactly as an approval is.
+    </figcaption>
+  </figure>
+
+  <section class="docs-landing__pillars" aria-label="What Aegis ID does">
+    <article class="docs-pillar">
+      <span class="docs-pillar__icon" aria-hidden="true">{{agIcon "shield" 20}}</span>
+      <h3>Authorization, centralized</h3>
+      <p>
+        One policy registry, enforced server-side on every route. An
+        integration is an adapter in front of it, never a second place where
+        access is decided.
+      </p>
+    </article>
+    <article class="docs-pillar">
+      <span class="docs-pillar__icon" aria-hidden="true">{{agIcon "phone" 20}}</span>
+      <h3>Wallet-backed assurance</h3>
+      <p>
+        A challenge goes to the holder's own device and comes back signed and
+        bound to their Wallet ID. Approve and decline are both meaningful, and
+        both are recorded.
+      </p>
+    </article>
+    <article class="docs-pillar">
+      <span class="docs-pillar__icon" aria-hidden="true">{{agIcon "badge" 20}}</span>
+      <h3>Credentials you can revoke</h3>
+      <p>
+        Issue, consent, revoke. A revoked wallet stops working at acceptance
+        rather than merely looking disabled, and the trail it leaves behind
+        stays.
+      </p>
+    </article>
+    <article class="docs-pillar">
+      <span class="docs-pillar__icon" aria-hidden="true">{{agIcon "key" 20}}</span>
+      <h3>Hardware-backed sign-in</h3>
+      <p>
+        WebAuthn, passkeys and YubiKey. A passkey with user verification is
+        possession plus inherence, so it finishes a sign-in on its own — a
+        password never does.
+      </p>
+    </article>
+  </section>
+
+  <section class="docs-landing__start" aria-label="Where to start">
+    <h3>Where to start</h3>
+    <div class="docs-start-grid">
+      {{#each categories}}
+        {{#if count}}
+          <a class="docs-start-card" href="{{#with documents.[0]}}{{href}}{{/with}}">
+            <strong>{{title}}</strong>
+            <span>{{summary}}</span>
+            <small>{{count}} {{#if (eq count 1)}}guide{{else}}guides{{/if}}</small>
+          </a>
+        {{/if}}
+      {{/each}}
+    </div>
+  </section>
+
+</div>

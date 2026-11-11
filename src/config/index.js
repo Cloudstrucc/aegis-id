@@ -392,6 +392,15 @@ const config = {
         process.env.GRAPH_MAIL_FROM_NAME || process.env.SMTP_FROM_NAME || 'Vanguard Aegis ID'
     }
   },
+  // The repository whose releases the in-product release notes page reads.
+  // A token is optional and only raises GitHub's rate limit — the repository
+  // is public, so the page works without one.
+  releases: {
+    repo: (process.env.RELEASES_REPO || 'Cloudstrucc/aegis-id').trim(),
+    token: process.env.GITHUB_TOKEN || '',
+    cacheSeconds: integerValue(process.env.RELEASES_CACHE_SECONDS, 900)
+  },
+
   hosting: {
     provider: (process.env.CUSTOM_HOSTING_PROVIDER || 'none').trim().toLowerCase(),
     // Which App Service the `azure` provider binds hostnames to. On the host

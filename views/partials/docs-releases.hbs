@@ -1,0 +1,124 @@
+{{!--
+  Direction C: a version list on the left, the chosen release rendered in full
+  on the right. The only one of the three mock-ups that shows a whole release
+  at once, which is what these notes are for.
+
+  "This deployment" is the version in package.json, not the newest release. A
+  deployment behind the latest is exactly the case worth showing, and it is the
+  one fact on this page GitHub cannot supply.
+--}}
+<div class="rel">
+
+  <header class="rel__head">
+    <div>
+      <p class="eyebrow">Release notes</p>
+      <h2>What changed, and when.</h2>
+      <p class="rel__lede">
+        Published from <a href="{{releases.repoUrl}}" target="_blank" rel="noopener">{{releases.repo}}</a>.
+        Every entry is a tagged release.
+      </p>
+    </div>
+
+    {{#if releases.deployedVersion}}
+      <div class="rel__youare">
+        <span>This deployment</span>
+        <strong>{{releases.deployedVersion}}</strong>
+        {{#unless releases.deployedIsReleased}}
+          <small>not a tagged release</small>
+        {{else}}
+          {{#if releases.behindBy}}
+            <small>{{releases.behindBy}} behind the latest</small>
+          {{else}}
+            <small>up to date</small>
+          {{/if}}
+        {{/unless}}
+      </div>
+    {{/if}}
+  </header>
+
+  {{#if releases.error}}
+    <div class="rel__notice" role="status">
+      <strong>Showing the last answer we got.</strong>
+      <span>
+        {{releases.error}}
+        {{#if releases.fetchedAt}} Last fetched {{releases.fetchedAt}}.{{/if}}
+      </span>
+    </div>
+  {{/if}}
+
+  {{#if releases.total}}
+    <div class="rel__split">
+      <nav class="rel__list" aria-label="Releases">
+        {{#each releases.releases}}
+          <a class="rel-row {{#if isSelected}}is-active{{/if}}" href="/developer/docs/releases/{{version}}">
+            <span class="rel-row__ver">{{version}}</span>
+            <span class="rel-row__when">{{publishedLabel}}</span>
+            <span class="rel-row__tag">
+              {{kindLabel}}{{#if isDeployed}} · you are here{{else}}{{#if isNewest}} · newest{{/if}}{{/if}}
+            </span>
+          </a>
+        {{/each}}
+      </nav>
+
+      <article class="rel__reader">
+        {{#if releases.selected}}
+          <h3>{{releases.selected.name}}</h3>
+          <div class="rel__meta">
+            <span class="rel__ver">{{releases.selected.version}}</span>
+            <span class="pill pill--{{releases.selected.kind}}">{{releases.selected.kindLabel}}</span>
+            {{#if releases.selected.isDeployed}}
+              <span class="pill pill--here">You are here</span>
+            {{/if}}
+            {{#if releases.selected.isPrerelease}}
+              <span class="pill pill--mute">Pre-release</span>
+            {{/if}}
+            <span class="rel__when">{{releases.selected.publishedLabel}}</span>
+            <a class="rel__source" href="{{releases.selected.url}}" target="_blank" rel="noopener">On GitHub ↗</a>
+          </div>
+          <div class="rel__body docs-reader__content">
+            {{{releases.selected.bodyHtml}}}
+          </div>
+        {{else}}
+          <div class="docs-empty-state">
+            <h2>Pick a release.</h2>
+            <p>Choose a version from the list to read its notes.</p>
+          </div>
+        {{/if}}
+      </article>
+    </div>
+
+    <div class="rel__pager">
+      <span>Showing {{releases.rangeStart}}–{{releases.rangeEnd}} of {{releases.total}} releases</span>
+      <div class="rel__pager-btns">
+        {{#if releases.hasNewer}}
+          <a class="button button--ghost" href="/developer/docs/releases?page={{releases.newerPage}}">Newer</a>
+        {{else}}
+          <span class="button button--ghost is-disabled" aria-disabled="true">Newer</span>
+        {{/if}}
+        {{#if releases.hasOlder}}
+          <a class="button button--ghost" href="/developer/docs/releases?page={{releases.olderPage}}">Older</a>
+        {{else}}
+          <span class="button button--ghost is-disabled" aria-disabled="true">Older</span>
+        {{/if}}
+      </div>
+    </div>
+  {{else}}
+    {{!--
+      An empty state that says what would put something here, and offers the
+      place it comes from — the same rule as every other empty state in the
+      product.
+    --}}
+    <div class="aeg-empty">
+      <h4>No releases published yet</h4>
+      <p>
+        A release appears here once one is tagged and published in
+        {{releases.repo}}. Until then this deployment reports its own version
+        and nothing else.
+      </p>
+      <a class="button button--primary" href="{{releases.repoUrl}}" target="_blank" rel="noopener">
+        Releases on GitHub ↗
+      </a>
+    </div>
+  {{/if}}
+
+</div>

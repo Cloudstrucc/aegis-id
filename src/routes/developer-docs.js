@@ -3,6 +3,7 @@ const express = require('express');
 const { requireAuthenticated } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorization');
 const { getDocsWorkspace, isKnownCategory } = require('../services/docs-service');
+const { deployedVersion, getReleaseHistory } = require('../services/release-notes-service');
 
 const router = express.Router();
 
@@ -10,6 +11,27 @@ router.use('/developer', requireAuthenticated);
 
 router.get('/developer/api', authorize('developerApiDocs.view'), renderDocsWorkspace);
 router.get('/developer/docs', authorize('developerApiDocs.view'), renderDocsWorkspace);
+
+// Before the :categoryId route, or "releases" is read as a category id.
+//
+// Behind the same authentication and the same policy as the rest of the docs:
+// the release history names what changed and when, which is operational
+// detail about this deployment rather than marketing.
+router.get('/developer/docs/releases', authorize('developerApiDocs.view'), async (req, res, next) => {
+  try {
+    return await renderDocsWorkspace(req, res, { view: 'releases' });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/developer/docs/releases/:version', authorize('developerApiDocs.view'), async (req, res, next) => {
+  try {
+    return await renderDocsWorkspace(req, res, { view: 'releases' });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 router.get('/developer/docs/:categoryId/:slug', authorize('developerApiDocs.view'), (req, res, next) => {
   if (!isKnownCategory(req.params.categoryId)) {
@@ -159,12 +181,19 @@ function getRequestBaseUrl(req) {
   return req.site.baseUrl;
 }
 
-function renderDocsWorkspace(req, res) {
+async function renderDocsWorkspace(req, res, options = {}) {
   const workspace = getDocsWorkspace({
     categoryId: req.params.categoryId,
     slug: req.params.slug,
-    query: req.query.q
+    query: req.query.q,
+    view: options.view
   });
+
+  // Only fetched for the page that shows it. The landing page and every
+  // document render without touching GitHub at all.
+  const releases = options.view === 'releases'
+    ? await getReleaseHistory({ version: req.params.version, page: req.query.page })
+    : null;
 
   res.render('pages/docs-workspace', {
     title: 'Aegis ID Docs',
@@ -176,6 +205,12 @@ function renderDocsWorkspace(req, res) {
       { src: '/vendor/mermaid/mermaid.min.js' },
       { src: '/scripts/docs-workspace.js' }
     ],
+    releases,
+    // The deployment's own version, on the pinned nav entry, so the one fact
+    // somebody opens this page for is visible before they open it. Read from
+    // package.json rather than from GitHub, so it costs nothing on every other
+    // page in the docs.
+    releaseVersionBadge: deployedVersion(),
     ...workspace
   });
 }

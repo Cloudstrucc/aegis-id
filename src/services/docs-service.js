@@ -83,19 +83,34 @@ markdown.renderer.rules.fence = (tokens, index, options, env, self) => {
   return defaultFence(tokens, index, options, env, self);
 };
 
-function getDocsWorkspace({ categoryId, slug, query } = {}) {
+function getDocsWorkspace({ categoryId, slug, query, view } = {}) {
   const categories = loadCategories();
   const documents = categories.flatMap((category) => category.documents);
-  const selected =
-    findDocument(documents, categoryId, slug) ||
-    searchDocuments(documents, query || '')[0] ||
-    documents[0] ||
-    null;
+
+  // The landing page is what `/developer/docs` opens on.
+  //
+  // It used to open on whichever document sorted first, which told a reader
+  // nothing about what else was here and made the first impression of the
+  // documentation an arbitrary page about one integration. A reader who asked
+  // for a document, searched, or opened the release notes gets what they
+  // asked for instead.
+  const isReleases = view === 'releases';
+  const asked = Boolean(categoryId || slug || query);
+  const isLanding = !isReleases && !asked;
+
+  const selected = isLanding || isReleases
+    ? null
+    : findDocument(documents, categoryId, slug) ||
+      searchDocuments(documents, query || '')[0] ||
+      documents[0] ||
+      null;
 
   const searchResults = query ? searchDocuments(documents, query) : [];
-  const activeCategoryId = selected?.categoryId || categoryId || categories[0]?.id || '';
+  const activeCategoryId = selected?.categoryId || categoryId || '';
 
   return {
+    isLanding,
+    isReleases,
     categories: categories.map((category) => ({
       ...category,
       isActive: category.id === activeCategoryId,
@@ -329,8 +344,23 @@ function isKnownCategory(categoryId) {
   return CATEGORY_BY_ID.has(categoryId);
 }
 
+/**
+ * Markdown to safe HTML, through the same renderer and the same allow-list the
+ * docs use.
+ *
+ * Exported because the release notes arrive as Markdown too — GitHub stores a
+ * release body verbatim — and rendering them through a second pipeline would
+ * mean a second allow-list to keep in step. A release body is written by
+ * whoever cut the release, so it is not trusted input any more or less than a
+ * file in `docs/content`.
+ */
+function renderMarkdown(source) {
+  return sanitizeRenderedHtml(markdown.render(normalizeDocContent(String(source || ''))));
+}
+
 module.exports = {
   getCategoryMeta,
   getDocsWorkspace,
-  isKnownCategory
+  isKnownCategory,
+  renderMarkdown
 };

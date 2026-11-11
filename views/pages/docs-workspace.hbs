@@ -7,13 +7,32 @@
         <p>{{documentCount}} technical guides organized by implementation area.</p>
       </div>
 
-      <form class="docs-search" method="get" action="/developer/api">
+      <form class="docs-search" method="get" action="/developer/docs">
         <label for="docs-search-query">Search docs</label>
         <div>
           <input id="docs-search-query" name="q" type="search" value="{{query}}" placeholder="Search OIDC, RBAC, passkeys">
           <button type="submit">Search</button>
         </div>
       </form>
+
+      {{!--
+        Release notes are pinned above the category list with a rule under
+        them, not filed inside it. They are not a guide to anything — they are
+        the record of what this deployment is running — and a reader looking
+        for them should not have to guess which of seven categories somebody
+        decided they belonged to.
+      --}}
+      <nav class="docs-pinned" aria-label="Release notes">
+        <a class="docs-pinned__link {{#if isReleases}}is-active{{/if}}" href="/developer/docs/releases">
+          <span class="docs-pinned__icon" aria-hidden="true">{{agIcon "tag" 16}}</span>
+          <span class="docs-pinned__label">Release notes</span>
+          {{#if releaseVersionBadge}}<span class="docs-pinned__badge">{{releaseVersionBadge}}</span>{{/if}}
+        </a>
+        <a class="docs-pinned__link {{#if isLanding}}is-active{{/if}}" href="/developer/docs">
+          <span class="docs-pinned__icon" aria-hidden="true">{{agIcon "grid" 16}}</span>
+          <span class="docs-pinned__label">Overview</span>
+        </a>
+      </nav>
 
       {{#if hasQuery}}
         <section class="docs-search-results" aria-label="Search results">
@@ -49,7 +68,11 @@
     </aside>
 
     <article class="docs-reader">
-      {{#if selected}}
+      {{#if isReleases}}
+        {{> docs-releases releases=releases}}
+      {{else if isLanding}}
+        {{> docs-landing}}
+      {{else if selected}}
         <div class="docs-reader__meta">
           <span>{{selected.categoryTitle}}</span>
           <a href="/developer/openapi.json" target="_blank" rel="noopener">OpenAPI JSON</a>

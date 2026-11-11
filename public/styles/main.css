@@ -11054,3 +11054,392 @@ body > .site-footer {
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* ===================================================================
+   Docs: the pinned entries, the landing page, and the release notes
+   =================================================================== */
+
+/* Release notes sit above the category list with a rule under them, because
+   they are not a guide to anything — they are the record of what this
+   deployment is running. */
+.docs-pinned {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--ag-line);
+}
+
+.docs-pinned__link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  color: var(--ag-text);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.docs-pinned__link:hover {
+  background: var(--ag-surface-2);
+  border-color: var(--ag-line);
+  transform: translateY(-1px);
+}
+
+.docs-pinned__link.is-active {
+  color: var(--ag-brand-text);
+  background: var(--ag-brand-soft);
+  border-color: var(--ag-brand-line);
+}
+
+.docs-pinned__icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 6px;
+  color: var(--ag-plate-ink);
+  background: var(--ag-plate);
+  border: 1px solid var(--ag-plate-line);
+}
+
+.docs-pinned__link.is-active .docs-pinned__icon {
+  color: var(--ag-brand-text);
+  background: var(--ag-brand-on);
+  border-color: var(--ag-brand-line);
+}
+
+.docs-pinned__label { flex: 1 1 auto; min-width: 0; }
+
+.docs-pinned__badge {
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--ag-muted);
+  background: var(--ag-surface-2);
+  border: 1px solid var(--ag-line);
+  font-family: var(--ag-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- the landing page ------------------------------------------------- */
+
+.docs-landing { display: grid; gap: 28px; min-width: 0; }
+
+.docs-landing__hero { display: grid; gap: 8px; }
+
+.docs-landing__hero h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 32px);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.docs-landing__lede {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--ag-muted);
+  font-size: 15px;
+  line-height: 1.62;
+}
+
+.docs-landing__figure {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: 12px;
+  box-shadow: var(--ag-raise);
+  min-width: 0;
+  /* The diagram keeps its proportions rather than squashing; below its natural
+     width it scrolls in its own box, which is the only thing allowed to. */
+  overflow-x: auto;
+}
+
+.docs-landing__figure figcaption {
+  color: var(--ag-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.docs-diagram { display: block; width: 100%; min-width: 640px; height: auto; }
+
+/* Every colour from the tokens, so the diagram follows the theme instead of
+   being a picture that only works in one of them. */
+.dg-avatar-ring { fill: var(--ag-brand-soft); stroke: var(--ag-brand-line); }
+.dg-avatar-head, .dg-avatar-body { fill: var(--ag-brand-text); }
+.dg-phone { fill: var(--ag-surface); stroke: var(--ag-line-strong); stroke-width: 2; }
+.dg-phone-screen { fill: var(--ag-brand-soft); }
+.dg-phone-check { fill: none; stroke: var(--ag-good); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+.dg-label { fill: var(--ag-text); font-size: 13px; font-weight: 700; }
+.dg-sub { fill: var(--ag-muted); font-size: 11.5px; }
+
+.dg-flow {
+  fill: none;
+  stroke: var(--ag-line-strong);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+}
+.dg-flow--muted { stroke: var(--ag-line); }
+.dg-flow-label { fill: var(--ag-muted); font-size: 11px; }
+
+.dg-platform-box { fill: var(--ag-brand-soft); stroke: var(--ag-brand-line); stroke-width: 1.5; }
+.dg-platform-title { fill: var(--ag-brand-text); font-size: 19px; font-weight: 800; }
+
+.dg-rp-box { fill: var(--ag-surface-2); stroke: var(--ag-line); stroke-width: 1.5; }
+.dg-rp-title { fill: var(--ag-text); font-size: 14px; font-weight: 700; }
+.dg-glyph {
+  fill: none;
+  stroke: var(--ag-plate-ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dg-evidence-box { fill: var(--ag-surface); stroke: var(--ag-line-strong); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.dg-evidence-text { fill: var(--ag-text); font-size: 13px; font-weight: 700; }
+
+.docs-landing__pillars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.docs-pillar {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 16px;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: 10px;
+  box-shadow: var(--ag-raise);
+  min-width: 0;
+}
+
+.docs-pillar h3 { margin: 0; font-size: 14.5px; font-weight: 700; }
+.docs-pillar p { margin: 0; color: var(--ag-muted); font-size: 13px; line-height: 1.55; }
+
+.docs-pillar__icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--ag-plate-ink);
+  background: var(--ag-plate);
+  border: 1px solid var(--ag-plate-line);
+}
+
+.docs-landing__start { display: grid; gap: 12px; }
+.docs-landing__start h3 { margin: 0; font-size: 15px; font-weight: 700; }
+
+.docs-start-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.docs-start-card {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+  padding: 14px;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: 10px;
+  box-shadow: var(--ag-raise);
+  color: var(--ag-text);
+  text-decoration: none;
+  min-width: 0;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.docs-start-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ag-brand-line);
+  box-shadow: var(--ag-raise-hi), var(--ag-raise-lift);
+}
+
+.docs-start-card strong { font-size: 13.5px; }
+.docs-start-card span { color: var(--ag-muted); font-size: 12.5px; line-height: 1.5; }
+.docs-start-card small { color: var(--ag-subtle); font-size: 11px; font-weight: 650; }
+
+/* --- release notes ---------------------------------------------------- */
+
+.rel { display: grid; gap: 18px; min-width: 0; }
+
+.rel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.rel__head > div:first-child { flex: 1 1 320px; min-width: 0; }
+.rel__head h2 { margin: 0 0 6px; font-size: clamp(21px, 2.4vw, 27px); letter-spacing: -0.01em; }
+.rel__lede { margin: 0; color: var(--ag-muted); font-size: 13.5px; }
+
+.rel__youare {
+  display: grid;
+  gap: 2px;
+  flex: none;
+  padding: 10px 14px;
+  text-align: right;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: 10px;
+  box-shadow: var(--ag-raise);
+}
+
+.rel__youare span {
+  color: var(--ag-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rel__youare strong {
+  font-family: var(--ag-mono);
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rel__youare small { color: var(--ag-subtle); font-size: 11px; }
+
+.rel__notice {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: var(--ag-warn);
+  background: var(--ag-warn-soft);
+  border: 1px solid var(--ag-warn-line);
+  font-size: 13px;
+}
+
+.rel__split {
+  display: grid;
+  grid-template-columns: minmax(0, 190px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .rel__split { grid-template-columns: minmax(0, 1fr); }
+}
+
+.rel__list {
+  display: grid;
+  gap: 3px;
+  align-content: start;
+  padding: 7px;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: 10px;
+  box-shadow: var(--ag-raise);
+  min-width: 0;
+}
+
+.rel-row {
+  display: grid;
+  gap: 1px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border-left: 2px solid transparent;
+  color: var(--ag-text);
+  text-decoration: none;
+  transition: background-color 140ms ease;
+}
+
+.rel-row:hover { background: var(--ag-surface-2); }
+
+.rel-row.is-active {
+  background: var(--ag-brand-soft);
+  border-left-color: var(--ag-brand-text);
+}
+
+.rel-row__ver {
+  font-family: var(--ag-mono);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rel-row__when { color: var(--ag-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.rel-row__tag { color: var(--ag-subtle); font-size: 10.5px; }
+
+.rel__reader {
+  padding: 18px 20px;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line);
+  border-radius: 10px;
+  box-shadow: var(--ag-raise);
+  min-width: 0;
+}
+
+.rel__reader h3 {
+  margin: 0 0 7px;
+  font-size: clamp(17px, 2vw, 21px);
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+.rel__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ag-line);
+}
+
+.rel__ver {
+  font-family: var(--ag-mono);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rel__when { color: var(--ag-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rel__source { margin-left: auto; color: var(--ag-brand-text); font-size: 12px; font-weight: 600; }
+
+.pill--feature,
+.pill--major { color: var(--ag-brand-text); background: var(--ag-brand-soft); border: 1px solid var(--ag-brand-line); }
+.pill--fix,
+.pill--release { color: var(--ag-muted); background: var(--ag-surface-2); border: 1px solid var(--ag-line-strong); }
+.pill--here { color: var(--ag-good); background: var(--ag-good-soft); border: 1px solid var(--ag-good-line); }
+
+.rel__body { min-width: 0; }
+
+.rel__pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ag-line);
+  color: var(--ag-muted);
+  font-size: 12.5px;
+}
+
+.rel__pager-btns { display: flex; gap: 8px; }
+
+.button.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
