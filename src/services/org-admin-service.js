@@ -468,8 +468,15 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
       ...field,
       value: state.branding[field.key] || '#000000'
     })),
-    // Records written before the control existed have no scale.
-    brandLogoScale: Number.parseInt(state.branding.logoScale, 10) || DEFAULT_LOGO_SCALE,
+    // Records written before the control existed have no scales.
+    brandLogoScales: LOGO_PLACES.map((place) => ({
+      place,
+      name: `logoScale_${place}`,
+      inputId: `logoScale-${place}`,
+      label: { panel: 'Panel', chip: 'Sidebar', switcher: 'Switcher' }[place],
+      size: { panel: 40, chip: 28, switcher: 22 }[place],
+      value: readLogoScale(state.branding, place)
+    })),
     roles: state.roles.map((role) => decorateRole(role)),
     privilegeGroups: buildPrivilegeGroups(),
     roleTemplates: ROLE_TEMPLATES.map(decorateRoleTemplate),
@@ -1314,13 +1321,18 @@ async function updateBranding(workspace, subscription, input = {}) {
     backgroundColor: normalizeColor(useCustom ? input.backgroundColor : selectedPalette.backgroundColor, selectedPalette.backgroundColor),
     textColor: normalizeColor(useCustom ? input.textColor : selectedPalette.textColor, selectedPalette.textColor),
     logoDataUrl: input.removeLogo ? '' : normalizeLogoDataUrl(input.logoDataUrl) || state.branding.logoDataUrl || '',
-    // How much of its plate the logo fills, as a percentage.
+    // How much of its plate the logo fills, per place it is drawn.
     //
     // A mark drawn with its own generous margin — most are — comes out tiny
     // once it is fitted inside a 40px tile, and a wordmark under it becomes
-    // unreadable. The organization knows how its own logo is cropped, so it
+    // unreadable. The organization knows how its own file is cropped, so it
     // sets this rather than the product guessing at a trim.
-    logoScale: normalizeLogoScale(input.logoScale, state.branding.logoScale),
+    //
+    // Three values rather than one, because the three places are three
+    // different sizes: a mark that reads at 40px in a panel is often a smudge
+    // at 22px in the switcher, where cropping in harder is what rescues it.
+    // Above 100% the plate crops rather than the logo growing out of it.
+    logoScales: normalizeLogoScales(input, state.branding),
     // Site-wide identity: what replaces the platform name and
     // "Aegis ID" once the organization is served from its own host. Stored
     // now so the blade can be set up ahead of the host going live.
@@ -1593,6 +1605,13 @@ async function listBrandingByWorkspace() {
   }
 
   return branding;
+}
+
+/** One place's trim, however old the record is. */
+function readLogoScale(branding = {}, place = 'panel') {
+  const scales = branding.logoScales || {};
+  const value = Number.parseInt(scales[place] ?? branding.logoScale, 10);
+  return Number.isFinite(value) ? Math.min(200, Math.max(50, value)) : DEFAULT_LOGO_SCALE;
 }
 
 async function getOrganizationBranding(organizationId) {
@@ -2033,7 +2052,7 @@ function defaultBranding() {
     backgroundColor: PALETTES[0].backgroundColor,
     textColor: PALETTES[0].textColor,
     logoDataUrl: '',
-    logoScale: DEFAULT_LOGO_SCALE,
+    logoScales: { panel: DEFAULT_LOGO_SCALE, chip: DEFAULT_LOGO_SCALE, switcher: DEFAULT_LOGO_SCALE },
     displayName: '',
     productName: '',
     faviconDataUrl: '',
@@ -3240,14 +3259,40 @@ function normalizeColor(value = '', fallback = '#0f4fa8') {
   return /^#[0-9a-f]{6}$/i.test(color) ? color : fallback;
 }
 
-/** 50-100% of the plate. Below half a logo is not a mark, it is a speck. */
+/**
+ * 50-200% of the plate.
+ *
+ * Below half a logo is not a mark, it is a speck. Above 100 the plate crops
+ * into the logo's own margin, which is what makes a mark with a lot of air
+ * around it readable at 22px — the ceiling used to be 100 and a logo like
+ * that stayed small whatever the slider said.
+ */
 function normalizeLogoScale(value, fallback) {
   const parsed = Number.parseInt(value, 10);
   if (Number.isFinite(parsed)) {
-    return Math.min(100, Math.max(50, parsed));
+    return Math.min(200, Math.max(50, parsed));
   }
   const previous = Number.parseInt(fallback, 10);
-  return Number.isFinite(previous) ? Math.min(100, Math.max(50, previous)) : DEFAULT_LOGO_SCALE;
+  return Number.isFinite(previous) ? Math.min(200, Math.max(50, previous)) : DEFAULT_LOGO_SCALE;
+}
+
+/** The three places a mark is drawn, each with its own trim. */
+const LOGO_PLACES = Object.freeze(['panel', 'chip', 'switcher']);
+
+function normalizeLogoScales(input = {}, previous = {}) {
+  // Records written before the three existed carry one `logoScale`, which was
+  // chosen against the panel; every place starts from it.
+  const fallbackAll = Number.parseInt(previous.logoScale, 10);
+  const stored = previous.logoScales || {};
+  const scales = {};
+
+  for (const place of LOGO_PLACES) {
+    scales[place] = normalizeLogoScale(
+      input[`logoScale_${place}`],
+      stored[place] ?? (Number.isFinite(fallbackAll) ? fallbackAll : DEFAULT_LOGO_SCALE)
+    );
+  }
+  return scales;
 }
 
 /**
@@ -3422,6 +3467,7 @@ module.exports = {
   countCredentialsByWalletId,
   countCredentialsByWorkspace,
   listBrandingByWorkspace,
+  readLogoScale,
   listWalletScopeForWorkspace,
   assertOrgPrivilege,
   createClaimDefinition,

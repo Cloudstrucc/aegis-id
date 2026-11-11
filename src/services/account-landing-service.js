@@ -28,7 +28,8 @@ const { listWorkspacesForSubscription } = require('./platform-service');
 const {
   countCredentialsByWorkspace,
   listBrandingByWorkspace,
-  listCredentialMembershipsForEmail
+  listCredentialMembershipsForEmail,
+  readLogoScale
 } = require('./org-admin-service');
 const {
   describeHeadlinePrice,
@@ -79,7 +80,8 @@ function brandMark(workspaceIds, branding) {
     if (record && record.logoDataUrl) {
       return {
         logoDataUrl: record.logoDataUrl,
-        logoScale: Number.parseInt(record.logoScale, 10) || 82,
+        // The panel's own trim: this is the 40px plate.
+        logoScale: readLogoScale(record, 'panel'),
         primaryColor: record.primaryColor || '',
         accentColor: record.accentColor || ''
       };

@@ -367,3 +367,85 @@ test('every custom property the stylesheets use is defined somewhere', () => {
 
   assert.deepEqual(missing, [], `used but never defined: ${missing.join(', ')}`);
 });
+
+test('the icon plate is defined in every theme block and inverts', () => {
+  // The small square a tile's glyph sits on. It is the one token pair whose
+  // whole point is that it flips: a light plate with near-black ink in light
+  // mode, a dark plate with near-white ink in dark. Defined in only one of
+  // the three blocks it would be a bright square on a dark page, or a dark
+  // glyph invisible on a dark plate — and nothing would fail.
+  const brand = fs.readFileSync(
+    path.join(__dirname, '..', 'public', 'styles', 'brand-layer.css'),
+    'utf8'
+  );
+
+  for (const token of ['--ag-plate', '--ag-plate-ink', '--ag-plate-line']) {
+    const hits = [...brand.matchAll(new RegExp(`${token}\\s*:\\s*(#[0-9a-f]{6})`, 'gi'))];
+    assert.equal(
+      hits.length,
+      3,
+      `${token} is declared ${hits.length} times; it needs one per theme block ` +
+        '(bare :root, the prefers-color-scheme block, and [data-theme="dark"])'
+    );
+
+    // The two dark blocks carry the same value, so the toggle and the system
+    // setting cannot disagree.
+    assert.equal(
+      hits[1][1].toLowerCase(),
+      hits[2][1].toLowerCase(),
+      `${token} differs between the media query and the [data-theme] block`
+    );
+
+    // And the dark value is not the light one.
+    assert.notEqual(
+      hits[0][1].toLowerCase(),
+      hits[1][1].toLowerCase(),
+      `${token} is the same in both themes, so it does not invert`
+    );
+  }
+
+  const luminance = (hex) => {
+    const channel = (pair) => {
+      const value = parseInt(pair, 16) / 255;
+      return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    };
+    return (
+      0.2126 * channel(hex.slice(1, 3)) +
+      0.7152 * channel(hex.slice(3, 5)) +
+      0.0722 * channel(hex.slice(5, 7))
+    );
+  };
+  const contrast = (a, b) => {
+    const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (high + 0.05) / (low + 0.05);
+  };
+
+  const plates = [...brand.matchAll(/--ag-plate\s*:\s*(#[0-9a-f]{6})/gi)].map((m) => m[1]);
+  const inks = [...brand.matchAll(/--ag-plate-ink\s*:\s*(#[0-9a-f]{6})/gi)].map((m) => m[1]);
+
+  // A glyph is a non-text graphic, so 3:1 is the bar it has to clear. Both
+  // pairs are an order of magnitude past it, and this guards the case where
+  // somebody tunes one of the four values and not its partner.
+  for (let index = 0; index < 3; index += 1) {
+    const ratio = contrast(inks[index], plates[index]);
+    assert.ok(ratio >= 4.5, `plate ink ${inks[index]} on ${plates[index]} is only ${ratio.toFixed(2)}:1`);
+  }
+});
+
+test('a tile puts its glyph beside the title, not above it', () => {
+  // The glyph sat in its own row, which made every dashboard tile three
+  // stacked rows deep and pushed the line that says what the tile is for a
+  // third of the way down it. Only a browser can prove the layout, so what is
+  // guarded here is the rule that produces it — removed, the grid silently
+  // falls back to one column per child and the stack comes back.
+  const brand = fs.readFileSync(
+    path.join(__dirname, '..', 'public', 'styles', 'brand-layer.css'),
+    'utf8'
+  );
+
+  assert.match(brand, /\.blade-action-card\s*\{[^}]*grid-template-columns:\s*auto minmax\(0, 1fr\)/s);
+  assert.match(brand, /\.blade-action-card > span\s*\{[^}]*grid-row: 1/s);
+  assert.match(brand, /\.blade-action-card > strong\s*\{[^}]*grid-column: 2;\s*grid-row: 1/s);
+  // The description keeps the full width underneath both of them.
+  assert.match(brand, /\.blade-action-card > small\s*\{[^}]*grid-column: 1 \/ -1/s);
+});

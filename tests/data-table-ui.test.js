@@ -87,3 +87,18 @@ test('the component has styles for both views', () => {
   // Wrapping five buttons into five rows made every row five rows tall.
   assert.match(css, /\.dt-table td:first-child \.row-actions \{[^}]*flex-wrap: nowrap/s);
 });
+
+test('the column menu is closed until it is opened', () => {
+  const css = read('public/styles/main.css');
+
+  // `.dt-columns__menu { display: grid }` outranks the user agent's
+  // `[hidden] { display: none }` — author styles always do — so the menu was
+  // open from the moment it was built and setting .hidden did nothing. It was
+  // stuck on screen over the table beneath it.
+  assert.match(css, /\.dt-columns__menu\[hidden\]\s*\{\s*display:\s*none/s);
+
+  // And it closes the two ways a menu should.
+  assert.match(SCRIPT, /menu\.hidden = true/);
+  assert.match(SCRIPT, /event\.key === 'Escape'/);
+  assert.match(SCRIPT, /!menuWrap\.contains\(event\.target\)/);
+});

@@ -42,6 +42,16 @@
   --ag-brand-soft:   #e8f3fb;
   --ag-brand-line:   #b9d9ef;
 
+  /* --- the icon plate ---------------------------------------------------
+     The small square a tile's glyph sits on. It is a solid fill rather than
+     a transparent one, so the glyph never picks up whatever happens to be
+     behind the tile, and the glyph itself is near-black with a blue bias
+     rather than brand blue — brand blue on a tile reads as a link.
+     It inverts in dark mode: dark plate, near-white glyph. */
+  --ag-plate:        #eef1f6;
+  --ag-plate-ink:    #16222f;   /* 15.4:1 on --ag-plate */
+  --ag-plate-line:   #d6dce6;
+
   /* --- surfaces --------------------------------------------------------- */
   --ag-bg:           #f4f4f5;
   --ag-surface:      #ffffff;
@@ -115,6 +125,12 @@
     --ag-brand-soft:   #0b1f2e;
     --ag-brand-line:   #1c3f5c;
 
+    /* Lighter than the card it sits on (#111113), so the plate reads as a
+       plate rather than as a hole. The glyph on it is still 10.7:1. */
+    --ag-plate:        #2a3444;
+    --ag-plate-ink:    #e8eef7;
+    --ag-plate-line:   #3d4a5d;
+
     --ag-bg:           #09090b;
     --ag-surface:      #111113;
     --ag-surface-2:    #18181b;
@@ -164,6 +180,10 @@
   --ag-brand-hover-on: #06243a;
   --ag-brand-soft:   #0b1f2e;
   --ag-brand-line:   #1c3f5c;
+
+  --ag-plate:        #2a3444;
+  --ag-plate-ink:    #e8eef7;
+  --ag-plate-line:   #3d4a5d;
 
   --ag-bg:           #09090b;
   --ag-surface:      #111113;
@@ -887,7 +907,6 @@ body.auth-page .page-hero,
    white on #0F75BC is 4.89:1. Caught on every authenticated page by the
    contrast sweep.
    ------------------------------------------------------------------------ */
-.platform-icon,
 .store-badge__mark,
 .aeg-tenant-switcher__icon,
 .workspace-brand-mark,
@@ -1557,26 +1576,73 @@ body.auth-page .page-hero,
 /* --- the icon tiles ------------------------------------------------------
    `.platform-icon` was sized for a two- or three-letter abbreviation. It
    holds an SVG now, which has to be centred and told what colour to stroke.
+
+   The plate is a solid fill rather than a brand gradient, and the glyph on it
+   is near-black with a blue bias. Three reasons, in order: a glyph on a
+   transparent plate picks up whatever band is behind the tile and changes
+   colour from page to page; a wall of saturated blue squares is the loudest
+   thing on a dashboard without being the most important; and brand blue is
+   this product's link colour, so a blue square inside a card claims to be a
+   second thing to click. The plate inverts in dark mode rather than staying
+   light, so the glyph is never a dark shape on a bright square in a dark
+   page. Both pairs are above 12:1.
    ---------------------------------------------------------------------- */
 .platform-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* A blue-to-cyan gradient, and the cyan end was light enough that the white
-     12px label on it measured 2.9:1. A tile this small cannot carry a
-     gradient and legible type at the same time, so it carries one of them. */
-  background: var(--ag-brand);
-  color: var(--ag-brand-on);
+  background: var(--ag-plate);
+  border: 1px solid var(--ag-plate-line);
+  color: var(--ag-plate-ink);
 }
-
-.platform-icon .ag-icon { color: var(--ag-brand-on); }
 
 /* Inside the shell the same tiles are restated at 0,2,0 with the workspace
    gradient, so the flat fill has to be restated there too. */
 .app-shell .platform-icon,
-.app-shell .blade-action-card span {
-  background: var(--ag-brand);
-  color: var(--ag-brand-on);
+.app-shell .blade-action-card span,
+.aeg-stat-card__icon {
+  background: var(--ag-plate);
+  border: 1px solid var(--ag-plate-line);
+  color: var(--ag-plate-ink);
+}
+
+/* The glyph is an SVG that strokes `currentColor`, and three rules upstream
+   set that to the on-brand white for what used to be a lettered abbreviation.
+   Restated here at the same place the plate is decided, so the two can never
+   drift apart. */
+.platform-icon .ag-icon,
+.blade-action-card span .ag-icon,
+.aeg-stat-card__icon .ag-icon { color: var(--ag-plate-ink); }
+
+/* --- a tile reads left to right -----------------------------------------
+   The glyph sat above the title, which made every card three stacked rows
+   and pushed the one line that says what the card is for a third of the way
+   down it. Pinned at the top left with the title beside it, the eye lands on
+   the pair at once and the description keeps the full width underneath.
+   ---------------------------------------------------------------------- */
+.blade-action-card {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 10px;
+  align-content: start;
+  /* The row stretches every card to the tallest of them, so a floor of its
+     own only added empty space under the short ones. */
+  min-height: 0;
+}
+
+.blade-action-card > span { grid-column: 1; grid-row: 1; }
+
+.blade-action-card > strong {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  min-width: 0;
+}
+
+.blade-action-card > small {
+  grid-column: 1 / -1;
+  grid-row: 2;
 }
 
 /* --- outline buttons inside an organization tile -------------------------

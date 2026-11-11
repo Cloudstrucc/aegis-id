@@ -23,7 +23,7 @@
       {{#if orgAdmin.canManageAdminAssurance}}
         {{#if orgAdmin.adminProfile.showVerificationBanner}}
           <aside class="identity-reminder" data-dismissible-banner="identity-reminder-{{workspace.id}}">
-            <span class="platform-icon">ID</span>
+            <span class="platform-icon">{{agIcon "idcheck" 18}}</span>
             <div>
               <strong>Administrator profile validation due in {{orgAdmin.adminProfile.verificationDaysRemaining}} days</strong>
               <p>Admins can keep working during the grace period, but higher-trust deployments should validate the original subscriber and co-admins.</p>
@@ -57,61 +57,61 @@
 
       <div class="blade-action-grid">
         <a class="blade-action-card" href="#credential-admin" data-blade-link="people">
-          <span>USR</span>
+          <span>{{bladeIcon "people" 20}}</span>
           <strong>{{#if orgAdmin.viewer.canViewAllCredentials}}People{{else}}My credential{{/if}}</strong>
           <small>{{#if orgAdmin.viewer.canViewAllCredentials}}Add, edit, revoke, and inspect credential holders only.{{else}}See your roles, claims, status, and wallet evidence.{{/if}}</small>
         </a>
         {{#if orgAdmin.canManageCredentials}}
           <a class="blade-action-card" href="#credentials-issuance" data-blade-link="credentials">
-            <span>VID</span>
+            <span>{{bladeIcon "credentials" 20}}</span>
             <strong>Credentials</strong>
             <small>Create issuance invites, show QR codes, copy wallet links, and monitor acceptance status.</small>
           </a>
         {{/if}}
         {{#if orgAdmin.canViewRoles}}
           <a class="blade-action-card" href="#roles-management" data-blade-link="roles">
-            <span>RLS</span>
+            <span>{{bladeIcon "roles" 20}}</span>
             <strong>Roles</strong>
             <small>Define admin, employee, contractor, approver, and custom privilege sets.</small>
           </a>
         {{/if}}
         {{#if orgAdmin.canViewClaims}}
           <a class="blade-action-card" href="#claims-management" data-blade-link="claims">
-            <span>CLM</span>
+            <span>{{bladeIcon "claims" 20}}</span>
             <strong>Claims</strong>
             <small>Choose claim definitions, consent requirements, and delta fields.</small>
           </a>
         {{/if}}
         {{#if orgAdmin.canViewOrgChart}}
           <a class="blade-action-card" href="#org-structure" data-blade-link="org-structure">
-            <span>ORG</span>
+            <span>{{bladeIcon "org-structure" 20}}</span>
             <strong>Org chart</strong>
             <small>Model divisions, departments, reporting nodes, and default policy assignments.</small>
           </a>
         {{/if}}
         {{#if orgAdmin.canViewIntegrations}}
           <a class="blade-action-card" href="#identity-platforms" data-blade-link="platforms">
-            <span>API</span>
+            <span>{{bladeIcon "platforms" 20}}</span>
             <strong>Integrations</strong>
             <small>Connect Verified ID, YubiKey, OIDC, SAML, Okta, and Keycloak.</small>
           </a>
         {{/if}}
         {{#if orgAdmin.canViewConnectedApps}}
           <a class="blade-action-card" href="#connected-apps" data-blade-link="connected-apps">
-            <span>APP</span>
+            <span>{{bladeIcon "connected-apps" 20}}</span>
             <strong>Connected apps</strong>
             <small>Register relying parties, configure OIDC/OAuth clients, issue credentials, and audit API activity.</small>
           </a>
         {{/if}}
         {{#if orgAdmin.canViewBranding}}
           <a class="blade-action-card" href="#org-branding" data-blade-link="branding">
-            <span>BRD</span>
+            <span>{{bladeIcon "branding" 20}}</span>
             <strong>Branding</strong>
             <small>Set logo, palette, and wallet context shown to holders.</small>
           </a>
         {{/if}}
         <a class="blade-action-card" href="#wallet-challenge-events" data-blade-link="wallet-events">
-          <span>LOG</span>
+          <span>{{bladeIcon "wallet-events" 20}}</span>
           <strong>Wallet events</strong>
           <small>Review immutable challenge evidence for sign-in, approvals, and revocations.</small>
         </a>
@@ -958,7 +958,7 @@
   <div class="split-panel">
     <article class="platform-card org-chart-card">
       <div class="platform-card__head">
-        <span class="platform-icon">QR</span>
+        <span class="platform-icon">{{agIcon "badge" 18}}</span>
         <div>
           <span class="track-label">Issuance</span>
           <h3>New credential invitation</h3>
@@ -972,7 +972,7 @@
     </article>
     <article class="platform-card">
       <div class="platform-card__head">
-        <span class="platform-icon">STS</span>
+        <span class="platform-icon">{{agIcon "activity" 18}}</span>
         <div>
           <span class="track-label">Status</span>
           <h3>Credential lifecycle</h3>
@@ -1054,7 +1054,7 @@
   <article class="org-chart-card">
     <div class="org-chart-card__head">
       <div class="platform-card__head">
-        <span class="platform-icon">ORG</span>
+        <span class="platform-icon">{{agIcon "building" 18}}</span>
         <div>
           <span class="track-label">Sub-organizations</span>
           <h3>Interactive org chart</h3>
@@ -1335,7 +1335,7 @@
     <p>A wizard-style flow validates government photo ID, live face capture readiness, and profile assurance before admin deadlines expire.</p>
   </div>
   <article class="identity-reminder {{#if orgAdmin.adminProfile.isVerified}}identity-reminder--verified{{/if}}">
-    <span class="platform-icon">IDV</span>
+    <span class="platform-icon">{{agIcon "idcheck" 18}}</span>
     <div>
       <strong>{{orgAdmin.adminProfile.verificationStatusLabel}}</strong>
       {{#if orgAdmin.adminProfile.isVerified}}
@@ -1370,7 +1370,7 @@
   <div class="configuration-grid">
     <article class="platform-card">
       <div class="platform-card__head">
-        <span class="platform-icon">TTL</span>
+        <span class="platform-icon">{{agIcon "rotate" 18}}</span>
         <div>
           <span class="track-label">Invitations</span>
           <h3>Default expiry</h3>
@@ -1383,7 +1383,7 @@
     </article>
     <article class="platform-card">
       <div class="platform-card__head">
-        <span class="platform-icon">IDV</span>
+        <span class="platform-icon">{{agIcon "idcheck" 18}}</span>
         <div>
           <span class="track-label">Profile validation</span>
           <h3>Re-validation cadence</h3>
@@ -1396,7 +1396,7 @@
     </article>
     <article class="platform-card">
       <div class="platform-card__head">
-        <span class="platform-icon">RET</span>
+        <span class="platform-icon">{{agIcon "chain" 18}}</span>
         <div>
           <span class="track-label">Evidence</span>
           <h3>Ledger retention</h3>
@@ -1409,7 +1409,7 @@
     </article>
     <article class="platform-card">
       <div class="platform-card__head">
-        <span class="platform-icon">RST</span>
+        <span class="platform-icon">{{agIcon "rotate" 18}}</span>
         <div>
           <span class="track-label">Admin assurance</span>
           <h3>Reset validation</h3>
@@ -1422,7 +1422,7 @@
     </article>
     <article class="platform-card">
       <div class="platform-card__head">
-        <span class="platform-icon">ORG</span>
+        <span class="platform-icon">{{agIcon "building" 18}}</span>
         <div>
           <span class="track-label">Lifecycle</span>
           <h3>Disable or delete</h3>
@@ -2121,26 +2121,34 @@
             the product draws it at.
           --}}
           <div class="logo-size" data-logo-size>
-            <div class="logo-size__head">
-              <label for="logoScale">Size on the plate</label>
-              <output for="logoScale" data-logo-size-value>{{orgAdmin.brandLogoScale}}%</output>
-            </div>
-            <input
-              id="logoScale"
-              name="logoScale"
-              type="range"
-              min="50"
-              max="100"
-              step="1"
-              value="{{orgAdmin.brandLogoScale}}"
-              data-logo-size-input>
-            <div class="logo-size__samples" aria-hidden="true">
-              {{#if orgAdmin.branding.logoDataUrl}}
-                <span class="logo-size__sample logo-size__sample--lg"><img src="{{orgAdmin.branding.logoDataUrl}}" alt="" data-logo-sample></span>
-                <span class="logo-size__sample logo-size__sample--md"><img src="{{orgAdmin.branding.logoDataUrl}}" alt="" data-logo-sample></span>
-                <span class="logo-size__sample logo-size__sample--sm"><img src="{{orgAdmin.branding.logoDataUrl}}" alt="" data-logo-sample></span>
-              {{/if}}
-              <span class="logo-size__caption">Panel · sidebar · switcher</span>
+            <p class="logo-size__title">Size on the plate</p>
+            <p class="logo-size__hint">
+              Each place is a different size, so each gets its own trim. Past
+              100% the plate crops into the logo's own margin, which is what
+              rescues a mark with a lot of air around it at 22px.
+            </p>
+            <div class="logo-size__places">
+              {{#each orgAdmin.brandLogoScales}}
+                <div class="logo-size__place" data-logo-place="{{place}}" style="--logo-scale: {{value}}%;">
+                  <span class="logo-size__sample" style="width: {{size}}px; height: {{size}}px;">
+                    {{#if ../orgAdmin.branding.logoDataUrl}}
+                      <img src="{{../orgAdmin.branding.logoDataUrl}}" alt="" data-logo-sample>
+                    {{/if}}
+                  </span>
+                  <label class="logo-size__label" for="{{inputId}}">{{label}}</label>
+                  <input
+                    id="{{inputId}}"
+                    name="{{name}}"
+                    class="logo-size__slider"
+                    type="range"
+                    min="50"
+                    max="200"
+                    step="1"
+                    value="{{value}}"
+                    data-logo-size-input>
+                  <output for="{{inputId}}" class="logo-size__value" data-logo-size-value>{{value}}%</output>
+                </div>
+              {{/each}}
             </div>
           </div>
           {{#if orgAdmin.branding.logoDataUrl}}
@@ -2200,7 +2208,7 @@
   <div class="issuer-org-layout">
     <article class="platform-card">
       <div class="platform-card__head">
-        <span class="platform-icon">ORG</span>
+        <span class="platform-icon">{{agIcon "building" 18}}</span>
         <div>
           <span class="track-label">Subscriber org</span>
           <h3>{{workspace.organization}}</h3>

@@ -138,6 +138,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
       cards: [
         {
           href: '/admin/wallets',
+          icon: 'phone',
           title: 'Registered wallets',
           summary: 'Every wallet registered against this deployment. Withdraw one from service, restore it, or remove one that was never used.',
           stat: wallets.length,
@@ -147,6 +148,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         },
         {
           href: '/admin/registration-codes',
+          icon: 'ticket',
           title: 'Registration codes',
           summary: 'Grant a paid plan without payment, for testers and comped pilots.',
           stat: usableCodes,
@@ -155,6 +157,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         },
         {
           href: '/admin/sign-in-methods',
+          icon: 'key',
           title: 'Sign-in methods',
           summary: 'Choose how people may sign in, and what each method counts for.',
           stat: enabledMethods,
@@ -162,6 +165,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         },
         {
           href: '/admin/auth-adapters',
+          icon: 'plug',
           title: 'Authentication adapters',
           summary: 'SAML, Kerberos and certificate (CBA) adapters that let an external IdP front connected-app sign-in.',
           stat: activeAdapters,
@@ -171,6 +175,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         },
         {
           href: '/admin/notifications',
+          icon: 'bell',
           title: 'Notification delivery',
           summary: 'How codes, links and notices are sent by email and SMS.',
           stat: deliveryChannelCount(notificationSettings),
@@ -180,6 +185,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         },
         {
           href: '/admin/domains',
+          icon: 'globe',
           title: 'Organization domains',
           summary: 'Which organizations have proven the domain they claim, and which are still self-declared.',
           stat: verifiedDomains,
@@ -189,6 +195,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         },
         {
           href: '/admin/break-glass',
+          icon: 'alert',
           title: 'Break-glass recovery',
           summary: 'Recover an organization that has lost every root wallet. Needs their code and their root wallet\'s prior authorisation.',
           stat: breakGlassRedeemed,
@@ -197,6 +204,7 @@ router.get('/admin', authorize('admin.dashboard.view'), async (req, res, next) =
         },
         {
           href: '/admin/account-recovery',
+          icon: 'rotate',
           title: 'Account recovery',
           summary: 'Passwordless accounts and their remaining recovery codes.',
           stat: passwordlessAccounts.length,

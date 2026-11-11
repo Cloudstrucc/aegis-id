@@ -16,8 +16,11 @@
       {{#if errorMessage}}<p class="form-alert">{{errorMessage}}</p>{{/if}}
 
       {{#if isOtp}}
-        <div class="delivery-panel">
-          <span class="delivery-panel__icon">{{#if (eq delivery.method "sms")}}SMS{{else}}Email{{/if}}</span>
+        {{!-- No channel plate on this one. The two lines underneath already
+              name the channel and the address it went to, so the square was
+              a third statement of the same fact taking a quarter of the
+              panel's width. --}}
+        <div class="delivery-panel delivery-panel--plain">
           <div>
             {{#if delivery.delivered}}
               <h2>Code sent to {{delivery.destination}}</h2>
@@ -37,7 +40,11 @@
           <button class="button button--primary" type="submit">Verify</button>
         </form>
 
-        <div class="inline-actions">
+        {{!-- Stacked, so "Send email code" is the same width as Verify above
+              it. Side by side it was half the width of the button it is an
+              alternative to, which read as a lesser control rather than
+              another way through. --}}
+        <div class="inline-actions inline-actions--stacked">
           <form action="/auth/verify/resend" method="post">
             <input type="hidden" name="method" value="email">
             <button class="button button--secondary button--dark-text" type="submit">Send email code</button>

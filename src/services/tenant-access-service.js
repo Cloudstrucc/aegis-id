@@ -27,7 +27,8 @@ const {
   getViewerAccessForEmail,
   isWorkspaceAdmin,
   listBrandingByWorkspace,
-  listCredentialMembershipsForEmail
+  listCredentialMembershipsForEmail,
+  readLogoScale
 } = require('./org-admin-service');
 const { getIdentity } = require('./organization-identity-service');
 
@@ -103,7 +104,10 @@ async function listTenantsForUser(user) {
       // header, the breadcrumb — and drew a letter on the platform's own
       // gradient in all three, which is the opposite of what branding is for.
       logoDataUrl: brand?.logoDataUrl || '',
-      logoScale: Number.parseInt(brand?.logoScale, 10) || 82,
+      // The sidebar chip and the header switcher are 28px and 22px, so they
+      // are trimmed separately from the 40px panel.
+      logoScale: readLogoScale(brand, 'chip'),
+      logoScaleSwitcher: readLogoScale(brand, 'switcher'),
       primaryColor: brand?.primaryColor || '',
       accentColor: brand?.accentColor || '',
       domain: identity?.domain || null,

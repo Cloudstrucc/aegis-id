@@ -1266,6 +1266,20 @@ textarea:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* One per row, each filling the column, so a resend button matches the width
+   of the primary button it stands beside. */
+.inline-actions--stacked {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.inline-actions--stacked form { display: grid; }
+.inline-actions--stacked .button { width: 100%; }
+
+/* Without the channel plate the panel is one column, not two. */
+.delivery-panel--plain {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* The photograph and its scrim are gone: an interior page opens on the
    canvas now, and a fixed dark scrim could not follow the theme anyway. */
 .page-hero {
@@ -10529,50 +10543,58 @@ body > .site-footer {
   place-items: center;
 }
 
-/* The control itself, with the three real sizes beside it. */
+/* The size control: one mini slider per place, under the sample it changes.
+   One long slider for all three could only ever be a compromise between a
+   40px plate and a 22px one. */
 .logo-size {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   margin-top: 12px;
-  padding: 13px;
+  padding: 14px;
   background: var(--ag-surface-2);
   border: 1px solid var(--line);
   border-radius: 10px;
 }
 
-.logo-size__head {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.logo-size__head label {
+.logo-size__title {
   margin: 0;
   font-size: 13px;
   font-weight: 750;
 }
 
-.logo-size__head output {
+.logo-size__hint {
+  max-width: 60ch;
+  margin: 0;
   color: var(--muted);
   font-size: 12px;
-  font-weight: 750;
-  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
 }
 
-.logo-size__samples {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+.logo-size__places {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
 }
 
+.logo-size__place {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 11px 10px;
+  background: var(--ag-surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+/* The sample is the real size the product draws the mark at, and it crops
+   like the real plate does once the slider passes 100%. */
 .logo-size__sample {
   display: grid;
   flex: none;
   place-items: center;
   background: var(--ag-brand-on);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -10582,55 +10604,73 @@ body > .site-footer {
   object-fit: contain;
 }
 
-/* The three places the product actually draws it. */
-.logo-size__sample--lg { width: 40px; height: 40px; }
-.logo-size__sample--md { width: 28px; height: 28px; border-radius: 8px; }
-.logo-size__sample--sm { width: 22px; height: 22px; border-radius: 7px; }
-
-.logo-size__caption {
+.logo-size__label {
+  margin: 0;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 750;
 }
 
-.logo-size input[type="range"] {
+.logo-size__value {
+  color: var(--ag-text);
+  font-size: 11px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.logo-size__slider {
   appearance: none;
   -webkit-appearance: none;
   width: 100%;
   min-height: 0;
-  height: 14px;
+  /* Tall enough for a thumb that stands proud of the track. */
+  height: 20px;
   padding: 0;
   background: none;
   border: 0;
   cursor: pointer;
 }
 
-.logo-size input[type="range"]::-webkit-slider-runnable-track,
-.logo-size input[type="range"]::-moz-range-track {
+.logo-size__slider::-webkit-slider-runnable-track {
   height: 6px;
   background: var(--ag-surface-3);
   border: 1px solid var(--line);
   border-radius: 999px;
 }
 
-.logo-size input[type="range"]::-webkit-slider-thumb {
+.logo-size__slider::-moz-range-track {
+  height: 6px;
+  background: var(--ag-surface-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+/* Taller than the bar it runs along, so it reads as a thing to drag rather
+   than a dot sitting inside a pill. */
+.logo-size__slider::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
   width: 16px;
-  height: 16px;
-  margin-top: -6px;
+  height: 20px;
+  margin-top: -8px;
   background: var(--ag-brand);
   border: 2px solid var(--ag-brand-on);
-  border-radius: 50%;
-  box-shadow: var(--ag-sh);
+  border-radius: 6px;
+  box-shadow: var(--ag-raise);
 }
 
-.logo-size input[type="range"]::-moz-range-thumb {
+.logo-size__slider::-moz-range-thumb {
   width: 16px;
-  height: 16px;
+  height: 20px;
   background: var(--ag-brand);
   border: 2px solid var(--ag-brand-on);
-  border-radius: 50%;
+  border-radius: 6px;
+  box-shadow: var(--ag-raise);
+}
+
+.logo-size__slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--ag-brand);
+  outline-offset: 2px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -10716,6 +10756,14 @@ body > .site-footer {
   color: var(--ag-text);
   border-color: var(--ag-brand-line);
   box-shadow: var(--ag-raise);
+}
+
+/* `display: grid` below outranks the user agent's `[hidden] { display: none }`
+   — author styles always do — so the menu was open from the moment it was
+   built and no amount of setting .hidden closed it. Stated here, where it
+   wins. */
+.dt-columns__menu[hidden] {
+  display: none;
 }
 
 .dt-columns__menu {
@@ -10881,4 +10929,30 @@ body > .site-footer {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* The administration tiles carry the same glyph as their sidebar row, pinned
+   at the top left where the eye starts, so the grid can be read by shape
+   rather than by reading every title. */
+.aeg-stat-card__icon {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--ag-brand-text);
+  background: var(--ag-brand-soft);
+  border: 1px solid var(--ag-brand-line);
+  border-radius: 8px;
+}
+
+.aeg-stat-card__top {
+  gap: 10px;
+  align-items: center;
+}
+
+/* The title takes the room between the glyph and the figure. */
+.aeg-stat-card__top h4 {
+  flex: 1 1 auto;
+  min-width: 0;
 }

@@ -36,6 +36,7 @@ const { attachAppShell } = require('./middleware/app-shell');
 const { organizationHostRouting } = require('./middleware/organization-host');
 const { configurePassport } = require('./services/passport-service');
 const { iconSvg } = require('./lib/app-icons');
+const { BLADE_ICONS } = require('./services/app-shell-service');
 const { localeForRequest, SUPPORTED_LOCALES } = require('./services/i18n-service');
 
 // The language names are written in their own language, which is the one
@@ -63,6 +64,13 @@ function registerHandlebars() {
   // several templates render an `icon` field of their own data.
   hbs.registerHelper('agIcon', (name, size) => new hbs.handlebars.SafeString(
     iconSvg(String(name || ''), typeof size === 'number' ? size : 16)
+  ));
+  // The same key the sidebar uses, so a blade's tile and its sidebar row
+  // cannot end up with two different icons. The tiles carried a three-letter
+  // acronym — USR, VID, RLS — which is a label for a thing that already has
+  // one underneath it.
+  hbs.registerHelper('bladeIcon', (key, size) => new hbs.handlebars.SafeString(
+    iconSvg(BLADE_ICONS[String(key || '')] || 'grid', typeof size === 'number' ? size : 20)
   ));
 }
 

@@ -46,6 +46,7 @@
         {{#each tenants}}
           <a class="aeg-stat-card" href="{{this.settingsPath}}">
             <div class="aeg-stat-card__top">
+              <span class="aeg-stat-card__icon" aria-hidden="true">{{agIcon "building" 18}}</span>
               <h4>{{this.organization}}</h4>
               <span class="aeg-stat-card__pill">
                 <span class="pill {{#if this.isDomainVerified}}pill--ok{{else}}pill--mute{{/if}}">
@@ -69,6 +70,8 @@
       {{#each cards}}
         <a class="aeg-stat-card" href="{{this.href}}">
           <div class="aeg-stat-card__top">
+            {{!-- The same glyph the sidebar row for this page carries. --}}
+            <span class="aeg-stat-card__icon" aria-hidden="true">{{agIcon this.icon 18}}</span>
             <h4>{{this.title}}</h4>
             <span class="aeg-stat-card__stat">{{this.stat}}</span>
           </div>
