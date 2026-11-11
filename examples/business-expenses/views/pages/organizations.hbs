@@ -6,6 +6,12 @@
       Wallet challenges are addressed to an organization, so pick the one you want to test with.
       Only organizations you hold a live credential in are listed.
     </p>
+    <p class="text-muted mb-0 mt-2">
+      <strong>Choosing raises a wallet challenge for that organization.</strong>
+      Approve it in the Aegis wallet and the session switches; decline it and
+      nothing changes. The challenge is addressed to the organization you pick,
+      so it reaches the wallet holding that organization's credential.
+    </p>
   </div>
 
   {{#if hasOrganizations}}
@@ -31,7 +37,7 @@
           </label>
         {{/each}}
       </div>
-      <button class="btn btn-primary" type="submit">Continue</button>
+      <button class="btn btn-primary" type="submit">Continue with wallet approval</button>
     </form>
   {{else}}
     <div class="alert alert-warning">

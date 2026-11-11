@@ -230,7 +230,7 @@ app.get('/auth/callback', async (req, res, next) => {
     }
 
     const challenge = await createAegisChallenge({
-      organizationId: activeOrganizationId(req),
+      organizationId: challengeOrganizationId(req),
       challengeType: 'authentication',
       action,
       resourceType: 'session',
@@ -404,7 +404,7 @@ app.post('/expenses/:expenseId/:action', requireAuthenticated, async (req, res, 
     }
 
     const challenge = await createAegisChallenge({
-      organizationId: activeOrganizationId(req),
+      organizationId: challengeOrganizationId(req),
       challengeType: 'expense-decision',
       action,
       resourceType: 'expense',
@@ -503,7 +503,7 @@ app.post('/signatures/templates/:templateId/envelopes', requireAuthenticated, as
     const actorName = req.session.user.name || req.session.user.email;
 
     const challenge = await createAegisChallenge({
-      organizationId: activeOrganizationId(req),
+      organizationId: challengeOrganizationId(req),
       appName: 'Aegis ID E-Signatures',
       challengeType: 'document-signature',
       action: 'sign-document',
@@ -597,16 +597,60 @@ app.get('/organizations', requireAuthenticated, (req, res) => {
   });
 });
 
-app.post('/organizations', requireAuthenticated, (req, res) => {
-  const organizations = req.session.user?.organizations || [];
-  const chosen = organizations.find((organization) => organization.id === req.body.organizationId);
-  if (!chosen) {
-    // Only organizations carried on the holder's own token are selectable, so a
-    // posted id cannot grant access to one they do not belong to.
-    return res.redirect(303, '/organizations');
+app.post('/organizations', requireAuthenticated, async (req, res, next) => {
+  try {
+    const organizations = req.session.user?.organizations || [];
+    const chosen = organizations.find((organization) => organization.id === req.body.organizationId);
+    if (!chosen) {
+      // Only organizations carried on the holder's own token are selectable, so a
+      // posted id cannot grant access to one they do not belong to.
+      return res.redirect(303, '/organizations');
+    }
+
+    const returnTo = normalizeReturnTo(req.body.returnTo || '/expenses');
+
+    // Already acting in it. Nothing to prove again.
+    if (req.session.activeOrganizationId === chosen.id) {
+      return res.redirect(303, returnTo);
+    }
+
+    // Choosing is a request, not a grant.
+    //
+    // This used to set the session field and redirect, which meant the holder
+    // asserted which organization they were acting in and the app believed
+    // them. A wallet challenge is addressed to one organization and answered
+    // by a wallet connected to it, so raising one here is what actually
+    // establishes that this holder may act in the organization they picked —
+    // and it is raised against *that* organization, so their wallet can see
+    // it. A challenge addressed to an organization the holder does not hold a
+    // credential in reaches no wallet at all and sits at `sent` until it
+    // expires.
+    const challenge = await createAegisChallenge({
+      organizationId: chosen.id,
+      challengeType: 'authentication',
+      action: 'switch-organization',
+      resourceType: 'session',
+      resourceId: req.session.id,
+      subject: req.session.user.email,
+      payload: {
+        appName: config.appName,
+        action: 'switch-organization',
+        organizationId: chosen.id,
+        organizationName: chosen.name,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    // Parked, not applied. `loadAndSettleChallenge` sets the active
+    // organization once the wallet has approved, and only for the
+    // organization the challenge named.
+    req.session.pendingOrganizationChallengeId = challenge.id;
+    req.session.pendingOrganizationId = chosen.id;
+
+    return res.redirect(303, `/challenge/${challenge.id}?returnTo=${encodeURIComponent(returnTo)}`);
+  } catch (error) {
+    return next(error);
   }
-  req.session.activeOrganizationId = chosen.id;
-  res.redirect(303, normalizeReturnTo(req.body.returnTo || '/expenses'));
 });
 
 app.post('/expenses/reset', requireAuthenticated, async (req, res, next) => {
@@ -753,7 +797,50 @@ function activeOrganizationId(req) {
   return activeOrganization(req)?.id || config.organizationId || '';
 }
 
+/**
+ * The organization a wallet challenge for this holder must be addressed to.
+ *
+ * A challenge is delivered by organization: a wallet polls for the
+ * organizations it holds a credential in, and a challenge naming any other one
+ * reaches nobody. It does not fail — it sits at `sent` until it expires, with
+ * the browser polling a status that will never change.
+ *
+ * `activeOrganizationId` falls back to `AEGIS_ORGANIZATION_ID`, which is the
+ * organization this *deployment* was configured with and not necessarily one
+ * the holder belongs to. That fallback is right for addressing data; it is
+ * wrong for addressing a challenge, which is why this is a separate question.
+ *
+ * So: the active organization when the holder actually belongs to it, else the
+ * first they do belong to, and the configured one only when their token
+ * carries no organizations at all — a single-tenant deployment where the
+ * question does not arise.
+ */
+function challengeOrganizationId(req) {
+  const held = req?.session?.user?.organizations || [];
+  const active = req?.session?.activeOrganizationId;
+
+  if (active && held.some((organization) => organization.id === active)) {
+    return active;
+  }
+  if (held.length > 0) {
+    return held[0].id;
+  }
+  return config.organizationId || '';
+}
+
 async function createAegisChallenge(input) {
+  // A challenge addressed to neither an organization nor a connection cannot
+  // be delivered to any wallet. The platform accepts it and reports it `sent`,
+  // which looks like success and leaves somebody watching a spinner for
+  // fifteen minutes. Better to fail here, where the cause is still visible.
+  if (!input.organizationId && !config.issuerConnectionId) {
+    throw new Error(
+      'Cannot raise a wallet challenge: no organization to address it to. ' +
+        'Set AEGIS_ORGANIZATION_ID, or sign in as a holder whose credential ' +
+        'names an organization.'
+    );
+  }
+
   const challenge = await fetchAegisJson('/api/wallet-challenges', {
     method: 'POST',
     body: {
@@ -876,6 +963,13 @@ async function loadAndSettleChallenge(req) {
     if (req.session.pendingAuthChallengeId === challenge.id) {
       req.session.authenticated = true;
       delete req.session.pendingAuthChallengeId;
+    }
+    // The organization switch is applied here and nowhere else, so the
+    // session only ever names an organization a wallet has approved.
+    if (req.session.pendingOrganizationChallengeId === challenge.id) {
+      req.session.activeOrganizationId = req.session.pendingOrganizationId;
+      delete req.session.pendingOrganizationChallengeId;
+      delete req.session.pendingOrganizationId;
     }
     await settleDecision(challenge);
     await settleEnvelope(challenge);
@@ -1241,6 +1335,7 @@ function requireAuthenticated(req, res, next) {
 function requireKnownChallenge(req, res, next) {
   if (
     req.session.pendingAuthChallengeId === req.params.challengeId ||
+    req.session.pendingOrganizationChallengeId === req.params.challengeId ||
     req.session.authenticated
   ) {
     return next();
