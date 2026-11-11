@@ -432,7 +432,11 @@ function initOrgChart() {
     showPeople: true,
     renderAttempts: 0,
     fitTimer: null,
-    resizeObserver: null
+    resizeObserver: null,
+    // The width the SVG was last built at. d3-org-chart sizes the <svg> from
+    // the container when it renders and never again, so this is what tells us
+    // a re-render is owed rather than another fit.
+    svgWidth: 0
   };
 
   const scheduleFit = (delay = 0) => {
@@ -461,6 +465,18 @@ function initOrgChart() {
     state.renderAttempts = 0;
     const chart = state.chart || new window.d3.OrgChart();
     state.chart = chart;
+    // The <svg> is sized from the container at render time and not updated
+    // afterwards. Widen the window, open the sidebar, or let the blade become
+    // visible at a width it was not built at, and the SVG keeps the old one:
+    // the shell's grid background grows with the panel while the chart does
+    // not, so every node is cut off at the same vertical line with grid
+    // showing beyond it. Setting it on each render is what keeps the drawing
+    // surface the size of the thing it is drawn in.
+    const width = Math.max(320, Math.round(container.clientWidth || 0));
+    if (width) {
+      state.svgWidth = width;
+      chart.svgWidth(width);
+    }
     chart
       .container(container)
       .data(visibleNodes)
@@ -532,7 +548,19 @@ function initOrgChart() {
   window.setTimeout(() => state.chart?.fit?.(), 520);
 
   if ('ResizeObserver' in window) {
-    state.resizeObserver = new ResizeObserver(() => scheduleFit(60));
+    state.resizeObserver = new ResizeObserver(() => {
+      // A fit re-centres the content inside the viewport it already has, so
+      // on its own it cannot fix a viewport that is the wrong size — it just
+      // centres the clipped drawing. A width that has actually moved needs
+      // the chart built again; anything else is a fit.
+      const width = Math.max(320, Math.round(container.clientWidth || 0));
+      if (width && Math.abs(width - state.svgWidth) > 1) {
+        render();
+        scheduleFit(60);
+        return;
+      }
+      scheduleFit(60);
+    });
     state.resizeObserver.observe(container);
   }
 }
