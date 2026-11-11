@@ -68,9 +68,23 @@
     </aside>
 
     <article class="docs-reader">
+      {{!--
+        One header bar for every view in this panel, not one per partial.
+        It is the same object as the sidebar's header in the other column, so
+        it carries the same rule and the same vertical rhythm — drawn
+        separately they sat at different heights across the page.
+      --}}
       {{#if isReleases}}
+        <div class="docs-reader__meta">
+          <span>Release notes</span>
+          <a href="{{releases.repoUrl}}" target="_blank" rel="noopener">All releases ↗</a>
+        </div>
         {{> docs-releases releases=releases}}
       {{else if isLanding}}
+        <div class="docs-reader__meta">
+          <span>Overview</span>
+          <a href="/developer/openapi.json" target="_blank" rel="noopener">OpenAPI JSON</a>
+        </div>
         {{> docs-landing}}
       {{else if selected}}
         <div class="docs-reader__meta">

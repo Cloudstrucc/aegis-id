@@ -6223,10 +6223,17 @@ body:has(.app-shell) .site-footer div span {
 }
 
 .docs-workspace-body > main {
-  --docs-site-header-offset: 90px;
-  --docs-top-gap: 4px;
+  /* The site header is `position: sticky; top: 0`, so it takes its 64px in
+     normal flow *and* sticks. Reserving the header's height again as padding
+     on main was therefore pure dead space — 72px of nothing between the
+     header and the top of the panels, measured at 1440px.
+     The offset is still needed by the sticky sidebar below, which does have
+     to clear the header when the page scrolls under it. It is the height of
+     that header plus four pixels. */
+  --docs-site-header-offset: 68px;
+  --docs-top-gap: 14px;
   background: var(--ag-surface);
-  padding-top: var(--docs-site-header-offset);
+  padding-top: 0;
 }
 
 /* Brand blue marks links and the active row. It is not the colour of text
@@ -6259,19 +6266,52 @@ body:has(.app-shell) .site-footer div span {
 
 .docs-sidebar {
   position: sticky;
-  top: calc(var(--docs-site-header-offset, 90px) + var(--docs-top-gap, 14px));
-  max-height: calc(100vh - var(--docs-site-header-offset, 90px) - (var(--docs-top-gap, 14px) * 2));
+  /* Just the header's height, not the header plus the gap above the panels.
+     A sticky element whose `top` is greater than its natural position is
+     pushed down to meet it — this one sat at 82px while the reader panel
+     beside it started at 78px, so the two panels were four pixels out of
+     line before the page had even been scrolled. 68px is below the natural
+     78px, so nothing moves at rest and the sidebar still clears the 64px
+     sticky header once the page scrolls under it. */
+  top: var(--docs-site-header-offset, 68px);
+  max-height: calc(100vh - var(--docs-site-header-offset, 68px) - var(--docs-top-gap, 14px));
   overflow: auto;
   padding: 18px;
   overscroll-behavior: contain;
   scroll-padding-top: 96px;
 }
 
+/* The sidebar's header and the reader's are the same object in two columns,
+   so they share a border and a vertical rhythm. They were drawn with
+   different border opacities and different padding, which put the two
+   eyebrows at different heights across the page. */
 .docs-sidebar__header {
   margin: -18px -18px 0;
-  padding: 18px 18px 14px;
+  padding: 15px 18px 13px;
   background: var(--ag-surface);
-  border-bottom: 1px solid rgba(148, 170, 196, 0.18);
+  border-bottom: 1px solid var(--ag-line);
+}
+
+/* The sidebar's eyebrow and the reader's label are the same object in two
+   columns, so they are set the same way — same size, same tracking, same
+   colour. Set differently they read as two unrelated bits of chrome, and
+   their first lines sat nine pixels apart across the page. */
+.docs-sidebar__header .eyebrow {
+  /* `inline-block` sits on the baseline of a line box sized by the PARENT's
+     line-height (24px here), not at the padding edge — which put this five
+     pixels below the label in the panel beside it. */
+  display: block;
+  margin: 0 0 10px;
+  color: var(--ag-muted);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+
+.docs-reader__meta > span,
+.docs-reader__meta > a {
+  line-height: 1.5;
 }
 
 .docs-sidebar__header h1 {
@@ -6439,8 +6479,8 @@ body:has(.app-shell) .site-footer div span {
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  border-bottom: 1px solid rgba(148, 170, 196, 0.28);
-  padding: 14px 28px;
+  border-bottom: 1px solid var(--ag-line);
+  padding: 15px 28px 13px;
   font-size: 12px;
   font-weight: 850;
   letter-spacing: 0.08em;
@@ -11130,6 +11170,11 @@ body > .site-footer {
 }
 
 /* --- the landing page ------------------------------------------------- */
+
+/* Inside the reader panel, which now supplies the header bar, so these views
+   carry the same inset as a rendered document. */
+.docs-landing,
+.rel { padding: 24px 28px 32px; }
 
 .docs-landing { display: grid; gap: 28px; min-width: 0; }
 

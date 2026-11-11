@@ -78,6 +78,30 @@ function normalizeVersion(value) {
   return String(value || '').trim().replace(/^v/i, '');
 }
 
+/**
+ * Semantic order. Returns negative when `a` sorts before `b`.
+ *
+ * A pre-release sorts below the release it precedes — 3.0.0-rc1 is not 3.0.0 —
+ * which matters because the newest entry is the one the page marks as latest.
+ */
+function compareVersions(a, b) {
+  const left = parseVersion(a);
+  const right = parseVersion(b);
+  for (const part of ['major', 'minor', 'patch']) {
+    const l = left[part] === null ? -1 : left[part];
+    const r = right[part] === null ? -1 : right[part];
+    if (l !== r) {
+      return l - r;
+    }
+  }
+  const leftPre = /-/.test(normalizeVersion(a));
+  const rightPre = /-/.test(normalizeVersion(b));
+  if (leftPre !== rightPre) {
+    return leftPre ? -1 : 1;
+  }
+  return 0;
+}
+
 function parseVersion(value) {
   const parts = normalizeVersion(value).split('.').map((part) => Number.parseInt(part, 10));
   return {
@@ -153,7 +177,21 @@ async function loadReleases({ force = false } = {}) {
     const raw = await fetchReleases();
     const published = (Array.isArray(raw) ? raw : [])
       .filter((release) => !release.draft)
-      .sort((left, right) => new Date(right.published_at || 0) - new Date(left.published_at || 0));
+      // By version, not by publication date. Notes written after the fact —
+      // a history backfilled in one sitting — all carry the same timestamp,
+      // and ordering a release history by when somebody got round to writing
+      // it up puts 0.1.0 above 1.0.0. Falls back to the date when a version
+      // cannot be parsed.
+      .sort((left, right) => {
+        const byVersion = compareVersions(
+          normalizeVersion(right.tag_name),
+          normalizeVersion(left.tag_name)
+        );
+        if (byVersion !== 0) {
+          return byVersion;
+        }
+        return new Date(right.published_at || 0) - new Date(left.published_at || 0);
+      });
 
     const releases = published.map((release, index) => {
       const version = normalizeVersion(release.tag_name);

@@ -282,3 +282,81 @@ test('the diagram is described for a reader who cannot see it', () => {
   assert.match(partial, /<title id="docs-diagram-title">/);
   assert.match(partial, /<desc id="docs-diagram-desc">/);
 });
+
+test('the history is ordered by version, not by when it was written up', async () => {
+  // A backfilled history — notes written for twelve past releases in one
+  // sitting — carries one timestamp. Ordering by publication date then puts
+  // 0.1.0 above 1.0.0, which is the opposite of a release history.
+  const service = freshService();
+  const sameMoment = '2026-11-11T09:40:00Z';
+  await withGitHub(
+    githubReleases([
+      { tag: 'v0.1.0', publishedAt: sameMoment },
+      { tag: 'v2.4.0', publishedAt: sameMoment },
+      { tag: 'v1.0.0', publishedAt: sameMoment },
+      { tag: 'v0.9.0', publishedAt: sameMoment },
+      { tag: 'v2.2.1', publishedAt: sameMoment },
+      { tag: 'v2.10.0', publishedAt: sameMoment }
+    ]),
+    async () => {
+      service.clearReleaseCache();
+      const history = await service.getReleaseHistory({ perPage: 10 });
+      assert.deepEqual(
+        history.releases.map((release) => release.version),
+        // 2.10.0 above 2.4.0: ten is greater than four, however it sorts as
+        // a string.
+        ['2.10.0', '2.4.0', '2.2.1', '1.0.0', '0.9.0', '0.1.0']
+      );
+      assert.equal(history.releases[0].isNewest, true);
+    }
+  );
+});
+
+test('a pre-release sorts below the release it precedes', async () => {
+  const service = freshService();
+  await withGitHub(
+    githubReleases([
+      { tag: 'v3.0.0-rc1', prerelease: true, publishedAt: '2026-11-01T00:00:00Z' },
+      { tag: 'v3.0.0', publishedAt: '2026-11-02T00:00:00Z' }
+    ]),
+    async () => {
+      service.clearReleaseCache();
+      const history = await service.getReleaseHistory({});
+      assert.deepEqual(history.releases.map((r) => r.version), ['3.0.0', '3.0.0-rc1']);
+    }
+  );
+});
+
+test('the two panel headers are one object in two columns', () => {
+  // Drawn separately they sat five and nine pixels apart across the page.
+  const css = read('public/styles/main.css');
+
+  // Same rule under both.
+  assert.match(css, /\.docs-sidebar__header \{[^}]*border-bottom: 1px solid var\(--ag-line\)/s);
+  assert.match(css, /\.docs-reader__meta \{[^}]*border-bottom: 1px solid var\(--ag-line\)/s);
+
+  // The sidebar's eyebrow is a block, or it sits on a line box sized by the
+  // parent's line-height instead of at the padding edge.
+  assert.match(css, /\.docs-sidebar__header \.eyebrow \{[^}]*display: block/s);
+
+  // And the sticky sidebar's offset does not exceed its natural position,
+  // which would push it below the panel beside it at rest.
+  assert.match(css, /top: var\(--docs-site-header-offset, 68px\)/);
+  assert.ok(
+    !/top: calc\(var\(--docs-site-header-offset[^)]*\) \+ var\(--docs-top-gap/.test(css),
+    'the sticky offset must not add the gap, or the sidebar floats down'
+  );
+});
+
+test('every view in the reader panel carries the same header bar', () => {
+  // The landing page and the release notes used to draw their own eyebrow
+  // inside the content, so they had no header bar at all while a rendered
+  // document did.
+  const view = read('views/pages/docs-workspace.hbs');
+  const bars = view.match(/<div class="docs-reader__meta">/g) || [];
+  assert.equal(bars.length, 3, 'releases, landing and a document each need one');
+
+  // And the partials no longer draw their own.
+  assert.ok(!read('views/partials/docs-landing.hbs').includes('class="eyebrow"'));
+  assert.ok(!read('views/partials/docs-releases.hbs').includes('class="eyebrow"'));
+});
