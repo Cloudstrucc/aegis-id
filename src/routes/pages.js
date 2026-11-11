@@ -70,10 +70,7 @@ const router = express.Router();
 router.get('/', authorize('public.home'), async (req, res, next) => {
   try {
     if (req.isAuthenticated?.() && req.user) {
-      const landing = await buildAccountLanding(req.user);
-      if (landing.redirectTo) {
-        return res.redirect(303, landing.redirectTo);
-      }
+      const landing = await buildAccountLanding(req.user, { session: req.session });
       return res.render('pages/account', landing.view);
     }
 

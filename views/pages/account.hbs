@@ -1,38 +1,158 @@
-<section class="page-hero page-hero--compact">
+{{!--
+  The signed-in landing page, and the first thing somebody sees after
+  registering. It answers three questions in order: what do I do next, what
+  would that give me, and what do I already have.
+
+  There is exactly one way to create an organization on this page. It carried
+  two buttons to the same form, which read as two different things to choose
+  between on the one screen where the reader knows least.
+--}}
+<section class="page-hero page-hero--compact page-hero--account">
   <p class="eyebrow">Home</p>
   <h1>Welcome, {{user.displayName}}.</h1>
-  <p>Choose an organization you administer, contribute to, or hold credentials for. You can also subscribe a new organization.</p>
-  <div class="hero__actions">
-    <a class="button button--primary" href="/subscribe">Subscribe organization</a>
+  {{#if hasOrganizations}}
+    <p>Open an organization you administer, or create another one.</p>
+  {{else if hasMemberships}}
+    <p>You hold credentials in the organizations below. Create a workspace of your own when you want to issue them rather than hold them.</p>
+  {{else}}
+    <p>Your account is ready. An organization is the workspace that issues credentials, connects your applications, and holds the evidence of what was approved.</p>
+  {{/if}}
+</section>
+
+<section class="band band--white band--account">
+  <div class="landing-split">
+    <div class="landing-main">
+      {{#if hasOrganizations}}
+        <div class="section-heading section-heading--tight">
+          <p class="eyebrow">Organizations</p>
+          <h2>Organizations you administer.</h2>
+          <p>Each one opens its workspaces, people, adapters and evidence.</p>
+        </div>
+
+        <div class="organization-grid">
+          {{#each organizations}}
+            <a class="organization-tile" href="{{organizationsPath}}">
+              <div class="organization-tile__mark" aria-hidden="true">{{mark}}</div>
+              <div class="organization-tile__body">
+                <h3>{{subscription.organization}}</h3>
+                <p class="organization-tile__meta">
+                  <span class="status-pill status-pill--{{statusKey}}">{{statusLabel}}</span>
+                  <span>{{planLabel}} plan</span>
+                </p>
+                <p>{{workspaceSummary}}</p>
+              </div>
+            </a>
+          {{/each}}
+        </div>
+
+        <p class="landing-main__more">
+          <a class="button button--ghost" href="/subscribe">Create another organization</a>
+        </p>
+      {{else}}
+        <article class="create-organization">
+          <p class="eyebrow">Next step</p>
+          <h2>Create your organization workspace.</h2>
+          <p>
+            Everything in Aegis ID belongs to an organization: the people you
+            invite, the credentials you issue, the applications you connect and
+            the wallets that approve them. Creating one takes a name and a
+            minute.
+          </p>
+          <ul class="create-organization__points">
+            <li>You become its first administrator, and can promote others later.</li>
+            <li>It gets a permanent handle and a public page straight away.</li>
+            <li>Nothing is charged on the {{entitlement.planLabel}} plan.</li>
+          </ul>
+          <a class="button button--primary button--blue" href="/subscribe">Create organization workspace</a>
+        </article>
+      {{/if}}
+    </div>
+
+    <aside class="landing-aside">
+      {{!--
+        Somebody who has just registered has no subscription to read a limit
+        from, so this describes the plan that creating one would start — the
+        same plan /subscribe will use — rather than claiming a plan they have
+        not got.
+      --}}
+      <p class="eyebrow">{{#if entitlement.isProspective}}What you would start on{{else}}Your plan{{/if}}</p>
+      <div class="landing-aside__head">
+        <h3>{{entitlement.planLabel}}</h3>
+        <span class="status-pill status-pill--{{entitlement.standingKey}}">{{entitlement.standingLabel}}</span>
+      </div>
+      <p class="landing-aside__blurb">{{entitlement.planBlurb}}</p>
+
+      <dl class="limit-list">
+        {{#each entitlement.rows}}
+          <div class="limit-list__row">
+            <dt>{{label}}</dt>
+            <dd>{{value}}</dd>
+          </div>
+        {{/each}}
+      </dl>
+
+      {{#if entitlement.endsOn}}
+        <p class="landing-aside__note">Trial ends {{entitlement.endsOn}}.</p>
+      {{/if}}
+      {{#if entitlement.signedUpForLabel}}
+        <p class="landing-aside__note">
+          Signed up for {{entitlement.signedUpForLabel}}. {{entitlement.planLabel}} limits
+          apply until billing is in good standing — what you have already issued keeps working.
+        </p>
+      {{/if}}
+      {{#if entitlement.organizationName}}
+        <p class="landing-aside__note">
+          For {{entitlement.organizationName}}.{{#if entitlement.otherSubscriptions}} You have {{entitlement.otherSubscriptions}} other subscription(s), each with its own limits.{{/if}}
+        </p>
+      {{/if}}
+
+      <p class="landing-aside__note"><a href="/plans">Compare plans</a></p>
+    </aside>
   </div>
 </section>
 
-<section class="band band--white">
-  <div class="section-heading">
-    <p class="eyebrow">Organizations</p>
-    <h2>Your organization access.</h2>
-    <p>Each tile opens the organization selector for subscribed workspaces or organizations tied to your credential invitations.</p>
-  </div>
+{{#unless hasOrganizations}}
+  <section class="band band--light band--account">
+    <div class="section-heading section-heading--tight">
+      <p class="eyebrow">What you get</p>
+      <h2>What an organization gives you.</h2>
+      <p>Four things, all of which need an organization to belong to.</p>
+    </div>
 
-  {{#if hasOrganizations}}
+    <div class="capability-grid">
+      {{#each capabilities}}
+        <article class="capability-card">
+          <span class="capability-card__icon" aria-hidden="true">{{agIcon icon 20}}</span>
+          <h3>{{title}}</h3>
+          <p>{{body}}</p>
+        </article>
+      {{/each}}
+    </div>
+  </section>
+{{/unless}}
+
+{{#if hasMemberships}}
+  <section class="band {{#if hasOrganizations}}band--light{{else}}band--white{{/if}} band--account">
+    <div class="section-heading section-heading--tight">
+      <p class="eyebrow">Memberships</p>
+      <h2>Organizations you belong to.</h2>
+      <p>Organizations that invited you and issued you a credential. You hold these rather than administer them.</p>
+    </div>
+
     <div class="organization-grid">
-      {{#each organizations}}
+      {{#each memberships}}
         <a class="organization-tile" href="{{organizationsPath}}">
-          <div class="organization-tile__mark" aria-hidden="true">V</div>
-          <div>
-            <h3>{{subscription.organization}}</h3>
-            <p>Plans</p>
-            <p>{{#if hasWorkspaces}}{{workspaces.length}} workspace{{else}}No workspace registered yet{{/if}}</p>
+          <div class="organization-tile__mark" aria-hidden="true">{{mark}}</div>
+          <div class="organization-tile__body">
+            <h3>{{organizationName}}</h3>
+            <p class="organization-tile__meta">
+              <span class="status-pill status-pill--{{statusKey}}">{{statusLabel}}</span>
+              <span>{{credentialSummary}}</span>
+            </p>
+            <p>{{roleSummary}}</p>
           </div>
-          <span class="organization-tile__arrow" aria-hidden="true">&rarr;</span>
         </a>
       {{/each}}
     </div>
-  {{else}}
-    <div class="empty-state-panel">
-      <h2>No organizations yet.</h2>
-      <p>Subscribe your first organization, verify the administrative flow, then open the setup wizards for Verified ID, Keycloak, Okta, OIDC, or SAML.</p>
-      <a class="button button--primary" href="/subscribe">Subscribe organization</a>
-    </div>
-  {{/if}}
-</section>
+  </section>
+{{/if}}
