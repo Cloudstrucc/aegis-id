@@ -41,6 +41,13 @@ function resetModules() {
 async function withEnv(run) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'aegis-admin-access-'));
   const previous = { ...process.env };
+  // An empty string is a real answer here: config reads it with csvList, which
+  // yields no operators, and dotenv will not overwrite a variable that is
+  // already set. That is what keeps a developer's own .env.local — which does
+  // name an operator — out of these results.
+  if (process.env.PLATFORM_OPERATOR_EMAILS === undefined) {
+    process.env.PLATFORM_OPERATOR_EMAILS = '';
+  }
   process.env.SUBSCRIPTION_STORE_PATH = path.join(dir, 'subs.json');
   process.env.SUBSCRIBER_WORKSPACE_STORE_PATH = path.join(dir, 'ws.json');
   process.env.ORG_ADMIN_STORE_PATH = path.join(dir, 'oa.json');

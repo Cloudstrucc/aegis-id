@@ -269,7 +269,7 @@ test('tenant administration does not open the platform area', async () => {
     assert.equal(await ctx.access.canViewAdminOperations(INVITED), false);
     await assert.rejects(
       () => ctx.access.assertAdminOperations(INVITED),
-      /subscribers who administer/
+      /operator of this deployment/
     );
   });
 });

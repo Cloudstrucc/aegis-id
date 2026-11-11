@@ -3,84 +3,121 @@
   registering. It answers three questions in order: what do I do next, what
   would that give me, and what do I already have.
 
-  There is exactly one way to create an organization on this page. It carried
-  two buttons to the same form, which read as two different things to choose
-  between on the one screen where the reader knows least.
+  Laid out as panels of one size on a tinted ground, rather than a hero over
+  one tile and one tall sidebar. Everything on the page is the same kind of
+  object at the same scale, which is what the old composition did not have:
+  a 430px hero, a 152px-wide tile and a full-height rail were three different
+  weights arguing with each other.
+
+  There is exactly one way to create an organization, in the head. The page
+  carried two buttons to the same form, which read as two different things to
+  choose between on the one screen where the reader knows least.
 --}}
-<section class="page-hero page-hero--compact page-hero--account">
-  <p class="eyebrow">Home</p>
-  <h1>Welcome, {{user.displayName}}.</h1>
-  {{#if hasOrganizations}}
-    <p>Open an organization you administer, or create another one.</p>
-  {{else if hasMemberships}}
-    <p>You hold credentials in the organizations below. Create a workspace of your own when you want to issue them rather than hold them.</p>
-  {{else}}
-    <p>Your account is ready. An organization is the workspace that issues credentials, connects your applications, and holds the evidence of what was approved.</p>
-  {{/if}}
-</section>
-
-<section class="band band--white band--account">
-  <div class="landing-split">
-    <div class="landing-main">
+<section class="band band--white band--account landing">
+  <div class="landing-head">
+    <div>
+      <p class="eyebrow">Home</p>
+      <h1>Welcome, {{user.displayName}}.</h1>
       {{#if hasOrganizations}}
-        <div class="section-heading section-heading--tight">
-          <p class="eyebrow">Organizations</p>
-          <h2>Organizations you administer.</h2>
-          <p>Each one opens its workspaces, people, adapters and evidence.</p>
-        </div>
-
-        <div class="organization-grid">
-          {{#each organizations}}
-            <a class="organization-tile" href="{{organizationsPath}}">
-              <div class="organization-tile__mark" aria-hidden="true">{{mark}}</div>
-              <div class="organization-tile__body">
-                <h3>{{subscription.organization}}</h3>
-                <p class="organization-tile__meta">
-                  <span class="status-pill status-pill--{{statusKey}}">{{statusLabel}}</span>
-                  <span>{{planLabel}} plan</span>
-                </p>
-                <p>{{workspaceSummary}}</p>
-              </div>
-            </a>
-          {{/each}}
-        </div>
-
-        <p class="landing-main__more">
-          <a class="button button--ghost" href="/subscribe">Create another organization</a>
-        </p>
+        <p>Open an organization you administer, or create another one.</p>
+      {{else if hasMemberships}}
+        <p>You hold credentials in the organizations below. Create a workspace of your own when you want to issue them rather than hold them.</p>
       {{else}}
-        <article class="create-organization">
-          <p class="eyebrow">Next step</p>
-          <h2>Create your organization workspace.</h2>
-          <p>
-            Everything in Aegis ID belongs to an organization: the people you
-            invite, the credentials you issue, the applications you connect and
-            the wallets that approve them. Creating one takes a name and a
-            minute.
-          </p>
-          <ul class="create-organization__points">
-            <li>You become its first administrator, and can promote others later.</li>
-            <li>It gets a permanent handle and a public page straight away.</li>
-            <li>Nothing is charged on the {{entitlement.planLabel}} plan.</li>
-          </ul>
-          <a class="button button--primary button--blue" href="/subscribe">Create organization workspace</a>
-        </article>
+        <p>Your account is ready. An organization is the workspace that issues credentials, connects your applications, and holds the evidence of what was approved.</p>
       {{/if}}
     </div>
+    {{#if hasOrganizations}}
+      <a class="button button--primary button--blue" href="/subscribe">Create organization</a>
+    {{/if}}
+  </div>
 
-    <aside class="landing-aside">
+  <div class="panel-grid">
+    {{#if hasOrganizations}}
+      {{#each organizations}}
+        <article class="panel panel--org">
+          <div class="panel__identity">
+            <span class="panel__mark" aria-hidden="true">{{mark}}</span>
+            <div>
+              <h2>{{subscription.organization}}</h2>
+              <p class="panel__sub">{{workspaceSummary}}</p>
+            </div>
+          </div>
+          <div class="panel__tags">
+            <span class="status-pill status-pill--{{statusKey}}">{{statusLabel}}</span>
+            <span class="status-pill status-pill--plain">{{planLabel}} plan</span>
+          </div>
+          <p class="panel__note">{{issuedSummary}}</p>
+          <a class="button button--secondary button--dark-text panel__action" href="{{organizationsPath}}">Open organization</a>
+        </article>
+      {{/each}}
+
+      {{#if entitlement.credentials}}
+        {{!--
+          The figure that moves as the organization is used, next to the one
+          that moves as the account is. Both are real counts: the credentials
+          actually issued, not the plan's allowance restated.
+        --}}
+        <article class="panel">
+          <p class="eyebrow">Issued so far</p>
+          <p class="panel__figure">
+            <strong>{{entitlement.credentials.issued}}</strong>
+            <span>{{entitlement.credentials.label}}</span>
+          </p>
+          {{#if entitlement.credentials.percent}}
+            <div class="meter{{#if entitlement.credentials.isFull}} meter--full{{/if}}">
+              <i style="width: {{entitlement.credentials.percent}}%"></i>
+            </div>
+          {{else}}
+            <div class="meter meter--open"><i style="width: 100%"></i></div>
+          {{/if}}
+          <p class="panel__note">Credentials your organizations have issued to holders.</p>
+        </article>
+      {{/if}}
+    {{else}}
+      <article class="panel panel--wide">
+        <p class="eyebrow">Next step</p>
+        <h2>Create your organization workspace.</h2>
+        <p class="panel__note">
+          Everything in Aegis ID belongs to an organization: the people you
+          invite, the credentials you issue, the applications you connect and
+          the wallets that approve them. Creating one takes a name and a
+          minute.
+        </p>
+        <ul class="panel__points">
+          <li>You become its first administrator, and can promote others later.</li>
+          <li>It gets a permanent handle and a public page straight away.</li>
+          <li>Nothing is charged on the {{entitlement.planLabel}} plan.</li>
+        </ul>
+        <a class="button button--primary button--blue panel__action" href="/subscribe">Create organization workspace</a>
+      </article>
+    {{/if}}
+
+    <article class="panel panel--plan">
       {{!--
         Somebody who has just registered has no subscription to read a limit
         from, so this describes the plan that creating one would start — the
         same plan /subscribe will use — rather than claiming a plan they have
         not got.
       --}}
-      <p class="eyebrow">{{#if entitlement.isProspective}}What you would start on{{else}}Your plan{{/if}}</p>
-      <div class="landing-aside__head">
-        <h3>{{entitlement.planLabel}}</h3>
+      <div class="panel__planhead">
+        <div>
+          <p class="eyebrow">{{#if entitlement.isProspective}}What you would start on{{else}}Your plan{{/if}}</p>
+          <h2>{{entitlement.planLabel}}</h2>
+        </div>
         <span class="status-pill status-pill--{{entitlement.standingKey}}">{{entitlement.standingLabel}}</span>
       </div>
-      <p class="landing-aside__blurb">{{entitlement.planBlurb}}</p>
+
+      {{#if entitlement.capacity}}
+        <div class="capacity">
+          <div class="capacity__row">
+            <span>Organizations</span>
+            <span class="capacity__value">{{entitlement.capacity.label}}</span>
+          </div>
+          <div class="meter{{#if entitlement.capacity.isFull}} meter--full{{/if}}">
+            <i style="width: {{entitlement.capacity.percent}}%"></i>
+          </div>
+        </div>
+      {{/if}}
 
       <dl class="limit-list">
         {{#each entitlement.rows}}
@@ -91,28 +128,19 @@
         {{/each}}
       </dl>
 
-      {{#if entitlement.endsOn}}
-        <p class="landing-aside__note">Trial ends {{entitlement.endsOn}}.</p>
-      {{/if}}
-      {{#if entitlement.signedUpForLabel}}
-        <p class="landing-aside__note">
-          Signed up for {{entitlement.signedUpForLabel}}. {{entitlement.planLabel}} limits
-          apply until billing is in good standing — what you have already issued keeps working.
-        </p>
-      {{/if}}
-      {{#if entitlement.organizationName}}
-        <p class="landing-aside__note">
-          For {{entitlement.organizationName}}.{{#if entitlement.otherSubscriptions}} You have {{entitlement.otherSubscriptions}} other subscription(s), each with its own limits.{{/if}}
-        </p>
-      {{/if}}
-
-      <p class="landing-aside__note"><a href="/plans">Compare plans</a></p>
-    </aside>
+      <p class="panel__note">
+        {{entitlement.planBlurb}}{{#if entitlement.endsOn}} Ends {{entitlement.endsOn}}.{{/if}}
+        {{#if entitlement.signedUpForLabel}} Signed up for {{entitlement.signedUpForLabel}}; {{entitlement.planLabel}} limits apply until billing is in good standing, and what you have already issued keeps working.{{/if}}
+        {{#if entitlement.organizationName}} For {{entitlement.organizationName}}.{{/if}}
+        {{#if entitlement.otherSubscriptions}} You have {{entitlement.otherSubscriptions}} other subscription(s), each with its own limits.{{/if}}
+      </p>
+      <a class="button button--secondary button--dark-text panel__action" href="/plans">Compare plans</a>
+    </article>
   </div>
 </section>
 
 {{#unless hasOrganizations}}
-  <section class="band band--light band--account">
+  <section class="band band--light band--account landing">
     <div class="section-heading section-heading--tight">
       <p class="eyebrow">What you get</p>
       <h2>What an organization gives you.</h2>
@@ -132,26 +160,29 @@
 {{/unless}}
 
 {{#if hasMemberships}}
-  <section class="band {{#if hasOrganizations}}band--light{{else}}band--white{{/if}} band--account">
+  <section class="band {{#if hasOrganizations}}band--light{{else}}band--white{{/if}} band--account landing">
     <div class="section-heading section-heading--tight">
       <p class="eyebrow">Memberships</p>
       <h2>Organizations you belong to.</h2>
       <p>Organizations that invited you and issued you a credential. You hold these rather than administer them.</p>
     </div>
 
-    <div class="organization-grid">
+    <div class="panel-grid">
       {{#each memberships}}
-        <a class="organization-tile" href="{{organizationsPath}}">
-          <div class="organization-tile__mark" aria-hidden="true">{{mark}}</div>
-          <div class="organization-tile__body">
-            <h3>{{organizationName}}</h3>
-            <p class="organization-tile__meta">
-              <span class="status-pill status-pill--{{statusKey}}">{{statusLabel}}</span>
-              <span>{{credentialSummary}}</span>
-            </p>
-            <p>{{roleSummary}}</p>
+        <article class="panel panel--org">
+          <div class="panel__identity">
+            <span class="panel__mark" aria-hidden="true">{{mark}}</span>
+            <div>
+              <h2>{{organizationName}}</h2>
+              <p class="panel__sub">{{credentialSummary}}</p>
+            </div>
           </div>
-        </a>
+          <div class="panel__tags">
+            <span class="status-pill status-pill--{{statusKey}}">{{statusLabel}}</span>
+          </div>
+          <p class="panel__note">{{roleSummary}}</p>
+          <a class="button button--secondary button--dark-text panel__action" href="{{organizationsPath}}">Open</a>
+        </article>
       {{/each}}
     </div>
   </section>

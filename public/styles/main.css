@@ -3959,7 +3959,9 @@ body.document-page .embedded-document {
   --workspace-blue: #2268e8;
   --workspace-cyan: #00a6b8;
   --workspace-green: #15915f;
-  --workspace-shadow: 0 18px 44px rgba(7, 22, 38, 0.08);
+  /* The shell had its own, so the raised treatment stopped at its door and
+     every tile inside it kept the old flat cast. */
+  --workspace-shadow: var(--ag-raise);
   color: var(--ag-text);
 }
 
@@ -9599,29 +9601,13 @@ details.aeg-card[open] > summary {
 /* The action on the left, what it would cost and allow on the right. Below
    1040px the aside drops under the action rather than squeezing beside it —
    a definition list in a 200px column wraps every value onto its own line. */
-.landing-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-  gap: 22px;
-  align-items: start;
-}
 
-.landing-main {
-  min-width: 0;
-}
 
-.landing-main__more {
-  margin: 18px 0 0;
-}
 
-.create-organization,
-.landing-aside {
-  padding: 26px;
-  background: var(--ag-surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-}
+
+
+
+
 
 .create-organization h2 {
   margin: 2px 0 10px;
@@ -9772,6 +9758,226 @@ a.organization-tile:focus-visible {
   transform: translateY(-2px);
   border-color: rgba(48, 104, 220, 0.42);
   box-shadow: 0 18px 46px rgba(15, 79, 168, 0.16);
+}
+
+/* ---------------------------------------------------------------------------
+   The signed-in landing page.
+
+   Panels of one size on a tinted ground. Everything on the page is the same
+   kind of object at the same scale — the composition it replaced put a 430px
+   hero over one 152px tile and one full-height rail, three different weights
+   arguing with each other, which is what read as out of proportion.
+
+   The ground is --ag-bg rather than the surface, so a panel is something
+   sitting on the page instead of a rectangle drawn on it; --ag-raise does the
+   rest.
+   --------------------------------------------------------------------------- */
+.landing {
+  background: var(--ag-bg);
+}
+
+.landing-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.landing-head h1 {
+  margin: 2px 0 6px;
+  font-size: 28px;
+  line-height: 1.12;
+}
+
+.landing-head p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* auto-fit, so one organization and five organizations both fill the row
+   rather than leaving a panel stranded beside empty track. */
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(286px, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+.panel {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 18px;
+  background: var(--ag-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: var(--ag-raise);
+  min-width: 0;
+}
+
+.panel--wide {
+  grid-column: span 2;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.panel .eyebrow {
+  margin: 0;
+}
+
+.panel__identity {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.panel__mark {
+  display: grid;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: var(--ag-brand-on);
+  background: linear-gradient(140deg, var(--org-primary, var(--navy-800)), var(--org-accent, var(--blue-600)));
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.panel__sub,
+.panel__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.panel__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.panel__planhead {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.panel__figure {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  align-items: baseline;
+  margin: 0;
+}
+
+.panel__figure strong {
+  font-family: "Saira", "Helvetica Neue", Arial, sans-serif;
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel__figure span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.panel__points {
+  display: grid;
+  gap: 7px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel__points li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* A drawn tick rather than a list marker: these read as confirmations. */
+.panel__points li::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 2px;
+  width: 10px;
+  height: 5px;
+  border-left: 2px solid var(--ag-brand-text);
+  border-bottom: 2px solid var(--ag-brand-text);
+  transform: rotate(-45deg);
+}
+
+/* The action sits on the bottom edge of every panel, so a row of panels of
+   different heights still has its buttons on one line. */
+.panel__action {
+  justify-self: stretch;
+  margin-top: auto;
+  justify-content: center;
+}
+
+.panel--org,
+.panel--plan {
+  grid-template-rows: auto;
+}
+
+/* The two figures that move as the account is used. */
+.capacity {
+  display: grid;
+  gap: 6px;
+}
+
+.capacity__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.capacity__value {
+  color: var(--ag-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter {
+  height: 6px;
+  background: var(--ag-surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.meter > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-600), var(--cyan-500));
+}
+
+/* At the ceiling the bar is information, not an achievement. */
+.meter--full > i {
+  background: var(--ag-warn);
+}
+
+/* A plan with no ceiling gets a flat band rather than a bar that can never
+   fill, which would read as a limit the customer does not have. */
+.meter--open > i {
+  background: var(--ag-brand-line);
 }
 
 /* The plan and the status sit above the detail line on an organization tile,
@@ -9935,4 +10141,260 @@ a.organization-tile:focus-visible {
   .flash {
     transition: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   The organization branding palette editor.
+
+   An <input type="color"> inherits this stylesheet's input height and renders
+   as a thin grey line that shows none of the colour it holds — which is what
+   the four palette fields looked like. Each colour is now a swatch that opens
+   the picker, a hex field that can be typed into, an rgb() readout, and three
+   sliders whose tracks are painted with the colours they would produce.
+   --------------------------------------------------------------------------- */
+.color-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.color-field {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  background: var(--ag-surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--ag-raise);
+  min-width: 0;
+}
+
+.color-field__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.color-field__head label {
+  margin: 0;
+  color: var(--ag-text);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.color-field__codes {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.color-field__hex {
+  width: 9ch;
+  min-height: 0;
+  padding: 3px 6px;
+  color: var(--ag-text);
+  background: var(--ag-surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  text-transform: lowercase;
+}
+
+.color-field__rgb {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.color-field__body {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+/* The swatch is the picker: the real control sits on top of it at zero
+   opacity, so a click anywhere on the chip opens the operating system's own
+   colour picker and the chip still shows the current colour. */
+.color-swatch {
+  position: relative;
+  display: block;
+  width: 46px;
+  height: 46px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.color-swatch__chip {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  box-shadow: var(--ag-raise);
+}
+
+.color-swatch input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.color-swatch:focus-within .color-swatch__chip {
+  outline: 2px solid var(--ag-brand);
+  outline-offset: 2px;
+}
+
+.color-sliders {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.color-slider {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+}
+
+.color-slider > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.color-slider input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 0;
+  height: 14px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.color-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--track, var(--ag-surface-3));
+}
+
+.color-slider input[type="range"]::-moz-range-track {
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--track, var(--ag-surface-3));
+}
+
+/* A white thumb with a dark ring reads on every track colour, which a thumb
+   tinted to the value does not — at the dark end it disappears into it. The
+   track is the holder's own palette rather than the product's, so the thumb
+   is the one control here that must not follow the theme: --ag-brand-on is
+   white in both, and is already the token for ink on an arbitrary fill. */
+.color-slider input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -4px;
+  background: var(--ag-brand-on);
+  border: 2px solid var(--navy-900);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(9, 22, 37, 0.4);
+}
+
+.color-slider input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--ag-brand-on);
+  border: 2px solid var(--navy-900);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(9, 22, 37, 0.4);
+}
+
+.color-slider input[type="range"]:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--ag-brand);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .color-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The landing page is outside the application shell, so it does need the
+   fixed header cleared — but 48px of air on top of that clearance is what
+   made the old composition open halfway down the screen. */
+/* Matched to the clearance rule's own specificity — (0,4,1) — or the general
+   rule wins on the cascade and this one silently does nothing. */
+main:not(.app-shell__main) > .band.landing:first-child {
+  padding-top: calc(104px + 14px);
+}
+
+@media (max-width: 760px) {
+  main:not(.app-shell__main) > .band.landing:first-child {
+    padding-top: var(--aeg-space-6);
+  }
+}
+
+/* Panels size to their content rather than stretching to the tallest in the
+   row: a short panel stretched to match a long one is the void this layout
+   was meant to remove. */
+.panel-grid {
+  align-items: start;
+}
+
+/* ---------------------------------------------------------------------------
+   The footer sits at the bottom of the window on a short page.
+
+   Every page is header, body, footer, so the body takes the slack: on a page
+   with little content the footer lands on the bottom edge instead of halfway
+   up with the page's own background below it, and on a long page it scrolls
+   normally because the body has already grown past the viewport.
+   --------------------------------------------------------------------------- */
+html {
+  min-height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+body > main,
+body > .app-shell,
+body > .document-shell {
+  flex: 1 0 auto;
+  /* The shell asked for `100vh - 64px`, which with the 64px header fills the
+     viewport exactly and leaves the footer one scroll below the fold. Flex
+     already gives it everything the header and footer do not use, so the
+     fixed figure only gets in the way — and it was a figure that had to be
+     kept in step with the header's height by hand. */
+  min-height: 0;
+}
+
+body > .site-footer {
+  flex: none;
+  margin-top: auto;
 }

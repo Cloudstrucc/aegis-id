@@ -30,6 +30,10 @@ const { iconSvg } = require('../lib/app-icons');
 // page would be navigation to somewhere the reader cannot go yet.
 const SHELL_PREFIXES = ['/dashboard', '/admin', '/organizations', '/account', '/testing'];
 
+// The signed-in landing page. Not a prefix, because every path starts with
+// "/" — it is the one exact path that takes the shell.
+const SHELL_EXACT_PATHS = ['/'];
+
 /** The icon for each dashboard blade, by the blade key the service emits. */
 const BLADE_ICONS = {
   dashboard: 'grid',
@@ -75,7 +79,10 @@ function buildAppShell(locals = {}) {
     return null;
   }
   const isOrgSettings = /^\/orgs\/[^/]+\/settings/.test(currentPath);
-  if (!isOrgSettings && !SHELL_PREFIXES.some((prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`))) {
+  const isShellPath =
+    SHELL_EXACT_PATHS.includes(currentPath) ||
+    SHELL_PREFIXES.some((prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`));
+  if (!isOrgSettings && !isShellPath) {
     return null;
   }
 
@@ -247,4 +254,4 @@ function buildCrumbs(locals, currentPath) {
   return [{ label: locals.title || 'Aegis ID' }];
 }
 
-module.exports = { buildAppShell, iconSvg, SHELL_PREFIXES, PLATFORM_ITEMS, BLADE_ICONS };
+module.exports = { buildAppShell, iconSvg, SHELL_EXACT_PATHS, SHELL_PREFIXES, PLATFORM_ITEMS, BLADE_ICONS };

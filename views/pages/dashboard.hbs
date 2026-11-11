@@ -2031,7 +2031,7 @@
     <span>Branding helps holders recognize which organization is asking for consent or approval. Keep palettes high-contrast and consistent with the issuer’s public identity.</span>
   </article>
   <div class="admin-grid">
-    <article class="brand-preview-card" style="--brand-primary: {{orgAdmin.branding.primaryColor}}; --brand-accent: {{orgAdmin.branding.accentColor}}; --brand-bg: {{orgAdmin.branding.backgroundColor}}; --brand-text: {{orgAdmin.branding.textColor}};">
+    <article class="brand-preview-card" data-brand-preview style="--brand-primary: {{orgAdmin.branding.primaryColor}}; --brand-accent: {{orgAdmin.branding.accentColor}}; --brand-bg: {{orgAdmin.branding.backgroundColor}}; --brand-text: {{orgAdmin.branding.textColor}};">
       {{#if orgAdmin.branding.logoDataUrl}}
         <img src="{{orgAdmin.branding.logoDataUrl}}" alt="{{workspace.organization}} logo">
       {{else}}
@@ -2052,25 +2052,61 @@
             <option value="custom" {{#if orgAdmin.customPaletteSelected}}selected{{/if}}>Custom palette</option>
           </select>
         </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="primaryColor">Primary</label>
-            <input id="primaryColor" name="primaryColor" type="color" value="{{orgAdmin.branding.primaryColor}}">
-          </div>
-          <div class="field-group">
-            <label for="accentColor">Accent</label>
-            <input id="accentColor" name="accentColor" type="color" value="{{orgAdmin.branding.accentColor}}">
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="backgroundColor">Background</label>
-            <input id="backgroundColor" name="backgroundColor" type="color" value="{{orgAdmin.branding.backgroundColor}}">
-          </div>
-          <div class="field-group">
-            <label for="textColor">Text</label>
-            <input id="textColor" name="textColor" type="color" value="{{orgAdmin.branding.textColor}}">
-          </div>
+        {{!--
+          Four colour editors. Each one is the posted hex field, a swatch that
+          opens the operating system's picker, and hue / saturation / lightness
+          sliders whose own tracks are painted with the colours they would
+          produce — so the control shows the colour rather than describing it.
+          The preview beside the form follows every move.
+
+          The name= input stays a plain text field holding #rrggbb: it is what
+          the server already validates, and the form still posts correctly with
+          the script blocked, when the swatch alone is the editor.
+        --}}
+        <div class="color-fields" data-brand-palette>
+          {{#each orgAdmin.brandColorFields}}
+            <div class="color-field" data-color-field data-role="{{role}}">
+              <div class="color-field__head">
+                <label for="{{inputId}}">{{label}}</label>
+                <span class="color-field__codes">
+                  <input
+                    class="color-field__hex"
+                    id="{{inputId}}"
+                    name="{{name}}"
+                    type="text"
+                    value="{{value}}"
+                    spellcheck="false"
+                    autocomplete="off"
+                    inputmode="text"
+                    maxlength="7"
+                    pattern="#?[0-9A-Fa-f]{6}"
+                    aria-describedby="{{inputId}}-rgb"
+                    data-color-hex>
+                  <span class="color-field__rgb" id="{{inputId}}-rgb" data-color-rgb>rgb(—)</span>
+                </span>
+              </div>
+              <div class="color-field__body">
+                <label class="color-swatch" title="Open the colour picker">
+                  <span class="color-swatch__chip" data-color-chip></span>
+                  <input type="color" value="{{value}}" data-color-picker aria-label="{{label}} colour picker">
+                </label>
+                <div class="color-sliders">
+                  <label class="color-slider">
+                    <span>H</span>
+                    <input type="range" min="0" max="360" step="1" data-color-slider="h" aria-label="{{label}} hue">
+                  </label>
+                  <label class="color-slider">
+                    <span>S</span>
+                    <input type="range" min="0" max="100" step="1" data-color-slider="s" aria-label="{{label}} saturation">
+                  </label>
+                  <label class="color-slider">
+                    <span>L</span>
+                    <input type="range" min="0" max="100" step="1" data-color-slider="l" aria-label="{{label}} lightness">
+                  </label>
+                </div>
+              </div>
+            </div>
+          {{/each}}
         </div>
         <div class="field-group">
           <label for="logoUpload">Logo upload</label>

@@ -102,10 +102,17 @@ test('an organization you administer carries its own plan and standing', async (
     assert.equal(view.entitlement.isProspective, false);
     assert.equal(view.entitlement.organizationName, 'Owner Co');
 
-    // Usage against the limit, not just the limit: "1 of 1 created" is the
-    // answer to "may I create another?", which "1 organization" is not.
-    const organizations = view.entitlement.rows.find((row) => row.label === 'Organizations');
-    assert.equal(organizations.value, '1 of 1 created');
+    // Usage against the limit, not just the limit: "may I create another?"
+    // is the question, and "1 organization" does not answer it. Drawn as a
+    // meter rather than listed, because it is the one figure on this panel
+    // that moves — and the list below it does not repeat what the meter says.
+    assert.deepEqual(view.entitlement.capacity, { label: '1 of 1', percent: 100, isFull: true });
+    assert.equal(
+      view.entitlement.rows.some((row) => row.label === 'Organizations'),
+      false,
+      'the organizations row is duplicating the meter'
+    );
+    assert.match(view.entitlement.createNote, /Compare plans/);
   });
 });
 

@@ -143,7 +143,11 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', authorize('workspace.
       orgAdmin,
       userProfile: buildUserProfileView(req.user, subscription, workspace, orgAdmin, credentialMemberships),
       welcome: req.query.welcome === '1',
-      flash: flashFor(req.query)
+      flash: flashFor(req.query),
+      // The branding palette editor. Its own file rather than main.js: it is
+      // one blade on one page, and the colour maths is long enough to be worth
+      // reading on its own.
+      pageScripts: [{ src: '/scripts/brand-palette.js' }]
     });
   } catch (error) {
     next(error);

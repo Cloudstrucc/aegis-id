@@ -92,6 +92,13 @@
   --ag-r-pill:  999px;
   --ag-sh:      0 1px 2px rgba(9, 9, 11, .05), 0 1px 3px rgba(9, 9, 11, .04);
   --ag-sh-lg:   0 12px 32px rgba(9, 9, 11, .10);
+  /* The raised panel. A card is an object sitting on the page rather than a
+     rectangle drawn on it: a contact shadow that holds the edge, a soft cast
+     below it, and a one-pixel highlight along the top where the light would
+     catch. Applied once, by class list, in main.css. */
+  --ag-raise:    inset 0 1px 0 rgba(255, 255, 255, .9), 0 1px 1px rgba(9, 22, 37, .05), 0 10px 26px rgba(9, 22, 37, .08);
+  --ag-raise-hi: inset 0 1px 0 rgba(255, 255, 255, .9);
+  --ag-raise-lift: 0 1px 1px rgba(9, 22, 37, .06), 0 18px 40px rgba(9, 22, 37, .14);
 
   color-scheme: light;
 }
@@ -137,6 +144,11 @@
 
     --ag-sh:    0 1px 2px rgba(0, 0, 0, .40), 0 1px 3px rgba(0, 0, 0, .30);
     --ag-sh-lg: 0 12px 32px rgba(0, 0, 0, .45);
+    /* In the dark the cast does almost nothing — a shadow on near-black is
+       invisible — so the highlight does the separating instead. */
+    --ag-raise:    inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 1px rgba(0, 0, 0, .55), 0 10px 26px rgba(0, 0, 0, .42);
+    --ag-raise-hi: inset 0 1px 0 rgba(255, 255, 255, .06);
+    --ag-raise-lift: 0 1px 1px rgba(0, 0, 0, .6), 0 20px 44px rgba(0, 0, 0, .55);
 
     color-scheme: dark;
   }
@@ -182,6 +194,9 @@
 
   --ag-sh:    0 1px 2px rgba(0, 0, 0, .40), 0 1px 3px rgba(0, 0, 0, .30);
   --ag-sh-lg: 0 12px 32px rgba(0, 0, 0, .45);
+  --ag-raise:    inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 1px rgba(0, 0, 0, .55), 0 10px 26px rgba(0, 0, 0, .42);
+  --ag-raise-hi: inset 0 1px 0 rgba(255, 255, 255, .06);
+  --ag-raise-lift: 0 1px 1px rgba(0, 0, 0, .6), 0 20px 44px rgba(0, 0, 0, .55);
 
   color-scheme: dark;
 }
@@ -210,7 +225,11 @@
   --paper:     var(--ag-surface);
   --mist:      var(--ag-bg);
   --soft-blue: var(--ag-brand-soft);
-  --shadow:    var(--ag-sh-lg);
+  /* Every card in the stylesheet already asks for one of these three, so
+     repointing them is what applies the raised treatment everywhere at once —
+     dashboard tiles, organization tiles, wizard panels, the people table,
+     every blade. --ag-sh stays the small one, for chrome that is not a card. */
+  --shadow:    var(--ag-raise);
 
   /* -- workspace family -- */
   --workspace-ink:    var(--ag-text);
@@ -220,7 +239,7 @@
   --workspace-blue:   var(--ag-brand);
   --workspace-cyan:   var(--ag-brand-ink);
   --workspace-green:  var(--ag-good);
-  --workspace-shadow: var(--ag-sh);
+  --workspace-shadow: var(--ag-raise);
 
   /* -- aeg family -- */
   --aeg-bg:            var(--ag-bg);
@@ -242,7 +261,7 @@
   --aeg-nav-line:      var(--ag-nav-line);
   --aeg-nav-text:      var(--ag-nav-text);
   --aeg-sh:            var(--ag-sh);
-  --aeg-sh-lg:         var(--ag-sh-lg);
+  --aeg-sh-lg:         var(--ag-raise);
   --aeg-sh-brand:      0 3px 14px rgba(15, 117, 188, .14);
 
   /* State triples. Status pills read these; without the alias they keep their

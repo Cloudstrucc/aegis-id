@@ -462,6 +462,12 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
       selected: state.branding.paletteId === palette.id
     })),
     customPaletteSelected: state.branding.paletteId === 'custom',
+    // The four palette colours as one list, so the form renders one editor
+    // four times rather than four hand-written pairs of markup that drift.
+    brandColorFields: BRAND_COLOR_FIELDS.map((field) => ({
+      ...field,
+      value: state.branding[field.key] || '#000000'
+    })),
     roles: state.roles.map((role) => decorateRole(role)),
     privilegeGroups: buildPrivilegeGroups(),
     roleTemplates: ROLE_TEMPLATES.map(decorateRoleTemplate),
@@ -2154,6 +2160,20 @@ function normalizePrivilegeIds(value = [], adminRole = false) {
   const base = adminRole ? ADMIN_BASE_PRIVILEGES : HOLDER_BASE_PRIVILEGES;
   return [...new Set([...base, ...selected])];
 }
+
+/**
+ * The four colours a holder sees, in the order they matter.
+ *
+ * Primary and accent are what the wallet paints the organization with;
+ * background and text are what it reads against. Named here once because the
+ * form, the preview and the stored record all have to agree on them.
+ */
+const BRAND_COLOR_FIELDS = Object.freeze([
+  { role: 'primary', key: 'primaryColor', name: 'primaryColor', inputId: 'primaryColor', label: 'Primary' },
+  { role: 'accent', key: 'accentColor', name: 'accentColor', inputId: 'accentColor', label: 'Accent' },
+  { role: 'background', key: 'backgroundColor', name: 'backgroundColor', inputId: 'backgroundColor', label: 'Background' },
+  { role: 'text', key: 'textColor', name: 'textColor', inputId: 'textColor', label: 'Text' }
+]);
 
 function decorateRole(role = {}) {
   const normalized = normalizeRoleDefinition(role);

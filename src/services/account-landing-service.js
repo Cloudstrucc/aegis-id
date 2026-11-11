@@ -25,7 +25,10 @@ const {
   listSubscriptionsForUser
 } = require('./subscription-service');
 const { listWorkspacesForSubscription } = require('./platform-service');
-const { listCredentialMembershipsForEmail } = require('./org-admin-service');
+const {
+  countCredentialsByWorkspace,
+  listCredentialMembershipsForEmail
+} = require('./org-admin-service');
 const {
   describeHeadlinePrice,
   effectiveEntitlement,
@@ -117,7 +120,7 @@ const STANDING_LABELS = Object.freeze({
  * would start is described instead — `intendedPlan` is the same value
  * `/subscribe` will actually use, so the page and the form cannot disagree.
  */
-function describeEntitlement(subscriptions, workspaceCounts, session) {
+function describeEntitlement(subscriptions, workspaceCounts, session, issuedTotal = 0) {
   const primary = subscriptions[0] || null;
 
   if (!primary) {
@@ -131,6 +134,10 @@ function describeEntitlement(subscriptions, workspaceCounts, session) {
       standingKey: 'invited',
       organizationName: null,
       rows: limitRows(plan, null),
+      // Nothing has been used yet, so there is nothing to meter.
+      capacity: null,
+      credentials: null,
+      createNote: describeCreateNote(plan, null),
       endsOn: null,
       otherSubscriptions: 0
     };
@@ -138,6 +145,8 @@ function describeEntitlement(subscriptions, workspaceCounts, session) {
 
   const { plan, signedUpFor, standing, endsAt } = effectiveEntitlement(primary);
   const used = workspaceCounts.get(primary.id) ?? null;
+  const capacity = describeCapacity(plan, used);
+  const credentials = describeCredentialAllowance(plan, issuedTotal);
 
   return {
     isProspective: false,
@@ -151,10 +160,74 @@ function describeEntitlement(subscriptions, workspaceCounts, session) {
     // Only worth saying when the two differ — otherwise it reads as a downgrade
     // notice to somebody whose plan is working exactly as bought.
     signedUpForLabel: signedUpFor.id === plan.id ? null : signedUpFor.label,
-    rows: limitRows(plan, used),
+    // The meter already says how many organizations of how many, so the list
+    // underneath does not say it again.
+    rows: limitRows(plan, used).filter((row) => !(capacity && row.label === 'Organizations')),
+    capacity,
+    credentials,
+    createNote: describeCreateNote(plan, used),
     endsOn: formatDate(endsAt),
     otherSubscriptions: Math.max(0, subscriptions.length - 1)
   };
+}
+
+/**
+ * Organizations used against organizations allowed, as a figure and a bar.
+ *
+ * The one number on this panel that moves as the account is used, so it is
+ * drawn rather than listed. A plan with no ceiling has no bar — a meter that
+ * can never fill says nothing, and an unlimited plan showing 3% used reads as
+ * a limit the customer does not have.
+ */
+function describeCapacity(plan, used) {
+  if (used === null || plan.maxWorkspaces === null) {
+    return null;
+  }
+  const allowed = Math.max(1, plan.maxWorkspaces);
+  return {
+    label: `${used} of ${plan.maxWorkspaces}`,
+    percent: Math.min(100, Math.round((used / allowed) * 100)),
+    isFull: used >= plan.maxWorkspaces
+  };
+}
+
+/**
+ * Credentials issued against what the plan allows.
+ *
+ * A metered plan has no ceiling by design — the customer pays for what they
+ * issue rather than being cut off — so it gets a figure and no bar. A bar that
+ * can never fill would read as a limit they do not have.
+ */
+function describeCredentialAllowance(plan, issued) {
+  const allowance = plan.maxCredentialsPerWorkspace;
+  if (allowance === null) {
+    return {
+      issued,
+      label: plan.includedCredentials
+        ? `${plan.includedCredentials} included, then $${(plan.perCredentialCents / 100).toFixed(0)} each`
+        : 'no limit on this plan',
+      percent: null,
+      isFull: false
+    };
+  }
+  return {
+    issued,
+    label: `of ${allowance} per organization`,
+    percent: Math.min(100, Math.round((issued / Math.max(1, allowance)) * 100)),
+    isFull: issued >= allowance
+  };
+}
+
+/** What the row that creates the next organization says underneath itself. */
+function describeCreateNote(plan, used) {
+  if (plan.maxWorkspaces === null) {
+    return 'Your plan has no organization limit.';
+  }
+  if (used !== null && used >= plan.maxWorkspaces) {
+    return `The ${plan.label} plan includes ${plan.maxWorkspaces === 1 ? 'one' : plan.maxWorkspaces}. Compare plans to add more.`;
+  }
+  const remaining = used === null ? plan.maxWorkspaces : plan.maxWorkspaces - used;
+  return `${remaining} more included on the ${plan.label} plan.`;
 }
 
 /**
@@ -233,6 +306,11 @@ async function buildAccountLanding(user, { session } = {}) {
   );
   const credentialMemberships = await listCredentialMembershipsForEmail(user.email);
   const membershipWorkspaceIds = uniqueWorkspaceIds(credentialMemberships);
+  // One read of every organization's state, shared by all of them below. The
+  // panel says how many credentials have actually been issued against what the
+  // plan allows, and a figure that is not the real one is worse there than no
+  // figure at all.
+  const credentialCounts = await countCredentialsByWorkspace();
   const organizations = [];
   const workspaceCounts = new Map();
 
@@ -240,7 +318,13 @@ async function buildAccountLanding(user, { session } = {}) {
     const workspaces = await listWorkspacesForSubscription(subscription);
     workspaceCounts.set(subscription.id, workspaces.length);
     const { plan, standing } = effectiveEntitlement(subscription);
+    const issued = workspaces.reduce(
+      (total, workspace) => total + (credentialCounts.get(workspace.id) || 0),
+      0
+    );
     organizations.push({
+      issued,
+      issuedSummary: `${issued} credential${issued === 1 ? '' : 's'} issued`,
       subscription,
       workspaces,
       hasWorkspaces: workspaces.length > 0,
@@ -278,7 +362,12 @@ async function buildAccountLanding(user, { session } = {}) {
       memberships,
       hasMemberships: memberships.length > 0,
       capabilities: ORGANIZATION_CAPABILITIES,
-      entitlement: describeEntitlement(subscriptions, workspaceCounts, session)
+      entitlement: describeEntitlement(
+        subscriptions,
+        workspaceCounts,
+        session,
+        organizations.reduce((total, entry) => total + entry.issued, 0)
+      )
     }
   };
 }
