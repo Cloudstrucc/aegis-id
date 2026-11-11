@@ -1117,7 +1117,17 @@ label {
   font-weight: 900;
 }
 
+/* Hidden with `display`, not with opacity alone.
+   An absolutely positioned box does not change any element's width — which is
+   why nothing on this page measured wider than its parent — but it still
+   counts toward the scrollable overflow of its ancestors. A help bubble on a
+   field in the right-hand column therefore reached past the edge of the page
+   and gave the whole document an 83px horizontal scroll, while invisible at
+   `opacity: 0`. Measured on the branding blade at a 1009px viewport.
+   `allow-discrete` keeps the fade where the browser supports it; where it does
+   not, the bubble simply appears. */
 .field-tooltip::after {
+  display: none;
   position: absolute;
   z-index: 20;
   bottom: calc(100% + 10px);
@@ -1141,8 +1151,22 @@ label {
 
 .field-tooltip:hover::after,
 .field-tooltip:focus-visible::after {
+  display: block;
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+@supports (transition-behavior: allow-discrete) {
+  .field-tooltip::after {
+    transition-behavior: allow-discrete;
+  }
+
+  @starting-style {
+    .field-tooltip:hover::after,
+    .field-tooltip:focus-visible::after {
+      opacity: 0;
+    }
+  }
 }
 
 input,
@@ -4664,8 +4688,14 @@ body:has(.app-shell) .site-footer div span {
   grid-template-columns: repeat(4, minmax(150px, 1fr));
 }
 
+/* `repeat(4, ...)` with a 180px floor cannot wrap: four tracks plus three
+   gaps need 762px of panel whatever the window does, and below that the grid
+   overflows its container and the page scrolls sideways. Measured at a 1009px
+   viewport on the wallet-events and app-ledger blades, where the sidebar
+   leaves the panel narrower than that. `auto-fit` keeps four across when there
+   is room and drops to three, two or one when there is not. */
 .blade-action-grid {
-  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .blade-action-card {
@@ -8923,6 +8953,28 @@ main > .band:first-child:has(> .section-heading):not(.onboarding-shell) .section
   margin-bottom: 0;
 }
 
+/* The copy reads better at a measure than across a 2560px panel, and a
+   centred block of full-width prose above a centred button looks accidental. */
+.aeg-empty p {
+  max-width: 62ch;
+  margin-inline: auto;
+}
+
+/* Inside a table's own container rather than filling a page: the same state,
+   without the forty pixels of air a whole-page one needs. */
+.aeg-empty--inline {
+  padding: 26px 18px;
+}
+
+/* An empty state that asks for something must offer the control that does it.
+   `tests/empty-state-actions.test.js` holds the list; this is what makes the
+   control look like one wherever it lands. */
+.aeg-empty .button,
+.aeg-empty .aeg-btn {
+  display: inline-flex;
+  margin-top: 2px;
+}
+
 /* Forms.
    Capped at 580px. A full-bleed input on a 2560px monitor is the single
    loudest complaint about the adapters form: a 40-character client id in a
@@ -10277,12 +10329,18 @@ a.organization-tile:focus-visible {
   min-width: 0;
 }
 
+/* `minmax(0, 1fr)` lets the TRACK collapse; it does not let the ITEM in it
+   collapse. A range input has an intrinsic width of its own — about 173px in
+   Chrome — and as a grid item its default `min-width: auto` holds it there, so
+   each slider row overflowed its own label by a couple of pixels and the
+   branding blade's panel ended up 83px wider than the page. */
 .color-slider {
   display: grid;
   grid-template-columns: 12px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
   margin: 0;
+  min-width: 0;
 }
 
 .color-slider > span {
@@ -10296,6 +10354,7 @@ a.organization-tile:focus-visible {
   appearance: none;
   -webkit-appearance: none;
   width: 100%;
+  min-width: 0;
   min-height: 0;
   height: 14px;
   padding: 0;
@@ -10683,9 +10742,35 @@ body > .site-footer {
    answers; public/scripts/data-table.js builds all three from the table that
    is already on the page.
    --------------------------------------------------------------------------- */
+/* A grid or flex child defaults to `min-width: auto`, which means it refuses
+   to shrink below its content's min-content width. A record table carries a
+   `min-width` of its own — the people table asks for 880px — so without this
+   the wrapper demands 880px, the panel's grid track widens to match, and
+   because every child of that track stretches to it, the header and the
+   pagination grow too and the whole PAGE scrolls sideways. Measured on the
+   people directory at a 1009px viewport: the document was 1616px wide, and all
+   three children of the panel were 1329px against a 721px parent.
+   `min-width: 0` lets the track collapse to the width it actually has, and the
+   table then scrolls inside its own container, which is the only thing that
+   should scroll horizontally.
+   This sits on the component rather than on the page because `.dt` wraps every
+   record table in the product. */
 .dt {
   display: grid;
   gap: 12px;
+  min-width: 0;
+}
+
+.dt-table,
+.dt-cards {
+  min-width: 0;
+}
+
+/* The table's own scroller, for a table whose markup has no wrapper of its
+   own. Where one exists — `.people-table-wrap` — it keeps doing the scrolling
+   and this is inert. */
+.dt-table {
+  overflow-x: auto;
 }
 
 .dt-bar {

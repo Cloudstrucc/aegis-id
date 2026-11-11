@@ -2385,7 +2385,16 @@
         </tbody>
       </table>
       {{#unless connectedApps.table.hasRows}}
-        <p class="empty-table-note">No connected-app registrations of your own yet — the built-in example above is always available, or select “Create registration” to add one.</p>
+        {{!--
+          Naming a control in prose is not offering it. The same
+          data-modal-target the button at the top of this blade carries opens
+          the create modal straight from here.
+        --}}
+        <div class="aeg-empty aeg-empty--inline">
+          <h4>No connected-app registrations yet</h4>
+          <p>Register a relying party to issue it client credentials, raise wallet challenges against it and audit its API activity. The built-in example above is always available to test against.</p>
+          <button class="button button--primary button--blue" type="button" data-modal-target="#modal-connected-app-create">Create registration</button>
+        </div>
       {{/unless}}
     </div>
 

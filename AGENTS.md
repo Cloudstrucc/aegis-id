@@ -563,6 +563,22 @@ Core capabilities:
 - **Brand blue marks links and the active row, never prose.** Text somebody
   reads is `--ag-text`; secondary labels are `--ag-muted`. A paragraph in the
   link colour is both tiring to read and a claim that it is clickable.
+- **An empty state that asks for something offers the control that does it.**
+  A list with no rows is where somebody is most likely to be stuck, and it is
+  the one screen that can say exactly what to do next — so it carries a button
+  or an anchor, not a sentence naming one. Three shipped as dead ends: the
+  wallet register explained that a wallet appears once a holder accepts an
+  invitation without linking to issuance; the adapters page said "pick a
+  protocol below" with the catalogue a screen further down and nothing to
+  press; the connected-apps table named the "Create registration" button in
+  prose while the button sat at the top of a long blade. Where the thing to do
+  is on the same page, anchor to it rather than navigating away; where it
+  opens a modal, carry the same `data-modal-target` the real control carries.
+  An empty state that is purely informational — an event log, a filtered
+  result set — says what causes an entry to appear instead, and a filtered one
+  offers a way to clear the filter. `tests/empty-state-actions.test.js` holds
+  the list and also checks that every in-page anchor has a target, because an
+  anchor that misses leaves the page still and says nothing.
 
 Two audits, both run against a rendered page in the browser because neither
 defect can be seen in the source — the page renders correctly, it just renders

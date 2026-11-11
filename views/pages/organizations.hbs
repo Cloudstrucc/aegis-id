@@ -83,10 +83,18 @@
       {{/each}}
     </div>
   {{else}}
+    {{!--
+      The form that answers this is further down the same page, and nothing
+      here pointed at it. Anchored rather than linked, because navigating away
+      to come back to the same page would be the longer route.
+    --}}
     <article class="empty-state-panel">
       <span class="platform-icon">{{agIcon "idcheck" 18}}</span>
       <h2>Register your organization to continue.</h2>
       <p>No Aegis ID organization workspaces are associated with this subscriber yet. Create one, then you can open the dashboard and start the setup wizards.</p>
+      {{#if showRegisterForm}}
+        <a class="button button--blue" href="#add-an-organization">Create an organization</a>
+      {{/if}}
     </article>
   {{/if}}
 
@@ -94,7 +102,7 @@
 </section>
 
 {{#if showRegisterForm}}
-  <section class="band band--light">
+  <section class="band band--light" id="add-an-organization">
     <div class="section-heading">
       <p class="eyebrow">Add an organization</p>
       <h2>Create another workspace.</h2>

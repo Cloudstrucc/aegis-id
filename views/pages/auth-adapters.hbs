@@ -204,15 +204,22 @@
             </table>
           </div>
         {{else}}
+          {{!--
+            "Pick a protocol below" without a way to get there is the same dead
+            end the wallet register had: the reader is told an action exists
+            and left to find it. The catalogue is further down this page, so
+            the control is an in-page anchor rather than a navigation.
+          --}}
           <div class="aeg-empty">
             <h4>No adapters configured yet</h4>
-            <p>Pick a protocol below. Required fields must validate before an adapter goes active.</p>
+            <p>Connect SAML 2.0, Kerberos/SPNEGO or certificate-based auth so an external identity provider can front connected-app sign-in. Required fields must validate before an adapter goes active.</p>
+            <a class="aeg-btn aeg-btn--primary" href="#add-an-adapter">Add an adapter</a>
           </div>
         {{/if}}
       </div>
     </div>
 
-    <div class="aeg-section">
+    <div class="aeg-section" id="add-an-adapter">
       <div class="aeg-section-head">
         <div>
           <h3>Add an adapter</h3>
