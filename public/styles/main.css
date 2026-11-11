@@ -6170,8 +6170,13 @@ body:has(.app-shell) .site-footer div span {
   padding-top: var(--docs-site-header-offset);
 }
 
+/* Brand blue marks links and the active row. It is not the colour of text
+   somebody reads: setting it here made every heading, paragraph, list item,
+   table cell and code block on the documentation a link colour, which is both
+   exhausting to read and a lie about what is clickable. The page's text is
+   --ag-text, which is near-black in light and near-white in dark. */
 .docs-workspace-page {
-  color: var(--ag-brand-text);
+  color: var(--ag-text);
   padding: var(--docs-top-gap, 4px) 4% 18px;
   background: var(--ag-surface);
 }
@@ -6219,11 +6224,8 @@ body:has(.app-shell) .site-footer div span {
 .docs-sidebar__header p:not(.eyebrow),
 .docs-search label,
 .docs-search-results p,
-.docs-reader__meta,
-.docs-reader__content p,
-.docs-reader__content li,
-.docs-reader__content td {
-  color: var(--ag-brand-text);
+.docs-reader__meta {
+  color: var(--ag-muted);
 }
 
 .docs-sidebar__header p:not(.eyebrow),
@@ -6242,7 +6244,7 @@ body:has(.app-shell) .site-footer div span {
 .docs-nav-heading {
   display: block;
   margin: 0 0 8px;
-  color: var(--ag-brand-text);
+  color: var(--ag-muted);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -6262,7 +6264,7 @@ body:has(.app-shell) .site-footer div span {
   padding: 10px 12px;
   font: inherit;
   font-size: 14px;
-  color: var(--ag-brand-text);
+  color: var(--ag-text);
   background: var(--ag-surface);
 }
 
@@ -6290,7 +6292,7 @@ body:has(.app-shell) .site-footer div span {
 .docs-category__links a {
   display: block;
   border-radius: 7px;
-  color: var(--ag-brand-text);
+  color: var(--ag-text);
   text-decoration: none;
 }
 
@@ -6312,7 +6314,7 @@ body:has(.app-shell) .site-footer div span {
 .docs-result-link span {
   display: block;
   margin-top: 2px;
-  color: var(--ag-brand-text);
+  color: var(--ag-muted);
   font-size: 12px;
   font-weight: 700;
 }
@@ -6327,14 +6329,14 @@ body:has(.app-shell) .site-footer div span {
   gap: 12px;
   align-items: center;
   padding: 12px 0;
-  color: var(--ag-brand-text);
+  color: var(--ag-text);
   font-size: 14px;
   font-weight: 850;
   cursor: pointer;
 }
 
 .docs-category summary::marker {
-  color: var(--ag-brand-text);
+  color: var(--ag-muted);
 }
 
 .docs-category summary small {
@@ -6357,7 +6359,6 @@ body:has(.app-shell) .site-footer div span {
 
 .docs-category__links a {
   padding: 8px 10px;
-  color: var(--ag-brand-text);
   font-size: 13px;
   font-weight: 700;
   line-height: 1.35;
@@ -6449,7 +6450,7 @@ body:has(.app-shell) .site-footer div span {
 .docs-reader__content code {
   border-radius: 5px;
   padding: 2px 5px;
-  color: var(--ag-brand-text);
+  color: var(--ag-text);
   background: var(--ag-brand-soft);
   font-size: 0.92em;
 }
@@ -6465,7 +6466,7 @@ body:has(.app-shell) .site-footer div span {
 
 .docs-reader__content pre code {
   padding: 0;
-  color: var(--ag-brand-text);
+  color: var(--ag-text);
   background: transparent;
   font-size: 13px;
   line-height: 1.55;
@@ -6482,7 +6483,7 @@ body:has(.app-shell) .site-footer div span {
   border: 1px solid rgba(148, 170, 196, 0.32);
   border-radius: 8px;
   padding: 18px;
-  color: var(--ag-brand-text);
+  color: var(--ag-text);
   background: var(--ag-surface);
   overflow-x: auto;
   text-align: center;
@@ -6528,7 +6529,7 @@ body:has(.app-shell) .site-footer div span {
 }
 
 .docs-reader__content th {
-  color: var(--ag-brand-text);
+  color: var(--ag-muted);
   background: var(--ag-surface);
   font-size: 12px;
   font-weight: 900;
@@ -6541,7 +6542,7 @@ body:has(.app-shell) .site-footer div span {
   border-left: 4px solid var(--ag-brand-line);
   border-radius: 8px;
   padding: 12px 16px;
-  color: var(--ag-brand-text);
+  color: var(--ag-text);
   background: var(--ag-surface);
 }
 
