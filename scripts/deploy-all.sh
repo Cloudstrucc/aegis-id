@@ -43,7 +43,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/scripts/env-loader.sh"
 
 ENVS_RAW="dev,qa,prod"
-TENANTS_RAW="default"
+# VanguardCS is the tenant in service. The unnamed "default" profile in the env
+# files is the original Cloudstrucc one and is not deployed to, so naming it
+# here rather than leaving the profile unset is what stops a bare
+# `deploy-all.sh` from pushing at the wrong set of App Services.
+TENANTS_RAW="vanguardcs"
+ALLOW_DEFAULT_TENANT=0
 ASSUME_YES=0
 SKIP_HEALTH=0
 DRY_RUN=0
@@ -64,6 +69,7 @@ while [[ $# -gt 0 ]]; do
     --tenant|--tenants)
                [[ $# -ge 2 ]] || die "--tenant requires a value";  TENANTS_RAW="$2"; shift 2 ;;
     --tenant=*|--tenants=*) TENANTS_RAW="${1#*=}"; shift ;;
+    --allow-default-tenant) ALLOW_DEFAULT_TENANT=1; shift ;;
     --yes|-y)         ASSUME_YES=1; shift ;;
     --skip-health)    SKIP_HEALTH=1; shift ;;
     --dry-run)        DRY_RUN=1; shift ;;
@@ -81,6 +87,16 @@ for env_name in "${ENVS[@]}"; do
     dev|qa|prod) ;;
     *) die "Refusing to deploy to '$env_name'. This script covers dev, qa and prod." ;;
   esac
+done
+
+# The unnamed profile is the original Cloudstrucc set of App Services, which is
+# not in service. Deploying to it by accident is a push at live hosts nobody is
+# watching, so it has to be asked for by name.
+for tenant in "${TENANTS[@]}"; do
+  if [[ "$tenant" == "default" && $ALLOW_DEFAULT_TENANT -eq 0 ]]; then
+    die "The 'default' tenant profile is not deployed to. VanguardCS is the one in service.
+  Pass --allow-default-tenant if you really mean the Cloudstrucc App Services."
+  fi
 done
 
 # ---------------------------------------------------------------------------
@@ -113,16 +129,70 @@ resolve_target() {
 # Kudu status codes: 0 Pending, 1 Building, 2 Deploying, 3 Failed, 4 Success.
 # Anything in 0-2 means the next push is refused, so finding out now costs a
 # second and finding out later costs a full test run and a package.
+#
+# Two kinds of record have to be ignored, or this refuses deploys that would
+# have worked:
+#
+#   * `temp-<id>` scratch records. Kudu writes one per push and does not always
+#     clear it. One has sat at status 0 on the VanguardCS production app since
+#     08:18 on 11 Nov while deployments after it succeeded, so it blocks
+#     nothing.
+#   * anything older than STALE_DEPLOY_MINUTES. A build that is genuinely
+#     running is minutes old; one that is half an hour old has been abandoned,
+#     and treating it as live would mean this script could never run again on
+#     that app.
+#
+# The cutoff is computed in node rather than date(1), because BSD and GNU date
+# parse ISO-8601 with different flags and node is already a dependency here.
+STALE_DEPLOY_MINUTES="${STALE_DEPLOY_MINUTES:-30}"
+
 preflight_deployment_lock() {
   local webapp="$1" group="$2"
   [[ -n "$webapp" && -n "$group" ]] || return 0
   command -v az >/dev/null 2>&1 || return 0
 
-  local in_flight
-  in_flight="$(az webapp deployment list \
-      --name "$webapp" --resource-group "$group" \
-      --query "length([?properties.status==\`0\`||properties.status==\`1\`||properties.status==\`2\`])" \
-      -o tsv 2>/dev/null)" || return 0
+  # There is no `az webapp deployment list`. The deployment history is only on
+  # the ARM resource, so this goes through `az rest` — and resolves the site id
+  # rather than assembling the URL from a subscription id, so it follows
+  # whichever subscription the session is on.
+  local site_id records
+  site_id="$(az webapp show --name "$webapp" --resource-group "$group" --query id -o tsv 2>/dev/null)"
+  if [[ -z "$site_id" ]]; then
+    warn "Could not read $webapp from Azure — skipping the in-flight check"
+    return 0
+  fi
+
+  records="$(az rest --method get \
+      --url "https://management.azure.com${site_id}/deployments?api-version=2022-03-01" \
+      --query "value[?properties.status==\`0\`||properties.status==\`1\`||properties.status==\`2\`].{id:name, start:properties.start_time}" \
+      -o json 2>/dev/null)"
+  if [[ -z "$records" ]]; then
+    warn "Could not read the deployment history for $webapp — skipping the in-flight check"
+    return 0
+  fi
+
+  local in_flight=0
+  if command -v node >/dev/null 2>&1; then
+    in_flight="$(printf '%s' "$records" | node -e '
+      let raw = "";
+      process.stdin.on("data", (chunk) => { raw += chunk; });
+      process.stdin.on("end", () => {
+        let rows = [];
+        try { rows = JSON.parse(raw) || []; } catch { return console.log(0); }
+        const cutoff = Date.now() - Number(process.argv[1]) * 60000;
+        const live = rows.filter((row) => {
+          const id = String(row.id || "");
+          // Kudu scratch record, not a deployment.
+          if (id.includes("temp-")) return false;
+          const started = Date.parse(row.start);
+          // No parseable start time: treat it as live rather than guess.
+          if (Number.isNaN(started)) return true;
+          return started >= cutoff;
+        });
+        console.log(live.length);
+      });
+    ' "$STALE_DEPLOY_MINUTES" 2>/dev/null)" || in_flight=0
+  fi
 
   [[ "$in_flight" =~ ^[0-9]+$ ]] || return 0
   (( in_flight == 0 )) && return 0
