@@ -86,18 +86,24 @@
       </article>
     </div>
 
+    {{!-- Only when there is somewhere to page to. Two dead buttons under a
+          complete list are noise. --}}
     <div class="rel__pager">
-      <span>Showing {{releases.rangeStart}}–{{releases.rangeEnd}} of {{releases.total}} releases</span>
+      <span>
+        {{#if releases.hasOlder}}
+          Showing {{releases.rangeStart}}–{{releases.rangeEnd}} of {{releases.total}} releases
+        {{else}}{{#if releases.hasNewer}}
+          Showing {{releases.rangeStart}}–{{releases.rangeEnd}} of {{releases.total}} releases
+        {{else}}
+          All {{releases.total}} releases, newest first
+        {{/if}}{{/if}}
+      </span>
       <div class="rel__pager-btns">
         {{#if releases.hasNewer}}
           <a class="button button--ghost" href="/developer/docs/releases?page={{releases.newerPage}}">Newer</a>
-        {{else}}
-          <span class="button button--ghost is-disabled" aria-disabled="true">Newer</span>
         {{/if}}
         {{#if releases.hasOlder}}
           <a class="button button--ghost" href="/developer/docs/releases?page={{releases.olderPage}}">Older</a>
-        {{else}}
-          <span class="button button--ghost is-disabled" aria-disabled="true">Older</span>
         {{/if}}
       </div>
     </div>

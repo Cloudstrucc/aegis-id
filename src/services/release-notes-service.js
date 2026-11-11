@@ -284,7 +284,7 @@ async function loadReleases({ force = false } = {}) {
  * enough that rendering every body into one response is a waste of everybody's
  * time.
  */
-async function getReleaseHistory({ version, page = 1, perPage = 8 } = {}) {
+async function getReleaseHistory({ version, page = 1, perPage = 50 } = {}) {
   const { releases, fetchedAt, stale, error } = await loadReleases();
   const deployed = deployedVersion();
 
@@ -298,7 +298,12 @@ async function getReleaseHistory({ version, page = 1, perPage = 8 } = {}) {
   }
 
   const total = decorated.length;
-  const size = Math.min(Math.max(Number.parseInt(perPage, 10) || 8, 1), 50);
+  // The version list is a navigation column, not a page of content: a row is
+  // three short lines and only the SELECTED release renders a body. Eight at a
+  // time split a two-year history across three pages and hid the thing the
+  // page exists to show. Fifty shows every release this product has and keeps
+  // paging for a history that genuinely outgrows one column.
+  const size = Math.min(Math.max(Number.parseInt(perPage, 10) || 50, 1), 200);
   const pages = Math.max(1, Math.ceil(total / size));
   const current = Math.min(Math.max(Number.parseInt(page, 10) || 1, 1), pages);
   const start = (current - 1) * size;

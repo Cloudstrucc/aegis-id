@@ -192,7 +192,11 @@ async function renderDocsWorkspace(req, res, options = {}) {
   // Only fetched for the page that shows it. The landing page and every
   // document render without touching GitHub at all.
   const releases = options.view === 'releases'
-    ? await getReleaseHistory({ version: req.params.version, page: req.query.page })
+    ? await getReleaseHistory({
+        version: req.params.version,
+        page: req.query.page,
+        perPage: req.query.perPage
+      })
     : null;
 
   res.render('pages/docs-workspace', {

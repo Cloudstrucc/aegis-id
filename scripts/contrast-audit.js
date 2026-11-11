@@ -1,3 +1,12 @@
+// Run this ONCE per theme, on a page that was loaded in that theme.
+//
+// Setting `data-theme` and re-running it in the same script reports failures
+// that are not there: the second pass read `.rel-row.is-active` as having the
+// light brand fill at 1.08:1 while the element actually computed
+// rgb(11, 31, 46) with near-white text, about 14:1. Chased twice before it was
+// written down. Flip the theme, let the page settle, then audit in a separate
+// call — or load the page in the theme you mean to test.
+
 (function(){
 const srgb=c=>c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);
 function rgbOf(str){const m=str&&str.match(/rgba?\(([^)]+)\)/);if(!m)return null;

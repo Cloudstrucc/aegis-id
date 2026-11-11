@@ -11386,6 +11386,9 @@ body > .site-footer {
   .rel__split { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* The whole history lives here, so it scrolls in its own column rather than
+   stretching the panel to the length of the list. Sticky, so the versions
+   stay reachable while a long release is being read beside them. */
 .rel__list {
   display: grid;
   gap: 3px;
@@ -11396,6 +11399,20 @@ body > .site-footer {
   border-radius: 10px;
   box-shadow: var(--ag-raise);
   min-width: 0;
+  position: sticky;
+  top: var(--docs-site-header-offset, 68px);
+  max-height: calc(100vh - var(--docs-site-header-offset, 68px) - 28px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 860px) {
+  /* Stacked, the list is above the notes rather than beside them, and a
+     sticky column that cannot sit beside anything just covers the reading. */
+  .rel__list {
+    position: static;
+    max-height: 320px;
+  }
 }
 
 .rel-row {
