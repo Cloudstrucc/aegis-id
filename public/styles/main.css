@@ -10442,3 +10442,193 @@ body > .site-footer {
 .aeg-tenant-switcher__icon.has-logo img {
   padding: 2px;
 }
+
+/* ---------------------------------------------------------------------------
+   Link rows as pills.
+
+   `.aeg-btn--ghost` was transparent on a transparent border, so a row of them
+   read as four words sitting under a card rather than as four things you can
+   press — which is how "All platform settings / Account recovery / Sign-in
+   methods / Registration codes" looked at the foot of every settings page.
+
+   They are now objects: a surface, a hairline, a pill radius, and a lift on
+   hover so the pointer says so before the click does.
+   --------------------------------------------------------------------------- */
+.aeg-btn--ghost,
+.button--ghost {
+  background: var(--ag-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  box-shadow: var(--ag-sh);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.aeg-btn--ghost:hover,
+.aeg-btn--ghost:focus-visible,
+.button--ghost:hover,
+.button--ghost:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--ag-brand-line);
+  box-shadow: var(--ag-raise-lift);
+}
+
+.aeg-btn--ghost:active,
+.button--ghost:active {
+  transform: translateY(0);
+  box-shadow: var(--ag-sh);
+}
+
+/* The row they sit in, so they breathe rather than butting against the card
+   above them. */
+.aeg-btns {
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* An empty register's way out. */
+.aeg-empty .aeg-btn {
+  margin-top: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aeg-btn--ghost,
+  .button--ghost {
+    transition: none;
+  }
+
+  .aeg-btn--ghost:hover,
+  .aeg-btn--ghost:focus-visible,
+  .button--ghost:hover,
+  .button--ghost:focus-visible {
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   How much of its plate a logo fills.
+
+   Most marks are drawn with a generous margin of their own, so fitted edge to
+   edge inside a 40px tile they come out tiny. --logo-scale is set per
+   organization from its branding and defaults to 82%.
+   --------------------------------------------------------------------------- */
+.panel__mark--logo img,
+.app-side__org-mark.has-logo img,
+.aeg-tenant-switcher__icon.has-logo img,
+.organization-tile__mark img {
+  width: var(--logo-scale, 82%);
+  height: var(--logo-scale, 82%);
+  margin: auto;
+  padding: 0;
+}
+
+.panel__mark--logo,
+.app-side__org-mark.has-logo,
+.aeg-tenant-switcher__icon.has-logo,
+.organization-tile__mark:has(img) {
+  display: grid;
+  place-items: center;
+}
+
+/* The control itself, with the three real sizes beside it. */
+.logo-size {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 13px;
+  background: var(--ag-surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.logo-size__head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.logo-size__head label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.logo-size__head output {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.logo-size__samples {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.logo-size__sample {
+  display: grid;
+  flex: none;
+  place-items: center;
+  background: var(--ag-brand-on);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.logo-size__sample img {
+  width: var(--logo-scale, 82%);
+  height: var(--logo-scale, 82%);
+  object-fit: contain;
+}
+
+/* The three places the product actually draws it. */
+.logo-size__sample--lg { width: 40px; height: 40px; }
+.logo-size__sample--md { width: 28px; height: 28px; border-radius: 8px; }
+.logo-size__sample--sm { width: 22px; height: 22px; border-radius: 7px; }
+
+.logo-size__caption {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.logo-size input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 0;
+  height: 14px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.logo-size input[type="range"]::-webkit-slider-runnable-track,
+.logo-size input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--ag-surface-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.logo-size input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  background: var(--ag-brand);
+  border: 2px solid var(--ag-brand-on);
+  border-radius: 50%;
+  box-shadow: var(--ag-sh);
+}
+
+.logo-size input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--ag-brand);
+  border: 2px solid var(--ag-brand-on);
+  border-radius: 50%;
+}

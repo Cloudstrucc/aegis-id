@@ -79,6 +79,7 @@ function brandMark(workspaceIds, branding) {
     if (record && record.logoDataUrl) {
       return {
         logoDataUrl: record.logoDataUrl,
+        logoScale: Number.parseInt(record.logoScale, 10) || 82,
         primaryColor: record.primaryColor || '',
         accentColor: record.accentColor || ''
       };
@@ -87,6 +88,7 @@ function brandMark(workspaceIds, branding) {
   const first = workspaceIds.map((id) => branding.get(id)).find(Boolean);
   return {
     logoDataUrl: '',
+    logoScale: 82,
     primaryColor: first?.primaryColor || '',
     accentColor: first?.accentColor || ''
   };

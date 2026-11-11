@@ -106,6 +106,7 @@ function buildAppShell(locals = {}) {
           name: locals.currentTenant.organization,
           initials: locals.currentTenant.initials,
           logoDataUrl: locals.currentTenant.logoDataUrl || '',
+          logoScale: locals.currentTenant.logoScale || 82,
           primaryColor: locals.currentTenant.primaryColor || '',
           accentColor: locals.currentTenant.accentColor || '',
           handle: locals.currentTenant.handle,

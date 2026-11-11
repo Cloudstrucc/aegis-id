@@ -468,6 +468,8 @@ async function getOrgAdminView(workspace, subscription, query = {}, options = {}
       ...field,
       value: state.branding[field.key] || '#000000'
     })),
+    // Records written before the control existed have no scale.
+    brandLogoScale: Number.parseInt(state.branding.logoScale, 10) || DEFAULT_LOGO_SCALE,
     roles: state.roles.map((role) => decorateRole(role)),
     privilegeGroups: buildPrivilegeGroups(),
     roleTemplates: ROLE_TEMPLATES.map(decorateRoleTemplate),
@@ -1312,6 +1314,13 @@ async function updateBranding(workspace, subscription, input = {}) {
     backgroundColor: normalizeColor(useCustom ? input.backgroundColor : selectedPalette.backgroundColor, selectedPalette.backgroundColor),
     textColor: normalizeColor(useCustom ? input.textColor : selectedPalette.textColor, selectedPalette.textColor),
     logoDataUrl: input.removeLogo ? '' : normalizeLogoDataUrl(input.logoDataUrl) || state.branding.logoDataUrl || '',
+    // How much of its plate the logo fills, as a percentage.
+    //
+    // A mark drawn with its own generous margin — most are — comes out tiny
+    // once it is fitted inside a 40px tile, and a wordmark under it becomes
+    // unreadable. The organization knows how its own logo is cropped, so it
+    // sets this rather than the product guessing at a trim.
+    logoScale: normalizeLogoScale(input.logoScale, state.branding.logoScale),
     // Site-wide identity: what replaces the platform name and
     // "Aegis ID" once the organization is served from its own host. Stored
     // now so the blade can be set up ahead of the host going live.
@@ -2024,6 +2033,7 @@ function defaultBranding() {
     backgroundColor: PALETTES[0].backgroundColor,
     textColor: PALETTES[0].textColor,
     logoDataUrl: '',
+    logoScale: DEFAULT_LOGO_SCALE,
     displayName: '',
     productName: '',
     faviconDataUrl: '',
@@ -3229,6 +3239,22 @@ function normalizeColor(value = '', fallback = '#0f4fa8') {
   const color = String(value || '').trim();
   return /^#[0-9a-f]{6}$/i.test(color) ? color : fallback;
 }
+
+/** 50-100% of the plate. Below half a logo is not a mark, it is a speck. */
+function normalizeLogoScale(value, fallback) {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isFinite(parsed)) {
+    return Math.min(100, Math.max(50, parsed));
+  }
+  const previous = Number.parseInt(fallback, 10);
+  return Number.isFinite(previous) ? Math.min(100, Math.max(50, previous)) : DEFAULT_LOGO_SCALE;
+}
+
+/**
+ * Most marks are drawn with their own margin, so filling the plate edge to
+ * edge is wrong more often than it is right.
+ */
+const DEFAULT_LOGO_SCALE = 82;
 
 function normalizeLogoDataUrl(value = '') {
   const text = String(value || '').trim();

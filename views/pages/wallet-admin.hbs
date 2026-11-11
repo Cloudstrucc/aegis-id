@@ -143,15 +143,27 @@
             </table>
           </div>
         {{else}}
+          {{!--
+            An empty register with no way out of it is a dead end. A wallet
+            appears here when somebody installs the wallet and accepts an
+            invitation, so the action is to issue one — which is a different
+            page, and was not linked from here.
+          --}}
           <div class="aeg-empty">
             <h4>No wallets to show</h4>
             <p>
               {{#if tenant}}
-                No wallet holds a credential from this organization yet.
+                No wallet holds a credential from this organization yet. A wallet
+                appears here once a holder accepts a credential you have issued.
               {{else}}
-                No wallets are registered against this environment yet.
+                No wallets are registered against this environment yet. A wallet
+                appears here once a holder installs the Aegis wallet and accepts
+                an invitation from one of its organizations.
               {{/if}}
             </p>
+            {{#if emptyAction}}
+              <a class="aeg-btn aeg-btn--primary" href="{{emptyAction.href}}">{{emptyAction.label}}</a>
+            {{/if}}
           </div>
         {{/if}}
       </div>

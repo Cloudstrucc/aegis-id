@@ -360,6 +360,11 @@ router.get(
         wallets,
         revokedCount: wallets.filter((wallet) => wallet.isRevoked).length,
         basePath: `/orgs/${req.authorizedTenant.handle}/settings/wallets`,
+        // A wallet lands in this register by accepting a credential, so the
+        // way out of an empty one is the page that issues them.
+        emptyAction: req.authorizedTenant.dashboardPath
+          ? { href: `${req.authorizedTenant.dashboardPath}#credentials`, label: 'Issue a credential' }
+          : { href: '/organizations', label: 'Open an organization' },
         backHref: `/orgs/${req.authorizedTenant.handle}/settings`,
         backLabel: 'All organization settings',
         saved: req.query.saved || null,

@@ -42,7 +42,7 @@
               trouble of uploading it.
             --}}
             <span class="panel__mark{{#if logoDataUrl}} panel__mark--logo{{/if}}"
-                  style="--org-primary: {{primaryColor}}; --org-accent: {{accentColor}};"
+                  style="--org-primary: {{primaryColor}}; --org-accent: {{accentColor}}; --logo-scale: {{logoScale}}%;"
                   aria-hidden="true">
               {{#if logoDataUrl}}<img src="{{logoDataUrl}}" alt="">{{else}}{{mark}}{{/if}}
             </span>
@@ -181,7 +181,7 @@
         <article class="panel panel--org">
           <div class="panel__identity">
             <span class="panel__mark{{#if logoDataUrl}} panel__mark--logo{{/if}}"
-                  style="--org-primary: {{primaryColor}}; --org-accent: {{accentColor}};"
+                  style="--org-primary: {{primaryColor}}; --org-accent: {{accentColor}}; --logo-scale: {{logoScale}}%;"
                   aria-hidden="true">
               {{#if logoDataUrl}}<img src="{{logoDataUrl}}" alt="">{{else}}{{mark}}{{/if}}
             </span>

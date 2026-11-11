@@ -316,6 +316,10 @@ router.get('/admin/wallets', authorize('admin.wallets.manage'), async (req, res,
       .sort((left, right) => String(right.registeredAt).localeCompare(String(left.registeredAt)));
 
     res.render('pages/wallet-admin', {
+      // Deployment-wide: the operator does not issue credentials, an
+      // organization does, so the way out of an empty register is the list of
+      // them rather than any one issuing screen.
+      emptyAction: { href: '/organizations', label: 'Open an organization' },
       title: 'Registered wallets',
       description: 'Withdraw a wallet from service, restore one, or remove a wallet that was never used.',
       wallets: rows,

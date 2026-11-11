@@ -339,3 +339,31 @@ test('the embedded documents are themed, not just recoloured once', () => {
     );
   }
 });
+
+test('every custom property the stylesheets use is defined somewhere', () => {
+  // `var(--line-strong)` appeared five times in main.css and was defined
+  // nowhere. CSS does not complain: the declaration is simply dropped and the
+  // property falls back to whatever it inherits, so a border meant to be a
+  // hairline came out the colour of the text beside it. Nothing failed, and
+  // the only symptom was that it looked slightly wrong.
+  const sheets = ['main.css', 'brand-layer.css', 'fonts.css']
+    .map((name) => path.join(__dirname, '..', 'public', 'styles', name))
+    .filter((file) => fs.existsSync(file))
+    .map((file) => fs.readFileSync(file, 'utf8'))
+    .join('\n');
+
+  // Not anchored to the start of a line: the semantic colours are declared
+  // three to a line, and anchoring missed two of every three.
+  const defined = new Set([...sheets.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1]));
+  // A var() with a fallback is making its own arrangements and is fine.
+  const used = [...sheets.matchAll(/var\(\s*(--[a-z0-9-]+)\s*\)/gi)].map((m) => m[1]);
+
+  // Set on the element by the template, from the organization's own branding,
+  // so they are never in a stylesheet.
+  const setInline = new Set(['--brand-primary', '--brand-accent', '--brand-bg', '--brand-text',
+    '--org-primary', '--org-accent', '--logo-scale', '--track', '--step-count', '--depth']);
+
+  const missing = [...new Set(used.filter((name) => !defined.has(name) && !setInline.has(name)))].sort();
+
+  assert.deepEqual(missing, [], `used but never defined: ${missing.join(', ')}`);
+});

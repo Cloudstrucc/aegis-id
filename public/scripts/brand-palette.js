@@ -252,3 +252,42 @@
 
   Array.prototype.forEach.call(root.querySelectorAll('[data-color-field]'), wire);
 })();
+
+// How much of its plate the logo fills.
+//
+// Separate from the palette above because it is the same question asked about
+// a different thing, and because the samples beside the slider are the actual
+// sizes the product draws the mark at — 40px in a landing panel, 28 in the
+// sidebar chip, 22 in the header switcher. Judging a trim against a 160px
+// preview is how a logo ends up looking right here and tiny everywhere else.
+(function initLogoSize() {
+  'use strict';
+
+  var panel = document.querySelector('[data-logo-size]');
+  if (!panel) {
+    return;
+  }
+
+  var input = panel.querySelector('[data-logo-size-input]');
+  var readout = panel.querySelector('[data-logo-size-value]');
+  var preview = document.querySelector('[data-brand-preview]');
+  if (!input) {
+    return;
+  }
+
+  function apply() {
+    var percent = Math.min(100, Math.max(50, Number(input.value) || 82));
+    var value = percent + '%';
+
+    if (readout) {
+      readout.textContent = percent + '%';
+    }
+    panel.style.setProperty('--logo-scale', value);
+    if (preview) {
+      preview.style.setProperty('--logo-scale', value);
+    }
+  }
+
+  input.addEventListener('input', apply);
+  apply();
+})();

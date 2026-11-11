@@ -2033,7 +2033,7 @@
   <div class="admin-grid">
     <article class="brand-preview-card" data-brand-preview style="--brand-primary: {{orgAdmin.branding.primaryColor}}; --brand-accent: {{orgAdmin.branding.accentColor}}; --brand-bg: {{orgAdmin.branding.backgroundColor}}; --brand-text: {{orgAdmin.branding.textColor}};">
       {{#if orgAdmin.branding.logoDataUrl}}
-        <img src="{{orgAdmin.branding.logoDataUrl}}" alt="{{workspace.organization}} logo">
+        <img src="{{orgAdmin.branding.logoDataUrl}}" alt="{{workspace.organization}} logo" data-brand-preview-logo>
       {{else}}
         <span>V</span>
       {{/if}}
@@ -2112,6 +2112,37 @@
           <label for="logoUpload">Logo upload</label>
           <input id="logoUpload" type="file" accept="image/png,image/jpeg,image/webp" data-logo-upload>
           <input type="hidden" name="logoDataUrl" data-logo-data-url>
+          {{!--
+            How much of its plate the mark fills. Most logos are drawn with a
+            generous margin of their own, so fitted edge to edge inside a 40px
+            tile they come out tiny — which is what "the logo is shrunk on the
+            thumbnail" is. The organization knows how its own file is cropped,
+            so it sets this; the samples beside the slider are the real sizes
+            the product draws it at.
+          --}}
+          <div class="logo-size" data-logo-size>
+            <div class="logo-size__head">
+              <label for="logoScale">Size on the plate</label>
+              <output for="logoScale" data-logo-size-value>{{orgAdmin.brandLogoScale}}%</output>
+            </div>
+            <input
+              id="logoScale"
+              name="logoScale"
+              type="range"
+              min="50"
+              max="100"
+              step="1"
+              value="{{orgAdmin.brandLogoScale}}"
+              data-logo-size-input>
+            <div class="logo-size__samples" aria-hidden="true">
+              {{#if orgAdmin.branding.logoDataUrl}}
+                <span class="logo-size__sample logo-size__sample--lg"><img src="{{orgAdmin.branding.logoDataUrl}}" alt="" data-logo-sample></span>
+                <span class="logo-size__sample logo-size__sample--md"><img src="{{orgAdmin.branding.logoDataUrl}}" alt="" data-logo-sample></span>
+                <span class="logo-size__sample logo-size__sample--sm"><img src="{{orgAdmin.branding.logoDataUrl}}" alt="" data-logo-sample></span>
+              {{/if}}
+              <span class="logo-size__caption">Panel · sidebar · switcher</span>
+            </div>
+          </div>
           {{#if orgAdmin.branding.logoDataUrl}}
             <label class="checkline"><input type="checkbox" name="removeLogo" value="1"><span>Remove the current logo</span></label>
           {{/if}}

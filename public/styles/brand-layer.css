@@ -222,6 +222,10 @@
   --ink:       var(--ag-text);
   --muted:     var(--ag-muted);
   --line:      var(--ag-line);
+  /* The legacy family had no strong line, so every `var(--line-strong)` in
+     main.css resolved to nothing and the border fell back to the inherited
+     colour — a muted grey where a hairline was meant. */
+  --line-strong: var(--ag-line-strong);
   --paper:     var(--ag-surface);
   --mist:      var(--ag-bg);
   --soft-blue: var(--ag-brand-soft);
@@ -260,7 +264,9 @@
   --aeg-nav-2:         var(--ag-nav-2);
   --aeg-nav-line:      var(--ag-nav-line);
   --aeg-nav-text:      var(--ag-nav-text);
-  --aeg-sh:            var(--ag-sh);
+  /* The two surfaces that use this — .aeg-card and .aeg-stat-card — are the
+     settings tiles, which is why they were the last flat things on the page. */
+  --aeg-sh:            var(--ag-raise);
   --aeg-sh-lg:         var(--ag-raise);
   --aeg-sh-brand:      0 3px 14px rgba(15, 117, 188, .14);
 
@@ -1247,6 +1253,8 @@ body.auth-page .page-hero,
 .app-shell .platform-card,
 .app-shell .people-directory,
 .app-shell .config-tile,
+/* These are tiles, and they were flattened inside the shell while every tile
+   outside it lifted — the dashboard's own summary cards among them. */
 .app-shell .policy,
 .app-shell .note-panel,
 .app-shell .demo-qr-card,
@@ -1254,7 +1262,7 @@ body.auth-page .page-hero,
   background: var(--ag-surface);
   border: 1px solid var(--ag-line);
   border-radius: var(--ag-r);
-  box-shadow: none;
+  box-shadow: var(--ag-raise);
 }
 
 .app-shell .dashboard-summary,
@@ -1361,18 +1369,28 @@ body.auth-page .page-hero,
   text-transform: uppercase;
 }
 
-/* The card grids read as one system with the dashboard's: a surface, a
-   hairline, no shadow, and the brand hairline on hover. */
+/* The card grids read as one system with the dashboard's — which now means
+   raised rather than flat. This rule said `box-shadow: none`, so the settings
+   tiles stayed flat while every other tile in the product lifted, and they
+   were the last ones left looking like the old design. */
 .app-shell .aeg-stat-card {
   background: var(--ag-surface);
   border: 1px solid var(--ag-line);
   border-radius: var(--ag-r);
-  box-shadow: none;
+  box-shadow: var(--ag-raise);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
 }
 
 .app-shell .aeg-stat-card:hover {
+  transform: translateY(-2px);
   border-color: var(--ag-brand-line);
   background: var(--ag-surface);
+  box-shadow: var(--ag-raise-lift);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .aeg-stat-card { transition: none; }
+  .app-shell .aeg-stat-card:hover { transform: none; }
 }
 
 /* ===========================================================================
@@ -2016,3 +2034,39 @@ body.document-page .embedded-document .doc-phone-card small {
   color: var(--ag-text);
 }
 .cookie-table tr:last-child td { border-bottom: 0; }
+
+
+/* ---------------------------------------------------------------------------
+   Ghost buttons as pills.
+
+   `.button` above sets `box-shadow: none`, and this file loads after main.css
+   at the same specificity — so the pill treatment written there was being
+   cancelled here for `.button--ghost`, while `.aeg-btn--ghost`, which this
+   file does not mention, kept it. Stated once more in the place that wins.
+   --------------------------------------------------------------------------- */
+.button--ghost {
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-line-strong);
+  border-radius: 999px;
+  box-shadow: var(--ag-sh);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.button--ghost:hover,
+.button--ghost:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--ag-brand-line);
+  background: var(--ag-surface);
+  box-shadow: var(--ag-raise-lift);
+}
+
+.button--ghost:active {
+  transform: translateY(0);
+  box-shadow: var(--ag-sh);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button--ghost { transition: none; }
+  .button--ghost:hover,
+  .button--ghost:focus-visible { transform: none; }
+}

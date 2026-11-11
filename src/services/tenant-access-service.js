@@ -103,6 +103,7 @@ async function listTenantsForUser(user) {
       // header, the breadcrumb — and drew a letter on the platform's own
       // gradient in all three, which is the opposite of what branding is for.
       logoDataUrl: brand?.logoDataUrl || '',
+      logoScale: Number.parseInt(brand?.logoScale, 10) || 82,
       primaryColor: brand?.primaryColor || '',
       accentColor: brand?.accentColor || '',
       domain: identity?.domain || null,
@@ -117,6 +118,12 @@ async function listTenantsForUser(user) {
       assignedRoleLabels: access.assignedRoleLabels,
       privilegeIds: access.privilegeIds,
       settingsPath: identity?.handle ? `/orgs/${identity.handle}/settings` : null,
+      // Where this organization's own work happens, as opposed to its
+      // settings. An empty register needs somewhere to send the reader, and
+      // "issue a credential" is a dashboard blade rather than a settings page.
+      dashboardPath: workspace.subscriptionId
+        ? `/dashboard/${workspace.subscriptionId}/orgs/${workspace.id}`
+        : null,
       publicPath: identity?.handle ? `/orgs/${identity.handle}` : null,
       updatedAt: workspace.updatedAt || workspace.createdAt || null
     });
