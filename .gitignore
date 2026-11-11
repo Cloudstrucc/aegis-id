@@ -30,3 +30,9 @@ artifacts/
 # editor swap files
 *.swp
 *.swo
+
+# Written by scripts/deploy-azure-webapp.sh just before packaging, so the
+# health check can tell which commit a site is actually serving. Generated per
+# deploy and never committed — tracked, it would dirty the tree the git guard
+# is checking.
+public/build.txt

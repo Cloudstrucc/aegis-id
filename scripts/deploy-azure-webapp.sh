@@ -484,6 +484,22 @@ if [[ "$VERIFY_ONLY" != "1" ]]; then
     --settings "${app_settings[@]}" \
     --output none
 
+  # A marker naming the commit in this package, served as a static file.
+  #
+  # Without it, "is the site up?" is the only question a deploy can answer, and
+  # the answer is yes while the PREVIOUS container is still serving — which is
+  # how a QA deploy looked finished eleven minutes before the commit it was
+  # supposed to carry even existed. With it, the caller can poll until the site
+  # serves the build it just shipped, which is the question that was actually
+  # being asked.
+  #
+  # Static and unauthenticated on purpose: /health needs a session, and a 401
+  # proves nothing about which build answered it. The repository is public, so
+  # the SHA discloses nothing.
+  build_sha="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
+  printf '%s\n' "$build_sha" > "$ROOT_DIR/public/build.txt"
+  log "Build marker: $build_sha"
+
   log "Creating zip package: $ZIP_PATH"
   rm -f "$ZIP_PATH"
   zip -r "$ZIP_PATH" . \

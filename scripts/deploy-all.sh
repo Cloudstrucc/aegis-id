@@ -227,24 +227,50 @@ EOF
 # take 40 seconds, so this polls rather than asking once, and it asks for the
 # root page rather than a health endpoint, because the health endpoint is
 # authenticated and a 401 proves nothing about whether a page renders.
+#
+# "Up" is not the question, though. During a swap the PREVIOUS container is
+# still answering 200, so a check that stops there says a deploy succeeded
+# while the old build is serving — on 11 Nov a QA deploy looked finished
+# eleven minutes before the commit it was meant to carry had even been made.
+# So when the deploy wrote a build marker, this waits for the site to serve
+# THAT commit. Falls back to the plain 200 when there is no marker to compare,
+# which keeps it working against a site deployed some other way.
 wait_until_serving() {
-  local url="$1" label="$2"
+  local url="$1" label="$2" expected_sha="${3:-}"
   [[ -n "$url" ]] || { warn "No APP_PUBLIC_BASE_URL for $label — cannot check it answers"; return 0; }
 
   local deadline=$(( SECONDS + HEALTH_TIMEOUT ))
-  local code=""
-  printf '  waiting for %s ' "$url"
+  local code="" served=""
+  if [[ -n "$expected_sha" ]]; then
+    printf '  waiting for %s to serve %s ' "$url" "${expected_sha:0:12}"
+  else
+    printf '  waiting for %s ' "$url"
+  fi
+
   while (( SECONDS < deadline )); do
     code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$url/" 2>/dev/null)"
     if [[ "$code" == "200" ]]; then
-      printf ' \033[32m200\033[0m\n'
-      return 0
+      if [[ -z "$expected_sha" ]]; then
+        printf ' \033[32m200\033[0m\n'
+        return 0
+      fi
+      # `tr -d` because the file ends in a newline, and a proxy or a 404 page
+      # could answer with anything — only an exact match counts.
+      served="$(curl -s --max-time 30 "$url/build.txt" 2>/dev/null | tr -d '[:space:]')"
+      if [[ "$served" == "$expected_sha" ]]; then
+        printf ' \033[32m200, serving %s\033[0m\n' "${served:0:12}"
+        return 0
+      fi
     fi
     printf '.'
     sleep "$HEALTH_INTERVAL"
   done
 
-  printf ' \033[31m%s\033[0m\n' "${code:-no answer}"
+  if [[ -n "$expected_sha" && "$code" == "200" ]]; then
+    printf ' \033[31manswering, but serving %s\033[0m\n' "${served:-no marker}"
+  else
+    printf ' \033[31m%s\033[0m\n' "${code:-no answer}"
+  fi
   return 1
 }
 
@@ -257,6 +283,13 @@ say "Deployment chain"
 printf '  environments : %s\n' "${ENVS[*]}"
 printf '  tenants      : %s\n' "${TENANTS[*]}"
 printf '  health check : %s\n' "$([[ $SKIP_HEALTH == 1 ]] && echo 'skipped' || echo "up to ${HEALTH_TIMEOUT}s per stage")"
+
+# The commit every stage in this run ships. The per-environment script writes
+# it into the package as public/build.txt, so the health check can wait for the
+# site to serve this build rather than merely to answer.
+# Overridable so the check can be exercised without a checkout; normally it is
+# simply HEAD.
+DEPLOYING_SHA="${DEPLOYING_SHA:-$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || true)}"
 
 STAGES=()
 for tenant in "${TENANTS[@]}"; do
@@ -338,7 +371,7 @@ for stage in "${STAGES[@]}"; do
   fi
 
   if (( SKIP_HEALTH == 0 )); then
-    if ! wait_until_serving "$base_url" "$label"; then
+    if ! wait_until_serving "$base_url" "$label" "$DEPLOYING_SHA"; then
       printf '\n'
       # printf, not a heredoc: a heredoc passes \033 through as four literal
       # characters, so the warning printed its own escape codes as text.
