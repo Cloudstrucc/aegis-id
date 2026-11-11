@@ -2261,3 +2261,52 @@ function renderImportProgress(panel, job) {
 
   paint(stored());
 })();
+
+// The one-shot confirmation after a redirect.
+//
+// Removed on a timer because it confirms something that has already happened:
+// leaving it on screen would make the reader dismiss a message about work they
+// have finished. The close button is there for anyone who wants it gone first,
+// and the element is removed rather than hidden so it cannot be tabbed into
+// after it has faded.
+(function initFlash() {
+  var flash = document.querySelector('[data-flash]');
+  if (!flash) {
+    return;
+  }
+
+  var ms = parseInt(flash.getAttribute('data-flash-ms'), 10);
+  if (!Number.isFinite(ms) || ms < 1000) {
+    ms = 5000;
+  }
+
+  var timer = null;
+
+  function dismiss() {
+    if (timer) {
+      window.clearTimeout(timer);
+      timer = null;
+    }
+    flash.setAttribute('data-flash-leaving', '');
+    window.setTimeout(function removeFlash() {
+      if (flash.parentNode) {
+        flash.parentNode.removeChild(flash);
+      }
+    }, 240);
+  }
+
+  var closeButton = flash.querySelector('[data-flash-close]');
+  if (closeButton) {
+    closeButton.addEventListener('click', dismiss);
+  }
+
+  timer = window.setTimeout(dismiss, ms);
+
+  // The query parameter has done its job. Taking it out of the address bar
+  // stops the message coming back on reload or when the link is shared.
+  if (window.history && window.history.replaceState && window.location.search.indexOf('flash=') !== -1) {
+    var url = new URL(window.location.href);
+    url.searchParams.delete('flash');
+    window.history.replaceState({}, '', url.pathname + (url.search || '') + url.hash);
+  }
+})();

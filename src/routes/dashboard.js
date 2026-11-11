@@ -20,6 +20,7 @@ const {
 } = require('../services/issuer-organization-service');
 const { getConnectedAppsView } = require('../services/connected-app-service');
 const { getWorkspaceWalletOnboardingState } = require('../services/workspace-onboarding-service');
+const { flashFor } = require('../services/flash-service');
 const {
   getOrgAdminView,
   listCredentialMembershipsForEmail
@@ -141,7 +142,8 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId', authorize('workspace.
       connectedApps,
       orgAdmin,
       userProfile: buildUserProfileView(req.user, subscription, workspace, orgAdmin, credentialMemberships),
-      welcome: req.query.welcome === '1'
+      welcome: req.query.welcome === '1',
+      flash: flashFor(req.query)
     });
   } catch (error) {
     next(error);

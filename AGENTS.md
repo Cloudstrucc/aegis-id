@@ -525,6 +525,25 @@ Core capabilities:
 - Avoid accidental overflow and horizontal scrolling.
 - Keep tables responsive within their container.
 - Keep modals and forms visually integrated with the product.
+- **A page opens at the top of its content.** The first thing a reader sees
+  must be within ~56px of the top of the content area. Anything more is a
+  screenful of nothing, and it is invisible in the stylesheet because the
+  cause is usually a shared rule on `main > :first-child` several files away.
+- **Brand blue marks links and the active row, never prose.** Text somebody
+  reads is `--ag-text`; secondary labels are `--ag-muted`. A paragraph in the
+  link colour is both tiring to read and a claim that it is clickable.
+
+Two audits, both run against a rendered page in the browser because neither
+defect can be seen in the source — the page renders correctly, it just renders
+wrong:
+
+- `scripts/contrast-audit.js` — every text/background pair, resting and on
+  hover, against WCAG AA. Run it in both themes.
+- `scripts/layout-gap-audit.js` — how far below the top of the content area
+  the first thing that draws ink actually sits, and which rule put it there.
+
+`tests/layout-spacing.test.js` guards the shape of the rule that caused the
+last one; it cannot measure a page, which is why the audit above exists.
 
 ## Environments
 

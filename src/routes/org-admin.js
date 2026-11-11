@@ -210,7 +210,15 @@ router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/identity-verific
     status: verification.status,
     provider: verification.provider
   });
-  res.redirect(303, `/dashboard/${subscription.id}/orgs/${workspace.id}#credential-admin`);
+  // The capture modal closes onto a page that looks exactly like the one it
+  // opened over, so the redirect carries the only evidence the reader gets
+  // that it worked. A token, not a message: the query string is theirs to
+  // edit, and the words come from the catalogue.
+  const flash = verification.status === 'verified' ? 'admin-verified' : 'admin-verification-pending';
+  res.redirect(
+    303,
+    `/dashboard/${subscription.id}/orgs/${workspace.id}?flash=${flash}#credential-admin`
+  );
 }));
 
 router.post('/dashboard/:subscriptionId/orgs/:workspaceId/admin/policy', authorize('org.policy.manage'), withOrg(async ({ subscription, workspace, req, res }) => {

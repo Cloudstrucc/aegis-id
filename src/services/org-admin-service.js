@@ -2691,6 +2691,14 @@ function buildAdminProfile(workspace, subscription, state) {
     nextValidationDueLabel: nextValidationAt ? formatDate(nextValidationAt) : 'Re-validation disabled',
     revalidationEnabled: policy.adminRevalidationEnabled,
     revalidationMonths: policy.adminRevalidationMonths,
+    // Whether there is anything to do right now. A validated profile with no
+    // re-validation due needs no action, and the People table was offering
+    // "Verify" to an administrator who had just finished verifying — which
+    // reads as "that did not work, do it again".
+    revalidationDue: Boolean(
+      isVerified && nextValidationAt && Date.parse(nextValidationAt) <= Date.now()
+    ),
+    needsVerification: !isVerified,
     showVerificationBanner: !isVerified,
     createdAt: registeredAt
   };

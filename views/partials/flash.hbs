@@ -1,0 +1,23 @@
+{{!--
+  One-shot confirmation of something that just happened.
+
+  Shown after a redirect, because that is the only moment the reader cannot
+  tell whether their action worked: the page they came back to looks like the
+  page they left. The message is chosen server-side from a fixed set — nothing
+  from the query string is ever rendered — so a crafted URL cannot put words
+  on somebody else's screen.
+
+  role="status" rather than "alert": it is a confirmation, so it should be
+  announced after what the reader is already doing rather than interrupting
+  it. It dismisses itself, and carries a close button so it can go sooner.
+--}}
+{{#if flash}}
+  <div class="flash flash--{{flash.tone}}" role="status" aria-live="polite" data-flash data-flash-ms="{{flash.ms}}">
+    <span class="flash__mark" aria-hidden="true">{{agIcon flash.icon 18}}</span>
+    <div class="flash__body">
+      <strong>{{flash.title}}</strong>
+      {{#if flash.body}}<span>{{flash.body}}</span>{{/if}}
+    </div>
+    <button class="flash__close" type="button" data-flash-close aria-label="Dismiss">&times;</button>
+  </div>
+{{/if}}

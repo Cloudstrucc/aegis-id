@@ -9529,7 +9529,10 @@ details.aeg-card[open] > summary {
     background: var(--ag-surface);
   }
 
-  main > .band:first-child:not(.band--page-top) {
+  /* Same exclusion as the desktop clearance above: inside the application
+     shell the bands carry no padding of their own, and <main> is not under a
+     fixed header. */
+  main:not(.app-shell__main) > .band:first-child:not(.band--page-top) {
     padding-top: var(--aeg-space-6);
   }
 
@@ -9829,4 +9832,107 @@ a.organization-tile:focus-visible {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------------------
+   The one-shot confirmation after a redirect.
+
+   Top centre rather than a corner: it confirms something the reader just did,
+   so it belongs where they are looking, and it is gone in a few seconds.
+   Fixed, above the modals, and never over the close button of the thing it is
+   confirming — the identity capture modal closes before this appears.
+   --------------------------------------------------------------------------- */
+.flash {
+  position: fixed;
+  /* Below the fixed site header, not over it: a confirmation that covers the
+     navigation makes the reader move the mouse to read the page again. */
+  top: 86px;
+  left: 50%;
+  z-index: 1200;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: min(520px, calc(100vw - 32px));
+  padding: 14px 16px;
+  background: var(--ag-surface);
+  border: 1px solid var(--ag-good-line);
+  border-radius: 10px;
+  box-shadow: 0 22px 54px rgba(7, 25, 40, 0.22);
+  transform: translate(-50%, 0);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.flash[data-flash-leaving] {
+  opacity: 0;
+  transform: translate(-50%, -10px);
+}
+
+.flash__mark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--ag-good);
+  background: var(--ag-good-soft);
+  border-radius: 8px;
+}
+
+.flash__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.flash__body strong {
+  color: var(--ag-text);
+  font-size: 15px;
+}
+
+.flash__body span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.flash__close {
+  border: 0;
+  border-radius: 6px;
+  padding: 2px 8px;
+  color: var(--muted);
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.flash__close:hover,
+.flash__close:focus-visible {
+  color: var(--ag-text);
+  background: var(--ag-surface-2);
+}
+
+.flash--info {
+  border-color: var(--ag-brand-line);
+}
+
+.flash--info .flash__mark {
+  color: var(--ag-brand-text);
+  background: var(--ag-brand-soft);
+}
+
+/* Below the wrap point the header scrolls with the page, so there is nothing
+   fixed to clear. */
+@media (max-width: 760px) {
+  .flash {
+    top: 12px;
+  }
+}
+
+/* Somebody who has asked for less motion still gets the message; it just
+   appears and disappears rather than sliding. */
+@media (prefers-reduced-motion: reduce) {
+  .flash {
+    transition: none;
+  }
 }

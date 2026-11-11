@@ -258,7 +258,17 @@
                   <button class="icon-button" type="button" title="View details" data-modal-target="#{{detailModalId}}">View</button>
                   {{#if ../orgAdmin.canManagePeople}}
                     {{#if isAdminProfile}}
-                      <button class="icon-button" type="button" title="Verify administrator identity" data-modal-target="#admin-identity-verification">Verify</button>
+                      {{!--
+                        Only when there is something to do. A profile that has
+                        just been validated has nothing left to verify, and an
+                        action offering it again reads as a failure report.
+                        Re-validation is a different thing and says so.
+                      --}}
+                      {{#if needsVerification}}
+                        <button class="icon-button" type="button" title="Verify administrator identity" data-modal-target="#admin-identity-verification">Verify</button>
+                      {{else if revalidationDue}}
+                        <button class="icon-button" type="button" title="Re-validate administrator identity" data-modal-target="#admin-identity-verification">Re-verify</button>
+                      {{/if}}
                     {{else}}
                       <button class="icon-button" type="button" title="Edit credential holder" data-modal-target="#{{editModalId}}">Edit</button>
                       <button class="icon-button" type="button" title="Show invite QR and link" data-modal-target="#{{inviteModalId}}">Invite</button>
