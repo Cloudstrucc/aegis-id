@@ -90,7 +90,10 @@ router.get('/dashboard/:subscriptionId/orgs/:workspaceId/onboarding', authorize(
       hasAndroidDownloadUrl: Boolean(config.app.androidTestingUrl),
       welcome: req.query.welcome === '1',
       onboardingSteps: buildOnboardingSteps(onboarding.latestInvitation),
-      walletSetupComplete: onboarding.walletSetupComplete
+      walletSetupComplete: onboarding.walletSetupComplete,
+      // Asks this route again on a timer. It redirects to the dashboard as
+      // soon as a wallet has accepted, so the check is the request itself.
+      pageScripts: [{ src: '/scripts/workspace-onboarding.js' }]
     });
   } catch (error) {
     next(error);

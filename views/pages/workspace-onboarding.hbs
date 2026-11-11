@@ -35,7 +35,7 @@
       <article class="demo-qr-card demo-qr-card--onboarding">
         <p class="eyebrow">Step 2</p>
         <h3>{{#if walletSetupComplete}}Wallet connected for {{workspace.organization}}{{else}}Register {{workspace.organization}} in the Aegis wallet{{/if}}</h3>
-        <p class="demo-qr-card__description">{{#if walletSetupComplete}}The first administrator wallet is now linked to this organization.{{else}}Download the mobile wallet on iOS or Android, open it on your phone, scan the QR code, and accept the issuer invitation for {{workspace.organization}}. Refresh after acceptance if this page does not update automatically.{{/if}}</p>
+        <p class="demo-qr-card__description">{{#if walletSetupComplete}}The first administrator wallet is now linked to this organization.{{else}}Download the mobile wallet on iOS or Android, open it on your phone, scan the QR code, and accept the issuer invitation for {{workspace.organization}}. This page opens the dashboard on its own once a wallet accepts.{{/if}}</p>
         <div class="store-badge-row">
           {{#if hasIosAppStore}}
             <a class="store-badge-official" href="{{iosAppStoreUrl}}" target="_blank" rel="noopener" aria-label="Download on the App Store">
@@ -96,6 +96,23 @@
           </div>
         </dl>
         {{#unless walletSetupComplete}}
+          {{!--
+            The dashboard opens by itself: this route redirects to it the
+            moment a wallet has accepted the invitation. So "check now" is
+            literally "ask the server again", and the script asks on a timer
+            too — somebody who has just accepted on their phone should not have
+            to work out that the browser needs a nudge, which is what the copy
+            above used to ask of them.
+
+            The link works with the script blocked or failed, because it is a
+            link to this page and this page already decides where to send them.
+          --}}
+          <div class="onboarding-check" data-onboarding-check="{{onboardingPath}}">
+            <a class="button button--primary button--blue" href="{{onboardingPath}}">Check now</a>
+            <p class="onboarding-check__note" data-onboarding-check-note role="status">
+              Checking automatically. This page opens the dashboard as soon as a wallet accepts.
+            </p>
+          </div>
           <form action="{{dashboardBasePath}}/issuer-organizations/invitations" method="post">
             <input type="hidden" name="returnTo" value="onboarding">
             <button class="button button--ghost" type="submit">Generate new wallet invitation</button>

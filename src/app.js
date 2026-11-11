@@ -361,7 +361,18 @@ function createApp() {
           imgSrc: ["'self'", 'data:', 'https://img.shields.io'],
           objectSrc: ["'none'"],
           scriptSrc: ["'self'", "'unsafe-eval'", "'wasm-unsafe-eval'"],
-          styleSrc: ["'self'", "'unsafe-inline'"]
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          // Helmet adds upgrade-insecure-requests by default, which is right
+          // for dev, qa and prod — they are https and it costs nothing there.
+          // On localhost it is served over http, and the directive rewrites
+          // every same-origin fetch and XHR to https, where nothing is
+          // listening: they fail with ERR_SSL_PROTOCOL_ERROR while links and
+          // form posts keep working, because a top-level navigation is not
+          // upgraded. That is a long afternoon for whoever meets it, and it
+          // protects nothing on a plaintext origin that is already loaded.
+          // `local` is the only environment where NODE_ENV is not production,
+          // so this is a localhost-only exception by construction.
+          ...(config.app.env === 'production' ? {} : { upgradeInsecureRequests: null })
         }
       }
     })

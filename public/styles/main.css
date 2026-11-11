@@ -6648,13 +6648,20 @@ body:has(.app-shell) .site-footer div span {
    <main>, so the first band in the document is exactly the one that needs the
    offset. Pages that open with .page-hero / .hero are untouched because their
    first child is not a .band, and .band--page-top is excluded so the two never
-   stack. */
-main > .band:first-child:not(.band--page-top) {
+   stack.
+
+   Not inside the application shell. There, <main> is .app-shell__main, which
+   sits below the shell's own topbar and breadcrumb rather than under the fixed
+   site header, and `.app-shell .band { padding: 0 }` already says the bands
+   carry no padding of their own. This rule outranked it, so every shell page
+   whose first element is a band opened with 152px of nothing between the
+   breadcrumb and the first card — most visibly the wallet setup page. */
+main:not(.app-shell__main) > .band:first-child:not(.band--page-top) {
   padding-top: calc(104px + 48px);
 }
 
 @media (max-width: 760px) {
-  main > .band:first-child:not(.band--page-top) {
+  main:not(.app-shell__main) > .band:first-child:not(.band--page-top) {
     padding-top: calc(104px + 24px);
   }
 }
@@ -7504,7 +7511,11 @@ main > .band:first-child:not(.band--page-top) {
   padding-top: 18px;
 }
 
-.demo-qr-card--onboarding img,
+/* The QR code, by its own class. Written as `img` it also caught the App
+   Store badge sitting in the same card and stretched it to the column width at
+   its intrinsic 3:1 ratio — 260x101 beside a 214x68 Android badge, and a
+   `height: auto` that overrode the 66px the badge is drawn at. */
+.demo-qr-card--onboarding .demo-qr-card__image,
 .demo-qr-card--onboarding canvas {
   display: block;
   width: 100%;
@@ -9801,4 +9812,21 @@ a.organization-tile:focus-visible {
   .section-heading--tight h2 {
     font-size: 21px;
   }
+}
+
+/* Wallet setup: the manual check beside the automatic one. The note sits
+   under the button rather than beside it, because it is a status line that
+   changes length and a flex row made the button move when it did. */
+.onboarding-check {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-top: 16px;
+}
+
+.onboarding-check__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
