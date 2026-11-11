@@ -10632,3 +10632,253 @@ body > .site-footer {
   border: 2px solid var(--ag-brand-on);
   border-radius: 50%;
 }
+
+/* ---------------------------------------------------------------------------
+   Record tables, in two views.
+
+   A table compares rows well and fits a phone badly, and several of these are
+   wider than a laptop — the people directory carries ten columns, and the
+   last of them is the row's own actions, the first thing to scroll off the
+   right-hand edge. Cards, a column chooser and actions-first are the three
+   answers; public/scripts/data-table.js builds all three from the table that
+   is already on the page.
+   --------------------------------------------------------------------------- */
+.dt {
+  display: grid;
+  gap: 12px;
+}
+
+.dt-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* The two views, as one segmented control. */
+.dt-views {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--ag-surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.dt-views__button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 14px;
+  color: var(--muted);
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.dt-views__button[aria-pressed="true"] {
+  color: var(--ag-text);
+  background: var(--ag-surface);
+  box-shadow: var(--ag-sh);
+}
+
+.dt-views__button:focus-visible {
+  outline: 2px solid var(--ag-brand);
+  outline-offset: 1px;
+}
+
+/* The column chooser. */
+.dt-columns {
+  position: relative;
+}
+
+.dt-columns__toggle {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--muted);
+  background: var(--ag-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.dt-columns__toggle:hover,
+.dt-columns__toggle:focus-visible {
+  transform: translateY(-1px);
+  color: var(--ag-text);
+  border-color: var(--ag-brand-line);
+  box-shadow: var(--ag-raise);
+}
+
+.dt-columns__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  min-width: 200px;
+  padding: 10px;
+  background: var(--ag-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  box-shadow: var(--ag-raise-lift);
+}
+
+.dt-columns__heading {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dt-columns__item {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin: 0;
+  padding: 6px 7px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.dt-columns__item:hover {
+  background: var(--ag-surface-2);
+}
+
+.dt-columns__item input {
+  width: 15px;
+  height: 15px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--ag-brand);
+}
+
+/* Cards: as many across as fit, so a wide screen still shows several. */
+.dt-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.dt-card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 16px;
+  background: var(--ag-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: var(--ag-raise);
+  min-width: 0;
+}
+
+.dt-card__title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.dt-card__fields {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.dt-card__fields > div {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+
+.dt-card__fields dt {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dt-card__fields dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.dt-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.dt-card__actions form {
+  margin: 0;
+}
+
+.dt-cards__empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 26px 16px;
+  color: var(--muted);
+  text-align: center;
+  background: var(--ag-surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+/* One view at a time. */
+.dt--cards > .dt-table { display: none; }
+.dt--table > .dt-cards { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-views__button,
+  .dt-columns__toggle {
+    transition: none;
+  }
+
+  .dt-columns__toggle:hover,
+  .dt-columns__toggle:focus-visible {
+    transform: none;
+  }
+}
+
+/* Moving the actions to the front put them in whatever width the browser felt
+   like giving column one, which wrapped five buttons into five rows and made
+   every row five rows tall. They stay on one line, and the column is sized to
+   hold them. */
+.dt-table th:first-child,
+.dt-table td:first-child {
+  white-space: nowrap;
+}
+
+.dt-table td:first-child .row-actions {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+/* On a card the actions are at the foot with room to wrap, which is where
+   wrapping is right. */
+.dt-card__actions .row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

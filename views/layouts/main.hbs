@@ -60,6 +60,13 @@
     {{#each pageScripts}}
       <script src="{{src}}" defer></script>
     {{/each}}
+    {{!--
+      Every page, because record tables are rendered by six different routes
+      and a table added later should be covered by its class rather than by
+      somebody remembering to add a script. It does nothing on a page with no
+      table on it.
+    --}}
+    <script src="/scripts/data-table.js?v={{assetVersion}}" defer></script>
     <script src="/scripts/main.js?v={{assetVersion}}" defer></script>
   </body>
 </html>
