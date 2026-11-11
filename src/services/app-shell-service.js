@@ -28,7 +28,12 @@ const { iconSvg } = require('../lib/app-icons');
 // sign-in and recovery flows, checkout and the rendered documents keep the
 // plain single-column layout — a sidebar of organization settings on a sign-in
 // page would be navigation to somewhere the reader cannot go yet.
-const SHELL_PREFIXES = ['/dashboard', '/admin', '/organizations', '/account', '/testing'];
+// `/help` is in the list even though those pages are public, because
+// `buildAppShell` already returns null for a viewer who is not signed in. An
+// anonymous reader therefore still gets the public chrome, while an
+// administrator who reached the setup guide from /admin/domains keeps the
+// navigation they came in with instead of landing on a page with no way back.
+const SHELL_PREFIXES = ['/dashboard', '/admin', '/organizations', '/account', '/testing', '/help'];
 
 // The signed-in landing page. Not a prefix, because every path starts with
 // "/" — it is the one exact path that takes the shell.

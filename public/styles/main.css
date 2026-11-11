@@ -1286,14 +1286,27 @@ textarea:focus {
   gap: 14px;
 }
 
+/* A row of links, not a pair of banners.
+   Two equal 1fr tracks stretched "All settings" and "Setup guide" to 523px
+   each at the foot of /admin/domains, and sat them flush against the cards
+   above with no separation at all. These are secondary navigation on nine
+   pages; they take the width of their own labels and wrap when they run out
+   of room. The auth pages, where a full-width button IS right, ask for it by
+   name with --stacked. */
 .inline-actions {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
 }
 
 /* One per row, each filling the column, so a resend button matches the width
    of the primary button it stands beside. */
 .inline-actions--stacked {
+  display: grid;
   grid-template-columns: minmax(0, 1fr);
+  margin-top: 0;
 }
 
 .inline-actions--stacked form { display: grid; }
